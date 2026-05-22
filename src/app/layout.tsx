@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "FlowDesk — Panel de administración",
-  description: "Campus empresarial gamificado",
+  title: "FlowDesk — Sistema operativo para equipos humano-IA",
+  description: "Integra a tu equipo humano y tus agentes de IA en un solo espacio de trabajo inteligente.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -1,0 +1,398 @@
+'use client';
+import { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import {
+  Send, Loader2, Upload, FileText, Users, Palette, GitBranch,
+  CheckCircle2, X, ArrowLeft, Bot,
+} from 'lucide-react';
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
+
+// ── Tipos ──────────────────────────────────────────────────────────────────────
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+interface UploadedDoc {
+  type: DocType;
+  name: string;
+  status: 'uploading' | 'ready' | 'error';
+}
+
+type DocType = 'identity' | 'org_chart' | 'brand' | 'processes';
+
+const DOC_TYPES: { type: DocType; icon: any; label: string; desc: string; color: string }[] = [
+  {
+    type: 'identity',
+    icon: FileText,
+    label: 'Identidad',
+    desc: 'Misión, visión y valores',
+    color: 'text-violet-400 bg-violet-400/10 border-violet-400/20',
+  },
+  {
+    type: 'org_chart',
+    icon: Users,
+    label: 'Organigrama',
+    desc: 'Departamentos y equipo',
+    color: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
+  },
+  {
+    type: 'brand',
+    icon: Palette,
+    label: 'Manual de marca',
+    desc: 'Colores, logo y estilo',
+    color: 'text-pink-400 bg-pink-400/10 border-pink-400/20',
+  },
+  {
+    type: 'processes',
+    icon: GitBranch,
+    label: 'Procesos',
+    desc: 'SOPs y flujos de trabajo',
+    color: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+  },
+];
+
+// ── Componente principal ───────────────────────────────────────────────────────
+
+export default function OnboardingPage() {
+  const router = useRouter();
+
+  // Chat state
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [completed, setCompleted] = useState(false);
+
+  // Upload state
+  const [uploads, setUploads] = useState<UploadedDoc[]>([]);
+  const [dragOver, setDragOver] = useState<DocType | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingDocType, setPendingDocType] = useState<DocType | null>(null);
+
+  // Scroll chat al final
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, chatLoading]);
+
+  // Mensaje de bienvenida al cargar
+  useEffect(() => {
+    sendMessage('Hola, quiero configurar mi FlowDesk', true);
+  }, []);
+
+  // ── Chat ───────────────────────────────────────────────────────────────────
+
+  async function sendMessage(text: string, silent = false) {
+    if (!text.trim() || chatLoading) return;
+
+    if (!silent) {
+      setMessages(prev => [...prev, { role: 'user', content: text }]);
+      setInput('');
+    }
+
+    setChatLoading(true);
+    try {
+      const res = await fetch(`${API}/onboarding/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId, message: text }),
+      });
+
+      const data = await res.json();
+      setSessionId(data.session_id);
+      setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+
+      if (data.completed) {
+        setCompleted(true);
+        setTimeout(() => router.push('/login?onboarding=done'), 3000);
+      }
+    } catch {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'Hubo un problema de conexión. Intenta de nuevo.',
+      }]);
+    } finally {
+      setChatLoading(false);
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage(input);
+    }
+  }
+
+  // ── Upload ─────────────────────────────────────────────────────────────────
+
+  function openFilePicker(type: DocType) {
+    setPendingDocType(type);
+    fileInputRef.current?.click();
+  }
+
+  async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !pendingDocType) return;
+    e.target.value = '';
+    await uploadDoc(file, pendingDocType);
+  }
+
+  async function handleDrop(e: React.DragEvent, type: DocType) {
+    e.preventDefault();
+    setDragOver(null);
+    const file = e.dataTransfer.files[0];
+    if (file) await uploadDoc(file, type);
+  }
+
+  async function uploadDoc(file: File, type: DocType) {
+    const doc: UploadedDoc = { type, name: file.name, status: 'uploading' };
+    setUploads(prev => [...prev.filter(u => u.type !== type), doc]);
+
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      form.append('doc_type', type);
+      if (sessionId) form.append('session_id', sessionId);
+
+      const res = await fetch(`${API}/onboarding/upload-doc`, {
+        method: 'POST',
+        body: form,
+      });
+
+      if (!res.ok) throw new Error();
+
+      const data = await res.json();
+      if (data.session_id) setSessionId(data.session_id);
+
+      setUploads(prev => prev.map(u => u.type === type ? { ...u, status: 'ready' } : u));
+
+      // Notificar al chat lo que se subió
+      const labels: Record<DocType, string> = {
+        identity: 'mi documento de identidad (misión, visión y valores)',
+        org_chart: 'mi organigrama con departamentos y equipo',
+        brand: 'el manual de marca',
+        processes: 'mis procesos y SOPs',
+      };
+      sendMessage(`Acabo de subir ${labels[type]}.`, false);
+
+    } catch {
+      setUploads(prev => prev.map(u => u.type === type ? { ...u, status: 'error' } : u));
+    }
+  }
+
+  function removeUpload(type: DocType) {
+    setUploads(prev => prev.filter(u => u.type !== type));
+  }
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+
+  return (
+    <div className="min-h-screen bg-gray-950 flex flex-col">
+
+      {/* Header */}
+      <header className="border-b border-gray-800/60 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Link href="/" className="text-gray-500 hover:text-white transition-colors">
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-[#4DBBF0] flex items-center justify-center">
+              <span className="text-xs font-bold text-gray-950">F</span>
+            </div>
+            <span className="font-semibold text-white text-sm">Configura tu FlowDesk</span>
+          </div>
+        </div>
+        <Link href="/login" className="text-xs text-gray-500 hover:text-white transition-colors">
+          ¿Ya tienes cuenta? Acceder →
+        </Link>
+      </header>
+
+      {/* Main — dos paneles */}
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden" style={{ height: 'calc(100vh - 65px)' }}>
+
+        {/* Panel izquierdo — Documentos */}
+        <aside className="lg:w-80 xl:w-96 border-b lg:border-b-0 lg:border-r border-gray-800/60 p-6 overflow-y-auto flex-shrink-0">
+          <div className="mb-6">
+            <h2 className="font-semibold text-white text-sm mb-1">Sube tus documentos</h2>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              Si ya tienes esto definido, súbelo y Atlas solo te preguntará lo que falte.
+              Acepta PDF, Word e imágenes.
+            </p>
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+            onChange={handleFileSelected}
+          />
+
+          <div className="space-y-3">
+            {DOC_TYPES.map(({ type, icon: Icon, label, desc, color }) => {
+              const uploaded = uploads.find(u => u.type === type);
+              return (
+                <div
+                  key={type}
+                  onDragOver={e => { e.preventDefault(); setDragOver(type); }}
+                  onDragLeave={() => setDragOver(null)}
+                  onDrop={e => handleDrop(e, type)}
+                  className={`
+                    relative rounded-xl border p-4 transition-all cursor-pointer
+                    ${uploaded?.status === 'ready'
+                      ? 'border-emerald-500/30 bg-emerald-500/5'
+                      : dragOver === type
+                        ? 'border-[#4DBBF0]/50 bg-[#4DBBF0]/5'
+                        : 'border-gray-800 bg-gray-900 hover:border-gray-700'
+                    }
+                  `}
+                  onClick={() => !uploaded && openFilePicker(type)}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-9 h-9 rounded-lg border flex items-center justify-center flex-shrink-0 ${color}`}>
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-white">{label}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
+                      {uploaded && (
+                        <p className="text-xs mt-1.5 truncate">
+                          {uploaded.status === 'uploading' && (
+                            <span className="text-[#4DBBF0] flex items-center gap-1">
+                              <Loader2 className="w-3 h-3 animate-spin" /> Procesando…
+                            </span>
+                          )}
+                          {uploaded.status === 'ready' && (
+                            <span className="text-emerald-400 flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" /> {uploaded.name}
+                            </span>
+                          )}
+                          {uploaded.status === 'error' && (
+                            <span className="text-red-400">Error al subir — intenta de nuevo</span>
+                          )}
+                        </p>
+                      )}
+                    </div>
+                    {uploaded?.status === 'ready' && (
+                      <button
+                        onClick={e => { e.stopPropagation(); removeUpload(type); }}
+                        className="text-gray-600 hover:text-gray-400 transition-colors flex-shrink-0"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {!uploaded && (
+                    <div className="mt-3 flex items-center gap-1.5 text-xs text-gray-600">
+                      <Upload className="w-3 h-3" />
+                      <span>Clic para subir o arrastra aquí</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <p className="text-xs text-gray-600 mt-6 text-center leading-relaxed">
+            Los documentos son opcionales.<br />
+            Puedes responder todo desde el chat.
+          </p>
+        </aside>
+
+        {/* Panel derecho — Chat con Atlas */}
+        <main className="flex-1 flex flex-col min-h-0">
+
+          {/* Mensajes */}
+          <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
+            {messages.length === 0 && chatLoading && (
+              <div className="flex items-start gap-3">
+                <AtlasAvatar />
+                <div className="bg-gray-800 rounded-2xl rounded-tl-sm px-4 py-3">
+                  <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                </div>
+              </div>
+            )}
+
+            {messages.map((msg, i) => (
+              <div key={i} className={`flex items-start gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                {msg.role === 'assistant' && <AtlasAvatar />}
+                <div
+                  className={`max-w-[75%] px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+                    msg.role === 'user'
+                      ? 'bg-[#4DBBF0] text-gray-950 rounded-tr-sm font-medium'
+                      : 'bg-gray-800 text-gray-100 rounded-tl-sm'
+                  }`}
+                >
+                  {msg.content}
+                </div>
+              </div>
+            ))}
+
+            {chatLoading && messages.length > 0 && (
+              <div className="flex items-start gap-3">
+                <AtlasAvatar />
+                <div className="bg-gray-800 rounded-2xl rounded-tl-sm px-4 py-3.5">
+                  <div className="flex gap-1">
+                    <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {completed && (
+              <div className="flex justify-center py-4">
+                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-6 py-4 text-center">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
+                  <p className="text-emerald-400 font-semibold text-sm">¡Tu FlowDesk está listo!</p>
+                  <p className="text-gray-400 text-xs mt-1">Redirigiendo al login…</p>
+                </div>
+              </div>
+            )}
+
+            <div ref={chatEndRef} />
+          </div>
+
+          {/* Input */}
+          <div className="border-t border-gray-800/60 p-4">
+            <div className="flex items-end gap-3 bg-gray-900 border border-gray-700 rounded-2xl px-4 py-3 focus-within:border-gray-600 transition-colors">
+              <textarea
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={completed ? 'Onboarding completado' : 'Escribe tu respuesta…'}
+                disabled={chatLoading || completed}
+                rows={1}
+                className="flex-1 bg-transparent text-white text-sm placeholder-gray-600 resize-none outline-none max-h-32 leading-relaxed disabled:opacity-50"
+                style={{ fieldSizing: 'content' } as any}
+              />
+              <button
+                onClick={() => sendMessage(input)}
+                disabled={!input.trim() || chatLoading || completed}
+                className="flex-shrink-0 w-8 h-8 rounded-xl bg-[#4DBBF0] hover:bg-[#3aabdf] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+              >
+                <Send className="w-3.5 h-3.5 text-gray-950" />
+              </button>
+            </div>
+            <p className="text-xs text-gray-700 text-center mt-2">Enter para enviar · Shift+Enter para nueva línea</p>
+          </div>
+
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function AtlasAvatar() {
+  return (
+    <div className="w-7 h-7 rounded-full bg-[#4DBBF0]/20 border border-[#4DBBF0]/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+      <Bot className="w-3.5 h-3.5 text-[#4DBBF0]" />
+    </div>
+  );
+}

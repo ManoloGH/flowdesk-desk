@@ -329,11 +329,29 @@ function StepSchedule({ onDone }: { onDone: () => void }) {
 function StepRooms({ onDone }: { onDone: () => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [departments, setDepartments] = useState<{ name: string; color: string | null }[]>([]);
+
+  useEffect(() => {
+    api.get<{ name: string; color: string | null }[]>('/departments')
+      .then(r => setDepartments(Array.isArray(r) ? r : []))
+      .catch(() => {});
+  }, []);
+
+  const MERGED = ['marketing digital', 'marketing'];
+  const deptRooms = departments.filter(d => !MERGED.includes(d.name.toLowerCase()));
+  const useOpenSpace = deptRooms.length <= 3;
+
+  const preview = [
+    { name: 'Sala de Juntas', color: '#7F1D1D', note: 'Siempre presente' },
+    ...(useOpenSpace
+      ? [{ name: 'Espacio de Trabajo', color: '#1E1E2E', note: 'Todos en un espacio abierto' }]
+      : deptRooms.map(d => ({ name: d.name, color: d.color ?? '#1E293B', note: 'Sala de departamento' }))),
+  ];
 
   const handleSubmit = async () => {
     setLoading(true); setError('');
     try {
-      await api.post('/onboarding/rooms', { use_template: true });
+      await api.post('/onboarding/rooms', {});
       onDone();
     } catch (e: any) { setError(e.message); }
     setLoading(false);
@@ -344,31 +362,32 @@ function StepRooms({ onDone }: { onDone: () => void }) {
       <div>
         <h2 className="text-xl font-bold text-white mb-1">Campus virtual</h2>
         <p className="text-sm text-gray-400">
-          El campus es el mapa interactivo donde tu equipo se mueve y colabora en tiempo real.
+          Se crearán salas basadas en los departamentos que configuraste. Puedes moverlas y personalizarlas después.
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        {[
-          { name: 'Sala de Juntas', color: '#7F1D1D', icon: '🧠', desc: 'Reuniones estratégicas y war room' },
-          { name: 'Dirección', color: '#4C1D95', icon: '👑', desc: 'Despacho del CEO y dirección' },
-          { name: 'RH & AD', color: '#1E3A5F', icon: '👥', desc: 'Gestión de personas y contratos' },
-          { name: 'Ventas', color: '#064E3B', icon: '💰', desc: 'Pipeline, demos y cierre' },
-          { name: 'Operaciones', color: '#451A03', icon: '⚙️', desc: 'Procesos y entrega' },
-          { name: 'Hub Técnico', color: '#1E1B4B', icon: '🤖', desc: 'Agentes IA y automatizaciones' },
-        ].map(r => (
-          <div key={r.name} className="flex items-center gap-3 rounded-xl p-3 border border-gray-700" style={{ background: r.color + '33' }}>
-            <span className="text-xl">{r.icon}</span>
-            <div>
-              <p className="text-sm font-medium text-white">{r.name}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{r.desc}</p>
-            </div>
+      <div className="space-y-2">
+        {preview.map(r => (
+          <div
+            key={r.name}
+            className="flex items-center gap-3 rounded-xl px-4 py-3 border border-gray-700"
+            style={{ background: r.color + '22' }}
+          >
+            <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: r.color }} />
+            <span className="text-sm font-medium text-white">{r.name}</span>
+            <span className="ml-auto text-xs text-gray-500">{r.note}</span>
           </div>
         ))}
       </div>
 
+      {departments.some(d => MERGED.includes(d.name.toLowerCase())) && (
+        <p className="text-xs text-gray-500">
+          Marketing Digital comparte espacio con Ventas.
+        </p>
+      )}
+
       <p className="text-xs text-gray-600">
-        Podrás personalizar colores, posiciones y añadir salas adicionales desde la sección Campus.
+        Podrás reorganizar el mapa y añadir salas adicionales desde la sección Campus.
       </p>
 
       {error && <p className="text-sm text-red-400">{error}</p>}
@@ -379,7 +398,7 @@ function StepRooms({ onDone }: { onDone: () => void }) {
         className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
       >
         {loading ? <Loader2 size={16} className="animate-spin" /> : <ChevronRight size={16} />}
-        {loading ? 'Configurando...' : 'Crear campus'}
+        {loading ? 'Creando campus...' : 'Crear campus'}
       </button>
     </div>
   );

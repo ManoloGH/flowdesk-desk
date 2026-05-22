@@ -112,7 +112,7 @@ export default function DashboardPage() {
             <div className="bg-indigo-500 h-1.5 rounded-full transition-all" style={{ width: `${progress}%` }} />
           </div>
           <Link
-            href="/onboarding"
+            href="/setup"
             className="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
           >
             Continuar configuración <ArrowRight size={12} />

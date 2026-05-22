@@ -7,15 +7,17 @@ import { api } from '@/lib/api';
 import {
   LayoutDashboard, Users, Map, Plug, BookUser, LogOut, ShieldCheck,
   Building2, CreditCard, ShieldAlert, Settings, Bell, X, CheckCheck, ExternalLink,
-  ChevronLeft,
+  ChevronLeft, Target, Cctv, Sparkles,
 } from 'lucide-react';
 import clsx from 'clsx';
 
 const BASE_NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/team', label: 'Equipo', icon: Users },
+  { href: '/goals', label: 'Objetivos', icon: Target },
   { href: '/contacts', label: 'Contactos', icon: BookUser },
   { href: '/campus', label: 'Campus', icon: Map },
+  { href: '/spaces', label: 'Espacios', icon: Cctv },
   { href: '/integrations', label: 'Integraciones', icon: Plug },
   { href: '/settings', label: 'Configuración', icon: Settings },
 ];
@@ -336,6 +338,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <main className="flex-1 overflow-auto">
         {children}
       </main>
+
+      {/* Botón flotante — Claude Code */}
+      <a
+        href="https://claude.ai/code"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Abrir Claude Code"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#D97706] hover:bg-[#B45309] text-white text-sm font-semibold shadow-lg shadow-amber-900/40 transition-all hover:scale-105 hover:shadow-xl hover:shadow-amber-900/50 group"
+      >
+        <Sparkles size={15} className="flex-shrink-0" />
+        <span>Claude Code</span>
+      </a>
     </div>
   );
 }

@@ -2,275 +2,309 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/store/auth';
-import {
-  CreditCard, CheckCircle, AlertCircle, Clock, XCircle,
-  ExternalLink, Zap, ArrowUpRight, Building2,
-} from 'lucide-react';
-import clsx from 'clsx';
+import { Building2, Palette, Globe, Loader2, Check, Lock, User } from 'lucide-react';
 
-interface BillingStatus {
+interface CompanyData {
   name: string;
+  slug: string;
   plan: string;
   status: string;
-  stripe_sub_status: string | null;
-  current_period_end: string | null;
-  billing_email: string | null;
-  stripe_customer_id: string | null;
-  stripe_subscription_id: string | null;
+  primary_color: string | null;
+  secondary_color: string | null;
+  tagline: string | null;
+  industry: string | null;
+  mission: string | null;
+  vision: string | null;
+  website: string | null;
+  logo_url: string | null;
 }
 
-const PLANS = [
-  {
-    key: 'starter',
-    label: 'Starter',
-    price: 49,
-    users: 10,
-    agents: 20,
-    color: 'border-blue-500/40 bg-blue-500/5',
-    badge: 'text-blue-400 bg-blue-500/10',
-    features: ['Campus virtual', 'CEO Agent básico', 'Integraciones GHL', 'Soporte por email'],
-  },
-  {
-    key: 'professional',
-    label: 'Professional',
-    price: 149,
-    users: 50,
-    agents: 100,
-    color: 'border-purple-500/40 bg-purple-500/5',
-    badge: 'text-purple-400 bg-purple-500/10',
-    features: ['Todo Starter', 'CEO Agent avanzado + memoria', 'Google & Microsoft', 'Soporte prioritario'],
-  },
-  {
-    key: 'enterprise',
-    label: 'Enterprise',
-    price: 399,
-    users: 999,
-    agents: 999,
-    color: 'border-amber-500/40 bg-amber-500/5',
-    badge: 'text-amber-400 bg-amber-500/10',
-    features: ['Todo Professional', 'Usuarios y agentes ilimitados', 'SLA garantizado', 'Onboarding dedicado'],
-  },
-];
+function Section({ title, icon: Icon, children }: { title: string; icon: any; children: React.ReactNode }) {
+  return (
+    <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+      <div className="flex items-center gap-2 mb-5">
+        <Icon size={15} className="text-indigo-400" />
+        <h2 className="font-semibold text-white text-sm">{title}</h2>
+      </div>
+      {children}
+    </div>
+  );
+}
 
-const SUB_STATUS: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  active: { label: 'Activo', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30', icon: <CheckCircle size={13} /> },
-  trialing: { label: 'Período de prueba', color: 'text-blue-400 bg-blue-500/10 border-blue-500/30', icon: <Clock size={13} /> },
-  past_due: { label: 'Pago vencido', color: 'text-red-400 bg-red-500/10 border-red-500/30', icon: <AlertCircle size={13} /> },
-  canceled: { label: 'Cancelado', color: 'text-gray-400 bg-gray-500/10 border-gray-500/30', icon: <XCircle size={13} /> },
-  unpaid: { label: 'Sin pagar', color: 'text-red-400 bg-red-500/10 border-red-500/30', icon: <AlertCircle size={13} /> },
-};
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block text-xs text-gray-400 mb-1.5">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+const INPUT = 'w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-indigo-500';
 
 export default function SettingsPage() {
   const { user } = useAuth();
-  const [billing, setBilling] = useState<BillingStatus | null>(null);
+  const [company, setCompany] = useState<CompanyData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
-  const [portalLoading, setPortalLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const [pwLoading, setPwLoading] = useState(false);
+  const [pwSaved, setPwSaved] = useState(false);
+  const [pwError, setPwError] = useState('');
+  const [currentPw, setCurrentPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+
+  const canEdit = user?.role === 'owner' || user?.role === 'admin';
 
   useEffect(() => {
-    api.get<BillingStatus>('/billing/status').then(setBilling).finally(() => setLoading(false));
+    api.get<CompanyData>('/tenants/mine').then(setCompany).finally(() => setLoading(false));
   }, []);
 
-  const handleUpgrade = async (plan: string) => {
-    setCheckoutLoading(plan);
+  const handleSave = async () => {
+    if (!company) return;
+    setSaving(true); setSaved(false);
     try {
-      const { url } = await api.post<{ url: string }>('/billing/checkout', { plan });
-      if (url) window.location.href = url;
-    } catch (e: any) {
-      alert(e.message);
-    } finally {
-      setCheckoutLoading(null);
-    }
+      await api.patch('/tenants/mine', {
+        name: company.name,
+        primary_color: company.primary_color,
+        secondary_color: company.secondary_color,
+        tagline: company.tagline,
+        industry: company.industry,
+        mission: company.mission,
+        vision: company.vision,
+        website: company.website,
+        logo_url: company.logo_url,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch {}
+    setSaving(false);
   };
 
-  const handlePortal = async () => {
-    setPortalLoading(true);
+  const handleChangePassword = async () => {
+    setPwError('');
+    if (newPw !== confirmPw) { setPwError('Las contraseñas no coinciden'); return; }
+    if (newPw.length < 8) { setPwError('Mínimo 8 caracteres'); return; }
+    setPwLoading(true);
     try {
-      const { url } = await api.post<{ url: string }>('/billing/portal', {});
-      if (url) window.open(url, '_blank');
+      await api.post('/auth/change-password', { current_password: currentPw, new_password: newPw });
+      setPwSaved(true);
+      setCurrentPw(''); setNewPw(''); setConfirmPw('');
+      setTimeout(() => setPwSaved(false), 3000);
     } catch (e: any) {
-      alert(e.message);
-    } finally {
-      setPortalLoading(false);
+      setPwError(e.message ?? 'Error al cambiar contraseña');
     }
+    setPwLoading(false);
   };
 
-  const fmtDate = (d: string | null) =>
-    d ? new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' }) : null;
+  const set = (field: keyof CompanyData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setCompany(prev => prev ? { ...prev, [field]: e.target.value } : prev);
 
-  const currentPlan = PLANS.find(p => p.key === billing?.plan);
-  const subStatus = billing?.stripe_sub_status ? SUB_STATUS[billing.stripe_sub_status] : null;
-
-  const canManage = user?.role === 'owner' || user?.role === 'admin';
+  if (loading) {
+    return (
+      <div className="p-8 flex items-center justify-center h-60">
+        <Loader2 size={24} className="text-indigo-500 animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div className="p-8 max-w-4xl">
+    <div className="p-8 max-w-3xl">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-white">Configuración</h1>
-        <p className="text-gray-400 mt-1 text-sm">Plan, facturación y datos de tu empresa</p>
+        <p className="text-gray-400 mt-1 text-sm">Datos de tu empresa y cuenta</p>
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center h-40">
-          <div className="w-7 h-7 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {/* Estado actual */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-            <div className="flex items-start justify-between mb-5">
+      <div className="space-y-6">
+        {/* Empresa */}
+        <Section title="Empresa" icon={Building2}>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Nombre de la empresa">
+              <input
+                value={company?.name ?? ''}
+                onChange={set('name')}
+                disabled={!canEdit}
+                className={INPUT}
+              />
+            </Field>
+            <Field label="Industria">
+              <input
+                value={company?.industry ?? ''}
+                onChange={set('industry')}
+                disabled={!canEdit}
+                placeholder="Ej. Tecnología — IA"
+                className={INPUT}
+              />
+            </Field>
+            <Field label="Tagline">
+              <input
+                value={company?.tagline ?? ''}
+                onChange={set('tagline')}
+                disabled={!canEdit}
+                placeholder="Tu slogan en una línea"
+                className={INPUT}
+              />
+            </Field>
+            <Field label="Sitio web">
+              <input
+                value={company?.website ?? ''}
+                onChange={set('website')}
+                disabled={!canEdit}
+                placeholder="https://tuempresa.com"
+                className={INPUT}
+              />
+            </Field>
+            <div className="col-span-2">
+              <Field label="Misión">
+                <textarea
+                  value={company?.mission ?? ''}
+                  onChange={set('mission')}
+                  disabled={!canEdit}
+                  rows={3}
+                  placeholder="¿Por qué existe tu empresa?"
+                  className={INPUT + ' resize-none'}
+                />
+              </Field>
+            </div>
+            <div className="col-span-2">
+              <Field label="Visión">
+                <textarea
+                  value={company?.vision ?? ''}
+                  onChange={set('vision')}
+                  disabled={!canEdit}
+                  rows={3}
+                  placeholder="¿Dónde quieres estar en 5 años?"
+                  className={INPUT + ' resize-none'}
+                />
+              </Field>
+            </div>
+          </div>
+        </Section>
+
+        {/* Identidad visual */}
+        <Section title="Identidad visual" icon={Palette}>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Color principal">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center">
-                  <Building2 size={18} className="text-white" />
-                </div>
-                <div>
-                  <h2 className="font-semibold text-white">{billing?.name}</h2>
-                  <p className="text-xs text-gray-500">{user?.email}</p>
-                </div>
+                <input
+                  type="color"
+                  value={company?.primary_color ?? '#4F46E5'}
+                  onChange={set('primary_color')}
+                  disabled={!canEdit}
+                  className="w-10 h-10 rounded-lg cursor-pointer bg-transparent border-0"
+                />
+                <input
+                  value={company?.primary_color ?? ''}
+                  onChange={set('primary_color')}
+                  disabled={!canEdit}
+                  placeholder="#4F46E5"
+                  className={INPUT + ' flex-1'}
+                />
               </div>
-              {subStatus && (
-                <span className={clsx('flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border font-medium', subStatus.color)}>
-                  {subStatus.icon}
-                  {subStatus.label}
-                </span>
-              )}
+            </Field>
+            <Field label="Color secundario">
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={company?.secondary_color ?? '#7C3AED'}
+                  onChange={set('secondary_color')}
+                  disabled={!canEdit}
+                  className="w-10 h-10 rounded-lg cursor-pointer bg-transparent border-0"
+                />
+                <input
+                  value={company?.secondary_color ?? ''}
+                  onChange={set('secondary_color')}
+                  disabled={!canEdit}
+                  placeholder="#7C3AED"
+                  className={INPUT + ' flex-1'}
+                />
+              </div>
+            </Field>
+            <div className="col-span-2">
+              <Field label="URL del logotipo">
+                <input
+                  value={company?.logo_url ?? ''}
+                  onChange={set('logo_url')}
+                  disabled={!canEdit}
+                  placeholder="https://cdn.tuempresa.com/logo.png"
+                  className={INPUT}
+                />
+              </Field>
             </div>
+          </div>
+        </Section>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Plan actual</p>
-                <p className="font-semibold text-white">{currentPlan?.label ?? billing?.plan ?? '—'}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Precio</p>
-                <p className="font-semibold text-white">
-                  {currentPlan ? `$${currentPlan.price}/mes` : '—'}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Próximo cobro</p>
-                <p className="font-semibold text-white">{fmtDate(billing?.current_period_end ?? null) ?? '—'}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Email de facturación</p>
-                <p className="font-semibold text-white text-sm truncate">{billing?.billing_email ?? '—'}</p>
-              </div>
-            </div>
+        {/* Info de cuenta */}
+        <Section title="Mi cuenta" icon={User}>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Email">
+              <input value={user?.email ?? ''} disabled className={INPUT + ' opacity-60 cursor-not-allowed'} />
+            </Field>
+            <Field label="Rol">
+              <input value={user?.role ?? ''} disabled className={INPUT + ' opacity-60 cursor-not-allowed capitalize'} />
+            </Field>
+          </div>
+        </Section>
 
-            {/* Alerta pago vencido */}
-            {billing?.stripe_sub_status === 'past_due' && (
-              <div className="mt-4 flex items-start gap-2 bg-red-500/10 border border-red-500/20 rounded-lg p-3">
-                <AlertCircle size={14} className="text-red-400 mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-red-300">
-                  Tu pago está vencido. Actualiza tu método de pago para evitar la suspensión del servicio.
-                </p>
-              </div>
-            )}
+        {/* Cambiar contraseña */}
+        <Section title="Cambiar contraseña" icon={Lock}>
+          <div className="grid grid-cols-1 gap-4 max-w-sm">
+            <Field label="Contraseña actual">
+              <input
+                type="password"
+                value={currentPw}
+                onChange={e => setCurrentPw(e.target.value)}
+                className={INPUT}
+              />
+            </Field>
+            <Field label="Nueva contraseña">
+              <input
+                type="password"
+                value={newPw}
+                onChange={e => setNewPw(e.target.value)}
+                className={INPUT}
+              />
+            </Field>
+            <Field label="Confirmar nueva contraseña">
+              <input
+                type="password"
+                value={confirmPw}
+                onChange={e => setConfirmPw(e.target.value)}
+                className={INPUT}
+              />
+            </Field>
+            {pwError && <p className="text-xs text-red-400">{pwError}</p>}
+            {pwSaved && <p className="text-xs text-emerald-400">Contraseña actualizada.</p>}
+            <button
+              onClick={handleChangePassword}
+              disabled={pwLoading || !currentPw || !newPw || !confirmPw}
+              className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors w-fit"
+            >
+              {pwLoading ? <Loader2 size={14} className="animate-spin" /> : <Lock size={14} />}
+              {pwLoading ? 'Guardando...' : 'Actualizar contraseña'}
+            </button>
+          </div>
+        </Section>
 
-            {/* Botón portal Stripe */}
-            {billing?.stripe_subscription_id && canManage && (
-              <div className="mt-5 pt-5 border-t border-gray-800">
-                <button
-                  onClick={handlePortal}
-                  disabled={portalLoading}
-                  className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors disabled:opacity-50"
-                >
-                  <CreditCard size={14} />
-                  {portalLoading ? 'Abriendo...' : 'Gestionar suscripción en Stripe'}
-                  <ExternalLink size={12} className="text-gray-500" />
-                </button>
-              </div>
+        {/* Guardar cambios empresa */}
+        {canEdit && (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors"
+            >
+              {saving ? <Loader2 size={15} className="animate-spin" /> : saved ? <Check size={15} /> : null}
+              {saving ? 'Guardando...' : saved ? 'Guardado' : 'Guardar cambios'}
+            </button>
+            {!canEdit && (
+              <p className="text-xs text-gray-500">Solo el owner o admin puede editar la empresa.</p>
             )}
           </div>
-
-          {/* Planes disponibles */}
-          {canManage && (
-            <div>
-              <h2 className="font-medium text-white text-sm mb-4 flex items-center gap-2">
-                <Zap size={14} className="text-indigo-400" />
-                {billing?.stripe_subscription_id ? 'Cambiar de plan' : 'Suscribirse'}
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {PLANS.map(plan => {
-                  const isCurrent = billing?.plan === plan.key;
-                  const isActive = isCurrent && (billing?.stripe_sub_status === 'active' || billing?.stripe_sub_status === 'trialing');
-                  const isLoading = checkoutLoading === plan.key;
-
-                  return (
-                    <div
-                      key={plan.key}
-                      className={clsx(
-                        'rounded-xl border p-5 transition-all',
-                        isCurrent ? plan.color : 'border-gray-800 bg-gray-900',
-                      )}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className={clsx('text-xs font-semibold px-2 py-0.5 rounded-full', plan.badge)}>
-                          {plan.label}
-                        </span>
-                        {isActive && (
-                          <span className="text-xs text-emerald-400 flex items-center gap-1">
-                            <CheckCircle size={11} /> Activo
-                          </span>
-                        )}
-                      </div>
-
-                      <p className="text-2xl font-bold text-white mt-3">
-                        ${plan.price}
-                        <span className="text-sm font-normal text-gray-500">/mes</span>
-                      </p>
-
-                      <p className="text-xs text-gray-500 mt-1 mb-4">
-                        {plan.users === 999 ? 'Usuarios ilimitados' : `${plan.users} usuarios`}
-                        {' · '}
-                        {plan.agents === 999 ? 'Agentes ilimitados' : `${plan.agents} agentes`}
-                      </p>
-
-                      <ul className="space-y-1.5 mb-5">
-                        {plan.features.map(f => (
-                          <li key={f} className="flex items-center gap-2 text-xs text-gray-400">
-                            <span className={clsx('w-1 h-1 rounded-full flex-shrink-0', plan.badge.split(' ')[0].replace('text', 'bg'))} />
-                            {f}
-                          </li>
-                        ))}
-                      </ul>
-
-                      {!isActive && (
-                        <button
-                          onClick={() => handleUpgrade(plan.key)}
-                          disabled={!!checkoutLoading}
-                          className={clsx(
-                            'w-full flex items-center justify-center gap-1.5 text-xs font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-50',
-                            isCurrent && !isActive
-                              ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                              : 'bg-indigo-600 text-white hover:bg-indigo-500',
-                          )}
-                        >
-                          {isLoading ? 'Redirigiendo...' : (
-                            <>
-                              {billing?.stripe_subscription_id ? 'Cambiar a este plan' : 'Contratar'}
-                              <ArrowUpRight size={12} />
-                            </>
-                          )}
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              <p className="text-xs text-gray-600 mt-3">
-                El pago se procesa de forma segura a través de Stripe. Puedes cambiar o cancelar tu plan en cualquier momento.
-              </p>
-            </div>
-          )}
-
-          {!canManage && (
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 text-center">
-              <p className="text-sm text-gray-500">Solo el owner puede gestionar el plan y la facturación.</p>
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
