@@ -1,268 +1,247 @@
 'use client';
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import React, { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/store/auth';
+import type { FocusBrief, FocusMetric, FocusPriority, FocusPulse } from './focus-types';
 import {
-  Users, Bot, BookUser, Wifi, CheckCircle, Calendar,
-  ClipboardList, Zap, ArrowRight, MapPin,
+  TrendingUp, TrendingDown, Minus, AlertCircle,
+  Clock, MessageSquare, Zap, Target, ChevronRight,
 } from 'lucide-react';
 
-interface Stats {
-  humans: number;
-  agents: number;
-  onlineSlots: number;
-  departments: number;
-  contacts: number;
-  tasks_pending: number;
-  upcoming_events: { id: string; title: string; start_at: string; end_at: string; location: string | null }[];
-  onboarding: { current_step: number; steps_completed: string[] } | null;
-}
-
-interface Usage {
-  period: string;
-  tokens_used: number;
-  tokens_limit: number;
-  usage_percent: number;
-  plan: string;
-}
-
-const PLAN_LABELS: Record<string, string> = {
-  starter: 'Starter',
-  professional: 'Professional',
-  enterprise: 'Enterprise',
+const URGENCY_RING: Record<string, string> = {
+  critical: 'ring-2 ring-red-500/60',
+  high:     'ring-2 ring-amber-500/40',
+  medium:   'ring-1 ring-indigo-500/30',
 };
 
-const PLAN_COLORS: Record<string, string> = {
-  starter: 'text-blue-400 bg-blue-500/10',
-  professional: 'text-purple-400 bg-purple-500/10',
-  enterprise: 'text-amber-400 bg-amber-500/10',
+const TREND_ICON: Record<string, React.ReactNode> = {
+  up:      <TrendingUp  className="w-3 h-3 text-emerald-400" />,
+  down:    <TrendingDown className="w-3 h-3 text-red-400" />,
+  flat:    <Minus       className="w-3 h-3 text-gray-400" />,
+  unknown: <Minus       className="w-3 h-3 text-gray-600" />,
 };
 
-function fmtTime(iso: string) {
-  return new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+const METRIC_COLOR: Record<string, string> = {
+  green: 'border-emerald-500/30 bg-emerald-500/5',
+  amber: 'border-amber-500/30 bg-amber-500/5',
+  red:   'border-red-500/30 bg-red-500/5',
+  blue:  'border-indigo-500/30 bg-indigo-500/5',
+};
+
+const CATEGORY_BADGE: Record<string, string> = {
+  strategic: 'bg-violet-500/20 text-violet-300',
+  client:    'bg-blue-500/20 text-blue-300',
+  team:      'bg-emerald-500/20 text-emerald-300',
+  admin:     'bg-gray-500/20 text-gray-400',
+};
+
+const CATEGORY_LABEL: Record<string, string> = {
+  strategic: 'Estratégico',
+  client:    'Cliente',
+  team:      'Equipo',
+  admin:     'Admin',
+};
+
+function HeroCard({ hero }: { hero: FocusBrief['hero'] }) {
+  return (
+    <div className={`relative rounded-2xl bg-gradient-to-br from-[#0f172a] to-[#1e1b4b] border border-white/5 p-6 flex flex-col justify-between h-full overflow-hidden ${URGENCY_RING[hero.urgency] ?? ''}`}>
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/10 via-transparent to-violet-600/5 pointer-events-none" />
+      <div className="relative z-10">
+        <p className="text-[10px] font-bold tracking-[0.2em] text-indigo-400 uppercase mb-1">{hero.label}</p>
+        {hero.ksf_name && <p className="text-xs text-gray-500 mb-3">{hero.ksf_name}</p>}
+        <p className="text-5xl font-black text-white leading-none tracking-tight">{hero.value}</p>
+      </div>
+      <div className="relative z-10 mt-4">
+        <p className="text-sm text-gray-300 leading-relaxed">{hero.description}</p>
+        <div className="mt-3">
+          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+            hero.urgency === 'critical' ? 'bg-red-500/20 text-red-300' :
+            hero.urgency === 'high'     ? 'bg-amber-500/20 text-amber-300' :
+                                          'bg-indigo-500/20 text-indigo-300'
+          }`}>
+            {hero.urgency === 'critical' ? 'ACCIÓN INMEDIATA' :
+             hero.urgency === 'high'     ? 'ALTA PRIORIDAD' : 'PRIORIDAD MEDIA'}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-function fmtDay(iso: string) {
-  const d = new Date(iso);
-  const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
-
-  if (d.toDateString() === today.toDateString()) return 'Hoy';
-  if (d.toDateString() === tomorrow.toDateString()) return 'Mañana';
-  return d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
+function MetricCard({ metric }: { metric: FocusMetric }) {
+  return (
+    <div className={`rounded-xl border p-4 ${METRIC_COLOR[metric.color] ?? ''}`}>
+      <div className="flex items-start justify-between mb-2">
+        <p className="text-[10px] font-semibold tracking-widest text-gray-500 uppercase leading-tight">{metric.label}</p>
+        {TREND_ICON[metric.trend]}
+      </div>
+      <p className="text-2xl font-bold text-white">{metric.current}</p>
+      <p className="text-xs text-gray-500 mt-1">meta: {metric.target}</p>
+    </div>
+  );
 }
 
-function fmtTokens(n: number) {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
-  return String(n);
+function PriorityRow({ p, index }: { p: FocusPriority; index: number }) {
+  return (
+    <div className="flex items-start gap-3 group">
+      <span className="text-lg font-black text-gray-700 w-5 shrink-0 mt-0.5">{index + 1}</span>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1">
+          <p className="text-sm font-semibold text-white truncate">{p.title}</p>
+          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0 ${CATEGORY_BADGE[p.category] ?? ''}`}>
+            {CATEGORY_LABEL[p.category] ?? p.category}
+          </span>
+        </div>
+        <p className="text-xs text-gray-400 leading-relaxed">{p.why}</p>
+        <div className="flex items-center gap-3 mt-1.5">
+          <span className="flex items-center gap-1 text-[10px] text-indigo-400">
+            <Target className="w-3 h-3" />{p.ksf_impact}
+          </span>
+          <span className="flex items-center gap-1 text-[10px] text-gray-500">
+            <Clock className="w-3 h-3" />~{p.estimated_minutes}min
+          </span>
+        </div>
+      </div>
+      <ChevronRight className="w-4 h-4 text-gray-700 shrink-0 mt-1 group-hover:text-indigo-400 transition-colors" />
+    </div>
+  );
 }
 
-export default function DashboardPage() {
+function PulseItem({ item }: { item: FocusPulse }) {
+  const colors: Record<string, string> = {
+    high:   'text-red-400 bg-red-500/10',
+    medium: 'text-amber-400 bg-amber-500/10',
+    low:    'text-gray-400 bg-gray-500/10',
+  };
+  return (
+    <div className="flex items-center gap-3">
+      <MessageSquare className="w-3.5 h-3.5 text-gray-600 shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="text-xs text-gray-300 truncate">{item.label}</p>
+        {item.preview && <p className="text-[10px] text-gray-600 truncate">{item.preview}</p>}
+      </div>
+      <span className={`text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ${colors[item.urgency] ?? ''}`}>
+        {item.count}
+      </span>
+    </div>
+  );
+}
+
+function FocusSkeleton() {
+  return (
+    <div className="h-screen bg-[#050a14] flex flex-col p-6 gap-4 animate-pulse">
+      <div className="h-6 w-48 bg-white/5 rounded" />
+      <div className="flex gap-4 flex-1">
+        <div className="w-80 bg-white/5 rounded-2xl" />
+        <div className="flex-1 flex flex-col gap-4">
+          <div className="grid grid-cols-4 gap-3 h-24">
+            {[0,1,2,3].map(i => <div key={i} className="bg-white/5 rounded-xl" />)}
+          </div>
+          <div className="flex-1 bg-white/5 rounded-2xl" />
+        </div>
+        <div className="w-56 bg-white/5 rounded-2xl" />
+      </div>
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 pointer-events-none">
+        <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs text-gray-600 animate-pulse">Atlas analizando tu día...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function FocusModePage() {
   const { user } = useAuth();
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [usage, setUsage] = useState<Usage | null>(null);
+  const [brief, setBrief] = useState<FocusBrief | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([
-      api.get<Stats>('/tenants/mine/stats').catch(() => null),
-      api.get<Usage>('/tenants/mine/usage').catch(() => null),
-    ]).then(([s, u]) => {
-      setStats(s);
-      setUsage(u);
-      setLoading(false);
-    });
+    api.get<FocusBrief>('/tenants/mine/focus-brief')
+      .then(setBrief)
+      .catch(() => setError('No se pudo generar el Focus Mode'))
+      .finally(() => setLoading(false));
   }, []);
 
-  if (loading) {
+  if (loading) return <FocusSkeleton />;
+
+  if (error || !brief) {
     return (
-      <div className="p-8 flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      <div className="h-screen bg-[#050a14] flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-8 h-8 text-red-400 mx-auto mb-3" />
+          <p className="text-gray-400 text-sm">{error ?? 'Error generando Focus Mode'}</p>
+        </div>
       </div>
     );
   }
 
-  const step = stats?.onboarding?.current_step ?? 0;
-  const progress = Math.round((step / 6) * 100);
-  const usagePct = Math.min(usage?.usage_percent ?? 0, 100);
-  const usageColor = usagePct >= 90 ? 'bg-red-500' : usagePct >= 70 ? 'bg-amber-500' : 'bg-indigo-500';
-
   return (
-    <div className="p-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="text-gray-400 mt-1 text-sm">
-          Bienvenido, <span className="text-indigo-400">{user?.email}</span>
-        </p>
-      </div>
-
-      {/* Onboarding progress */}
-      {stats?.onboarding && step < 6 && (
-        <div className="bg-indigo-600/10 border border-indigo-500/30 rounded-xl p-5 mb-6">
-          <div className="flex items-center gap-3 mb-3">
-            <CheckCircle size={16} className="text-indigo-400" />
-            <span className="font-medium text-white text-sm">Configuración inicial — paso {step} de 6</span>
-            <span className="ml-auto text-indigo-400 text-sm font-semibold">{progress}%</span>
-          </div>
-          <div className="w-full bg-gray-800 rounded-full h-1.5 mb-3">
-            <div className="bg-indigo-500 h-1.5 rounded-full transition-all" style={{ width: `${progress}%` }} />
-          </div>
-          <Link
-            href="/setup"
-            className="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
-          >
-            Continuar configuración <ArrowRight size={12} />
-          </Link>
+    <div className="h-screen bg-[#050a14] flex flex-col overflow-hidden select-none">
+      <header className="flex items-center justify-between px-6 py-3 border-b border-white/5 shrink-0">
+        <div className="flex items-center gap-3">
+          <Zap className="w-4 h-4 text-indigo-400" />
+          <span className="text-sm font-semibold text-white">Focus Mode</span>
+          <span className="text-xs text-gray-600">·</span>
+          <span className="text-xs text-gray-500 capitalize">{brief.date}</span>
         </div>
-      )}
+        <span className="text-xs text-gray-600">{user?.email}</span>
+      </header>
 
-      {/* Métricas principales */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {[
-          { label: 'Usuarios humanos', value: stats?.humans ?? 0, icon: Users, color: 'bg-indigo-600' },
-          { label: 'Agentes IA', value: stats?.agents ?? 0, icon: Bot, color: 'bg-violet-600' },
-          { label: 'Online ahora', value: stats?.onlineSlots ?? 0, icon: Wifi, color: 'bg-emerald-600' },
-          { label: 'Contactos CRM', value: stats?.contacts ?? 0, icon: BookUser, color: 'bg-blue-600' },
-        ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-gray-400">{label}</span>
-              <div className={`w-7 h-7 rounded-lg ${color} flex items-center justify-center`}>
-                <Icon size={13} className="text-white" />
-              </div>
-            </div>
-            <p className="text-3xl font-bold text-white">{value}</p>
-          </div>
-        ))}
-      </div>
+      <main className="flex-1 flex gap-4 p-4 min-h-0">
+        <section className="w-72 shrink-0">
+          <HeroCard hero={brief.hero} />
+        </section>
 
-      {/* Segunda fila: Token usage + Tareas pendientes + Plan */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-
-        {/* Token usage */}
-        <div className="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Zap size={14} className="text-indigo-400" />
-              <span className="text-sm font-medium text-white">Tokens IA este mes</span>
-            </div>
-            {usage && (
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PLAN_COLORS[usage.plan] ?? 'text-gray-400 bg-gray-800'}`}>
-                {PLAN_LABELS[usage.plan] ?? usage.plan}
-              </span>
-            )}
-          </div>
-          {usage ? (
-            <>
-              <div className="flex items-end justify-between mb-2">
-                <span className="text-2xl font-bold text-white">{fmtTokens(usage.tokens_used)}</span>
-                <span className="text-xs text-gray-500">de {fmtTokens(usage.tokens_limit)}</span>
-              </div>
-              <div className="w-full bg-gray-800 rounded-full h-2">
-                <div
-                  className={`h-2 rounded-full transition-all ${usageColor}`}
-                  style={{ width: `${usagePct}%` }}
-                />
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                {usagePct}% utilizado · período {usage.period}
-                {usagePct >= 80 && (
-                  <Link href="/settings" className="ml-2 text-indigo-400 hover:text-indigo-300">
-                    Actualizar plan →
-                  </Link>
-                )}
-              </p>
-            </>
-          ) : (
-            <p className="text-sm text-gray-500">Sin datos de uso</p>
-          )}
-        </div>
-
-        {/* Tareas pendientes */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col">
-          <div className="flex items-center gap-2 mb-3">
-            <ClipboardList size={14} className="text-amber-400" />
-            <span className="text-sm font-medium text-white">Tareas activas</span>
-          </div>
-          <p className="text-4xl font-bold text-white mt-1">{stats?.tasks_pending ?? 0}</p>
-          <p className="text-xs text-gray-500 mt-1 mb-4">pendientes o en progreso</p>
-          <Link
-            href="/team"
-            className="mt-auto flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors"
-          >
-            Ver equipo <ArrowRight size={12} />
-          </Link>
-        </div>
-      </div>
-
-      {/* Tercera fila: Eventos próximos + Accesos rápidos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
-        {/* Próximos eventos (7 días) */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Calendar size={14} className="text-blue-400" />
-            <span className="text-sm font-medium text-white">Próximos eventos</span>
-          </div>
-          {stats?.upcoming_events?.length ? (
-            <div className="space-y-3">
-              {stats.upcoming_events.map(ev => (
-                <div key={ev.id} className="flex items-start gap-3">
-                  <div className="text-center min-w-[40px]">
-                    <p className="text-xs text-indigo-400 font-medium">{fmtDay(ev.start_at)}</p>
-                    <p className="text-xs text-gray-500">{fmtTime(ev.start_at)}</p>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white truncate">{ev.title}</p>
-                    {ev.location && (
-                      <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                        <MapPin size={10} />
-                        {ev.location}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-24 text-center">
-              <Calendar size={20} className="text-gray-700 mb-2" />
-              <p className="text-xs text-gray-500">Sin eventos en los próximos 7 días</p>
-              <p className="text-xs text-gray-600 mt-0.5">Conecta Google o Microsoft para ver tu calendario</p>
-            </div>
-          )}
-        </div>
-
-        {/* Accesos rápidos */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-          <h2 className="text-sm font-medium text-white mb-4">Accesos rápidos</h2>
-          <div className="space-y-2">
-            {[
-              { label: 'Ver equipo completo', href: '/team', desc: `${stats?.humans ?? 0} usuarios · ${stats?.agents ?? 0} agentes` },
-              { label: 'Contactos CRM', href: '/contacts', desc: `${stats?.contacts ?? 0} contactos` },
-              { label: 'Configurar campus', href: '/campus', desc: 'Mapa y salas virtuales' },
-              { label: 'Integraciones', href: '/integrations', desc: 'Google, Microsoft, GHL' },
-              { label: 'Mi plan y facturación', href: '/settings', desc: usage ? `Plan ${PLAN_LABELS[usage.plan] ?? usage.plan}` : 'Configuración' },
-            ].map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex items-center justify-between p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors group"
-              >
-                <div>
-                  <p className="text-sm text-gray-300 group-hover:text-white">{item.label}</p>
-                  <p className="text-xs text-gray-600">{item.desc}</p>
-                </div>
-                <ArrowRight size={14} className="text-gray-600 group-hover:text-gray-400" />
-              </Link>
+        <section className="flex-1 flex flex-col gap-4 min-w-0">
+          <div className="grid grid-cols-4 gap-3 shrink-0">
+            {brief.metrics.slice(0, 4).map((m, i) => (
+              <MetricCard key={i} metric={m} />
             ))}
           </div>
-        </div>
-      </div>
+          <div className="flex-1 rounded-2xl bg-[#0a0f1e] border border-white/5 p-5 overflow-hidden flex flex-col">
+            <div className="flex items-center gap-2 mb-4 shrink-0">
+              <p className="text-[10px] font-bold tracking-[0.2em] text-gray-500 uppercase">Prioridades del día</p>
+              <span className="text-[10px] text-gray-700">· por impacto en KSFs</span>
+            </div>
+            <div className="flex flex-col gap-4 overflow-y-auto pr-1">
+              {brief.priorities.map((p, i) => (
+                <PriorityRow key={i} p={p} index={i} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="w-52 shrink-0 flex flex-col gap-4">
+          <div className="rounded-2xl bg-[#0a0f1e] border border-white/5 p-4">
+            <p className="text-[10px] font-bold tracking-[0.2em] text-gray-500 uppercase mb-3">Momentum</p>
+            <div className="flex items-end gap-2 mb-2">
+              <span className="text-4xl font-black text-white">{brief.momentum.streak_days}</span>
+              <span className="text-xs text-gray-500 mb-1">días seguidos</span>
+            </div>
+            <p className="text-xs text-gray-400 leading-relaxed">{brief.momentum.message}</p>
+            <div className="mt-3">
+              <div className="flex justify-between text-[10px] text-gray-600 mb-1">
+                <span>Score semanal</span>
+                <span>{brief.momentum.weekly_score}%</span>
+              </div>
+              <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${brief.momentum.weekly_score}%` }} />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 rounded-2xl bg-[#0a0f1e] border border-white/5 p-4 flex flex-col">
+            <p className="text-[10px] font-bold tracking-[0.2em] text-gray-500 uppercase mb-3">Pulse</p>
+            {brief.pulse.length === 0 ? (
+              <p className="text-xs text-gray-600 italic">Sin alertas pendientes</p>
+            ) : (
+              <div className="flex flex-col gap-3 overflow-y-auto">
+                {brief.pulse.map((item, i) => <PulseItem key={i} item={item} />)}
+              </div>
+            )}
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
