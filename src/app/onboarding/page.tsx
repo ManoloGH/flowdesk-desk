@@ -307,6 +307,15 @@ export default function OnboardingPage() {
         {/* Panel derecho — Chat con Atlas */}
         <main className="flex-1 flex flex-col min-h-0">
 
+          {/* Sub-header del agente */}
+          <div className="border-b border-gray-800/60 px-4 py-3 flex items-center gap-2 flex-shrink-0">
+            <AtlasAvatar />
+            <div>
+              <span className="text-sm font-semibold text-white">Atlas</span>
+              <span className="text-xs text-gray-500 ml-2">· Secretario Personal</span>
+            </div>
+          </div>
+
           {/* Mensajes */}
           <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
             {messages.length === 0 && chatLoading && (
