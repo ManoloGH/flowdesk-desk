@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Send, Loader2, Upload, FileText, Users, Palette, GitBranch,
-  CheckCircle2, X, ArrowLeft, Bot,
+  CheckCircle2, X, ArrowLeft, Bot, Cpu, Phone, ChevronRight,
 } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
@@ -66,6 +66,12 @@ export default function OnboardingPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [chatLoading, setChatLoading] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [postStep, setPostStep] = useState<null | 'ai' | 'conmutador'>(null);
+  const [onboardingTenantId, setOnboardingTenantId] = useState<string | null>(null);
+  const [postSaving, setPostSaving] = useState(false);
+  const [ceoForm, setCeoForm] = useState({ ceo_ai_provider: 'anthropic', ceo_model: 'claude-sonnet-4-6', ceo_api_key: '' });
+  const [agentForm, setAgentForm] = useState({ ai_provider: 'openrouter', model: 'meta-llama/llama-3.3-70b-instruct:free', api_key: '' });
+  const [pbxForm, setPbxForm] = useState({ enabled: false, main_number: '', greeting_text: '', deployment: 'local' });
 
   // Upload state
   const [uploads, setUploads] = useState<UploadedDoc[]>([]);
@@ -108,7 +114,12 @@ export default function OnboardingPage() {
 
       if (data.completed) {
         setCompleted(true);
-        setTimeout(() => router.push('/login?onboarding=done'), 3000);
+        if (data.tenant_id) {
+          setOnboardingTenantId(data.tenant_id);
+          setPostStep('ai'); // iniciar pasos opcionales post-onboarding
+        } else {
+          setTimeout(() => router.push('/login?onboarding=done'), 3000);
+        }
       }
     } catch {
       setMessages(prev => [...prev, {
@@ -355,7 +366,176 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {completed && (
+            {/* Pasos post-onboarding: Motor de IA */}
+            {postStep === 'ai' && (
+              <div className="mx-4 my-4 bg-gray-900 border border-gray-700 rounded-2xl p-6 space-y-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-indigo-600/20 rounded-lg flex items-center justify-center">
+                    <Cpu size={16} className="text-indigo-400" />
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold text-sm">Motor de IA</p>
+                    <p className="text-gray-400 text-xs">CEO Digital usa Claude. Los demás agentes usan OpenRouter gratis.</p>
+                  </div>
+                </div>
+
+                {/* CEO Digital */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-indigo-400 uppercase tracking-wide">CEO Digital — API Key de Claude</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[{ v: 'anthropic', l: 'Claude' }, { v: 'openai', l: 'GPT-4o' }, { v: 'openrouter', l: 'OpenRouter' }].map(opt => (
+                      <button key={opt.v} onClick={() => setCeoForm(p => ({ ...p, ceo_ai_provider: opt.v, ceo_api_key: '' }))}
+                        className={`py-2 text-xs font-medium rounded-lg border transition-colors ${ceoForm.ceo_ai_provider === opt.v ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-300'}`}>
+                        {opt.l}
+                      </button>
+                    ))}
+                  </div>
+                  <input type="password" value={ceoForm.ceo_api_key}
+                    onChange={e => setCeoForm(p => ({ ...p, ceo_api_key: e.target.value }))}
+                    placeholder={ceoForm.ceo_ai_provider === 'anthropic' ? 'sk-ant-...' : 'sk-...'}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                </div>
+
+                {/* Agentes de la empresa */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wide">Agentes de la empresa — API Key de OpenRouter</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[{ v: 'openrouter', l: 'OpenRouter (free ✓)' }, { v: 'ollama', l: 'Ollama local' }].map(opt => (
+                      <button key={opt.v} onClick={() => setAgentForm(p => ({ ...p, ai_provider: opt.v, api_key: '' }))}
+                        className={`py-2 text-xs font-medium rounded-lg border transition-colors ${agentForm.ai_provider === opt.v ? 'bg-emerald-700 border-emerald-600 text-white' : 'bg-gray-800 border-gray-700 text-gray-300'}`}>
+                        {opt.l}
+                      </button>
+                    ))}
+                  </div>
+                  {agentForm.ai_provider !== 'ollama' && (
+                    <input type="password" value={agentForm.api_key}
+                      onChange={e => setAgentForm(p => ({ ...p, api_key: e.target.value }))}
+                      placeholder="sk-or-... (gratis en openrouter.com)"
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    disabled={postSaving}
+                    onClick={async () => {
+                      setPostSaving(true);
+                      try {
+                        await fetch(`${API}/onboarding/ai-config`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            tenantId: onboardingTenantId,
+                            ...ceoForm,
+                            ...agentForm,
+                          }),
+                        });
+                      } catch {}
+                      setPostSaving(false);
+                      setPostStep('conmutador');
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
+                  >
+                    {postSaving ? <Loader2 size={13} className="animate-spin" /> : <ChevronRight size={13} />}
+                    {postSaving ? 'Guardando...' : 'Guardar y continuar'}
+                  </button>
+                  <button onClick={() => setPostStep('conmutador')}
+                    className="px-4 text-sm text-gray-400 hover:text-white transition-colors">
+                    Omitir
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Pasos post-onboarding: Agente Conmutador */}
+            {postStep === 'conmutador' && (
+              <div className="mx-4 my-4 bg-gray-900 border border-gray-700 rounded-2xl p-6 space-y-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-emerald-600/20 rounded-lg flex items-center justify-center">
+                    <Phone size={16} className="text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold text-sm">Agente Conmutador</p>
+                    <p className="text-gray-400 text-xs">Recibe y redirige llamadas con IA</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-white">Activar conmutador telefónico</span>
+                  <button
+                    onClick={() => setPbxForm(p => ({ ...p, enabled: !p.enabled }))}
+                    className={`relative w-10 h-5 rounded-full transition-colors ${pbxForm.enabled ? 'bg-indigo-600' : 'bg-gray-700'}`}
+                  >
+                    <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${pbxForm.enabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+
+                {pbxForm.enabled && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1.5">Número principal (DID)</label>
+                      <input value={pbxForm.main_number}
+                        onChange={e => setPbxForm(p => ({ ...p, main_number: e.target.value }))}
+                        placeholder="+52155..."
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1.5">Texto de bienvenida</label>
+                      <input value={pbxForm.greeting_text}
+                        onChange={e => setPbxForm(p => ({ ...p, greeting_text: e.target.value }))}
+                        placeholder="Bienvenido a Empresa X. ¿En qué le puedo ayudar?"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1.5">Servidor</label>
+                      <div className="flex gap-2">
+                        {[{ v: 'local', l: '🖥 En tu servidor' }, { v: 'cloud', l: '☁️ En la nube' }].map(opt => (
+                          <button key={opt.v} onClick={() => setPbxForm(p => ({ ...p, deployment: opt.v }))}
+                            className={`flex-1 py-2 text-xs font-medium rounded-lg border transition-colors ${
+                              pbxForm.deployment === opt.v ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-300'
+                            }`}>{opt.l}</button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-3">
+                  <button
+                    disabled={postSaving}
+                    onClick={async () => {
+                      setPostSaving(true);
+                      try {
+                        if (pbxForm.enabled || pbxForm.main_number) {
+                          await fetch(`${API}/onboarding/conmutador`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ tenantId: onboardingTenantId, ...pbxForm }),
+                          });
+                        }
+                      } catch {}
+                      setPostSaving(false);
+                      router.push('/login?onboarding=done');
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
+                  >
+                    {postSaving ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
+                    {postSaving ? 'Guardando...' : 'Guardar y finalizar'}
+                  </button>
+                  <button
+                    onClick={() => router.push('/login?onboarding=done')}
+                    className="px-4 text-sm text-gray-400 hover:text-white transition-colors"
+                  >
+                    Omitir
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Pantalla de completado (sin tenant_id — fallback) */}
+            {completed && !postStep && (
               <div className="flex justify-center py-4">
                 <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-6 py-4 text-center">
                   <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
