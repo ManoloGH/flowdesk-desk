@@ -70,31 +70,36 @@ export default function AgentChatPage() {
   const [sending, setSending] = useState(false);
   const [loadingAgent, setLoadingAgent] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [autoSpeak, setAutoSpeak] = useState(false);
+  const [isListening, setIsListening]     = useState(false);
+  const [autoSpeak, setAutoSpeak]         = useState(false);
+  const [convMode, setConvMode]           = useState(false); // modo videoconferencia
+  const convModeRef                        = useRef(false);   // ref para closures
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef    = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<any>(null);
+  const pendingTranscriptRef = useRef('');   // transcript acumulado en modo conv
 
-  // ── TTS helper ───────────────────────────────────────────────────────────
-  const speak = useCallback((text: string) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+  // Mantener ref sincronizado con estado
+  useEffect(() => { convModeRef.current = convMode; }, [convMode]);
+
+  // ── TTS — acepta callback onEnd para encadenar micrófono ─────────────────
+  const speak = useCallback((text: string, onEnd?: () => void) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) { onEnd?.(); return; }
     window.speechSynthesis.cancel();
-    // Limpia markdown básico antes de hablar
     const clean = text
       .replace(/\*\*(.*?)\*\*/g, '$1')
       .replace(/\*(.*?)\*/g, '$1')
       .replace(/#{1,6}\s/g, '')
-      .replace(/[•·▸]/g, '')
-      .slice(0, 900); // límite práctico
+      .replace(/[•·▸━=]/g, '')
+      .slice(0, 1200);
     const utt = new SpeechSynthesisUtterance(clean);
     utt.lang = 'es-MX';
     utt.rate = 1.05;
-    // Preferir voz en español si está disponible
     const voices = window.speechSynthesis.getVoices();
     const esVoice = voices.find(v => v.lang.startsWith('es'));
     if (esVoice) utt.voice = esVoice;
+    utt.onend = () => onEnd?.();
     window.speechSynthesis.speak(utt);
   }, []);
 
@@ -141,22 +146,17 @@ export default function AgentChatPage() {
     el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
   }, [input]);
 
-  // ── Voice input ──────────────────────────────────────────────────────────
-  const toggleMic = useCallback(() => {
+  // ── Inicia escucha (usado tanto en modo manual como en modo conversación) ─
+  const startListening = useCallback((autoSend = false) => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) { alert('Tu browser no soporta reconocimiento de voz. Usa Chrome o Edge.'); return; }
-
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
-      return;
-    }
+    if (!SR) return;
 
     const recognition = new SR();
     recognition.lang = 'es-MX';
     recognition.continuous = false;
     recognition.interimResults = true;
     recognitionRef.current = recognition;
+    pendingTranscriptRef.current = '';
 
     recognition.onstart = () => setIsListening(true);
 
@@ -164,18 +164,63 @@ export default function AgentChatPage() {
       const transcript = Array.from(e.results as SpeechRecognitionResultList)
         .map((r: SpeechRecognitionResult) => r[0].transcript)
         .join('');
+      pendingTranscriptRef.current = transcript;
       setInput(transcript);
     };
 
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => {
+      setIsListening(false);
+      if (autoSend && pendingTranscriptRef.current.trim()) {
+        // Dispara envío automático en modo conversación
+        setInput(pendingTranscriptRef.current);
+        setShouldAutoSend(true);
+      }
+    };
 
+    recognition.onerror = () => setIsListening(false);
     recognition.start();
-  }, [isListening]);
+  }, []);
+
+  const [shouldAutoSend, setShouldAutoSend] = useState(false);
+
+  // Efecto que envía cuando shouldAutoSend se activa
+  useEffect(() => {
+    if (shouldAutoSend && pendingTranscriptRef.current.trim() && !sending) {
+      setShouldAutoSend(false);
+      const text = pendingTranscriptRef.current.trim();
+      pendingTranscriptRef.current = '';
+      setInput('');
+      sendMessageText(text);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shouldAutoSend]);
+
+  // ── Toggle micrófono manual ───────────────────────────────────────────────
+  const toggleMic = useCallback(() => {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) { alert('Tu browser no soporta reconocimiento de voz. Usa Chrome o Edge.'); return; }
+    if (isListening) { recognitionRef.current?.stop(); setIsListening(false); return; }
+    startListening(false);
+  }, [isListening, startListening]);
+
+  // ── Toggle modo conversación continua ─────────────────────────────────────
+  const toggleConvMode = useCallback(() => {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) { alert('Tu browser no soporta reconocimiento de voz. Usa Chrome o Edge.'); return; }
+    const next = !convMode;
+    setConvMode(next);
+    setAutoSpeak(next);
+    if (next) {
+      startListening(true); // arranca escuchando
+    } else {
+      recognitionRef.current?.stop();
+      window.speechSynthesis?.cancel();
+      setIsListening(false);
+    }
+  }, [convMode, startListening]);
 
   // ── Send message ─────────────────────────────────────────────────────────
-  const sendMessage = async () => {
-    const text = input.trim();
+  const sendMessageText = async (text: string) => {
     if (!text || sending) return;
 
     const optimisticMsg: Message = {
@@ -209,7 +254,12 @@ export default function AgentChatPage() {
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
-      if (autoSpeak) speak(result.response);
+      if (autoSpeak || convModeRef.current) {
+        speak(result.response, () => {
+          // En modo conversación, al terminar de hablar → vuelve a escuchar
+          if (convModeRef.current) startListening(true);
+        });
+      }
 
       // Si era conversación nueva, establecerla como activa
       if (!activeConversation) {
@@ -237,6 +287,8 @@ export default function AgentChatPage() {
       setSending(false);
     }
   };
+
+  const sendMessage = () => sendMessageText(input.trim());
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -357,24 +409,39 @@ export default function AgentChatPage() {
       {/* ── Área principal de chat ─────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col overflow-hidden">
 
-        {/* Barra superior con toggle de voz */}
-        <div className="flex-shrink-0 flex items-center justify-end px-4 py-2 border-b border-gray-800/50">
+        {/* Barra superior con controles de voz */}
+        <div className="flex-shrink-0 flex items-center justify-end gap-2 px-4 py-2 border-b border-gray-800/50">
+          {/* Modo conversación continua */}
           <button
-            onClick={() => {
-              setAutoSpeak(v => !v);
-              if (autoSpeak) window.speechSynthesis?.cancel();
-            }}
-            title={autoSpeak ? 'Desactivar voz' : 'Activar voz — Atlas habla sus respuestas'}
+            onClick={toggleConvMode}
+            title={convMode ? 'Salir del modo conversación' : 'Modo conversación — habla y escucha sin tocar nada'}
             className={clsx(
-              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors',
-              autoSpeak
-                ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/40'
+              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all',
+              convMode
+                ? 'bg-green-500/20 text-green-400 border border-green-500/40 animate-pulse'
                 : 'text-gray-600 hover:text-gray-400 hover:bg-gray-800',
             )}
           >
-            {autoSpeak ? <Volume2 size={13} /> : <VolumeX size={13} />}
-            {autoSpeak ? 'Voz activa' : 'Voz'}
+            <Mic size={13} />
+            {convMode ? 'Conversando…' : 'Modo conversación'}
           </button>
+
+          {/* Toggle TTS manual */}
+          {!convMode && (
+            <button
+              onClick={() => { setAutoSpeak(v => !v); if (autoSpeak) window.speechSynthesis?.cancel(); }}
+              title={autoSpeak ? 'Desactivar voz' : 'Activar voz'}
+              className={clsx(
+                'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors',
+                autoSpeak
+                  ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/40'
+                  : 'text-gray-600 hover:text-gray-400 hover:bg-gray-800',
+              )}
+            >
+              {autoSpeak ? <Volume2 size={13} /> : <VolumeX size={13} />}
+              Voz
+            </button>
+          )}
         </div>
 
         {/* Empty state — sin conversación activa */}
