@@ -7,13 +7,14 @@ import { api } from '@/lib/api';
 import {
   LayoutDashboard, Users, Map, Plug, BookUser, LogOut, ShieldCheck,
   Building2, CreditCard, ShieldAlert, Settings, Bell, X, CheckCheck, ExternalLink,
-  ChevronLeft, Target, Cctv, Zap,
+  ChevronLeft, Target, Cctv, Zap, Sparkles,
 } from 'lucide-react';
 import clsx from 'clsx';
 
 const BASE_NAV = [
   { href: '/metrics',      label: 'Dashboard',      icon: LayoutDashboard },
   { href: '/dashboard',    label: 'Focus Mode',      icon: Zap },
+  { href: '/agents',       label: 'Agentes',         icon: Sparkles },
   { href: '/team',         label: 'Equipo',          icon: Users },
   { href: '/goals',        label: 'Objetivos',       icon: Target },
   { href: '/contacts',     label: 'Contactos',       icon: BookUser },
@@ -189,7 +190,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               href={href}
               className={clsx(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                pathname === href
+                (pathname === href || (href !== '/' && pathname.startsWith(href)))
                   ? 'bg-indigo-600 text-white'
                   : 'text-gray-400 hover:text-white hover:bg-gray-800',
               )}
