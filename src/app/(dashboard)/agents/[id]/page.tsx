@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import {
   ArrowLeft, Bot, Send, Plus, MessageSquare, Sparkles,
-  Loader2, ChevronRight, Clock,
+  Loader2, ChevronRight, Clock, Mic, MicOff,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -70,9 +70,11 @@ export default function AgentChatPage() {
   const [sending, setSending] = useState(false);
   const [loadingAgent, setLoadingAgent] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [isListening, setIsListening] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   // ── Load agent info ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -116,6 +118,38 @@ export default function AgentChatPage() {
     el.style.height = 'auto';
     el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
   }, [input]);
+
+  // ── Voice input ──────────────────────────────────────────────────────────
+  const toggleMic = useCallback(() => {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) { alert('Tu browser no soporta reconocimiento de voz. Usa Chrome o Edge.'); return; }
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const recognition = new SR();
+    recognition.lang = 'es-MX';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognitionRef.current = recognition;
+
+    recognition.onstart = () => setIsListening(true);
+
+    recognition.onresult = (e: any) => {
+      const transcript = Array.from(e.results as SpeechRecognitionResultList)
+        .map((r: SpeechRecognitionResult) => r[0].transcript)
+        .join('');
+      setInput(transcript);
+    };
+
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+
+    recognition.start();
+  }, [isListening]);
 
   // ── Send message ─────────────────────────────────────────────────────────
   const sendMessage = async () => {
@@ -423,11 +457,28 @@ export default function AgentChatPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={`Escribe a ${agent?.name ?? 'Atlas'}… (Enter para enviar)`}
+              placeholder={isListening ? '🎙️ Escuchando…' : `Escribe o habla con ${agent?.name ?? 'Atlas'}…`}
               rows={1}
               disabled={sending}
-              className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 resize-none outline-none leading-relaxed disabled:opacity-50"
+              className="flex-1 bg-transparent text-sm text-white placeholder-gray-500 resize-none outline-none leading-relaxed disabled:opacity-50"
             />
+
+            {/* Mic button */}
+            <button
+              onClick={toggleMic}
+              disabled={sending}
+              title={isListening ? 'Detener' : 'Hablar'}
+              className={clsx(
+                'flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all',
+                isListening
+                  ? 'bg-red-500 hover:bg-red-400 text-white animate-pulse'
+                  : 'bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white',
+              )}
+            >
+              {isListening ? <MicOff size={14} /> : <Mic size={14} />}
+            </button>
+
+            {/* Send button */}
             <button
               onClick={sendMessage}
               disabled={!input.trim() || sending}
@@ -444,7 +495,7 @@ export default function AgentChatPage() {
             </button>
           </div>
           <p className="text-[10px] text-gray-700 text-center mt-2">
-            Shift+Enter para salto de línea
+            Enter para enviar · Shift+Enter salto · 🎙️ micrófono para hablar
           </p>
         </div>
       </div>
