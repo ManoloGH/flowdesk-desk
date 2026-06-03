@@ -5,7 +5,7 @@ import { useAuth } from '@/store/auth';
 import type { FocusBrief, FocusMetric, FocusPriority, FocusPulse } from './focus-types';
 import {
   TrendingUp, TrendingDown, Minus, AlertCircle,
-  Clock, MessageSquare, Zap, Target, ChevronRight,
+  Clock, MessageSquare, Zap, Target, ChevronRight, RefreshCw,
 } from 'lucide-react';
 
 const URGENCY_RING: Record<string, string> = {
@@ -153,14 +153,18 @@ export default function FocusModePage() {
   const { user } = useAuth();
   const [brief, setBrief] = useState<FocusBrief | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    api.get<FocusBrief>('/tenants/mine/focus-brief')
+  function load(force = false) {
+    if (force) setRefreshing(true); else setLoading(true);
+    api.get<FocusBrief>(`/tenants/mine/focus-brief${force ? '?force=true' : ''}`)
       .then(setBrief)
       .catch(() => setError('No se pudo generar el Focus Mode'))
-      .finally(() => setLoading(false));
-  }, []);
+      .finally(() => { setLoading(false); setRefreshing(false); });
+  }
+
+  useEffect(() => { load(); }, []);
 
   if (loading) return <FocusSkeleton />;
 
@@ -183,8 +187,22 @@ export default function FocusModePage() {
           <span className="text-sm font-semibold text-white">Focus Mode</span>
           <span className="text-xs text-gray-600">·</span>
           <span className="text-xs text-gray-500 capitalize">{brief.date}</span>
+          {(brief as any).cached && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-gray-600">cache</span>
+          )}
         </div>
-        <span className="text-xs text-gray-600">{user?.email}</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => load(true)}
+            disabled={refreshing}
+            title="Regenerar brief"
+            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-white transition-colors"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Regenerando...' : 'Actualizar'}
+          </button>
+          <span className="text-xs text-gray-600">{user?.email}</span>
+        </div>
       </header>
 
       <main className="flex-1 flex gap-4 p-4 min-h-0">
