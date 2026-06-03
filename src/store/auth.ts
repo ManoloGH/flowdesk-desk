@@ -8,7 +8,8 @@ interface User {
   type: string;
   email: string;
   name?: string;
-  tenant_type?: string; // PLATFORM | NETWORK | BRANCH
+  tenant_type?: string;
+  platform_admin?: boolean;
 }
 
 interface BranchContext {
