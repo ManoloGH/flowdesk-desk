@@ -15,10 +15,10 @@ interface TenantRow {
 
 const ACCOUNT_TYPES = [
   { key: 'all',               label: 'Todos' },
-  { key: 'SAAS_ACCOUNT',      label: 'SaaS' },
-  { key: 'PARTNERSHIP',       label: 'Partnerships' },
-  { key: 'CONSULTORIA_CLIENT',label: 'Consultoría' },
-  { key: 'DIRECT',            label: 'Directo' },
+  { key: 'SAAS_ACCOUNT',      label: 'SaaS interno' },
+  { key: 'PARTNERSHIP',       label: 'Partners MentorIA' },
+  { key: 'CONSULTORIA_CLIENT',label: 'Clientes consultoría' },
+  { key: 'DIRECT',            label: 'Clientes FlowDesk' },
 ];
 
 const STATUS_FILTERS = [
@@ -31,11 +31,18 @@ const PLAN_COLORS: Record<string, string> = {
   enterprise: 'text-violet-400', professional: 'text-blue-400', starter: 'text-gray-400', internal: 'text-gray-600',
 };
 
+const TYPE_LABEL: Record<string, string> = {
+  SAAS_ACCOUNT:       'SaaS interno',
+  PARTNERSHIP:        'Partner MentorIA',
+  CONSULTORIA_CLIENT: 'Cliente consultoría',
+  DIRECT:             'Cliente FlowDesk',
+};
+
 const TYPE_ICON: Record<string, React.ReactNode> = {
-  SAAS_ACCOUNT: <Zap className="w-3.5 h-3.5 text-indigo-400" />,
-  PARTNERSHIP:  <Handshake className="w-3.5 h-3.5 text-purple-400" />,
+  SAAS_ACCOUNT:       <Zap className="w-3.5 h-3.5 text-indigo-400" />,
+  PARTNERSHIP:        <Handshake className="w-3.5 h-3.5 text-purple-400" />,
   CONSULTORIA_CLIENT: <Briefcase className="w-3.5 h-3.5 text-amber-400" />,
-  DIRECT:       <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />,
+  DIRECT:             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />,
 };
 
 export default function ClientsPage() {

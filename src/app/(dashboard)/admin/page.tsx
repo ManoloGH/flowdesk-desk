@@ -31,11 +31,11 @@ const PLAN_BADGE: Record<string, string> = {
 };
 
 const ACCOUNT_TYPE_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  SAAS_ACCOUNT:       { label: 'SaaS',         color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20', icon: <Zap className="w-3 h-3" /> },
-  PARTNERSHIP:        { label: 'Partnership',  color: 'text-purple-400 bg-purple-500/10 border-purple-500/20', icon: <Handshake className="w-3 h-3" /> },
-  CONSULTORIA_CLIENT: { label: 'Consultoría',  color: 'text-amber-400  bg-amber-500/10  border-amber-500/20',  icon: <Briefcase className="w-3 h-3" /> },
-  DIRECT:             { label: 'Directo',      color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', icon: <ShieldCheck className="w-3 h-3" /> },
-  company:            { label: 'Empresa',      color: 'text-gray-400 bg-gray-500/10 border-gray-500/20', icon: <Building2 className="w-3 h-3" /> },
+  SAAS_ACCOUNT:       { label: 'SaaS interno',       color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20',  icon: <Zap className="w-3 h-3" /> },
+  PARTNERSHIP:        { label: 'Partner MentorIA',   color: 'text-purple-400 bg-purple-500/10 border-purple-500/20',  icon: <Handshake className="w-3 h-3" /> },
+  CONSULTORIA_CLIENT: { label: 'Cliente consultoría',color: 'text-amber-400  bg-amber-500/10  border-amber-500/20',   icon: <Briefcase className="w-3 h-3" /> },
+  DIRECT:             { label: 'Cliente FlowDesk',   color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',icon: <ShieldCheck className="w-3 h-3" /> },
+  company:            { label: 'Empresa',             color: 'text-gray-400 bg-gray-500/10 border-gray-500/20',        icon: <Building2 className="w-3 h-3" /> },
 };
 
 function AccountBadge({ type }: { type: string }) {
