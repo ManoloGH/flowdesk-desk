@@ -1,48 +1,25 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { CreditCard, TrendingUp, AlertCircle, CheckCircle, XCircle, Clock, ExternalLink, RefreshCw } from 'lucide-react';
-import clsx from 'clsx';
 import { api } from '@/lib/api';
+import { TrendingUp, CheckCircle, AlertCircle, CreditCard, RefreshCw, FileText, Loader2 } from 'lucide-react';
 
 interface TenantBilling {
-  id: string;
-  name: string;
-  plan: string;
-  status: string;
-  stripe_sub_status: string | null;
-  current_period_end: string | null;
-  billing_email: string | null;
-  stripe_customer_id: string | null;
-  created_at: string;
+  id: string; name: string; plan: string; status: string;
+  created_at: string; billing_email: string | null; mrr: number;
+  billing_config: { enabled: boolean; rfc: string | null; facturapi_org_id: string | null; stripe_account_id: string | null } | null;
 }
 
 interface Overview {
-  mrr: number;
-  total: number;
-  active: number;
-  past_due: number;
-  plans_breakdown: { starter: number; professional: number; enterprise: number };
+  mrr: number; total: number; active: number; past_due: number; billing_configured: number;
+  plans_breakdown: Record<string, number>;
   tenants: TenantBilling[];
 }
 
-const PLAN_LABELS: Record<string, string> = {
-  starter: 'Starter',
-  professional: 'Professional',
-  enterprise: 'Enterprise',
-};
-
 const PLAN_COLORS: Record<string, string> = {
-  starter: 'text-blue-400 bg-blue-500/10',
-  professional: 'text-purple-400 bg-purple-500/10',
-  enterprise: 'text-amber-400 bg-amber-500/10',
-};
-
-const SUB_STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  active: { label: 'Activo', color: 'text-green-400 bg-green-500/10', icon: <CheckCircle size={12} /> },
-  trialing: { label: 'Trial', color: 'text-blue-400 bg-blue-500/10', icon: <Clock size={12} /> },
-  past_due: { label: 'Pago vencido', color: 'text-red-400 bg-red-500/10', icon: <AlertCircle size={12} /> },
-  canceled: { label: 'Cancelado', color: 'text-gray-400 bg-gray-500/10', icon: <XCircle size={12} /> },
-  unpaid: { label: 'Sin pagar', color: 'text-red-400 bg-red-500/10', icon: <AlertCircle size={12} /> },
+  enterprise: 'text-violet-400 bg-violet-500/10 border-violet-500/20',
+  professional: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+  starter: 'text-gray-400 bg-gray-500/10 border-gray-500/20',
+  internal: 'text-gray-600 bg-gray-800 border-gray-700/20',
 };
 
 export default function BillingPage() {
@@ -51,219 +28,119 @@ export default function BillingPage() {
   const [refreshing, setRefreshing] = useState(false);
 
   const load = async (silent = false) => {
-    if (!silent) setLoading(true);
-    else setRefreshing(true);
-    try {
-      const overview = await api.get<Overview>('/billing/admin/overview');
-      setData(overview);
-    } catch {}
-    setLoading(false);
-    setRefreshing(false);
+    if (!silent) setLoading(true); else setRefreshing(true);
+    const d = await api.get<Overview>('/billing/admin/overview').catch(() => null);
+    setData(d);
+    setLoading(false); setRefreshing(false);
   };
 
   useEffect(() => { load(); }, []);
 
-  const fmt = (n: number) =>
-    new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
-
-  const fmtDate = (d: string | null) =>
-    d ? new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
-
   if (loading) {
-    return (
-      <div className="p-8 flex items-center justify-center min-h-[60vh]">
-        <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <div className="min-h-screen bg-[#050a14] flex items-center justify-center"><Loader2 className="w-6 h-6 text-indigo-500 animate-spin" /></div>;
   }
 
+  const kpis = [
+    { label: 'MRR Total', value: `$${(data?.mrr ?? 0).toLocaleString()}`, icon: TrendingUp, color: 'text-indigo-400', sub: 'USD / mes' },
+    { label: 'Activos', value: data?.active ?? 0, icon: CheckCircle, color: 'text-emerald-400', sub: `de ${data?.total ?? 0} clientes` },
+    { label: 'Fact. configurada', value: data?.billing_configured ?? 0, icon: FileText, color: 'text-amber-400', sub: `de ${data?.total ?? 0} clientes` },
+    { label: 'Vencidos', value: data?.past_due ?? 0, icon: AlertCircle, color: 'text-red-400', sub: 'requieren atención' },
+  ];
+
   return (
-    <div className="p-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+    <div className="min-h-screen bg-[#050a14] p-6">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-semibold text-purple-400 uppercase tracking-wider">MentorIA ERP</span>
-          </div>
-          <h1 className="text-2xl font-bold text-white">Facturación</h1>
-          <p className="text-gray-400 mt-1 text-sm">MRR, planes activos y estado de pagos por cliente</p>
+          <h1 className="text-xl font-bold text-white mb-1">Facturación</h1>
+          <p className="text-xs text-gray-500">MRR, planes y estado de facturación por cliente</p>
         </div>
-        <button
-          onClick={() => load(true)}
-          disabled={refreshing}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 text-gray-300 text-sm hover:bg-gray-700 transition-colors disabled:opacity-50"
-        >
-          <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
-          Actualizar
+        <button onClick={() => load(true)} disabled={refreshing}
+          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#0a0f1e] border border-white/5 text-gray-400 text-xs hover:text-white transition-colors">
+          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} /> Actualizar
         </button>
       </div>
 
-      {data && (
-        <>
-          {/* Métricas top */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp size={14} className="text-purple-400" />
-                <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">MRR</span>
-              </div>
-              <p className="text-3xl font-bold text-white">{fmt(data.mrr)}</p>
-              <p className="text-xs text-gray-500 mt-1">Ingreso mensual recurrente</p>
+      {/* KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        {kpis.map(({ label, value, icon: Icon, color, sub }) => (
+          <div key={label} className="bg-[#0a0f1e] border border-white/5 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[10px] font-bold tracking-widest text-gray-600 uppercase">{label}</p>
+              <Icon className={`w-4 h-4 ${color}`} />
             </div>
-
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <CheckCircle size={14} className="text-green-400" />
-                <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">Activos</span>
-              </div>
-              <p className="text-3xl font-bold text-white">{data.active}</p>
-              <p className="text-xs text-gray-500 mt-1">de {data.total} clientes</p>
-            </div>
-
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <AlertCircle size={14} className="text-red-400" />
-                <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">Vencidos</span>
-              </div>
-              <p className="text-3xl font-bold text-white">{data.past_due}</p>
-              <p className="text-xs text-gray-500 mt-1">requieren atención</p>
-            </div>
-
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <CreditCard size={14} className="text-blue-400" />
-                <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">Planes</span>
-              </div>
-              <div className="flex flex-col gap-1">
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-500">Starter</span>
-                  <span className="text-blue-400 font-medium">{data.plans_breakdown.starter}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-500">Professional</span>
-                  <span className="text-purple-400 font-medium">{data.plans_breakdown.professional}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-500">Enterprise</span>
-                  <span className="text-amber-400 font-medium">{data.plans_breakdown.enterprise}</span>
-                </div>
-              </div>
-            </div>
+            <p className="text-2xl font-bold text-white">{value}</p>
+            <p className="text-[10px] text-gray-600 mt-1">{sub}</p>
           </div>
+        ))}
+      </div>
 
-          {/* Alerta pago vencido */}
-          {data.past_due > 0 && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 flex items-start gap-3">
-              <AlertCircle size={16} className="text-red-400 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-red-300">
-                  {data.past_due} cliente{data.past_due > 1 ? 's' : ''} con pago vencido
-                </p>
-                <p className="text-xs text-red-500 mt-0.5">
-                  Revisa el estado en Stripe y contacta al cliente. Si el pago no se resuelve, el acceso se suspenderá automáticamente.
-                </p>
-              </div>
+      {/* Desglose de planes */}
+      <div className="bg-[#0a0f1e] border border-white/5 rounded-xl p-5 mb-4">
+        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">Distribución de planes (activos)</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { plan: 'starter',      price: 49,  users: 10 },
+            { plan: 'professional', price: 149, users: 50 },
+            { plan: 'enterprise',   price: 399, users: 999 },
+            { plan: 'internal',     price: 0,   users: 999 },
+          ].map(({ plan, price, users }) => (
+            <div key={plan} className="bg-white/[0.02] rounded-xl p-4">
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${PLAN_COLORS[plan]}`}>{plan}</span>
+              <p className="text-2xl font-bold text-white mt-3">
+                {data?.plans_breakdown?.[plan] ?? 0}
+                <span className="text-sm font-normal text-gray-600 ml-1">clientes</span>
+              </p>
+              <p className="text-[10px] text-gray-600 mt-1">${price}/mes · {users === 999 ? '∞' : users} usuarios</p>
             </div>
-          )}
+          ))}
+        </div>
+      </div>
 
-          {/* Tabla de clientes */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-800">
-              <h2 className="font-medium text-white text-sm">Clientes ({data.total})</h2>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-800">
-                    <th className="px-5 py-3 text-left text-xs text-gray-500 font-medium">Empresa</th>
-                    <th className="px-4 py-3 text-left text-xs text-gray-500 font-medium">Plan</th>
-                    <th className="px-4 py-3 text-left text-xs text-gray-500 font-medium">Suscripción</th>
-                    <th className="px-4 py-3 text-left text-xs text-gray-500 font-medium">Próximo cobro</th>
-                    <th className="px-4 py-3 text-left text-xs text-gray-500 font-medium">Email billing</th>
-                    <th className="px-4 py-3 text-left text-xs text-gray-500 font-medium">Stripe</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.tenants.map(t => {
-                    const subCfg = t.stripe_sub_status ? SUB_STATUS_CONFIG[t.stripe_sub_status] : null;
-                    const stripeUrl = t.stripe_customer_id
-                      ? `https://dashboard.stripe.com/customers/${t.stripe_customer_id}`
-                      : null;
-
-                    return (
-                      <tr key={t.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
-                        <td className="px-5 py-3">
-                          <div>
-                            <p className="text-white font-medium">{t.name}</p>
-                            <p className="text-xs text-gray-500">{new Date(t.created_at).getFullYear()}</p>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={clsx('text-xs px-2 py-1 rounded-full font-medium', PLAN_COLORS[t.plan] ?? 'text-gray-400 bg-gray-500/10')}>
-                            {PLAN_LABELS[t.plan] ?? t.plan}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          {subCfg ? (
-                            <span className={clsx('flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium w-fit', subCfg.color)}>
-                              {subCfg.icon}
-                              {subCfg.label}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-gray-600">Sin suscripción</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-gray-400">
-                          {fmtDate(t.current_period_end)}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-gray-400">
-                          {t.billing_email ?? '—'}
-                        </td>
-                        <td className="px-4 py-3">
-                          {stripeUrl ? (
-                            <a
-                              href={stripeUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 transition-colors"
-                            >
-                              Ver <ExternalLink size={10} />
-                            </a>
-                          ) : (
-                            <span className="text-xs text-gray-600">—</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Definición de planes */}
-          <div className="mt-6 bg-gray-900 border border-gray-800 rounded-xl p-5">
-            <h2 className="font-medium text-white text-sm mb-4">Precios configurados</h2>
-            <div className="grid grid-cols-3 gap-4">
-              {[
-                { plan: 'starter', price: 49, users: 10, agents: 20 },
-                { plan: 'professional', price: 149, users: 50, agents: 100 },
-                { plan: 'enterprise', price: 399, users: 999, agents: 999 },
-              ].map(({ plan, price, users, agents }) => (
-                <div key={plan} className="bg-gray-800 rounded-lg p-4">
-                  <span className={clsx('text-xs px-2 py-0.5 rounded-full font-medium', PLAN_COLORS[plan])}>
-                    {PLAN_LABELS[plan]}
-                  </span>
-                  <p className="text-2xl font-bold text-white mt-3">${price}<span className="text-sm font-normal text-gray-500">/mes</span></p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {users === 999 ? 'Usuarios ilimitados' : `${users} usuarios`} · {agents === 999 ? 'Agentes ilimitados' : `${agents} agentes`}
-                  </p>
-                </div>
+      {/* Tabla */}
+      <div className="bg-[#0a0f1e] border border-white/5 rounded-xl overflow-hidden">
+        <div className="px-5 py-3 border-b border-white/5">
+          <p className="text-xs font-semibold text-gray-400">{data?.total ?? 0} clientes</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/5">
+                {['Empresa', 'Plan', 'Estado', 'MRR', 'RFC', 'Facturapi', 'Stripe'].map(h => (
+                  <th key={h} className="px-4 py-3 text-left text-[10px] text-gray-600 font-semibold uppercase tracking-widest">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {(data?.tenants ?? []).map(t => (
+                <tr key={t.id} className="hover:bg-white/[0.02] transition-colors">
+                  <td className="px-4 py-3">
+                    <p className="text-xs font-medium text-white">{t.name}</p>
+                    <p className="text-[10px] text-gray-600">{t.billing_email ?? '—'}</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${PLAN_COLORS[t.plan] ?? PLAN_COLORS.starter}`}>{t.plan}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`text-[10px] font-medium ${t.status === 'active' ? 'text-emerald-400' : 'text-red-400'}`}>● {t.status}</span>
+                  </td>
+                  <td className="px-4 py-3 text-xs text-white font-medium">${(t.mrr || 0).toLocaleString()}</td>
+                  <td className="px-4 py-3 text-xs text-gray-400">{t.billing_config?.rfc ?? '—'}</td>
+                  <td className="px-4 py-3">
+                    {t.billing_config?.facturapi_org_id
+                      ? <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Conectado</span>
+                      : <span className="text-xs text-gray-600">—</span>}
+                  </td>
+                  <td className="px-4 py-3">
+                    {t.billing_config?.stripe_account_id
+                      ? <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">Conectado</span>
+                      : <span className="text-xs text-gray-600">—</span>}
+                  </td>
+                </tr>
               ))}
-            </div>
-          </div>
-        </>
-      )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
