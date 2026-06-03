@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import {
   ArrowLeft, Bot, Send, Plus, MessageSquare, Sparkles,
-  Loader2, ChevronRight, Clock, Mic, MicOff,
+  Loader2, ChevronRight, Clock, Mic, MicOff, Volume2, VolumeX,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -71,10 +71,32 @@ export default function AgentChatPage() {
   const [loadingAgent, setLoadingAgent] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [autoSpeak, setAutoSpeak] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  // ── TTS helper ───────────────────────────────────────────────────────────
+  const speak = useCallback((text: string) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    // Limpia markdown básico antes de hablar
+    const clean = text
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/\*(.*?)\*/g, '$1')
+      .replace(/#{1,6}\s/g, '')
+      .replace(/[•·▸]/g, '')
+      .slice(0, 900); // límite práctico
+    const utt = new SpeechSynthesisUtterance(clean);
+    utt.lang = 'es-MX';
+    utt.rate = 1.05;
+    // Preferir voz en español si está disponible
+    const voices = window.speechSynthesis.getVoices();
+    const esVoice = voices.find(v => v.lang.startsWith('es'));
+    if (esVoice) utt.voice = esVoice;
+    window.speechSynthesis.speak(utt);
+  }, []);
 
   // ── Load agent info ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -187,6 +209,7 @@ export default function AgentChatPage() {
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
+      if (autoSpeak) speak(result.response);
 
       // Si era conversación nueva, establecerla como activa
       if (!activeConversation) {
@@ -333,6 +356,26 @@ export default function AgentChatPage() {
 
       {/* ── Área principal de chat ─────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col overflow-hidden">
+
+        {/* Barra superior con toggle de voz */}
+        <div className="flex-shrink-0 flex items-center justify-end px-4 py-2 border-b border-gray-800/50">
+          <button
+            onClick={() => {
+              setAutoSpeak(v => !v);
+              if (autoSpeak) window.speechSynthesis?.cancel();
+            }}
+            title={autoSpeak ? 'Desactivar voz' : 'Activar voz — Atlas habla sus respuestas'}
+            className={clsx(
+              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors',
+              autoSpeak
+                ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/40'
+                : 'text-gray-600 hover:text-gray-400 hover:bg-gray-800',
+            )}
+          >
+            {autoSpeak ? <Volume2 size={13} /> : <VolumeX size={13} />}
+            {autoSpeak ? 'Voz activa' : 'Voz'}
+          </button>
+        </div>
 
         {/* Empty state — sin conversación activa */}
         {!activeConversation && messages.length === 0 && (
