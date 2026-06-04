@@ -221,7 +221,7 @@ export default function BrainPage() {
 
         {/* Columna derecha — upload */}
         <div style={{ position: 'sticky', top: 24 }}>
-          <div style={{ background: '#111', border: `2px dashed ${dragging ? '#4a86e8' : '#222'}`, borderRadius: 10, padding: 20, transition: 'border-color 0.15s, background 0.15s', background: dragging ? 'rgba(74,134,232,0.05)' : '#111' } as any}
+          <div style={{ background: dragging ? 'rgba(74,134,232,0.05)' : '#111', border: `2px dashed ${dragging ? '#4a86e8' : '#222'}`, borderRadius: 10, padding: 20, transition: 'border-color 0.15s, background 0.15s' } as any}
             onDragOver={e => { e.preventDefault(); setDragging(true); }}
             onDragLeave={() => setDragging(false)}
             onDrop={handleDrop}
