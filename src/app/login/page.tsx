@@ -37,11 +37,17 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-gray-900 rounded-2xl p-8 border border-gray-800 space-y-4">
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm">
-              {error}
-            </div>
-          )}
+          {/* Error persistente — no desaparece hasta el próximo intento */}
+          <div
+            className={`rounded-lg p-3 text-sm transition-all duration-200 ${
+              error
+                ? 'bg-red-500/10 border border-red-500/30 text-red-400 opacity-100'
+                : 'opacity-0 h-0 overflow-hidden p-0 border-0'
+            }`}
+            aria-live="polite"
+          >
+            {error}
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1.5">Email</label>

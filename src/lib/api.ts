@@ -72,7 +72,10 @@ export async function apiFetch<T = any>(
 
   let res = await makeRequest(access);
 
-  if (res.status === 401) {
+  // Rutas públicas (login, refresh) no deben intentar refrescar token ni redirigir
+  const isPublicPath = path.startsWith('/auth/');
+
+  if (res.status === 401 && !isPublicPath) {
     access = await refreshAccessToken();
     if (!access) {
       clearTokens();
