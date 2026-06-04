@@ -89,7 +89,7 @@ export default function BrainPage() {
       fd.append('file', file);
       if (hint) fd.append('hint', hint);
       try {
-        await api.post('/brain/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+        await api.postForm('/brain/upload', fd);
         ok++;
       } catch { fail++; }
     }

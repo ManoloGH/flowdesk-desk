@@ -100,5 +100,17 @@ export const api = {
   patch: <T = any>(path: string, body: unknown) =>
     apiFetch<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),
   delete: <T = any>(path: string) => apiFetch<T>(path, { method: 'DELETE' }),
+  // Para uploads multipart/form-data — no pasar Content-Type, el browser lo pone con boundary
+  postForm: <T = any>(path: string, formData: FormData): Promise<T> => {
+    const access = typeof window !== 'undefined' ? localStorage.getItem('fd_access') : null;
+    return fetch(`${BASE}${path}`, {
+      method: 'POST',
+      body: formData,
+      headers: access ? { Authorization: `Bearer ${access}` } : {},
+    }).then(r => {
+      if (!r.ok) throw new Error(r.statusText);
+      return r.json();
+    });
+  },
   setTokens,
 };
