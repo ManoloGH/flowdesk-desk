@@ -625,7 +625,7 @@
 <div class="view active" id="view-focus">
 
   <header class="topbar">
-    <button class="brand-btn" onclick="toggleDrawer()">
+    <button class="brand-btn" onclick="toggleDrawer(); event.stopPropagation();">
       <div class="brand-logo"><span>F</span></div>
       <span class="brand-wordmark"><span class="flow">Flow</span><span class="desk">desk</span></span>
       <svg class="chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
@@ -1613,19 +1613,34 @@ function showView(name, btn) {
   // close all dropdowns when switching views
   document.querySelectorAll('.brand-btn-wrap').forEach(function(w){ w.classList.remove('open'); });
 }
-function toggleDrawer() {
-  document.getElementById('drawer').classList.toggle('open');
-  document.getElementById('overlay').classList.toggle('open');
+function openDrawer() {
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
 }
-// Close logo dropdowns on outside click or Escape
-document.addEventListener('click', function() {
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+function toggleDrawer() {
+  var d = document.getElementById('drawer');
+  if (d.classList.contains('open')) { closeDrawer(); } else { openDrawer(); }
+}
+// Cerrar drawer al hacer clic fuera de el
+document.addEventListener('click', function(e) {
+  var drawer = document.getElementById('drawer');
+  var brandBtn = document.querySelector('#view-focus .brand-btn');
+  if (drawer && drawer.classList.contains('open')) {
+    if (!drawer.contains(e.target) && brandBtn && !brandBtn.contains(e.target)) {
+      closeDrawer();
+    }
+  }
+  // Cerrar dropdowns del logo
   document.querySelectorAll('.brand-btn-wrap').forEach(function(w){ w.classList.remove('open'); });
 });
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
+    closeDrawer();
     document.querySelectorAll('.brand-btn-wrap').forEach(function(w){ w.classList.remove('open'); });
-    document.getElementById('drawer').classList.remove('open');
-    document.getElementById('overlay').classList.remove('open');
   }
 });
 </script>
