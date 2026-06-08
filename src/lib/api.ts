@@ -76,10 +76,13 @@ export async function apiFetch<T = any>(
   const isPublicPath = path.startsWith('/auth/');
 
   if (res.status === 401 && !isPublicPath) {
+    const hadSession = !!getTokens().refresh;
     access = await refreshAccessToken();
     if (!access) {
-      clearTokens();
-      window.location.href = '/login';
+      if (hadSession) {
+        clearTokens();
+        window.location.href = '/login';
+      }
       throw new Error('Session expired');
     }
     res = await makeRequest(access);

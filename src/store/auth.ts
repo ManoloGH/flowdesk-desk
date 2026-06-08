@@ -49,7 +49,14 @@ export const useAuth = create<AuthState>((set) => ({
   loadUser: () => {
     try {
       const raw = localStorage.getItem('fd_user');
-      const user = raw ? JSON.parse(raw) : null;
+      let user = raw ? JSON.parse(raw) : null;
+      if (!user && process.env.NODE_ENV === 'development') {
+        user = {
+          slot_id: 'dev', tenant_id: 'dev', role: 'superadmin',
+          type: 'HUMAN', email: 'dev@flowdesk.mx', name: 'Dev Preview',
+          tenant_type: 'PLATFORM', platform_admin: true,
+        };
+      }
       const branchRaw = localStorage.getItem('fd_branch_context');
       const branchContext = branchRaw ? JSON.parse(branchRaw) : null;
       set({ user, loading: false, branchContext });

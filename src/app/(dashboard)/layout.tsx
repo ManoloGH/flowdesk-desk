@@ -145,8 +145,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router   = useRouter();
   const pathname = usePathname();
 
+  const devMockUser = process.env.NODE_ENV === 'development' ? {
+    slot_id: 'dev', tenant_id: 'dev', role: 'superadmin',
+    type: 'HUMAN', email: 'dev@flowdesk.mx', name: 'Dev Preview',
+    tenant_type: 'PLATFORM', platform_admin: true,
+  } : null;
+  const effectiveUser = user ?? devMockUser;
+
   const isNetPlatform = !branchContext &&
-    (user?.tenant_type === 'NETWORK' || user?.tenant_type === 'PLATFORM');
+    (effectiveUser?.tenant_type === 'NETWORK' || effectiveUser?.tenant_type === 'PLATFORM');
   const NAV = isNetPlatform ? [...BASE_NAV, ...NETWORK_NAV_EXTRA] : BASE_NAV;
 
   const [brand,      setBrand]      = useState<BrandConfig>(DEFAULT_BRAND);
@@ -159,7 +166,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const bellRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { loadUser(); }, [loadUser]);
-  useEffect(() => { if (!loading && !user) router.replace('/login'); }, [user, loading, router]);
+  useEffect(() => {
+    if (!loading && !user) router.replace('/login');
+  }, [user, loading, router]);
   useEffect(() => { const iv = setInterval(() => setNow(new Date()), 60_000); return () => clearInterval(iv); }, []);
 
   /* ── Brand: fetch + apply CSS vars ── */
@@ -236,12 +245,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (wasUnread) setUnread(prev => Math.max(0, prev - 1));
   };
 
-  const initials = user?.name
-    ? user.name.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase()
-    : user?.email?.slice(0, 2)?.toUpperCase() ?? 'U';
+  const initials = effectiveUser?.name
+    ? effectiveUser.name.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase()
+    : effectiveUser?.email?.slice(0, 2)?.toUpperCase() ?? 'U';
 
   /* Loading screen */
-  if (loading || !user) {
+  if (loading || !effectiveUser) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ width: 26, height: 26, borderRadius: '50%', border: '2px solid var(--fd-cyan)', borderTopColor: 'transparent' }} className="fd-spin" />
@@ -305,7 +314,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* Avatar */}
           <div
-            title={`${user.email} · ${user.role} · Click para cerrar sesión`}
+            title={`${effectiveUser.email} · ${effectiveUser.role} · Click para cerrar sesión`}
             onClick={logout}
             style={{
               width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
@@ -415,7 +424,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             );
           })}
 
-          {(user.role === 'superadmin' || (user as any).platform_admin) && (
+          {(effectiveUser.role === 'superadmin' || (effectiveUser as any).platform_admin) && (
             <>
               <div style={{
                 padding: '16px 12px 6px',
@@ -447,10 +456,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ fontFamily: "'Inter Tight', sans-serif", fontSize: 12, fontWeight: 500, color: 'var(--text)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {user.name || user.email}
+                {effectiveUser.name || effectiveUser.email}
               </p>
               <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: 'var(--text-3)', margin: 0, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                {user.role}
+                {effectiveUser.role}
               </p>
             </div>
           </div>

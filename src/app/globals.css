@@ -1,26 +1,84 @@
 @import "tailwindcss";
 
+/* ── FlowDesk Design Tokens ── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #0A0E1A;
+  --bg-2: #0F1524;
+  --surface: #131A2C;
+  --surface-2: #1A2238;
+  --surface-3: #232C46;
+  --line: rgba(255, 255, 255, 0.06);
+  --line-strong: rgba(255, 255, 255, 0.10);
+  --text: #ECEEF5;
+  --text-2: #A4ADC2;
+  --text-3: #6B7390;
+  --fd-cyan: #1DBDF0;
+  --fd-cyan-deep: #00A8E8;
+  --fd-blue: #2566E8;
+  --fd-magenta: #E91E7A;
+  --fd-pink: #FF3B8F;
+  --fd-orange: #F59A23;
+  --fd-yellow: #FFC93C;
+  --fd-green: #22D399;
+  --fd-red: #FF4757;
+  --fd-purple: #9B59F6;
+  /* Tailwind compat */
+  --background: #0A0E1A;
+  --foreground: #ECEEF5;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(900px 600px at 85% 8%, rgba(29, 189, 240, 0.05), transparent 60%),
+    radial-gradient(700px 500px at 0% 100%, rgba(37, 102, 232, 0.06), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
 }
+
+/* ── Animations ── */
+@keyframes fd-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes fd-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+@keyframes fd-glow {
+  0%   { box-shadow: 0 0 0 0 rgba(29, 189, 240, 0.5); }
+  70%  { box-shadow: 0 0 0 8px rgba(29, 189, 240, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(29, 189, 240, 0); }
+}
+
+@keyframes fd-flame {
+  from { opacity: 0.6; transform: scale(0.9); }
+  to   { opacity: 1;   transform: scale(1.1); }
+}
+
+@keyframes fd-agent-ring {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%       { opacity: 0;   transform: scale(1.25); }
+}
+
+.fd-spin        { animation: fd-spin 0.8s linear infinite; }
+.fd-pulse       { animation: fd-pulse 1.5s ease-in-out infinite; }
+.fd-flame       { animation: fd-flame 1.5s ease-in-out infinite alternate; }
+.fd-agent-ring  { animation: fd-agent-ring 2.5s ease-in-out infinite; }
