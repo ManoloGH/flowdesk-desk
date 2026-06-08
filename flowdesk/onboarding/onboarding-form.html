@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Onboarding — MentorIA Systems</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --azul:    #1B4FD8;
+    --celeste: #5BC8F5;
+    --acento:  #3A86D4;
+    --gris:    #4A4A4A;
+    --claro:   #F0F4FF;
+    --oscuro:  #1A1A2E;
+    --blanco:  #FFFFFF;
+    --borde:   #D6E4FF;
+    --error:   #EF4444;
+    --ok:      #10B981;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, var(--oscuro) 0%, #0d1b3e 50%, #0a1628 100%);
+    min-height: 100vh;
+    color: var(--gris);
+    padding: 40px 16px 80px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .logo-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(91,200,245,0.3);
+    border-radius: 50px;
+    padding: 10px 24px;
+    margin-bottom: 24px;
+  }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--azul), var(--celeste));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .logo-text {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--blanco);
+    letter-spacing: 0.5px;
+  }
+  .logo-text span { color: var(--celeste); }
+  .header h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: clamp(26px, 4vw, 40px);
+    color: var(--blanco);
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+  .header h1 span { color: var(--celeste); }
+  .header p {
+    color: rgba(255,255,255,0.6);
+    font-size: 16px;
+    max-width: 500px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* ── PROGRESS ── */
+  .progress-wrap {
+    max-width: 680px;
+    margin: 0 auto 32px;
+  }
+  .progress-steps {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    margin-bottom: 12px;
+  }
+  .progress-steps::before {
+    content: '';
+    position: absolute;
+    top: 18px; left: 18px; right: 18px;
+    height: 2px;
+    background: rgba(255,255,255,0.1);
+    z-index: 0;
+  }
+  .progress-line {
+    position: absolute;
+    top: 18px; left: 18px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--azul), var(--celeste));
+    z-index: 1;
+    transition: width 0.4s ease;
+  }
+  .step-dot {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.05);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: rgba(255,255,255,0.4);
+    z-index: 2;
+    position: relative;
+    transition: all 0.3s ease;
+    cursor: default;
+  }
+  .step-dot.active {
+    background: linear-gradient(135deg, var(--azul), var(--acento));
+    border-color: var(--celeste);
+    color: var(--blanco);
+    box-shadow: 0 0 20px rgba(27,79,216,0.6);
+  }
+  .step-dot.done {
+    background: var(--ok);
+    border-color: var(--ok);
+    color: var(--blanco);
+  }
+  .step-dot.done::after { content: '✓'; }
+  .step-dot.done span { display: none; }
+  .progress-labels {
+    display: flex;
+    justify-content: space-between;
+  }
+  .step-label {
+    font-size: 10px;
+    color: rgba(255,255,255,0.35);
+    text-align: center;
+    width: 36px;
+    font-weight: 500;
+    transition: color 0.3s;
+  }
+  .step-label.active { color: var(--celeste); }
+
+  /* ── CARD ── */
+  .card {
+    max-width: 680px;
+    margin: 0 auto;
+    background: var(--blanco);
+    border-radius: 24px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05);
+    overflow: hidden;
+  }
+  .card-header {
+    background: linear-gradient(135deg, var(--azul) 0%, var(--oscuro) 100%);
+    padding: 28px 36px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .card-icon {
+    width: 48px; height: 48px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .card-header h2 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--blanco);
+    margin-bottom: 3px;
+  }
+  .card-header p {
+    font-size: 13px;
+    color: rgba(255,255,255,0.65);
+  }
+  .card-body { padding: 36px; }
+
+  /* ── FIELDS ── */
+  .field-group { margin-bottom: 24px; }
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 560px) { .field-row { grid-template-columns: 1fr; } }
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--oscuro);
+    margin-bottom: 7px;
+    letter-spacing: 0.2px;
+  }
+  label .req { color: var(--azul); margin-left: 2px; }
+  label .hint {
+    font-weight: 400;
+    color: #9CA3AF;
+    font-size: 12px;
+    margin-left: 6px;
+  }
+
+  input[type="text"], input[type="email"], input[type="tel"],
+  input[type="url"], input[type="number"], select, textarea {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid var(--borde);
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--oscuro);
+    background: #FAFBFF;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    appearance: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--azul);
+    box-shadow: 0 0 0 3px rgba(27,79,216,0.12);
+    background: var(--blanco);
+  }
+  textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234A4A4A' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+    cursor: pointer;
+  }
+
+  /* ── COLOR PICKER ROW ── */
+  .color-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .color-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+  }
+  .color-item input[type="color"] {
+    width: 52px; height: 52px;
+    border-radius: 12px;
+    border: 2px solid var(--borde);
+    padding: 3px;
+    cursor: pointer;
+    background: #FAFBFF;
+  }
+  .color-item span {
+    font-size: 11px;
+    color: #9CA3AF;
+    font-weight: 500;
+  }
+
+  /* ── CHECKBOX / RADIO PILLS ── */
+  .pill-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .pill-group input { display: none; }
+  .pill-group label {
+    margin: 0;
+    padding: 7px 14px;
+    border-radius: 50px;
+    border: 1.5px solid var(--borde);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gris);
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #FAFBFF;
+  }
+  .pill-group input:checked + label {
+    background: var(--azul);
+    border-color: var(--azul);
+    color: var(--blanco);
+    box-shadow: 0 4px 12px rgba(27,79,216,0.3);
+  }
+
+  /* ── SLIDER ── */
+  .budget-display {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 28px;
+    color: var(--azul);
+    margin-bottom: 8px;
+  }
+  input[type="range"] {
+    width: 100%;
+    height: 6px;
+    -webkit-appearance: none;
+    background: linear-gradient(90deg, var(--azul) var(--pct, 0%), var(--borde) var(--pct, 0%));
+    border-radius: 50px;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--azul);
+    box-shadow: 0 2px 8px rgba(27,79,216,0.4);
+    border: 3px solid white;
+    cursor: grab;
+  }
+  .range-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #9CA3AF;
+    margin-top: 6px;
+  }
+
+  /* ── UPLOAD ZONE ── */
+  .upload-zone {
+    border: 2px dashed var(--borde);
+    border-radius: 12px;
+    padding: 28px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #FAFBFF;
+  }
+  .upload-zone:hover { border-color: var(--azul); background: var(--claro); }
+  .upload-zone .up-icon { font-size: 32px; margin-bottom: 8px; }
+  .upload-zone p { font-size: 14px; color: var(--gris); }
+  .upload-zone span { font-size: 12px; color: #9CA3AF; }
+  .upload-zone input { display: none; }
+
+  /* ── DIVIDER ── */
+  .divider {
+    height: 1px;
+    background: var(--borde);
+    margin: 28px 0;
+  }
+  .section-title {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--azul);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--borde);
+  }
+
+  /* ── BUTTONS ── */
+  .btn-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--borde);
+  }
+  .btn {
+    padding: 13px 28px;
+    border-radius: 12px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    letter-spacing: 0.3px;
+  }
+  .btn-secondary {
+    background: var(--claro);
+    color: var(--azul);
+    border: 1.5px solid var(--borde);
+  }
+  .btn-secondary:hover { background: #dce8ff; }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--azul), var(--acento));
+    color: var(--blanco);
+    box-shadow: 0 6px 20px rgba(27,79,216,0.35);
+    flex: 1;
+    max-width: 240px;
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 28px rgba(27,79,216,0.45);
+  }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-submit {
+    background: linear-gradient(135deg, #10B981, #059669);
+    box-shadow: 0 6px 20px rgba(16,185,129,0.35);
+  }
+
+  /* ── SUCCESS ── */
+  .success-screen {
+    display: none;
+    text-align: center;
+    padding: 60px 36px;
+  }
+  .success-screen .check {
+    width: 80px; height: 80px;
+    background: linear-gradient(135deg, #10B981, #059669);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    margin: 0 auto 24px;
+    box-shadow: 0 12px 32px rgba(16,185,129,0.4);
+  }
+  .success-screen h2 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 26px;
+    color: var(--oscuro);
+    margin-bottom: 12px;
+  }
+  .success-screen p {
+    color: var(--gris);
+    font-size: 15px;
+    line-height: 1.6;
+    max-width: 360px;
+    margin: 0 auto 28px;
+  }
+  .success-screen .next-steps {
+    background: var(--claro);
+    border-radius: 14px;
+    padding: 20px;
+    text-align: left;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  .next-steps h3 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--azul);
+    margin-bottom: 12px;
+  }
+  .next-steps li {
+    list-style: none;
+    font-size: 13px;
+    color: var(--gris);
+    padding: 5px 0;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .next-steps li::before { content: '→'; color: var(--azul); font-weight: 700; }
+
+  /* ── STEP PANELS ── */
+  .step-panel { display: none; }
+  .step-panel.active { display: block; }
+
+  /* ── FOOTER ── */
+  .footer {
+    text-align: center;
+    margin-top: 32px;
+    color: rgba(255,255,255,0.3);
+    font-size: 12px;
+  }
+  .footer a { color: rgba(255,255,255,0.5); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+    <div style="position:fixed;top:16px;left:16px;z-index:1000;">
+    <img src="data:image/png;base64,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" alt="MentorIA Systems" style="height:260px;width:auto;object-fit:contain;display:block;">
+    <p style="color:rgba(255,255,255,0.60);font-family:'Inter',sans-serif;font-size:11px;font-style:italic;text-align:center;margin:4px 0 0;letter-spacing:0.3px;"><span style="font-weight:600;">inteligencia humana</span>, potencia artificial</p>
+  </div><h1>Alta de <span>Nueva Cuenta</span></h1>
+  <p>Completa el formulario para que nuestro agente de contenido empiece a trabajar para tu marca.</p>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-wrap">
+  <div class="progress-steps">
+    <div class="progress-line" id="progressLine"></div>
+    <div class="step-dot active" id="dot1"><span>1</span></div>
+    <div class="step-dot" id="dot2"><span>2</span></div>
+    <div class="step-dot" id="dot3"><span>3</span></div>
+    <div class="step-dot" id="dot4"><span>4</span></div>
+    <div class="step-dot" id="dot5"><span>5</span></div>
+    <div class="step-dot" id="dot6"><span>6</span></div>
+  </div>
+  <div class="progress-labels">
+    <span class="step-label active" id="lbl1">Empresa</span>
+    <span class="step-label" id="lbl2">Marca</span>
+    <span class="step-label" id="lbl3">Contenido</span>
+    <span class="step-label" id="lbl4">Redes</span>
+    <span class="step-label" id="lbl5">Operativo</span>
+    <span class="step-label" id="lbl6">Archivos</span>
+  </div>
+</div>
+
+<!-- CARD -->
+<div class="card">
+
+  <!-- ════════════════ STEP 1: EMPRESA ════════════════ -->
+  <div class="step-panel active" id="step1">
+    <div class="card-header">
+      <div class="card-icon">🏢</div>
+      <div>
+        <h2>Tu Empresa</h2>
+        <p>Cuéntanos quién eres y qué haces</p>
+      </div>
+    </div>
+    <div class="card-body">
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Nombre de la empresa <span class="req">*</span></label>
+          <input type="text" id="empresa" placeholder="Ej: TechCorp México" />
+        </div>
+        <div class="field-group">
+          <label>Giro o industria <span class="req">*</span></label>
+          <select id="industria">
+            <option value="">Selecciona...</option>
+            <option>Tecnología / SaaS</option>
+            <option>Bienes raíces</option>
+            <option>Salud y bienestar</option>
+            <option>Educación</option>
+            <option>Retail / eCommerce</option>
+            <option>Servicios profesionales</option>
+            <option>Restaurantes / Food</option>
+            <option>Moda / Belleza</option>
+            <option>Finanzas</option>
+            <option>Construcción</option>
+            <option>Otro</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>¿Qué hace tu empresa? <span class="req">*</span><span class="hint">En 1-2 oraciones claras</span></label>
+        <textarea id="descripcion" placeholder="Ej: Ayudamos a empresas medianas a reducir costos operativos implementando automatizaciones con IA. No vendemos tecnología, vendemos tiempo y ahorro."></textarea>
+      </div>
+
+      <div class="field-group">
+        <label>Propuesta de valor única <span class="req">*</span><span class="hint">¿Por qué te eligen a ti y no a la competencia?</span></label>
+        <textarea id="propuesta" placeholder="Ej: Somos los únicos en México que combinamos consultoría de procesos con desarrollo de IA a medida, sin costos de licencias externas." style="min-height:75px;"></textarea>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Website</label>
+          <input type="url" id="website" placeholder="https://tuempresa.com" />
+        </div>
+        <div class="field-group">
+          <label>Ciudad / País <span class="req">*</span></label>
+          <input type="text" id="ciudad" placeholder="Ej: Guadalajara, México" />
+        </div>
+      </div>
+
+      <div class="section-title">Competencia</div>
+
+      <div class="field-group">
+        <label>3 competidores principales <span class="hint">Uno por línea</span></label>
+        <textarea id="competidores" placeholder="Competidor A&#10;Competidor B&#10;Competidor C" style="min-height:75px;"></textarea>
+      </div>
+
+      <div class="btn-row">
+        <div></div>
+        <button class="btn btn-primary" onclick="goTo(2)">Siguiente → Marca</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════ STEP 2: MARCA ════════════════ -->
+  <div class="step-panel" id="step2">
+    <div class="card-header">
+      <div class="card-icon">🎨</div>
+      <div>
+        <h2>Identidad de Marca</h2>
+        <p>Tono de voz, personalidad y guía de comunicación</p>
+      </div>
+    </div>
+    <div class="card-body">
+
+      <div class="section-title">🗣️ Tono de Voz</div>
+
+      <div class="field-group">
+        <label>Tono de comunicación <span class="req">*</span><span class="hint">Selecciona todos los que aplican</span></label>
+        <div class="pill-group">
+          <input type="checkbox" id="t1" name="tono" value="Profesional"><label for="t1">Profesional</label>
+          <input type="checkbox" id="t2" name="tono" value="Cercano"><label for="t2">Cercano</label>
+          <input type="checkbox" id="t3" name="tono" value="Inspirador"><label for="t3">Inspirador</label>
+          <input type="checkbox" id="t4" name="tono" value="Educativo"><label for="t4">Educativo</label>
+          <input type="checkbox" id="t5" name="tono" value="Directo"><label for="t5">Directo</label>
+          <input type="checkbox" id="t6" name="tono" value="Humorístico"><label for="t6">Humorístico</label>
+          <input type="checkbox" id="t7" name="tono" value="Exclusivo"><label for="t7">Exclusivo</label>
+          <input type="checkbox" id="t8" name="tono" value="Conversacional"><label for="t8">Conversacional</label>
+          <input type="checkbox" id="t9" name="tono" value="Empático"><label for="t9">Empático</label>
+          <input type="checkbox" id="t10" name="tono" value="Audaz"><label for="t10">Audaz</label>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>Personalidad de marca <span class="hint">¿Cómo describirías a tu marca si fuera una persona?</span></label>
+        <div class="pill-group">
+          <input type="checkbox" id="per1" name="personalidad" value="Innovadora"><label for="per1">🚀 Innovadora</label>
+          <input type="checkbox" id="per2" name="personalidad" value="Confiable"><label for="per2">🤝 Confiable</label>
+          <input type="checkbox" id="per3" name="personalidad" value="Disruptiva"><label for="per3">⚡ Disruptiva</label>
+          <input type="checkbox" id="per4" name="personalidad" value="Premium"><label for="per4">💎 Premium</label>
+          <input type="checkbox" id="per5" name="personalidad" value="Accesible"><label for="per5">🌱 Accesible</label>
+          <input type="checkbox" id="per6" name="personalidad" value="Experta"><label for="per6">🎓 Experta</label>
+          <input type="checkbox" id="per7" name="personalidad" value="Humana"><label for="per7">❤️ Humana</label>
+          <input type="checkbox" id="per8" name="personalidad" value="Elegante"><label for="per8">✨ Elegante</label>
+          <input type="checkbox" id="per9" name="personalidad" value="Transparente"><label for="per9">🔍 Transparente</label>
+          <input type="checkbox" id="per10" name="personalidad" value="Retadora"><label for="per10">🏆 Retadora</label>
+        </div>
+      </div>
+
+      <div class="section-title">💬 Guía de Comunicación</div>
+
+      <div class="field-group">
+        <label>¿Qué SÍ debe decir o transmitir tu marca? <span class="req">*</span></label>
+        <textarea id="queDecir" placeholder="Ej: Empoderamos a las empresas con tecnología real. Somos el aliado estratégico que te da tranquilidad. Hablamos con datos, no con promesas vacías." style="min-height:85px;"></textarea>
+      </div>
+
+      <div class="field-group">
+        <label>¿Qué NUNCA debe decir o hacer tu marca? <span class="req">*</span></label>
+        <textarea id="prohibido" placeholder="Ej: No usar jerga técnica sin explicar. No hablar de precios en redes. No compararnos con competidores por nombre. No sonar desesperados por vender." style="min-height:75px;"></textarea>
+      </div>
+
+      <div class="field-group">
+        <label>¿Cómo tutea o trata a su audiencia? <span class="hint">Cómo se dirige a las personas</span></label>
+        <div class="pill-group">
+          <input type="radio" id="trat1" name="tratamiento" value="Tuteo (tú)"><label for="trat1">Tuteo (tú)</label>
+          <input type="radio" id="trat2" name="tratamiento" value="Ustedeo (usted)"><label for="trat2">Ustedeo (usted)</label>
+          <input type="radio" id="trat3" name="tratamiento" value="Plural (ustedes)"><label for="trat3">Plural (ustedes)</label>
+          <input type="radio" id="trat4" name="tratamiento" value="Varía según la red"><label for="trat4">Varía según la red</label>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>Palabras o frases clave de tu marca <span class="hint">Las que deberían aparecer seguido en el contenido</span></label>
+        <textarea id="frasesKey" placeholder="Ej: 'automatización inteligente', 'ROI comprobado', 'sin fricción', 'resultados reales'..." style="min-height:65px;"></textarea>
+      </div>
+
+      <div class="field-group">
+        <label>Ejemplo de comunicación que te encanta <span class="hint">Una frase, post o anuncio tuyo o de otra marca que capture el tono ideal</span></label>
+        <textarea id="ejemploComunicacion" placeholder="Ej: 'No vendemos software, vendemos tiempo libre para tu equipo.' O: @hubspot porque explican sin vender, y cuando vendes ya confías en ellos." style="min-height:75px;"></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goTo(1)">← Atrás</button>
+        <button class="btn btn-primary" onclick="goTo(3)">Siguiente → Contenido</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════ STEP 3: CONTENIDO ════════════════ -->
+  <div class="step-panel" id="step3">
+    <div class="card-header">
+      <div class="card-icon">✍️</div>
+      <div>
+        <h2>Estrategia de Contenido</h2>
+        <p>Qué vamos a comunicar y a quién</p>
+      </div>
+    </div>
+    <div class="card-body">
+
+      <div class="field-group">
+        <label>Cliente primario <span class="req">*</span><span class="hint">Tu buyer persona principal — sé muy específico/a</span></label>
+        <textarea id="clienteIdeal" placeholder="Ej: CEO o Director de operaciones de empresa mediana (50-200 empleados) en México. Entre 35-55 años. Siente que su empresa gasta demasiado en procesos manuales y está abierto a tecnología si le muestran el ROI claro." style="min-height:90px;"></textarea>
+      </div>
+
+      <div class="field-group">
+        <label>Cliente secundario A <span class="hint">Opcional — segundo perfil al que también llegas</span></label>
+        <textarea id="clienteSecundarioA" placeholder="Ej: Gerente de TI o CTO en empresa grande (200+ empleados) que busca integrar IA sin romper la operación existente. 30-45 años. Evalúa herramientas por seguridad y escalabilidad." style="min-height:80px;"></textarea>
+      </div>
+
+      <div class="field-group">
+        <label>Cliente secundario B <span class="hint">Opcional — tercer perfil o nicho emergente</span></label>
+        <textarea id="clienteSecundarioB" placeholder="Ej: Emprendedor con empresa en crecimiento (5-20 empleados) que lleva 2+ años y quiere profesionalizar su marketing sin contratar un equipo grande." style="min-height:80px;"></textarea>
+      </div>
+
+      <div class="section-title">Pilares de Contenido</div>
+
+      <div class="field-group">
+        <label>¿Sobre qué temas quieres ser reconocido? <span class="req">*</span><span class="hint">Selecciona 3-5</span></label>
+        <div class="pill-group">
+          <input type="checkbox" id="p1" name="pilar" value="Educación"><label for="p1">📚 Educación</label>
+          <input type="checkbox" id="p2" name="pilar" value="Casos de éxito"><label for="p2">🏆 Casos de éxito</label>
+          <input type="checkbox" id="p3" name="pilar" value="Detrás de cámaras"><label for="p3">🎬 Detrás de cámaras</label>
+          <input type="checkbox" id="p4" name="pilar" value="ROI y ahorro"><label for="p4">💰 ROI y ahorro</label>
+          <input type="checkbox" id="p5" name="pilar" value="Tendencias"><label for="p5">🔥 Tendencias</label>
+          <input type="checkbox" id="p6" name="pilar" value="Marca personal"><label for="p6">👤 Marca personal</label>
+          <input type="checkbox" id="p7" name="pilar" value="Producto/servicio"><label for="p7">⚡ Producto</label>
+          <input type="checkbox" id="p8" name="pilar" value="Comunidad"><label for="p8">🤝 Comunidad</label>
+          <input type="checkbox" id="p9" name="pilar" value="Humor"><label for="p9">😄 Humor</label>
+          <input type="checkbox" id="p10" name="pilar" value="Inspiración"><label for="p10">✨ Inspiración</label>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>¿Hay eventos, lanzamientos o fechas clave próximas?</label>
+        <textarea id="eventos" placeholder="Ej: Lanzamiento de producto en junio. Temporada de descuentos en noviembre. Webinar mensual cada primer martes." style="min-height:75px;"></textarea>
+      </div>
+
+      <div class="section-title">Referencias</div>
+
+      <div class="field-group">
+        <label>¿Qué cuentas o marcas admiras en redes? <span class="hint">Máx 5, una por línea</span></label>
+        <textarea id="referencias" placeholder="@cuenta1 — por qué te gusta&#10;@cuenta2 — qué le copiarías" style="min-height:75px;"></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goTo(2)">← Atrás</button>
+        <button class="btn btn-primary" onclick="goTo(4)">Siguiente → Redes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════ STEP 4: REDES ════════════════ -->
+  <div class="step-panel" id="step4">
+    <div class="card-header">
+      <div class="card-icon">📱</div>
+      <div>
+        <h2>Redes Sociales y Pauta</h2>
+        <p>Plataformas activas y presupuesto</p>
+      </div>
+    </div>
+    <div class="card-body">
+
+      <div class="section-title">Redes Activas</div>
+
+      <div class="field-group">
+        <label>¿En qué redes quieres publicar? <span class="req">*</span></label>
+        <div class="pill-group">
+          <input type="checkbox" id="r1" name="red" value="Instagram"><label for="r1">📸 Instagram</label>
+          <input type="checkbox" id="r2" name="red" value="Facebook"><label for="r2">👥 Facebook</label>
+          <input type="checkbox" id="r3" name="red" value="LinkedIn"><label for="r3">💼 LinkedIn</label>
+          <input type="checkbox" id="r4" name="red" value="TikTok"><label for="r4">🎵 TikTok</label>
+          <input type="checkbox" id="r5" name="red" value="Twitter/X"><label for="r5">𝕏 Twitter/X</label>
+          <input type="checkbox" id="r6" name="red" value="YouTube"><label for="r6">▶️ YouTube</label>
+          <input type="checkbox" id="r7" name="red" value="Pinterest"><label for="r7">📌 Pinterest</label>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Instagram <span class="hint">@handle</span></label>
+          <input type="text" id="hInstagram" placeholder="@tuempresa">
+        </div>
+        <div class="field-group">
+          <label>LinkedIn <span class="hint">URL del perfil</span></label>
+          <input type="text" id="hLinkedin" placeholder="linkedin.com/company/tuempresa">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>TikTok <span class="hint">@handle</span></label>
+          <input type="text" id="hTiktok" placeholder="@tuempresa">
+        </div>
+        <div class="field-group">
+          <label>YouTube <span class="hint">URL del canal</span></label>
+          <input type="text" id="hYoutube" placeholder="youtube.com/@tuempresa">
+        </div>
+      </div>
+
+      <div class="section-title">Objetivos y Presupuesto</div>
+
+      <div class="field-group">
+        <label>Objetivo principal en redes <span class="req">*</span></label>
+        <div class="pill-group">
+          <input type="radio" id="obj1" name="objetivo" value="Awareness"><label for="obj1">🎯 Awareness</label>
+          <input type="radio" id="obj2" name="objetivo" value="Generar leads"><label for="obj2">🧲 Generar leads</label>
+          <input type="radio" id="obj3" name="objetivo" value="Ventas directas"><label for="obj3">💳 Ventas</label>
+          <input type="radio" id="obj4" name="objetivo" value="Comunidad"><label for="obj4">❤️ Comunidad</label>
+          <input type="radio" id="obj5" name="objetivo" value="Posicionamiento"><label for="obj5">👑 Posicionamiento</label>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>Presupuesto mensual de pauta <span class="hint">USD</span></label>
+        <div class="budget-display" id="budgetDisplay">$500 USD / mes</div>
+        <input type="range" id="budgetSlider" min="0" max="5000" step="100" value="500"
+          oninput="updateBudget(this.value)" style="--pct: 10%">
+        <div class="range-labels">
+          <span>$0</span><span>$1,000</span><span>$2,500</span><span>$5,000+</span>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>CRM que utilizan <span class="hint">Para conectar contenido con ventas</span></label>
+        <select id="crm">
+          <option value="">Sin CRM por ahora</option>
+          <option>HubSpot</option>
+          <option>Pipedrive</option>
+          <option>Salesforce</option>
+          <option>Zoho CRM</option>
+          <option>Monday Sales</option>
+          <option>GoHighLevel</option>
+          <option>Notion</option>
+          <option>Google Sheets</option>
+          <option>Otro</option>
+        </select>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goTo(3)">← Atrás</button>
+        <button class="btn btn-primary" onclick="goTo(5)">Siguiente → Operativo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════ STEP 5: OPERATIVO ════════════════ -->
+  <div class="step-panel" id="step5">
+    <div class="card-header">
+      <div class="card-icon">⚙️</div>
+      <div>
+        <h2>Datos Operativos</h2>
+        <p>Contacto y configuración del agente</p>
+      </div>
+    </div>
+    <div class="card-body">
+
+      <div style="background:#FFF9F0;border:1px solid #FDE68A;border-radius:12px;padding:16px;margin-bottom:24px;font-size:13px;color:#92400E;line-height:1.6;">
+        <strong>🔄 Flujo de aprobación:</strong> el <strong>DC</strong> revisa y aprueba el contenido → el <strong>Cliente</strong> autoriza el calendario y cada publicación → el <strong>Trafiqueur</strong> ejecuta las pautas → el <strong>Supervisor</strong> monitorea todo el equipo.
+      </div>
+
+      <div class="section-title">👤 Contacto Principal (quien llena este formulario)</div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Nombre completo <span class="req">*</span></label>
+          <input type="text" id="contactoNombre" placeholder="Ej: Carlos Mendoza">
+        </div>
+        <div class="field-group">
+          <label>Cargo <span class="req">*</span></label>
+          <input type="text" id="contactoCargo" placeholder="Ej: Director de Marketing">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Email <span class="req">*</span></label>
+          <input type="email" id="contactoEmail" placeholder="carlos@tuempresa.com">
+        </div>
+        <div class="field-group">
+          <label>WhatsApp <span class="req">*</span><span class="hint">Con código de país</span></label>
+          <input type="tel" id="contactoWA" placeholder="+52 55 1234 5678">
+        </div>
+      </div>
+
+      <div class="section-title">🎯 Director de Contenido (DC)</div>
+      <div style="font-size:12px;color:#6B7280;margin-bottom:12px;">Aprueba el calendario y las piezas antes de que lleguen al cliente.</div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Nombre</label>
+          <input type="text" id="dcNombre" placeholder="Nombre del DC">
+        </div>
+        <div class="field-group">
+          <label>WhatsApp</label>
+          <input type="tel" id="dcWA" placeholder="+52 55 1234 5678">
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Email</label>
+        <input type="email" id="dcEmail" placeholder="dc@tuempresa.com">
+      </div>
+
+      <div class="section-title">🎨 Diseñador</div>
+      <div style="font-size:12px;color:#6B7280;margin-bottom:12px;">Recibe los briefs de diseño para producir las piezas aprobadas.</div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Nombre</label>
+          <input type="text" id="disenadorNombre" placeholder="Nombre del diseñador">
+        </div>
+        <div class="field-group">
+          <label>WhatsApp</label>
+          <input type="tel" id="disenadorWA" placeholder="+52 55 1234 5678">
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Email</label>
+        <input type="email" id="disenadorEmail" placeholder="diseno@tuempresa.com">
+      </div>
+
+      <div class="section-title">📢 Trafiqueur</div>
+      <div style="font-size:12px;color:#6B7280;margin-bottom:12px;">Gestiona y ejecuta las campañas de pauta pagada.</div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Nombre</label>
+          <input type="text" id="trafiqueurNombre" placeholder="Nombre del trafiqueur">
+        </div>
+        <div class="field-group">
+          <label>WhatsApp</label>
+          <input type="tel" id="trafiqueurWA" placeholder="+52 55 1234 5678">
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Email</label>
+        <input type="email" id="trafiqueurEmail" placeholder="trafico@tuempresa.com">
+      </div>
+
+      <div class="section-title">👔 Cliente (marca)</div>
+      <div style="font-size:12px;color:#6B7280;margin-bottom:12px;">Autoriza el calendario mensual y da visto bueno final a cada publicación después del DC.</div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Nombre</label>
+          <input type="text" id="clienteNombre" placeholder="Nombre del contacto en la marca">
+        </div>
+        <div class="field-group">
+          <label>WhatsApp</label>
+          <input type="tel" id="clienteNombreWA" placeholder="+52 55 1234 5678">
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Email</label>
+        <input type="email" id="clienteNombreEmail" placeholder="cliente@sumarca.com">
+      </div>
+
+      <div class="section-title">🔍 Supervisor</div>
+      <div style="font-size:12px;color:#6B7280;margin-bottom:12px;">Monitorea el funcionamiento del equipo completo, revisa estatus, tareas e interacciones.</div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Nombre</label>
+          <input type="text" id="supervisorNombre" placeholder="Nombre del supervisor">
+        </div>
+        <div class="field-group">
+          <label>WhatsApp</label>
+          <input type="tel" id="supervisorWA" placeholder="+52 55 1234 5678">
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Email</label>
+        <input type="email" id="supervisorEmail" placeholder="supervisor@mentoria.com">
+      </div>
+
+      <div class="section-title">Flujo de Aprobación</div>
+
+      <div class="field-group">
+        <label>¿Quién aprueba el contenido? <span class="req">*</span></label>
+        <div class="pill-group">
+          <input type="radio" id="ap1" name="aprueba" value="Yo mismo"><label for="ap1">Yo mismo</label>
+          <input type="radio" id="ap2" name="aprueba" value="Mi equipo de marketing"><label for="ap2">Mi equipo de marketing</label>
+          <input type="radio" id="ap3" name="aprueba" value="Director general"><label for="ap3">Director general</label>
+          <input type="radio" id="ap4" name="aprueba" value="Agencia externa"><label for="ap4">Agencia externa</label>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>¿Cada cuánto quieres recibir propuestas de contenido?</label>
+        <div class="pill-group">
+          <input type="radio" id="frec1" name="frecuencia" value="Semanal"><label for="frec1">📅 Semanal</label>
+          <input type="radio" id="frec2" name="frecuencia" value="Quincenal" checked><label for="frec2">📆 Quincenal</label>
+          <input type="radio" id="frec3" name="frecuencia" value="Mensual"><label for="frec3">🗓️ Mensual</label>
+        </div>
+      </div>
+
+      <div class="section-title">Notas Adicionales</div>
+
+      <div class="field-group">
+        <label>¿Algo más que debamos saber? <span class="hint">Contexto especial, restricciones legales, etc.</span></label>
+        <textarea id="notas" placeholder="Ej: Estamos en industria regulada, no podemos hacer promesas de rendimiento. Tenemos temporada alta en diciembre. El CEO prefiere un tono más formal en LinkedIn." style="min-height:90px;"></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goTo(4)">← Atrás</button>
+        <button class="btn btn-primary" onclick="goTo(6)">Siguiente → Archivos</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ════════════════ STEP 6: MATERIALES ════════════════ -->
+  <div class="step-panel" id="step6">
+    <div class="card-header">
+      <div class="card-icon">📁</div>
+      <div>
+        <h2>Materiales de Marca</h2>
+        <p>Comparte tu carpeta con logos, manual, fuentes y referencias</p>
+      </div>
+    </div>
+    <div class="card-body">
+
+      <!-- ── HERO: Google Drive link ── -->
+      <div style="background:linear-gradient(135deg,#f0f4ff,#e8f0fe);border:2px solid #D6E4FF;border-radius:16px;padding:28px;margin-bottom:28px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+          <img src="https://www.google.com/images/about/products-2016/drive/google_drive_lockup_drive_icon_vertical.svg" alt="Google Drive" style="height:36px;" onerror="this.style.display='none'">
+          <div>
+            <div style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:15px;color:#1B4FD8;">Comparte tu carpeta de Google Drive</div>
+            <div style="font-size:12px;color:#4A4A4A;margin-top:2px;">La forma más fácil y segura — acceso a todos tus archivos en un solo link</div>
+          </div>
+        </div>
+        <label style="font-size:13px;font-weight:600;color:#1A1A2E;display:block;margin-bottom:8px;">
+          Link de tu carpeta <span style="color:#EF4444;">*</span>
+          <span style="font-weight:400;color:#9CA3AF;margin-left:6px;">Google Drive, Dropbox, OneDrive o Canva</span>
+        </label>
+        <input type="url" id="linkCarpeta"
+          placeholder="https://drive.google.com/drive/folders/..."
+          style="width:100%;padding:14px 16px;border:1.5px solid #D6E4FF;border-radius:10px;font-size:14px;font-family:'Inter',sans-serif;outline:none;transition:border 0.2s;"
+          onfocus="this.style.borderColor='#1B4FD8'" onblur="this.style.borderColor='#D6E4FF'">
+        <div style="margin-top:10px;font-size:12px;color:#6B7280;display:flex;align-items:center;gap:6px;">
+          <span>💡</span>
+          <span>En Drive: botón derecho a la carpeta → <strong>Compartir</strong> → cambia a <strong>"Cualquiera con el link"</strong> → copia el link</span>
+        </div>
+      </div>
+
+      <!-- ── Qué incluir en la carpeta ── -->
+      <div class="section-title">📋 ¿Qué incluir en la carpeta?</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;">
+        <div style="background:#FAFBFF;border:1px solid #D6E4FF;border-radius:10px;padding:14px;display:flex;gap:10px;align-items:flex-start;">
+          <span style="font-size:20px;flex-shrink:0;">🖼️</span>
+          <div>
+            <div style="font-weight:600;font-size:13px;color:#1A1A2E;">Logo</div>
+            <div style="font-size:12px;color:#6B7280;margin-top:2px;">PNG o SVG con fondo transparente, todas las versiones (color, blanco, negro)</div>
+          </div>
+        </div>
+        <div style="background:#FAFBFF;border:1px solid #D6E4FF;border-radius:10px;padding:14px;display:flex;gap:10px;align-items:flex-start;">
+          <span style="font-size:20px;flex-shrink:0;">📄</span>
+          <div>
+            <div style="font-weight:600;font-size:13px;color:#1A1A2E;">Manual de marca</div>
+            <div style="font-size:12px;color:#6B7280;margin-top:2px;">Brand guidelines, guía de estilo, paleta de colores en PDF</div>
+          </div>
+        </div>
+        <div style="background:#FAFBFF;border:1px solid #D6E4FF;border-radius:10px;padding:14px;display:flex;gap:10px;align-items:flex-start;">
+          <span style="font-size:20px;flex-shrink:0;">🔤</span>
+          <div>
+            <div style="font-weight:600;font-size:13px;color:#1A1A2E;">Tipografías</div>
+            <div style="font-size:12px;color:#6B7280;margin-top:2px;">Archivos TTF, OTF o link a Google Fonts que uses</div>
+          </div>
+        </div>
+        <div style="background:#FAFBFF;border:1px solid #D6E4FF;border-radius:10px;padding:14px;display:flex;gap:10px;align-items:flex-start;">
+          <span style="font-size:20px;flex-shrink:0;">✨</span>
+          <div>
+            <div style="font-weight:600;font-size:13px;color:#1A1A2E;">Referencias visuales</div>
+            <div style="font-size:12px;color:#6B7280;margin-top:2px;">Imágenes que te gustan, ejemplos de posts anteriores, moodboard</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>Notas sobre los archivos <span class="hint">Contraseñas, instrucciones, contexto importante</span></label>
+        <textarea id="notasMateriales" placeholder="Ej: El logo azul es para fondo oscuro, el blanco para fondo claro. La carpeta principal tiene subcarpetas por tipo de archivo." style="min-height:80px;"></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goTo(5)">← Atrás</button>
+        <button class="btn btn-primary btn-submit" onclick="submitForm()">✓ &nbsp;Completar Onboarding</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════ SUCCESS ════════════════ -->
+  <div class="success-screen" id="successScreen">
+    <div class="check">✓</div>
+    <h2>¡Cuenta creada con éxito!</h2>
+    <p>Estamos configurando tu agente de contenido. En las próximas <strong>24 horas</strong> recibirás un WhatsApp de bienvenida con las instrucciones de uso.</p>
+    <div class="next-steps">
+      <h3>Próximos pasos</h3>
+      <ul>
+        <li>Recibirás un WhatsApp de bienvenida con tu acceso</li>
+        <li>El agente te pedirá tu primer brief de contenido</li>
+        <li>Revisarás y aprobarás las propuestas en WhatsApp</li>
+        <li>El diseñador recibirá los briefs automáticamente</li>
+        <li>Revisión mensual el primer lunes de cada mes</li>
+      </ul>
+    </div>
+  </div>
+
+</div><!-- /card -->
+
+<div class="footer">
+  <p>© 2026 MentorIA Systems &nbsp;·&nbsp; <a href="#">Política de privacidad</a> &nbsp;·&nbsp; <a href="#">Términos de uso</a></p>
+</div>
+
+<script>
+let currentStep = 1;
+const totalSteps = 6;
+
+function goTo(step) {
+  document.getElementById('step' + currentStep).classList.remove('active');
+  document.getElementById('dot' + currentStep).classList.remove('active');
+  document.getElementById('dot' + currentStep).classList.add('done');
+  document.getElementById('lbl' + currentStep).classList.remove('active');
+
+  if (step <= currentStep) {
+    for (let i = step; i <= currentStep; i++) {
+      document.getElementById('dot' + i).classList.remove('done');
+    }
+  }
+
+  currentStep = step;
+  document.getElementById('step' + currentStep).classList.add('active');
+  document.getElementById('dot' + currentStep).classList.remove('done');
+  document.getElementById('dot' + currentStep).classList.add('active');
+  document.getElementById('lbl' + currentStep).classList.add('active');
+
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateProgress() {
+  const pct = ((currentStep - 1) / (totalSteps - 1)) * 100;
+  const line = document.getElementById('progressLine');
+  const dotsWidth = document.querySelector('.progress-steps').offsetWidth - 36;
+  line.style.width = (pct / 100 * dotsWidth) + 'px';
+}
+
+function updateBudget(val) {
+  const v = parseInt(val);
+  document.getElementById('budgetDisplay').textContent = v >= 5000 ? '$5,000+ USD / mes' : '$' + v.toLocaleString() + ' USD / mes';
+  const pct = (v / 5000) * 100;
+  document.getElementById('budgetSlider').style.setProperty('--pct', pct + '%');
+}
+
+// Stored file names for material upload zones
+const fileStore = {};
+
+function handleFile(input, textId, storeKey) {
+  if (!input.files.length) return;
+  const names = Array.from(input.files).map(function(f) { return f.name; }).join(', ');
+  document.getElementById(textId).textContent = '✅ ' + names;
+  fileStore[storeKey] = names;
+  input.closest('.upload-zone').style.borderColor = 'var(--ok)';
+  input.closest('.upload-zone').style.background = '#f0fdf4';
+}
+
+async function submitForm() {
+  // Collect all data
+  const data = {
+    empresa:       document.getElementById('empresa').value,
+    industria:     document.getElementById('industria').value,
+    descripcion:   document.getElementById('descripcion').value,
+    propuesta:     document.getElementById('propuesta').value,
+    website:       document.getElementById('website').value,
+    ciudad:        document.getElementById('ciudad').value,
+    competidores:  document.getElementById('competidores').value,
+    tono:              [...document.querySelectorAll('[name="tono"]:checked')].map(e => e.value),
+    personalidad:      [...document.querySelectorAll('[name="personalidad"]:checked')].map(e => e.value),
+    tratamiento:       document.querySelector('[name="tratamiento"]:checked')?.value || '',
+    queDecir:          document.getElementById('queDecir').value,
+    prohibido:         document.getElementById('prohibido').value,
+    frasesKey:         document.getElementById('frasesKey').value,
+    ejemploComunicacion: document.getElementById('ejemploComunicacion').value,
+    clienteIdeal:      document.getElementById('clienteIdeal').value,
+    clienteSecundarioA: document.getElementById('clienteSecundarioA').value,
+    clienteSecundarioB: document.getElementById('clienteSecundarioB').value,
+    pilares:       [...document.querySelectorAll('[name="pilar"]:checked')].map(e => e.value),
+    eventos:       document.getElementById('eventos').value,
+    referencias:   document.getElementById('referencias').value,
+    redes:         [...document.querySelectorAll('[name="red"]:checked')].map(e => e.value),
+    handles: {
+      instagram: document.getElementById('hInstagram').value,
+      linkedin:  document.getElementById('hLinkedin').value,
+      tiktok:    document.getElementById('hTiktok').value,
+      youtube:   document.getElementById('hYoutube').value,
+    },
+    objetivo:      document.querySelector('[name="objetivo"]:checked')?.value || '',
+    presupuesto:   document.getElementById('budgetSlider').value,
+    crm:           document.getElementById('crm').value,
+    contacto: {
+      nombre: document.getElementById('contactoNombre').value,
+      cargo:  document.getElementById('contactoCargo').value,
+      email:  document.getElementById('contactoEmail').value,
+      wa:     document.getElementById('contactoWA').value,
+    },
+    equipoDC: {
+      nombre: document.getElementById('dcNombre').value,
+      email:  document.getElementById('dcEmail').value,
+      wa:     document.getElementById('dcWA').value,
+    },
+    equipoDisenador: {
+      nombre: document.getElementById('disenadorNombre').value,
+      email:  document.getElementById('disenadorEmail').value,
+      wa:     document.getElementById('disenadorWA').value,
+    },
+    equipoTrafiqueur: {
+      nombre: document.getElementById('trafiqueurNombre').value,
+      email:  document.getElementById('trafiqueurEmail').value,
+      wa:     document.getElementById('trafiqueurWA').value,
+    },
+    equipoCliente: {
+      nombre: document.getElementById('clienteNombre').value,
+      email:  document.getElementById('clienteNombreEmail').value,
+      wa:     document.getElementById('clienteNombreWA').value,
+    },
+    equipoSupervisor: {
+      nombre: document.getElementById('supervisorNombre').value,
+      email:  document.getElementById('supervisorEmail').value,
+      wa:     document.getElementById('supervisorWA').value,
+    },
+    aprueba:      document.querySelector('[name="aprueba"]:checked')?.value || '',
+    frecuencia:   document.querySelector('[name="frecuencia"]:checked')?.value || '',
+    notas:        document.getElementById('notas').value,
+    fecha:        new Date().toISOString(),
+    materiales: {
+      logo:        fileStore['fileLogo']     || '',
+      manual:      fileStore['fileManual']   || '',
+      fuentes:     fileStore['fileFuentes']  || '',
+      referencias: fileStore['fileRefs']     || '',
+      linkCarpeta: document.getElementById('linkCarpeta').value,
+      notas:       document.getElementById('notasMateriales').value,
+    },
+  };
+
+  // POST to n8n webhook
+  try {
+    const btn = document.querySelector('.btn-submit');
+    if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+    await fetch('https://prueba-digisaurios-n8n.4jvoco.easypanel.host/webhook/onboarding-submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+  } catch(e) {
+    console.error('Error enviando formulario:', e);
+  }
+
+  // Hide all steps, show success
+  document.getElementById('step' + currentStep).classList.remove('active');
+  for (let i = 1; i <= 6; i++) {
+    document.getElementById('dot' + i).classList.remove('active');
+    document.getElementById('dot' + i).classList.add('done');
+  }
+  document.getElementById('progressLine').style.width = document.querySelector('.progress-steps').offsetWidth - 36 + 'px';
+  document.getElementById('successScreen').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Init progress
+updateProgress();
+</script>
+</body>
+</html>

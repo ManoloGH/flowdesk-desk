@@ -1,0 +1,27 @@
+{
+  "folders": [
+    {
+      "name": "🏠 HolaMundo",
+      "path": "."
+    },
+    {
+      "name": "📊 flowdesk",
+      "path": "MentorIA/flowdesk"
+    },
+    {
+      "name": "📣 agente-mkt",
+      "path": "MentorIA/agente-mkt"
+    },
+    {
+      "name": "🎓 formacion-digital",
+      "path": "MentorIA/formacion-digital"
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/.next": true,
+      "**/dist": true
+    }
+  }
+}

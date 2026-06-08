@@ -1,0 +1,1648 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlowDesk - Preview rediseno</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0A0E1A;
+    --surface: #131A2C;
+    --surface-2: #1A2238;
+    --surface-3: #232C46;
+    --line: rgba(255,255,255,0.06);
+    --line-strong: rgba(255,255,255,0.10);
+    --text: #ECEEF5;
+    --text-2: #A4ADC2;
+    --text-3: #6B7390;
+    --fd-cyan: #1DBDF0;
+    --fd-blue: #2566E8;
+    --fd-magenta: #E91E7A;
+    --fd-pink: #FF3B8F;
+    --fd-orange: #F59A23;
+    --fd-green: #22D399;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background:
+      radial-gradient(900px 600px at 85% 8%, rgba(29,189,240,0.05), transparent 60%),
+      radial-gradient(700px 500px at 0% 100%, rgba(37,102,232,0.06), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* DEMO BAR */
+  .demo-bar {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 6px; z-index: 300;
+    background: var(--surface); border: 1px solid var(--line-strong);
+    border-radius: 999px; padding: 5px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  }
+  .demo-btn {
+    padding: 7px 18px; border-radius: 999px; border: none; cursor: pointer;
+    font-family: 'Inter Tight', sans-serif; font-size: 12px; font-weight: 500;
+    color: var(--text-2); background: transparent; transition: all 0.15s;
+  }
+  .demo-btn.active { background: var(--surface-2); color: var(--text); }
+
+  /* VIEWS */
+  .view { display: none; height: 100vh; flex-direction: column; overflow: hidden; }
+  .view.active { display: flex; }
+
+  /* TOP BAR */
+  .topbar {
+    height: 60px; flex-shrink: 0;
+    display: grid; grid-template-columns: auto 1fr auto;
+    align-items: center; padding: 0 20px;
+    background: rgba(10,14,26,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--line);
+    position: relative; z-index: 50;
+  }
+  .brand-btn {
+    display: flex; align-items: center; gap: 9px;
+    padding: 5px 12px 5px 5px; border-radius: 999px;
+    border: none; cursor: pointer; background: transparent;
+    transition: background 0.15s;
+  }
+  .brand-btn:hover { background: var(--surface); }
+  .brand-logo {
+    width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--fd-cyan), var(--fd-blue));
+    display: flex; align-items: center; justify-content: center;
+  }
+  .brand-logo span { font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 14px; color: white; }
+  .brand-wordmark {
+    font-family: 'Inter Tight', sans-serif; font-weight: 700;
+    letter-spacing: -0.03em; font-size: 17px; display: flex;
+  }
+  .brand-wordmark .flow {
+    background: linear-gradient(100deg, var(--fd-cyan), var(--fd-blue) 60%, var(--fd-magenta));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .brand-wordmark .desk { color: var(--text); }
+  .chevron { color: var(--text-3); }
+
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .campus-link {
+    font-family: 'Inter Tight', sans-serif; font-size: 13px; font-weight: 500;
+    color: var(--text-2); padding: 7px 14px; border-radius: 8px;
+    text-decoration: none; transition: all 0.15s; cursor: pointer;
+  }
+  .campus-link:hover { color: var(--text); background: var(--surface); }
+  .icon-btn {
+    width: 32px; height: 32px; border-radius: 8px; border: none; cursor: pointer;
+    background: transparent; color: var(--text-3);
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .icon-btn:hover { background: var(--surface); color: var(--text); }
+  .date-tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-3); letter-spacing: 0.08em; }
+  .avatar {
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--fd-cyan), var(--fd-magenta));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: 11px; color: white;
+    cursor: pointer;
+  }
+
+  /* DRAWER */
+  .overlay {
+    position: fixed; inset: 0; z-index: 40;
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(3px);
+    display: none;
+  }
+  .overlay.open { display: block; }
+  .drawer {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 272px; z-index: 50;
+    background: var(--surface); border-right: 1px solid var(--line-strong);
+    display: flex; flex-direction: column;
+    transform: translateX(-100%);
+    transition: transform 0.26s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: 20px 0 60px rgba(0,0,0,0.45);
+  }
+  .drawer.open { transform: translateX(0); }
+  .drawer-head {
+    height: 60px; padding: 0 14px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+  }
+  .drawer-close {
+    width: 28px; height: 28px; border-radius: 7px; border: none; cursor: pointer;
+    background: transparent; color: var(--text-3);
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .drawer-close:hover { background: var(--surface-2); color: var(--text); }
+  .drawer-nav { flex: 1; padding: 8px; overflow-y: auto; }
+  .nav-item {
+    display: flex; align-items: center; gap: 9px;
+    padding: 8px 10px; border-radius: 9px; margin-bottom: 2px;
+    color: var(--text-2); font-family: 'Inter Tight', sans-serif;
+    font-size: 13px; font-weight: 500; letter-spacing: -0.01em;
+    transition: background 0.15s, color 0.15s; cursor: pointer;
+    position: relative;
+  }
+  .nav-item:hover { background: var(--surface-2); color: var(--text); }
+  .nav-item.active { color: var(--text); background: var(--surface-2); }
+  .nav-item.active::before {
+    content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    width: 3px; height: 16px; border-radius: 0 3px 3px 0;
+    background: linear-gradient(180deg, var(--fd-cyan), var(--fd-blue));
+  }
+  .nav-icon {
+    width: 24px; height: 24px; border-radius: 7px; flex-shrink: 0;
+    background: var(--surface-3);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-3);
+  }
+  .nav-item.active .nav-icon {
+    background: linear-gradient(135deg, rgba(29,189,240,0.2), rgba(37,102,232,0.1));
+    color: var(--fd-cyan);
+  }
+  .drawer-bottom {
+    padding: 10px 12px; border-top: 1px solid var(--line); flex-shrink: 0;
+  }
+  .drawer-user { display: flex; align-items: center; gap: 9px; padding: 7px 9px; }
+  .drawer-avatar {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--fd-cyan), var(--fd-magenta));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: 10px; color: white;
+  }
+  .logout-btn {
+    width: 100%; display: flex; align-items: center; gap: 9px;
+    padding: 8px 10px; border-radius: 9px; border: none; cursor: pointer;
+    background: transparent; color: var(--text-2);
+    font-family: 'Inter Tight', sans-serif; font-size: 13px; font-weight: 500;
+    transition: background 0.15s; margin-top: 2px;
+  }
+  .logout-btn:hover { background: var(--surface-2); color: var(--text); }
+
+  /* FOCUS CONTENT — sin scroll */
+  .focus-body {
+    flex: 1; overflow: hidden; display: flex; flex-direction: column;
+  }
+  .focus-inner {
+    flex: 1; min-height: 0;
+    padding: 16px clamp(18px, 3vw, 44px) 72px;
+    display: flex; flex-direction: column; gap: 12px;
+    max-width: 1080px; margin: 0 auto; width: 100%;
+  }
+
+  /* Greeting */
+  .greeting { flex-shrink: 0; }
+  .eyebrow {
+    display: flex; align-items: center; gap: 9px; margin-bottom: 8px;
+  }
+  .eyebrow-date {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3);
+  }
+  .eyebrow-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--text-3); display: inline-block; }
+  .eyebrow-status {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--fd-cyan);
+  }
+  .greeting h1 {
+    font-family: 'Inter Tight', sans-serif; font-weight: 700;
+    letter-spacing: -0.03em; line-height: 1.0;
+    font-size: clamp(22px, 2.4vw, 30px); color: var(--text);
+  }
+  .name-grad {
+    background: linear-gradient(100deg, var(--fd-cyan), var(--fd-blue));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .greeting-sub {
+    display: flex; align-items: center; gap: 12px; margin-top: 7px;
+    flex-wrap: wrap;
+  }
+  .greeting-sub p {
+    font-family: 'Fraunces', serif; font-size: 13px; color: var(--text-2);
+  }
+  .greeting-sub p strong { color: var(--text); font-weight: 500; }
+  .momentum-inline {
+    display: flex; align-items: center; gap: 7px; margin-left: auto;
+  }
+  .momentum-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    color: var(--text-3); letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .momentum-val {
+    font-family: 'Inter Tight', sans-serif; font-weight: 700;
+    font-size: 13px; color: var(--fd-green); letter-spacing: -0.02em;
+  }
+  .momentum-bar {
+    width: 52px; height: 3px; background: var(--surface-2);
+    border-radius: 99px; overflow: hidden;
+  }
+  .momentum-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--fd-cyan), var(--fd-blue)); }
+  .momentum-pct { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--fd-green); }
+  .refresh-btn {
+    display: flex; align-items: center; gap: 5px; border: none; background: none;
+    cursor: pointer; color: var(--text-3);
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    letter-spacing: 0.08em; text-transform: uppercase; transition: color 0.15s;
+  }
+  .refresh-btn:hover { color: var(--text-2); }
+
+  /* Hero card */
+  .hero-wrap { flex: 1; min-height: 0; overflow: hidden; }
+  .hero-card {
+    position: relative; overflow: hidden; border-radius: 18px;
+    padding: 18px 22px 16px;
+    background:
+      radial-gradient(circle at 90% 10%, rgba(233,30,122,0.15), transparent 40%),
+      radial-gradient(circle at 5% 90%, rgba(29,189,240,0.08), transparent 50%),
+      var(--surface);
+    border: 1px solid rgba(233,30,122,0.28);
+    height: 100%; display: flex; flex-direction: column;
+  }
+  .hero-shimmer {
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--fd-pink), transparent);
+    opacity: 0.6;
+  }
+  .hero-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px; flex-wrap: wrap; gap: 6px; flex-shrink: 0;
+  }
+  .priority-pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 4px 10px; border-radius: 999px;
+    background: rgba(233,30,122,0.12); border: 1px solid rgba(233,30,122,0.28);
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--fd-pink); font-weight: 600;
+  }
+  .flame {
+    width: 5px; height: 5px; border-radius: 50%; background: currentColor;
+    box-shadow: 0 0 8px currentColor; display: inline-block;
+    animation: flame 1.5s ease-in-out infinite alternate;
+  }
+  @keyframes flame { from{opacity:0.6;transform:scale(0.9)} to{opacity:1;transform:scale(1.1)} }
+  .meta-tags { display: flex; gap: 5px; }
+  .meta-tag {
+    padding: 3px 8px; background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line); border-radius: 5px;
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    letter-spacing: 0.08em; color: var(--text-2); text-transform: uppercase;
+  }
+  .hero-card h2 {
+    font-family: 'Inter Tight', sans-serif; font-weight: 700;
+    letter-spacing: -0.03em; line-height: 1.02;
+    font-size: clamp(18px, 2vw, 26px); color: var(--text);
+    max-width: 30ch; margin: 0; flex-shrink: 0;
+  }
+  .hero-why {
+    font-family: 'Fraunces', serif; font-size: 13px;
+    color: var(--text-2); line-height: 1.5; max-width: 64ch;
+    margin-top: 7px; flex-shrink: 0;
+  }
+  .impact-row {
+    display: grid; grid-template-columns: repeat(4,1fr);
+    margin: 10px 0; padding: 10px 0;
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    flex-shrink: 0;
+  }
+  .impact-stat { padding: 0 16px; border-left: 1px solid var(--line); }
+  .impact-stat:first-child { border-left: none; padding-left: 0; }
+  .impact-stat .k {
+    font-family: 'JetBrains Mono', monospace; font-size: 8px;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); margin-bottom: 4px;
+  }
+  .impact-stat .v {
+    font-family: 'Inter Tight', sans-serif; font-weight: 700;
+    letter-spacing: -0.025em; font-size: 19px; color: var(--text);
+    display: flex; align-items: baseline; gap: 4px;
+  }
+  .impact-stat .v.grad {
+    background: linear-gradient(100deg, var(--fd-cyan), var(--fd-blue));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .impact-stat .v.pink { color: var(--fd-pink); }
+  .impact-stat .v .unit { font-size: 10px; font-weight: 500; color: var(--text-3); }
+  .hero-actions { display: flex; align-items: stretch; gap: 8px; margin-top: auto; }
+  .cta-btn {
+    flex: 1; display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 18px; border-radius: 12px; border: none; cursor: pointer; color: white;
+    background: linear-gradient(100deg, var(--fd-cyan) 0%, var(--fd-blue) 60%, var(--fd-magenta) 130%);
+    box-shadow: 0 12px 28px -10px rgba(29,189,240,0.45);
+    transition: transform 0.2s; font-family: 'Inter Tight', sans-serif;
+  }
+  .cta-btn:hover { transform: translateY(-1px); }
+  .cta-left { display: flex; align-items: center; gap: 10px; }
+  .cta-icon {
+    width: 28px; height: 28px; border-radius: 9px;
+    background: rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700;
+  }
+  .cta-text .l1 { font-size: 14px; font-weight: 700; letter-spacing: -0.02em; }
+  .cta-text .l2 { font-size: 10px; font-weight: 500; opacity: 0.85; margin-top: 1px; }
+  .cta-kbd {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    padding: 4px 8px; border-radius: 5px;
+    background: rgba(255,255,255,0.18); letter-spacing: 0.06em; color: white;
+  }
+  .secondary-btn {
+    padding: 12px 14px; border-radius: 12px;
+    background: rgba(255,255,255,0.05); border: 1px solid var(--line-strong);
+    color: var(--text); cursor: pointer;
+    font-family: 'Inter Tight', sans-serif; font-size: 12px; font-weight: 500;
+    display: flex; align-items: center; gap: 7px; transition: background 0.15s;
+  }
+  .secondary-btn:hover { background: rgba(255,255,255,0.08); }
+
+  /* After this */
+  .after-section { flex-shrink: 0; }
+  .after-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .after-head p {
+    font-family: 'Inter Tight', sans-serif; font-size: 13px; font-weight: 600;
+    letter-spacing: -0.02em; color: var(--text);
+  }
+  .after-head p .muted { color: var(--text-3); font-weight: 500; margin-right: 5px; }
+  .after-head span {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3);
+  }
+  .priority-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+  .priority-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 13px 15px; display: flex; flex-direction: column; gap: 8px; cursor: pointer;
+    transition: transform 0.15s, background 0.15s, border-color 0.15s;
+  }
+  .priority-card:hover { background: var(--surface-2); border-color: var(--line-strong); transform: translateY(-2px); }
+  .priority-card-top { display: flex; align-items: center; justify-content: space-between; }
+  .priority-card-top span {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 600;
+    letter-spacing: 0.1em; color: var(--text-3); text-transform: uppercase;
+  }
+  .p-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .priority-card h3 {
+    font-family: 'Inter Tight', sans-serif; font-size: 13px; font-weight: 600;
+    letter-spacing: -0.02em; color: var(--text); line-height: 1.25;
+  }
+  .priority-card-foot {
+    display: flex; align-items: center; gap: 8px; margin-top: auto;
+    padding-top: 8px; border-top: 1px solid var(--line);
+    font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-2);
+  }
+  .p-accent { font-weight: 500; }
+  .p-sep { width: 3px; height: 3px; border-radius: 50%; background: var(--text-3); display: inline-block; }
+
+  svg { display: inline-block; vertical-align: middle; }
+
+  /* TOPBAR CENTER NAV */
+  .topbar-center { display: flex; align-items: center; justify-content: center; gap: 4px; }
+  .nav-pill {
+    font-family: 'Inter Tight', sans-serif; font-size: 13px; font-weight: 500;
+    color: var(--text-2); padding: 7px 14px; border-radius: 8px;
+    border: none; cursor: pointer; background: transparent; transition: all 0.15s;
+  }
+  .nav-pill:hover { color: var(--text); background: var(--surface); }
+  .nav-pill.active { color: var(--text); background: var(--surface-2); }
+
+  /* LIVE PILL */
+  .live-pill {
+    display: flex; align-items: center; gap: 6px; padding: 5px 10px;
+    border-radius: 999px; background: rgba(34,211,153,0.08); border: 1px solid rgba(34,211,153,0.18);
+  }
+  .live-pill-text { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--fd-green); letter-spacing: 0.1em; }
+  @keyframes pulse-green { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.6;transform:scale(1.3);} }
+  .dot-green { width: 6px; height: 6px; border-radius: 50%; background: var(--fd-green); animation: pulse-green 2s ease-in-out infinite; }
+
+  /* LOGO DROPDOWN */
+  .brand-btn-wrap { position: relative; }
+  .logo-dropdown {
+    position: absolute; top: calc(100% + 8px); left: 0; width: 300px;
+    background: var(--surface); border: 1px solid var(--line-strong); border-radius: 16px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.55); z-index: 200;
+    display: none; overflow: hidden;
+  }
+  .brand-btn-wrap.open .logo-dropdown { display: block; }
+  .dd-section-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--text-3); padding: 12px 14px 6px;
+  }
+  .dd-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; cursor: pointer; transition: background 0.12s; }
+  .dd-item:hover { background: var(--surface-2); }
+  .dd-icon { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .dd-label .dl { font-family: 'Inter Tight', sans-serif; font-size: 13px; font-weight: 500; color: var(--text); }
+  .dd-label .ds { font-family: 'Inter', sans-serif; font-size: 11px; color: var(--text-3); margin-top: 1px; }
+  .dd-kbd { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-3); background: var(--surface-3); border: 1px solid var(--line-strong); border-radius: 4px; padding: 2px 5px; }
+  .dd-divider { height: 1px; background: var(--line); margin: 4px 0; }
+  .dd-footer { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-top: 1px solid var(--line); background: var(--surface-2); }
+  .dd-footer-txt { font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-2); }
+  .dd-change { font-family: 'Inter Tight', sans-serif; font-size: 12px; font-weight: 500; color: var(--fd-cyan); }
+
+  /* CAMPUS */
+  .campus-layout { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 290px; overflow: hidden; }
+  .campus-stage { display: flex; flex-direction: column; padding: 14px 16px 16px; gap: 9px; overflow: hidden; }
+  .campus-stage h1 { font-family: 'Inter Tight', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.03em; color: var(--text); }
+  .campus-stage h1 .grad { background: linear-gradient(100deg,var(--fd-cyan),var(--fd-blue)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .campus-sub { font-family: 'Fraunces', serif; font-size: 12px; color: var(--text-2); }
+  .filter-pills { display: flex; gap: 6px; flex-shrink: 0; }
+  .filter-pill { padding: 5px 13px; border-radius: 999px; font-family: 'Inter Tight', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--line); background: transparent; color: var(--text-3); transition: all 0.15s; }
+  .filter-pill.active { background: rgba(29,189,240,0.12); border-color: rgba(29,189,240,0.3); color: var(--fd-cyan); }
+
+  /* FLOOR */
+  .campus-floor {
+    flex: 1; min-height: 0; border-radius: 16px; border: 1px solid var(--line-strong);
+    background-color: var(--bg-2); position: relative; overflow: hidden; padding: 8px;
+  }
+  .campus-grid { display: grid; grid-template-columns: repeat(3,1fr); grid-template-rows: repeat(3,1fr); gap: 6px; width: 100%; height: 100%; }
+  .room {
+    border-radius: 11px; border: 1px solid var(--line); background: var(--surface);
+    display: flex; flex-direction: column; padding: 9px; cursor: pointer; transition: all 0.18s; position: relative; overflow: hidden;
+  }
+  .room:hover { border-color: var(--line-strong); background: var(--surface-2); }
+  .room.selected { border-color: var(--fd-cyan) !important; background: rgba(29,189,240,0.06) !important; }
+  .room-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+  .room-name { font-family: 'Inter Tight', sans-serif; font-size: 10px; font-weight: 600; color: var(--text); }
+  .room-avatars { flex: 1; position: relative; }
+  .mini-av {
+    position: absolute; width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: 8px; color: white;
+    border: 2px solid var(--surface);
+  }
+  @keyframes agent-ring { 0%,100%{box-shadow:0 0 0 0 rgba(29,189,240,0.5);}50%{box-shadow:0 0 0 4px rgba(29,189,240,0);} }
+  .mini-av.agent { border: 2px solid var(--fd-cyan); animation: agent-ring 2.5s ease-in-out infinite; }
+  .room-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
+  .room-count { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: var(--text-3); display: flex; align-items: center; gap: 4px; }
+  .room-enter { font-family: 'Inter Tight', sans-serif; font-size: 9px; font-weight: 500; color: var(--fd-cyan); opacity: 0; transition: opacity 0.15s; }
+  .room:hover .room-enter { opacity: 1; }
+  .sala { border: 1px solid rgba(29,189,240,0.35) !important; background: linear-gradient(140deg,rgba(29,189,240,0.07),rgba(233,30,122,0.04)) !important; }
+  .sala-shimmer { position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg,transparent,rgba(29,189,240,0.7),transparent); }
+  .sala-label { display: flex; align-items: center; gap: 5px; margin-bottom: 3px; }
+  .sala-badge { font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); }
+  .sala-live { display: flex; align-items: center; gap: 3px; padding: 1px 6px; border-radius: 999px; background: rgba(255,71,87,0.15); border: 1px solid rgba(255,71,87,0.3); }
+  .sala-live-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--fd-red); animation: pulse-green 1.5s ease-in-out infinite; }
+  .sala-live-txt { font-family: 'JetBrains Mono', monospace; font-size: 7px; color: var(--fd-red); letter-spacing: 0.08em; }
+  .sala-title { font-family: 'Inter Tight', sans-serif; font-size: 10px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .sala-meta { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: var(--text-3); margin-bottom: 5px; }
+  .sala-tiles { display: grid; grid-template-columns: repeat(4,1fr); gap: 3px; margin-bottom: 5px; }
+  .sala-tile { border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: 9px; color: white; }
+  .sala-tile.speaking { border-color: var(--fd-green); box-shadow: 0 0 6px rgba(34,211,153,0.35); }
+  .sala-tile.ada { background: linear-gradient(135deg,rgba(29,189,240,0.2),rgba(233,30,122,0.15)); border-color: rgba(29,189,240,0.3); font-size: 7px; color: var(--fd-cyan); }
+  .sala-enter-btn { width: 100%; padding: 4px; border-radius: 7px; border: none; cursor: pointer; background: linear-gradient(100deg,var(--fd-cyan),var(--fd-blue)); font-family: 'Inter Tight', sans-serif; font-size: 9px; font-weight: 600; color: white; }
+
+  /* CAMPUS RAIL */
+  .campus-rail { background: var(--bg-2); border-left: 1px solid var(--line); overflow-y: auto; padding: 12px; }
+  .rail-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; }
+  .rail-section-title { font-family: 'Inter Tight', sans-serif; font-size: 13px; font-weight: 600; color: var(--text); }
+  .rail-section-title .grad { background: linear-gradient(100deg,var(--fd-cyan),var(--fd-blue)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .rail-pill { font-family: 'JetBrains Mono', monospace; font-size: 8px; font-weight: 500; letter-spacing: 0.08em; padding: 3px 8px; border-radius: 999px; }
+  .rail-pill.cnt { background: rgba(34,211,153,0.1); color: var(--fd-green); border: 1px solid rgba(34,211,153,0.2); }
+  .rail-pill.live { background: rgba(255,71,87,0.1); color: var(--fd-red); border: 1px solid rgba(255,71,87,0.2); }
+  .dept-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; margin-bottom: 10px; }
+  .dept-card-top { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
+  .dept-icon { width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0; background: linear-gradient(135deg,var(--fd-cyan),var(--fd-blue)); display: flex; align-items: center; justify-content: center; }
+  .dept-name { font-family: 'Inter Tight', sans-serif; font-size: 14px; font-weight: 700; color: var(--text); }
+  .dept-meta { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: var(--text-3); }
+  .dept-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+  .dept-stat { background: var(--surface-2); border-radius: 8px; padding: 7px 9px; }
+  .dept-stat .sk { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: var(--text-3); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 2px; }
+  .dept-stat .sv { font-family: 'Inter Tight', sans-serif; font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+  .member-list { display: flex; flex-direction: column; gap: 5px; }
+  .member-row { display: flex; align-items: center; gap: 7px; padding: 5px 0; border-bottom: 1px solid var(--line); }
+  .member-row:last-child { border-bottom: none; }
+  .m-av { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: 9px; color: white; flex-shrink: 0; }
+  .m-av.agent { border: 2px solid var(--fd-cyan); animation: agent-ring 2.5s ease-in-out infinite; }
+  .m-info { flex: 1; min-width: 0; }
+  .m-name { font-family: 'Inter Tight', sans-serif; font-size: 11px; font-weight: 600; color: var(--text); }
+  .m-status { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: var(--text-3); letter-spacing: 0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .m-tag { font-family: 'JetBrains Mono', monospace; font-size: 7px; padding: 1px 4px; border-radius: 3px; background: rgba(29,189,240,0.12); color: var(--fd-cyan); border: 1px solid rgba(29,189,240,0.2); }
+  .m-val { font-family: 'Inter Tight', sans-serif; font-size: 10px; font-weight: 600; color: var(--fd-green); flex-shrink: 0; }
+
+  /* ACTIVITY FEED */
+  .activity-feed { display: flex; flex-direction: column; gap: 7px; margin-top: 7px; }
+  .activity-item { display: flex; align-items: flex-start; gap: 7px; }
+  .act-icon { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; margin-top: 1px; }
+  .act-text { font-family: 'Inter', sans-serif; font-size: 11px; color: var(--text-2); line-height: 1.4; flex: 1; }
+  .act-text strong { color: var(--text); font-weight: 600; }
+  .act-time { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: var(--text-3); flex-shrink: 0; margin-top: 2px; }
+
+  /* DEPT VIEW */
+  .dept-layout { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 290px; overflow: hidden; }
+  .dept-stage { overflow-y: auto; padding: 12px 18px 16px; display: flex; flex-direction: column; gap: 11px; }
+  .dept-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .dept-header-left { display: flex; align-items: center; gap: 9px; }
+  .back-btn { font-family: 'Inter Tight', sans-serif; font-size: 12px; font-weight: 500; color: var(--fd-cyan); cursor: pointer; padding: 5px 10px; border-radius: 8px; background: transparent; border: none; transition: background 0.15s; }
+  .back-btn:hover { background: var(--surface-2); }
+  .dept-big-icon { width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0; background: linear-gradient(135deg,var(--fd-cyan),var(--fd-blue)); display: flex; align-items: center; justify-content: center; }
+  .dept-title { font-family: 'Inter Tight', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.03em; color: var(--text); }
+  .dept-live-meta { display: flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-3); }
+  .kpi-strip { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .kpi-item { padding: 7px 12px; border-right: 1px solid var(--line); }
+  .kpi-item:last-child { border-right: none; }
+  .kpi-k { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: var(--text-3); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 2px; }
+  .kpi-v { font-family: 'Inter Tight', sans-serif; font-size: 13px; font-weight: 700; color: var(--text); }
+  .section-head { display: flex; align-items: center; justify-content: space-between; }
+  .section-title { font-family: 'Inter Tight', sans-serif; font-size: 13px; font-weight: 600; color: var(--text); }
+  .section-title .grad { background: linear-gradient(100deg,var(--fd-cyan),var(--fd-blue)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .section-sub { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: var(--text-3); letter-spacing: 0.05em; text-transform: uppercase; }
+  .workstations-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+  .ws-card { background: var(--surface); border: 1px solid var(--line); border-radius: 13px; padding: 11px; display: flex; flex-direction: column; gap: 9px; transition: all 0.15s; cursor: pointer; }
+  .ws-card:hover { border-color: var(--line-strong); background: var(--surface-2); }
+  .ws-card.featured { background: linear-gradient(140deg,rgba(29,189,240,0.08),rgba(37,102,232,0.03)); border-color: rgba(29,189,240,0.2); }
+  .ws-top { display: flex; align-items: center; gap: 7px; }
+  .ws-av { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: 11px; color: white; flex-shrink: 0; position: relative; }
+  .ws-av.agent { border: 2px solid var(--fd-cyan); animation: agent-ring 2.5s ease-in-out infinite; }
+  .ws-status-dot { position: absolute; bottom: -1px; right: -1px; width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--surface); }
+  .ws-info { flex: 1; min-width: 0; }
+  .ws-name { font-family: 'Inter Tight', sans-serif; font-size: 11px; font-weight: 600; color: var(--text); }
+  .ws-role { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: var(--text-3); letter-spacing: 0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ws-status-pill { font-family: 'JetBrains Mono', monospace; font-size: 7px; font-weight: 500; letter-spacing: 0.08em; padding: 2px 7px; border-radius: 999px; }
+  .ws-task { font-family: 'Fraunces', serif; font-size: 11px; color: var(--text-2); line-height: 1.4; }
+  .ws-preview { border-radius: 8px; background: var(--bg); border: 1px solid var(--line); padding: 8px; overflow: hidden; }
+  @keyframes wave { 0%,100%{height:3px;}50%{height:12px;} }
+  .wave-bars { display: flex; align-items: center; gap: 2px; height: 16px; }
+  .wave-bar { width: 3px; border-radius: 2px; background: var(--fd-pink); animation: wave 1.2s ease-in-out infinite; }
+  .wave-bar:nth-child(2){animation-delay:0.15s;} .wave-bar:nth-child(3){animation-delay:0.3s;} .wave-bar:nth-child(4){animation-delay:0.45s;} .wave-bar:nth-child(5){animation-delay:0.6s;}
+  @keyframes bounce { 0%,100%{transform:translateY(0);}40%{transform:translateY(-3px);} }
+  .typing-dots { display: inline-flex; gap: 3px; align-items: center; }
+  .typing-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--text-3); animation: bounce 1.2s ease-in-out infinite; }
+  .typing-dot:nth-child(2){animation-delay:0.15s;} .typing-dot:nth-child(3){animation-delay:0.3s;}
+  @keyframes spin { from{transform:rotate(0deg);}to{transform:rotate(360deg);} }
+  .spinner { display: inline-block; animation: spin 1s linear infinite; }
+  .agent-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .agent-ws { background: linear-gradient(140deg,rgba(29,189,240,0.06),rgba(233,30,122,0.03)); border: 1px solid rgba(29,189,240,0.2); border-radius: 13px; padding: 12px; display: flex; flex-direction: column; gap: 9px; position: relative; overflow: hidden; }
+  .agent-ws-shimmer { position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg,transparent,rgba(29,189,240,0.6),transparent); }
+  .agent-tag { font-family: 'JetBrains Mono', monospace; font-size: 7px; padding: 1px 5px; border-radius: 3px; background: rgba(29,189,240,0.12); color: var(--fd-cyan); border: 1px solid rgba(29,189,240,0.25); margin-left: 4px; }
+  .log-terminal { background: rgba(0,0,0,0.4); border: 1px solid var(--line); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+  .log-line { display: flex; align-items: baseline; gap: 5px; font-family: 'JetBrains Mono', monospace; font-size: 8px; }
+  .log-time { color: var(--text-3); flex-shrink: 0; }
+  .log-done { color: var(--fd-green); }
+  .log-spin { color: var(--fd-cyan); }
+  .log-text { color: var(--text-2); } .log-text strong { color: var(--text); }
+  .ws-foot { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 7px; }
+  .tool-icons { display: flex; gap: 4px; }
+  .tool-icon { width: 18px; height: 18px; border-radius: 4px; background: var(--surface-2); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; color: var(--text-3); }
+  .ws-summary { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: var(--text-3); }
+  .dept-rail { background: var(--bg-2); border-left: 1px solid var(--line); overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .ada-insight { border: 1px solid rgba(29,189,240,0.25); border-radius: 13px; padding: 12px; background: linear-gradient(140deg,rgba(29,189,240,0.05),rgba(233,30,122,0.03)); }
+  .ada-insight-head { display: flex; align-items: center; gap: 6px; margin-bottom: 7px; }
+  .ada-f { width: 20px; height: 20px; border-radius: 6px; background: linear-gradient(135deg,var(--fd-cyan),var(--fd-magenta)); display: flex; align-items: center; justify-content: center; font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 9px; color: white; flex-shrink: 0; }
+  .ada-insight-txt { font-family: 'Fraunces', serif; font-size: 11px; color: var(--text-2); line-height: 1.55; } .ada-insight-txt strong { color: var(--text); font-weight: 500; }
+  .next-meeting-card { background: var(--surface); border: 1px solid var(--line); border-radius: 13px; padding: 12px; }
+  .nm-badge { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 8px; padding: 2px 7px; border-radius: 999px; background: rgba(245,154,35,0.12); color: var(--fd-orange); border: 1px solid rgba(245,154,35,0.25); margin-bottom: 5px; }
+  .nm-title { font-family: 'Inter Tight', sans-serif; font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .nm-meta { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: var(--text-3); margin-bottom: 8px; }
+  .nm-avs { display: flex; margin-bottom: 8px; }
+  .nm-av { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--surface); margin-left: -5px; display: flex; align-items: center; justify-content: center; font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: 7px; color: white; }
+  .nm-av:first-child { margin-left: 0; }
+  .nm-av.ada { background: linear-gradient(135deg,var(--fd-cyan),var(--fd-magenta)); }
+  .nm-av-more { background: var(--surface-2); color: var(--text-3); font-family: 'JetBrains Mono', monospace; font-size: 7px; }
+  .nm-actions { display: flex; gap: 6px; }
+  .nm-enter-btn { flex: 1; padding: 6px; border-radius: 8px; border: none; cursor: pointer; background: linear-gradient(100deg,var(--fd-cyan),var(--fd-blue)); font-family: 'Inter Tight', sans-serif; font-size: 10px; font-weight: 600; color: white; }
+  .nm-ghost-btn { padding: 6px 11px; border-radius: 8px; border: 1px solid var(--line-strong); background: transparent; color: var(--text-2); font-family: 'Inter Tight', sans-serif; font-size: 10px; cursor: pointer; transition: all 0.15s; }
+  .nm-ghost-btn:hover { background: var(--surface-2); color: var(--text); }
+</style>
+</head>
+<body>
+
+<!-- DEMO BAR -->
+<div class="demo-bar">
+  <button class="demo-btn active" onclick="showView('focus',this)">Focus Mode</button>
+  <button class="demo-btn" onclick="showView('campus',this)">Campus</button>
+  <button class="demo-btn" onclick="showView('ventas',this)">Dept: Ventas</button>
+  <button class="demo-btn" onclick="showView('brand',this)">Brand cliente</button>
+</div>
+
+<!-- ============================== VIEW 1: FOCUS MODE ============================== -->
+<div class="view active" id="view-focus">
+
+  <header class="topbar">
+    <button class="brand-btn" onclick="toggleDrawer(); event.stopPropagation();">
+      <div class="brand-logo"><span>F</span></div>
+      <span class="brand-wordmark"><span class="flow">Flow</span><span class="desk">desk</span></span>
+      <svg class="chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div></div>
+    <div class="topbar-right">
+      <button class="campus-goto-btn" onclick="showView('campus', document.querySelectorAll('.demo-btn')[1])">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        Campus
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+      <span class="date-tag">JUE &middot; 03 JUN &middot; 10:42</span>
+      <div class="avatar">MR</div>
+    </div>
+  </header>
+
+  <!-- Overlay + Drawer -->
+  <div class="overlay" id="overlay" onclick="toggleDrawer()"></div>
+  <aside class="drawer" id="drawer">
+    <div class="drawer-head">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div class="brand-logo"><span>F</span></div>
+        <span class="brand-wordmark"><span class="flow">Flow</span><span class="desk">desk</span></span>
+      </div>
+      <button class="drawer-close" onclick="toggleDrawer()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <nav class="drawer-nav">
+      <div class="nav-item active" onclick="toggleDrawer()">
+        <div class="nav-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+        Focus Mode
+      </div>
+      <div class="nav-item" onclick="toggleDrawer()">
+        <div class="nav-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
+        Dashboard
+      </div>
+      <div class="nav-item" onclick="toggleDrawer()">
+        <div class="nav-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M9 9h6v6H9z"/></svg></div>
+        Agentes
+      </div>
+      <div class="nav-item" onclick="toggleDrawer()">
+        <div class="nav-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+        Equipo
+      </div>
+      <div class="nav-item" onclick="toggleDrawer()">
+        <div class="nav-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></div>
+        Objetivos
+      </div>
+      <div class="nav-item" onclick="toggleDrawer()">
+        <div class="nav-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+        Contactos
+      </div>
+      <div class="nav-item" onclick="showView('campus', document.querySelectorAll('.demo-btn')[1]); toggleDrawer();">
+        <div class="nav-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+        Campus
+      </div>
+      <div class="nav-item" onclick="toggleDrawer()">
+        <div class="nav-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></div>
+        Integraciones
+      </div>
+      <div class="nav-item" onclick="toggleDrawer()">
+        <div class="nav-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+        Configuracion
+      </div>
+    </nav>
+    <div class="drawer-bottom">
+      <div class="drawer-user">
+        <div class="drawer-avatar">MR</div>
+        <div>
+          <p style="font-family:'Inter Tight',sans-serif;font-size:12px;font-weight:500;color:var(--text);">Manolo Reyes</p>
+          <p style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-3);letter-spacing:0.06em;text-transform:uppercase;">owner</p>
+        </div>
+      </div>
+      <button class="logout-btn">
+        <div class="nav-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>
+        Cerrar sesion
+      </button>
+    </div>
+  </aside>
+
+  <!-- FOCUS CONTENT — 2 paneles -->
+  <div class="focus-layout">
+
+    <!-- ===== PANEL IZQUIERDO: contexto del dia ===== -->
+    <div class="focus-context">
+
+      <!-- Saludo compacto -->
+      <div class="focus-greeting">
+        <div class="eyebrow">
+          <span class="eyebrow-date">Jueves &middot; 03 Jun</span>
+          <span class="eyebrow-dot"></span>
+          <span class="eyebrow-status">Ada preparo tu dia</span>
+        </div>
+        <h1>Buenos dias, <span class="name-grad">Manolo</span>.</h1>
+        <div class="g-sub">
+          <p style="font-family:'Fraunces',serif;font-size:13px;color:var(--text-2);"><strong style="color:var(--text);font-weight:500;">2 reuniones</strong>, <strong style="color:var(--text);font-weight:500;">3 correos</strong> pendientes, <strong style="color:var(--text);font-weight:500;">3 tareas</strong> para hoy.</p>
+          <div class="momentum-inline" style="margin-left:auto;">
+            <span class="momentum-label">Racha</span>
+            <span class="momentum-val">7d</span>
+            <div class="momentum-bar"><div class="momentum-fill" style="width:72%"></div></div>
+            <span class="momentum-pct">72%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- REUNIONES -->
+      <div class="ctx-section">
+        <div class="ctx-head">
+          <span class="ctx-label">Reuniones hoy</span>
+          <span class="ctx-badge">2</span>
+        </div>
+
+        <!-- Reunion 1 — urgente -->
+        <div class="ctx-meeting urgent">
+          <div class="ctx-meeting-top">
+            <span class="ctx-time-badge">EN 16 MIN &middot; 11:00</span>
+            <span class="ctx-duration">45 min</span>
+          </div>
+          <div class="ctx-meeting-title">Pipeline review &middot; cierre de mes</div>
+          <div class="ctx-meeting-loc">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="margin-right:4px;"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
+            Sala de juntas &middot; SG, DV, PM, Ada, Closer
+          </div>
+          <div class="ctx-context-block">
+            <div class="ctx-context-lbl">Contexto de Ada</div>
+            <div class="ctx-context-txt">Llevar forecast Q3 actualizado. Closer preparo resumen de pipeline: <strong style="color:var(--text);">3 cierres inminentes ($120K)</strong>. Sofia cerro Telmex esta manana.</div>
+            <div class="ctx-chips">
+              <button class="ctx-chip">Ver resumen de Closer</button>
+              <button class="ctx-chip">Abrir forecast Q3</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reunion 2 -->
+        <div class="ctx-meeting">
+          <div class="ctx-meeting-top">
+            <span class="ctx-time">14:30</span>
+            <span class="ctx-duration">30 min</span>
+          </div>
+          <div class="ctx-meeting-title">1:1 con Diego Vargas</div>
+          <div class="ctx-meeting-loc">Videollamada</div>
+          <div class="ctx-context-block">
+            <div class="ctx-context-lbl">Contexto de Ada</div>
+            <div class="ctx-context-txt">Diego califico 12 hot leads hoy. Scout detecto oportunidad en <strong style="color:var(--text);">Nodos.io</strong> — el CEO respondio. Revisar estrategia outbound fintech.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CORREOS -->
+      <div class="ctx-section">
+        <div class="ctx-head">
+          <span class="ctx-label">Correos</span>
+          <span class="ctx-badge alert">3 sin leer</span>
+        </div>
+        <div class="ctx-msg-list">
+          <div class="ctx-msg">
+            <div class="ctx-msg-av" style="background:linear-gradient(135deg,#1DBDF0,#2566E8);">CD</div>
+            <div class="ctx-msg-body">
+              <div class="ctx-msg-from">Carlos Delgado &middot; Quantia</div>
+              <div class="ctx-msg-subj">Re: Contrato anual &mdash; propuesta v2</div>
+              <div class="ctx-msg-preview">Me parece bien el ajuste. Necesito validar con mi equipo legal antes de...</div>
+              <div class="ctx-msg-time">hace 32m</div>
+            </div>
+            <div class="ctx-unread"></div>
+          </div>
+          <div class="ctx-msg">
+            <div class="ctx-msg-av" style="background:linear-gradient(135deg,#22D399,#1DBDF0);">GA</div>
+            <div class="ctx-msg-body">
+              <div class="ctx-msg-from">Grupo Aurora &middot; ops@aurora.mx</div>
+              <div class="ctx-msg-subj">Solicitud de cambio en propuesta</div>
+              <div class="ctx-msg-preview">Hola Manolo, queriamos platicar sobre la seccion 4 del contrato, creemos que...</div>
+              <div class="ctx-msg-time">hace 1h</div>
+            </div>
+            <div class="ctx-unread"></div>
+          </div>
+          <div class="ctx-msg">
+            <div class="ctx-msg-av" style="background:var(--surface-3);color:var(--text-3);">FD</div>
+            <div class="ctx-msg-body">
+              <div class="ctx-msg-from">Admin &middot; Flowdesk</div>
+              <div class="ctx-msg-subj">Recordatorio: cierre Q2 este viernes</div>
+              <div class="ctx-msg-preview">Este es el recordatorio de que el viernes 06 Jun es la fecha limite para...</div>
+              <div class="ctx-msg-time">hace 2h</div>
+            </div>
+            <div class="ctx-unread"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WHATSAPP -->
+      <div class="ctx-section">
+        <div class="ctx-head">
+          <span class="ctx-label">WhatsApp</span>
+          <span class="ctx-badge alert">2 nuevos</span>
+        </div>
+        <div class="ctx-msg-list">
+          <div class="ctx-msg">
+            <div class="ctx-msg-av" style="background:#25D366;">DV</div>
+            <div class="ctx-msg-body">
+              <div class="ctx-msg-from">Diego Vargas</div>
+              <div class="ctx-msg-subj">&iquest;Cerramos con Nodos.io? El CEO respondio y quiere reunirse esta semana</div>
+              <div class="ctx-msg-time">hace 15m</div>
+            </div>
+            <div class="ctx-unread"></div>
+          </div>
+          <div class="ctx-msg">
+            <div class="ctx-msg-av" style="background:#25D366;">SG</div>
+            <div class="ctx-msg-body">
+              <div class="ctx-msg-from">Sofia Garcia</div>
+              <div class="ctx-msg-subj">Telmex confirmo para el viernes 10am &#x2713;</div>
+              <div class="ctx-msg-time">hace 1h</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PENDIENTES -->
+      <div class="ctx-section">
+        <div class="ctx-head">
+          <span class="ctx-label">Pendientes en proyectos</span>
+          <span class="ctx-badge">3 para hoy</span>
+        </div>
+        <div class="ctx-todo-list">
+          <div class="ctx-todo">
+            <div class="ctx-todo-box"></div>
+            <div>
+              <div class="ctx-todo-title">Responder a Carlos Delgado &mdash; Quantia</div>
+              <div class="ctx-todo-meta">Ventas &middot; urgente &middot; antes de las 2pm</div>
+            </div>
+          </div>
+          <div class="ctx-todo">
+            <div class="ctx-todo-box"></div>
+            <div>
+              <div class="ctx-todo-title">Revisar cambios en propuesta Aurora v3</div>
+              <div class="ctx-todo-meta">Ventas &middot; con Pao &middot; hoy</div>
+            </div>
+          </div>
+          <div class="ctx-todo">
+            <div class="ctx-todo-box"></div>
+            <div>
+              <div class="ctx-todo-title">Preparar agenda para pipeline review 11:00</div>
+              <div class="ctx-todo-meta">Operaciones &middot; Ada puede hacerlo</div>
+            </div>
+          </div>
+          <div class="ctx-todo done">
+            <div class="ctx-todo-box" style="background:var(--fd-green);border-color:var(--fd-green);background-image:url('data:image/svg+xml,%3Csvg width=10 height=10 viewBox=\'0 0 24 24\' fill=none stroke=white stroke-width=3 stroke-linecap=round%3E%3Cpolyline points=\'20 6 9 17 4 12\'/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:center;"></div>
+            <div>
+              <div class="ctx-todo-title">Aprobar onboarding de Quantia</div>
+              <div class="ctx-todo-meta">Completado &middot; 09:15</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ===== PANEL DERECHO: Ada chat ===== -->
+    <div class="focus-chat">
+
+      <!-- Header del chat -->
+      <div class="chat-header">
+        <div class="chat-ada-av">F</div>
+        <div>
+          <div class="chat-ada-name">Ada</div>
+          <div class="chat-ada-status">EN LINEA &middot; CLAUDE SONNET</div>
+        </div>
+        <div class="chat-tool-chips">
+          <div class="chat-tool" title="Gmail"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#EA4335" stroke-width="2" stroke-linecap="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 7 10-7"/></svg></div>
+          <div class="chat-tool" title="Calendar"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#4285F4" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+          <div class="chat-tool" title="WhatsApp"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2" stroke-linecap="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+          <div class="chat-tool" title="Docs"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1DBDF0" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+          <div class="chat-tool" title="Sheets"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#0F9D58" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/></svg></div>
+        </div>
+      </div>
+
+      <!-- Mensajes -->
+      <div class="chat-messages">
+
+        <!-- Ada: saludo + briefing -->
+        <div class="chat-msg-ada">
+          <div class="chat-ada-av" style="width:24px;height:24px;font-size:9px;flex-shrink:0;">F</div>
+          <div>
+            <div class="chat-bubble-ada">Buenos dias, Manolo. Prepare el contexto de tus 2 reuniones. Closer tiene el resumen del pipeline listo para las 11:00. <strong>Tienes 3 correos sin leer</strong> y Carlos de Quantia espera respuesta urgente.</div>
+            <div class="chat-msg-ts">10:42</div>
+          </div>
+        </div>
+
+        <!-- Quick chips de Ada -->
+        <div class="chat-quick-chips">
+          <button class="ada-chip">Redactar respuesta a Carlos</button>
+          <button class="ada-chip">Preparar agenda 11:00</button>
+          <button class="ada-chip">Resumir pipeline</button>
+        </div>
+
+        <!-- Usuario -->
+        <div class="chat-msg-user">
+          <div class="chat-bubble-user">Redacta el correo de seguimiento para Carlos de Quantia</div>
+        </div>
+
+        <!-- Ada: borrador de correo -->
+        <div class="chat-msg-ada">
+          <div class="chat-ada-av" style="width:24px;height:24px;font-size:9px;flex-shrink:0;">F</div>
+          <div>
+            <div class="chat-bubble-ada">Claro. Aqui el borrador basado en el historial de Quantia:</div>
+            <div class="email-draft-card">
+              <div class="email-draft-lbl">Borrador &mdash; Gmail</div>
+              <div class="email-draft-to">Para: carlos@quantia.mx</div>
+              <div class="email-draft-subj">Asunto: Siguiente paso &mdash; propuesta anual</div>
+              <div class="email-draft-body">Hola Carlos, gracias por tu respuesta. Entiendo que necesitas validar con tu equipo legal. Te propongo agendar una llamada express manana para resolver las ultimas dudas antes del cierre...</div>
+              <div class="email-draft-actions">
+                <button class="draft-btn primary">Enviar</button>
+                <button class="draft-btn ghost">Editar</button>
+              </div>
+            </div>
+            <div class="chat-msg-ts">10:43</div>
+          </div>
+        </div>
+
+        <!-- Ada: tip final -->
+        <div class="chat-msg-ada">
+          <div class="chat-ada-av" style="width:24px;height:24px;font-size:9px;flex-shrink:0;">F</div>
+          <div>
+            <div class="chat-bubble-ada">Tambien puedo preparar el brief completo de la reunion de las 11:00 y silenciar notificaciones durante la llamada.</div>
+            <div class="chat-msg-ts">10:43</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Input bar -->
+      <div class="chat-input-area">
+        <div class="chat-quick-actions">
+          <button class="chat-quick-btn">&#9993; Correo</button>
+          <button class="chat-quick-btn">&#128197; Agendar</button>
+          <button class="chat-quick-btn">&#128196; Documento</button>
+          <button class="chat-quick-btn">&#128202; Reporte</button>
+          <button class="chat-quick-btn">&#128172; WhatsApp</button>
+        </div>
+        <div class="chat-input-row">
+          <input class="chat-input" placeholder="Pide algo a Ada..." readonly>
+          <button class="chat-send-btn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================== VIEW 2: CAMPUS ============================== -->
+<div class="view" id="view-campus">
+  <header class="topbar">
+    <div class="brand-btn-wrap" id="campus-brand-wrap">
+      <button class="brand-btn" onclick="document.getElementById('campus-brand-wrap').classList.toggle('open');event.stopPropagation();">
+        <div class="brand-logo"><span>F</span></div>
+        <span class="brand-wordmark"><span class="flow">Flow</span><span class="desk">desk</span></span>
+        <svg class="chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="logo-dropdown">
+        <div class="dd-section-label">Accion rapida</div>
+        <div class="dd-item"><div class="dd-icon" style="background:linear-gradient(135deg,var(--fd-cyan),var(--fd-blue));"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div><div class="dd-label"><div class="dl">Iniciar huddle</div></div><span class="dd-kbd">H</span></div>
+        <div class="dd-item"><div class="dd-icon" style="background:linear-gradient(135deg,var(--fd-cyan),var(--fd-magenta));"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div><div class="dd-label"><div class="dl">Crear agente IA</div></div><span class="dd-kbd">&#8984;N</span></div>
+        <div class="dd-item"><div class="dd-icon" style="background:var(--surface-2);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--text-2)"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div><div class="dd-label"><div class="dl">Invitar al campus</div></div></div>
+        <div class="dd-item"><div class="dd-icon" style="background:var(--surface-2);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--text-2)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><div class="dd-label"><div class="dl">Buscar</div></div><span class="dd-kbd">&#8984;K</span></div>
+        <div class="dd-divider"></div>
+        <div class="dd-section-label">Espacio de trabajo</div>
+        <div class="dd-item"><div class="dd-icon" style="background:linear-gradient(135deg,var(--fd-orange),var(--fd-magenta));"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.51 15"/></svg></div><div class="dd-label"><div class="dl">Configuracion</div><div class="ds">Focus, agentes, equipo, integraciones</div></div></div>
+        <div class="dd-item"><div class="dd-icon" style="background:var(--surface-2);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--text-2)"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div><div class="dd-label"><div class="dl">Integraciones</div></div></div>
+        <div class="dd-item"><div class="dd-icon" style="background:var(--surface-2);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--text-2)"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div class="dd-label"><div class="dl">Ayuda y guias</div></div></div>
+        <div class="dd-footer"><span class="dd-footer-txt">Acme Studio &middot; 47 miembros</span><span class="dd-change">Cambiar &rarr;</span></div>
+      </div>
+    </div>
+    <div class="topbar-center">
+      <button class="nav-pill">Focus</button>
+      <button class="nav-pill active">Campus</button>
+      <button class="nav-pill">Dashboard</button>
+    </div>
+    <div class="topbar-right">
+      <div class="live-pill"><div class="dot-green"></div><span class="live-pill-text">47 EN LINEA</span></div>
+      <span class="date-tag">JUE &middot; 03 JUN &middot; 10:42</span>
+      <div class="avatar">MR</div>
+    </div>
+  </header>
+  <div class="campus-layout">
+    <!-- LEFT: campus stage -->
+    <div class="campus-stage">
+      <div>
+        <h1>El <span class="grad">campus</span> de Flowdesk.</h1>
+        <p class="campus-sub">32 personas y 15 agentes trabajando ahora.</p>
+      </div>
+      <div class="filter-pills">
+        <button class="filter-pill active">Todos 47</button>
+        <button class="filter-pill">Personas 32</button>
+        <button class="filter-pill">Agentes IA 15</button>
+        <button class="filter-pill">En foco 8</button>
+      </div>
+      <div class="campus-floor">
+        <div class="campus-grid">
+          <!-- Row 1 -->
+          <div class="room selected">
+            <div class="room-top"><span class="room-name">Ventas</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--fd-cyan)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+            <div class="room-avatars" style="height:40px;">
+              <div class="mini-av" style="background:linear-gradient(135deg,var(--fd-cyan),var(--fd-blue));top:0;left:4px;">MR</div>
+              <div class="mini-av" style="background:linear-gradient(135deg,var(--fd-magenta),var(--fd-pink));top:0;left:30px;">SG</div>
+              <div class="mini-av" style="background:linear-gradient(135deg,var(--fd-orange),var(--fd-magenta));top:0;left:56px;">DV</div>
+              <div class="mini-av" style="background:linear-gradient(135deg,var(--fd-green),var(--fd-cyan));top:14px;left:16px;">PM</div>
+              <div class="mini-av agent" style="background:linear-gradient(135deg,rgba(29,189,240,0.3),rgba(233,30,122,0.2));top:14px;left:42px;font-size:7px;">F</div>
+            </div>
+            <div class="room-foot"><span class="room-count"><span style="color:var(--fd-green);">&#9679;</span> 7 trabajando</span><span class="room-enter">Entrar &rarr;</span></div>
+          </div>
+          <div class="room">
+            <div class="room-top"><span class="room-name">Tech</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--text-3)"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
+            <div class="room-avatars" style="height:40px;">
+              <div class="mini-av" style="background:linear-gradient(135deg,#6B4FFF,#2566E8);top:0;left:2px;">AL</div>
+              <div class="mini-av" style="background:linear-gradient(135deg,#2566E8,#1DBDF0);top:0;left:24px;">BR</div>
+              <div class="mini-av" style="background:linear-gradient(135deg,var(--fd-green),var(--fd-cyan));top:0;left:46px;">CM</div>
+              <div class="mini-av" style="background:linear-gradient(135deg,#8B5CF6,#E91E7A);top:14px;left:10px;">JL</div>
+              <div class="mini-av agent" style="background:rgba(29,189,240,0.2);top:14px;left:34px;font-size:7px;">F</div>
+            </div>
+            <div class="room-foot"><span class="room-count"><span style="color:var(--fd-green);">&#9679;</span> 11 trabajando</span><span class="room-enter">Entrar &rarr;</span></div>
+          </div>
+          <div class="room">
+            <div class="room-top"><span class="room-name">Operaciones</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--text-3)"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
+            <div class="room-avatars" style="height:40px;">
+              <div class="mini-av" style="background:linear-gradient(135deg,var(--fd-orange),#F57A23);top:0;left:4px;">RA</div>
+              <div class="mini-av" style="background:linear-gradient(135deg,#22D399,#2566E8);top:0;left:28px;">KV</div>
+              <div class="mini-av" style="background:linear-gradient(135deg,#E91E7A,#FF3B8F);top:14px;left:16px;">TP</div>
+            </div>
+            <div class="room-foot"><span class="room-count"><span style="color:var(--fd-green);">&#9679;</span> 7 trabajando</span><span class="room-enter">Entrar &rarr;</span></div>
+          </div>
+          <!-- Row 2 -->
+          <div class="room">
+            <div class="room-top"><span class="room-name">Marketing</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--text-3)"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+            <div class="room-avatars" style="height:40px;">
+              <div class="mini-av" style="background:linear-gradient(135deg,#FF3B8F,#E91E7A);top:0;left:4px;">LC</div>
+              <div class="mini-av" style="background:linear-gradient(135deg,#F59A23,#E84B00);top:0;left:28px;">MF</div>
+              <div class="mini-av agent" style="background:rgba(29,189,240,0.2);top:14px;left:16px;font-size:7px;">F</div>
+            </div>
+            <div class="room-foot"><span class="room-count"><span style="color:var(--fd-orange);">&#9679;</span> 6 trabajando</span><span class="room-enter">Entrar &rarr;</span></div>
+          </div>
+          <!-- SALA DE JUNTAS -->
+          <div class="room sala" style="cursor:pointer;">
+            <div class="sala-shimmer"></div>
+            <div class="sala-label"><span class="sala-badge">Sala de Juntas</span><div class="sala-live"><div class="sala-live-dot"></div><span class="sala-live-txt">EN VIVO</span></div></div>
+            <div class="sala-title">Pipeline review &middot; cierre de mes</div>
+            <div class="sala-meta">Sala de juntas &middot; 10:58 &middot; 45 min</div>
+            <div class="sala-tiles">
+              <div class="sala-tile speaking" style="background:linear-gradient(135deg,var(--fd-cyan),var(--fd-blue));">MR</div>
+              <div class="sala-tile" style="background:linear-gradient(135deg,var(--fd-magenta),var(--fd-pink));">SG</div>
+              <div class="sala-tile" style="background:linear-gradient(135deg,var(--fd-orange),var(--fd-magenta));">DV</div>
+              <div class="sala-tile ada">Ada</div>
+            </div>
+            <button class="sala-enter-btn">Entrar a la sala</button>
+          </div>
+          <div class="room">
+            <div class="room-top"><span class="room-name">CS / Soporte</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--text-3)"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+            <div class="room-avatars" style="height:40px;">
+              <div class="mini-av" style="background:linear-gradient(135deg,var(--fd-blue),#6B4FFF);top:0;left:2px;">NM</div>
+              <div class="mini-av" style="background:linear-gradient(135deg,var(--fd-cyan),var(--fd-green));top:0;left:24px;">OG</div>
+              <div class="mini-av" style="background:linear-gradient(135deg,#F59A23,#22D399);top:0;left:46px;">PR</div>
+              <div class="mini-av" style="background:linear-gradient(135deg,var(--fd-magenta),var(--fd-blue));top:14px;left:16px;">VS</div>
+            </div>
+            <div class="room-foot"><span class="room-count"><span style="color:var(--fd-green);">&#9679;</span> 8 trabajando</span><span class="room-enter">Entrar &rarr;</span></div>
+          </div>
+          <!-- Row 3 -->
+          <div class="room">
+            <div class="room-top"><span class="room-name">RRHH</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--text-3)"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+            <div class="room-avatars" style="height:40px;">
+              <div class="mini-av" style="background:linear-gradient(135deg,#8B5CF6,#E91E7A);top:0;left:4px;">AF</div>
+              <div class="mini-av" style="background:linear-gradient(135deg,#2566E8,var(--fd-green));top:14px;left:22px;">BH</div>
+            </div>
+            <div class="room-foot"><span class="room-count"><span style="color:var(--text-3);">&#9679;</span> 3 trabajando</span><span class="room-enter">Entrar &rarr;</span></div>
+          </div>
+          <div class="room">
+            <div class="room-top"><span class="room-name">Finanzas</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--text-3)"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+            <div class="room-avatars" style="height:40px;">
+              <div class="mini-av" style="background:linear-gradient(135deg,var(--fd-green),var(--fd-blue));top:0;left:4px;">EC</div>
+              <div class="mini-av" style="background:linear-gradient(135deg,var(--fd-cyan),#8B5CF6);top:0;left:28px;">FL</div>
+              <div class="mini-av agent" style="background:rgba(29,189,240,0.2);top:14px;left:16px;font-size:7px;">F</div>
+            </div>
+            <div class="room-foot"><span class="room-count"><span style="color:var(--fd-green);">&#9679;</span> 5 trabajando</span><span class="room-enter">Entrar &rarr;</span></div>
+          </div>
+          <div class="room">
+            <div class="room-top"><span class="room-name">Producto</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--text-3)"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></div>
+            <div class="room-avatars" style="height:40px;">
+              <div class="mini-av" style="background:linear-gradient(135deg,#8B5CF6,var(--fd-blue));top:0;left:2px;">GH</div>
+              <div class="mini-av" style="background:linear-gradient(135deg,var(--fd-orange),#8B5CF6);top:0;left:24px;">IJ</div>
+              <div class="mini-av" style="background:linear-gradient(135deg,var(--fd-green),#F59A23);top:0;left:46px;">KP</div>
+              <div class="mini-av agent" style="background:rgba(29,189,240,0.2);top:14px;left:16px;font-size:7px;">F</div>
+            </div>
+            <div class="room-foot"><span class="room-count"><span style="color:var(--fd-green);">&#9679;</span> 7 trabajando</span><span class="room-enter">Entrar &rarr;</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- RIGHT: campus rail -->
+    <div class="campus-rail">
+      <div class="rail-section-head"><span class="rail-section-title">Dept. <span class="grad">Ventas</span> seleccionado</span><span class="rail-pill cnt">7 activos</span></div>
+      <div class="dept-card">
+        <div class="dept-card-top">
+          <div class="dept-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+          <div><div class="dept-name">Ventas</div><div class="dept-meta">5 personas &middot; 2 agentes IA</div></div>
+        </div>
+        <div class="dept-stats">
+          <div class="dept-stat"><div class="sk">Pipeline</div><div class="sv" style="background:linear-gradient(100deg,var(--fd-cyan),var(--fd-blue));-webkit-background-clip:text;background-clip:text;color:transparent;">$60K</div></div>
+          <div class="dept-stat"><div class="sk">Conversaciones</div><div class="sv">14</div></div>
+          <div class="dept-stat"><div class="sk">En foco</div><div class="sv" style="color:var(--fd-green);">2</div></div>
+          <div class="dept-stat"><div class="sk">Cerrando</div><div class="sv" style="color:var(--fd-pink);">3</div></div>
+        </div>
+        <div class="member-list">
+          <div class="member-row"><div class="m-av" style="background:linear-gradient(135deg,var(--fd-cyan),var(--fd-blue));">MR</div><div class="m-info"><div class="m-name">Manolo Reyes</div><div class="m-status">En llamada &middot; Quantia</div></div><div class="m-val">$38K</div></div>
+          <div class="member-row"><div class="m-av" style="background:linear-gradient(135deg,var(--fd-magenta),var(--fd-pink));">SG</div><div class="m-info"><div class="m-name">Sofia Garcia</div><div class="m-status">Respondiendo Telmex</div></div><div class="m-val" style="color:var(--fd-cyan);">42m</div></div>
+          <div class="member-row"><div class="m-av" style="background:linear-gradient(135deg,var(--fd-orange),var(--fd-magenta));">DV</div><div class="m-info"><div class="m-name">Diego Vargas</div><div class="m-status">Prospeccion outbound</div></div><div class="m-val" style="color:var(--text-3);">23 leads</div></div>
+          <div class="member-row"><div class="m-av" style="background:linear-gradient(135deg,var(--fd-green),var(--fd-cyan));">PM</div><div class="m-info"><div class="m-name">Pao Mendez</div><div class="m-status">Propuesta Aurora</div></div><div class="m-val" style="color:var(--fd-cyan);">1h</div></div>
+          <div class="member-row"><div class="m-av agent" style="background:linear-gradient(135deg,rgba(29,189,240,0.3),rgba(233,30,122,0.2));">CL</div><div class="m-info"><div class="m-name">Closer <span class="m-tag">AGENTE</span></div><div class="m-status">Transcribiendo llamada</div></div></div>
+          <div class="member-row"><div class="m-av agent" style="background:linear-gradient(135deg,rgba(29,189,240,0.3),rgba(37,102,232,0.2));">SC</div><div class="m-info"><div class="m-name">Scout <span class="m-tag">AGENTE</span></div><div class="m-status">Investigando Nodos.io</div></div></div>
+        </div>
+      </div>
+      <div class="rail-section-head" style="margin-top:4px;"><span class="rail-section-title">Pulso del <span class="grad">campus</span></span><span class="rail-pill live">EN VIVO</span></div>
+      <div class="activity-feed">
+        <div class="activity-item"><div class="act-icon" style="background:rgba(34,211,153,0.15);color:var(--fd-green);">&#10003;</div><div class="act-text"><strong>Sofia</strong> cerro conversacion con <strong>Telmex</strong>. <strong style="color:var(--fd-green);">+$22K MXN</strong>.</div><div class="act-time">1 min</div></div>
+        <div class="activity-item"><div class="act-icon" style="background:rgba(29,189,240,0.15);color:var(--fd-cyan);font-size:7px;font-family:'Inter Tight',sans-serif;font-weight:800;">F</div><div class="act-text"><strong>Scout</strong> asigno <strong>5 hot leads</strong> a Diego.</div><div class="act-time">8 min</div></div>
+        <div class="activity-item"><div class="act-icon" style="background:rgba(233,30,122,0.15);color:var(--fd-pink);">&#9670;</div><div class="act-text"><strong>Manolo</strong> entro en llamada con <strong>Carlos &middot; Quantia</strong>.</div><div class="act-time">12 min</div></div>
+        <div class="activity-item"><div class="act-icon" style="background:rgba(37,102,232,0.15);color:var(--fd-blue);">&#9679;</div><div class="act-text"><strong>Pao</strong> entro en modo enfoque &middot; propuesta Aurora.</div><div class="act-time">1h 12m</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+  <!-- Drawer abierto (estatico para este preview) -->
+  <aside style="position:fixed;top:0;left:0;bottom:0;width:272px;z-index:50;background:var(--surface);border-right:1px solid var(--line-strong);display:flex;flex-direction:column;box-shadow:20px 0 60px rgba(0,0,0,0.45);">
+    <div class="drawer-head">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div class="brand-logo"><span>F</span></div>
+        <span class="brand-wordmark"><span class="flow">Flow</span><span class="desk">desk</span></span>
+      </div>
+      <button class="drawer-close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <nav class="drawer-nav">
+      <div class="nav-item active"><div class="nav-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>Focus Mode</div>
+      <div class="nav-item"><div class="nav-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>Dashboard</div>
+      <div class="nav-item"><div class="nav-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M9 9h6v6H9z"/></svg></div>Agentes</div>
+      <div class="nav-item"><div class="nav-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>Equipo</div>
+      <div class="nav-item"><div class="nav-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></div>Objetivos</div>
+      <div class="nav-item"><div class="nav-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>Contactos</div>
+      <div class="nav-item"><div class="nav-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>Campus</div>
+      <div class="nav-item"><div class="nav-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></div>Integraciones</div>
+      <div class="nav-item"><div class="nav-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/></svg></div>Configuracion</div>
+    </nav>
+    <div class="drawer-bottom">
+      <div class="drawer-user">
+        <div class="drawer-avatar">MR</div>
+        <div>
+          <p style="font-family:'Inter Tight',sans-serif;font-size:12px;font-weight:500;color:var(--text);">Manolo Reyes</p>
+          <p style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-3);letter-spacing:0.06em;text-transform:uppercase;">owner</p>
+        </div>
+      </div>
+      <button class="logout-btn"><div class="nav-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>Cerrar sesion</button>
+    </div>
+  </aside>
+  <!-- Contenido difuminado -->
+  <div class="focus-body" style="filter:blur(2px);pointer-events:none;opacity:0.5;">
+    <div class="focus-inner">
+      <div class="greeting"><h1>Buenos dias, <span class="name-grad">Manolo</span>.</h1></div>
+      <div class="hero-wrap"><div class="hero-card"></div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================== VIEW 3: DEPT VENTAS ============================== -->
+<div class="view" id="view-ventas">
+  <header class="topbar">
+    <div class="brand-btn-wrap" id="ventas-brand-wrap">
+      <button class="brand-btn" onclick="document.getElementById('ventas-brand-wrap').classList.toggle('open');event.stopPropagation();">
+        <div class="brand-logo"><span>F</span></div>
+        <span class="brand-wordmark"><span class="flow">Flow</span><span class="desk">desk</span></span>
+        <svg class="chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="logo-dropdown">
+        <div class="dd-section-label">Accion rapida</div>
+        <div class="dd-item"><div class="dd-icon" style="background:linear-gradient(135deg,var(--fd-cyan),var(--fd-blue));"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div><div class="dd-label"><div class="dl">Iniciar huddle</div></div><span class="dd-kbd">H</span></div>
+        <div class="dd-item"><div class="dd-icon" style="background:linear-gradient(135deg,var(--fd-cyan),var(--fd-magenta));"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div><div class="dd-label"><div class="dl">Crear agente IA</div></div><span class="dd-kbd">&#8984;N</span></div>
+        <div class="dd-divider"></div>
+        <div class="dd-section-label">Espacio de trabajo</div>
+        <div class="dd-item"><div class="dd-icon" style="background:linear-gradient(135deg,var(--fd-orange),var(--fd-magenta));"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4"/></svg></div><div class="dd-label"><div class="dl">Configuracion</div><div class="ds">Focus, agentes, equipo, integraciones</div></div></div>
+        <div class="dd-footer"><span class="dd-footer-txt">Acme Studio &middot; 47 miembros</span><span class="dd-change">Cambiar &rarr;</span></div>
+      </div>
+    </div>
+    <div class="topbar-center">
+      <button class="nav-pill">Focus</button>
+      <button class="nav-pill active">Campus</button>
+      <button class="nav-pill">Dashboard</button>
+    </div>
+    <div class="topbar-right">
+      <div class="live-pill"><div class="dot-green"></div><span class="live-pill-text">47 EN LINEA</span></div>
+      <span class="date-tag">JUE &middot; 03 JUN &middot; 10:42</span>
+      <div class="avatar">MR</div>
+    </div>
+  </header>
+  <div class="dept-layout">
+    <!-- LEFT: dept stage -->
+    <div class="dept-stage">
+      <!-- Dept header -->
+      <div class="dept-header">
+        <div class="dept-header-left">
+          <button class="back-btn">&larr; Campus</button>
+          <div class="dept-big-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+          <div>
+            <div class="dept-title">Ventas</div>
+            <div class="dept-live-meta"><span class="dot-green" style="width:5px;height:5px;"></span>5 personas &middot; 2 agentes IA trabajando ahora</div>
+          </div>
+        </div>
+        <div class="kpi-strip">
+          <div class="kpi-item"><div class="kpi-k">Pipeline hoy</div><div class="kpi-v" style="background:linear-gradient(100deg,var(--fd-cyan),var(--fd-blue));-webkit-background-clip:text;background-clip:text;color:transparent;">$60K MXN</div></div>
+          <div class="kpi-item"><div class="kpi-k">Conversaciones</div><div class="kpi-v">14</div></div>
+          <div class="kpi-item"><div class="kpi-k">Cerrando</div><div class="kpi-v" style="color:var(--fd-pink);">3</div></div>
+          <div class="kpi-item"><div class="kpi-k">En foco</div><div class="kpi-v" style="color:var(--fd-green);">2</div></div>
+        </div>
+      </div>
+      <!-- Human workstations -->
+      <div class="section-head"><span class="section-title">El <span class="grad">equipo</span> trabajando [5]</span><span class="section-sub">Click cualquier estacion para entrar</span></div>
+      <div class="workstations-grid">
+        <!-- Card 1: Manolo (featured) -->
+        <div class="ws-card featured">
+          <div class="ws-top">
+            <div class="ws-av" style="background:linear-gradient(135deg,var(--fd-cyan),var(--fd-blue));">MR<div class="ws-status-dot" style="background:var(--fd-pink);"></div></div>
+            <div class="ws-info"><div class="ws-name">Manolo Reyes &middot; <span style="color:var(--text-3);font-weight:400;">tu</span></div><div class="ws-role">Director comercial</div></div>
+            <span class="ws-status-pill" style="background:rgba(255,59,143,0.15);color:var(--fd-pink);border:1px solid rgba(255,59,143,0.3);">EN LLAMADA</span>
+          </div>
+          <div class="ws-task">Negociacion &middot; Quantia &middot; contrato anual</div>
+          <div class="ws-preview">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--text-3);margin-bottom:5px;">Carlos Delgado &middot; Quantia &nbsp; &#9679; &nbsp; <span style="font-family:'Inter Tight',sans-serif;font-weight:600;color:var(--text);">12:48 transcurridos</span></div>
+            <div class="wave-bars"><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div></div>
+          </div>
+          <div class="ws-foot"><span style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--text-3);">Closer transcribiendo</span><span style="font-family:'Inter Tight',sans-serif;font-size:11px;font-weight:600;color:var(--fd-green);">$38K potencial</span></div>
+        </div>
+        <!-- Card 2: Sofia -->
+        <div class="ws-card">
+          <div class="ws-top">
+            <div class="ws-av" style="background:linear-gradient(135deg,var(--fd-magenta),var(--fd-pink));">SG<div class="ws-status-dot" style="background:var(--fd-cyan);"></div></div>
+            <div class="ws-info"><div class="ws-name">Sofia Garcia</div><div class="ws-role">Account Executive</div></div>
+            <span class="ws-status-pill" style="background:rgba(29,189,240,0.12);color:var(--fd-cyan);border:1px solid rgba(29,189,240,0.25);">FOCO 42M</span>
+          </div>
+          <div class="ws-task">Respondiendo a Telmex &middot; propuesta v2</div>
+          <div class="ws-preview">
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <div style="background:var(--surface-2);border-radius:0 7px 7px 7px;padding:4px 8px;font-family:'Inter',sans-serif;font-size:9px;color:var(--text-2);max-width:85%;">&iquest;Sigue en pie la reunion?</div>
+              <div style="background:linear-gradient(100deg,var(--fd-cyan),var(--fd-blue));border-radius:7px 7px 0 7px;padding:4px 8px;font-family:'Inter',sans-serif;font-size:9px;color:white;max-width:85%;align-self:flex-end;">Si, 10:00. Te mando agenda...</div>
+              <div style="padding-left:4px;"><span class="typing-dots"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></span></div>
+            </div>
+          </div>
+          <div class="ws-foot"><span style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--text-3);">Chatwoot &middot; 5 conv.</span><span style="font-family:'Inter Tight',sans-serif;font-size:11px;font-weight:600;color:var(--fd-green);">$22K hoy</span></div>
+        </div>
+        <!-- Card 3: Diego -->
+        <div class="ws-card">
+          <div class="ws-top">
+            <div class="ws-av" style="background:linear-gradient(135deg,var(--fd-orange),var(--fd-magenta));">DV<div class="ws-status-dot" style="background:var(--fd-green);"></div></div>
+            <div class="ws-info"><div class="ws-name">Diego Vargas</div><div class="ws-role">SDR</div></div>
+            <span class="ws-status-pill" style="background:rgba(34,211,153,0.12);color:var(--fd-green);border:1px solid rgba(34,211,153,0.25);">ACTIVO</span>
+          </div>
+          <div class="ws-task">Prospeccion outbound &middot; sector fintech</div>
+          <div class="ws-preview">
+            <div style="display:flex;gap:3px;align-items:flex-end;height:32px;">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="width:100%;background:var(--surface-3);border-radius:3px 3px 0 0;height:8px;"></div><div style="font-family:'JetBrains Mono',monospace;font-size:7px;color:var(--text-3);">Frio</div></div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="width:100%;background:var(--fd-orange);border-radius:3px 3px 0 0;height:16px;opacity:0.6;"></div><div style="font-family:'JetBrains Mono',monospace;font-size:7px;color:var(--text-3);">Tibio</div></div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="width:100%;background:var(--fd-cyan);border-radius:3px 3px 0 0;height:22px;opacity:0.7;"></div><div style="font-family:'JetBrains Mono',monospace;font-size:7px;color:var(--text-3);">Calif.</div></div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="width:100%;background:var(--fd-pink);border-radius:3px 3px 0 0;height:30px;"></div><div style="font-family:'JetBrains Mono',monospace;font-size:7px;color:var(--text-3);">Foco</div></div>
+            </div>
+          </div>
+          <div class="ws-foot"><span style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--text-3);">CRM &middot; 23 leads</span><span style="font-family:'Inter Tight',sans-serif;font-size:11px;font-weight:600;color:var(--text-2);">+12 calls hoy</span></div>
+        </div>
+        <!-- Card 4: Pao -->
+        <div class="ws-card">
+          <div class="ws-top">
+            <div class="ws-av" style="background:linear-gradient(135deg,var(--fd-green),var(--fd-cyan));">PM<div class="ws-status-dot" style="background:var(--fd-cyan);"></div></div>
+            <div class="ws-info"><div class="ws-name">Pao Mendez</div><div class="ws-role">AE Senior</div></div>
+            <span class="ws-status-pill" style="background:rgba(29,189,240,0.12);color:var(--fd-cyan);border:1px solid rgba(29,189,240,0.25);">FOCO 1H 12M</span>
+          </div>
+          <div class="ws-task">Propuesta comercial &middot; Grupo Aurora</div>
+          <div class="ws-preview">
+            <div style="display:flex;align-items:center;gap:7px;">
+              <div style="width:22px;height:22px;border-radius:6px;background:var(--surface-2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--fd-blue)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+              <div style="flex:1;min-width:0;"><div style="font-family:'Inter Tight',sans-serif;font-size:9px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Propuesta_Aurora_v3.docx</div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--text-3);">Editado hace 4 min &middot; 7 pag.</div></div>
+            </div>
+            <div style="margin-top:5px;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--fd-cyan);">Editando seccion 4<span style="border-right:1px solid var(--fd-cyan);margin-left:2px;animation:blink 1s step-end infinite;">&nbsp;</span></div>
+          </div>
+          <div class="ws-foot"><span style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--text-3);">Word &middot; sincronizado</span><span style="font-family:'Inter Tight',sans-serif;font-size:11px;font-weight:600;color:var(--fd-green);">$42K potencial</span></div>
+        </div>
+      </div>
+      <!-- Agent workstations -->
+      <div class="section-head"><span class="section-title">Los <span class="grad">agentes IA</span> trabajando [2]</span><span class="section-sub">Accion autonoma &middot; supervisada</span></div>
+      <div class="agent-grid">
+        <!-- Agent 1: Closer -->
+        <div class="agent-ws">
+          <div class="agent-ws-shimmer"></div>
+          <div class="ws-top">
+            <div class="ws-av agent" style="background:linear-gradient(135deg,rgba(29,189,240,0.3),rgba(233,30,122,0.2));">CL</div>
+            <div class="ws-info"><div class="ws-name">Closer <span class="agent-tag">AGENTE</span></div><div class="ws-role">Agente de cierre &middot; GPT-4 Turbo &middot; v3</div></div>
+            <span class="ws-status-pill" style="background:rgba(34,211,153,0.12);color:var(--fd-green);border:1px solid rgba(34,211,153,0.25);">ACTIVO</span>
+          </div>
+          <div class="log-terminal">
+            <div class="log-line"><span class="log-time">10:38</span><span class="log-done">&#10003;</span><span class="log-text">Sincronizo historial de <strong>Quantia</strong> desde CRM</span></div>
+            <div class="log-line"><span class="log-time">10:40</span><span class="log-done">&#10003;</span><span class="log-text">Genero borrador #1 &middot; revisado por Manolo</span></div>
+            <div class="log-line"><span class="log-time">10:42</span><span class="log-done">&#10003;</span><span class="log-text">Borradores #2&ndash;#4 listos para envio</span></div>
+            <div class="log-line"><span class="log-time">10:44</span><span class="log-spin"><span class="spinner">&#10227;</span></span><span class="log-text" style="color:var(--fd-cyan);">Transcribiendo llamada con Carlos &middot; Quantia</span></div>
+          </div>
+          <div class="ws-foot">
+            <div class="tool-icons"><div class="tool-icon"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div><div class="tool-icon"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><div class="tool-icon"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></div><div class="tool-icon"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div></div>
+            <span class="ws-summary">Hoy <strong style="color:var(--text);">4 borradores &middot; 1 transcripcion</strong></span>
+          </div>
+        </div>
+        <!-- Agent 2: Scout -->
+        <div class="agent-ws">
+          <div class="agent-ws-shimmer"></div>
+          <div class="ws-top">
+            <div class="ws-av agent" style="background:linear-gradient(135deg,rgba(29,189,240,0.3),rgba(37,102,232,0.2));">SC</div>
+            <div class="ws-info"><div class="ws-name">Scout <span class="agent-tag">AGENTE</span></div><div class="ws-role">Agente de prospeccion &middot; GPT-4 &middot; v2</div></div>
+            <span class="ws-status-pill" style="background:rgba(34,211,153,0.12);color:var(--fd-green);border:1px solid rgba(34,211,153,0.25);">ACTIVO</span>
+          </div>
+          <div class="log-terminal">
+            <div class="log-line"><span class="log-time">09:55</span><span class="log-done">&#10003;</span><span class="log-text">Escaneo <strong>1,247 perfiles</strong> de LinkedIn</span></div>
+            <div class="log-line"><span class="log-time">10:18</span><span class="log-done">&#10003;</span><span class="log-text">Califico 23 como tibios &middot; 12 como hot</span></div>
+            <div class="log-line"><span class="log-time">10:35</span><span class="log-done">&#10003;</span><span class="log-text">Asigno 5 hot leads a Diego</span></div>
+            <div class="log-line"><span class="log-time">10:44</span><span class="log-spin"><span class="spinner">&#10227;</span></span><span class="log-text" style="color:var(--fd-cyan);">Investigando <strong>Nodos.io</strong> &middot; pre-call brief</span></div>
+          </div>
+          <div class="ws-foot">
+            <div class="tool-icons"><div class="tool-icon"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></div><div class="tool-icon"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/></svg></div><div class="tool-icon"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg></div><div class="tool-icon"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div></div>
+            <span class="ws-summary">Hoy <strong style="color:var(--text);">12 leads hot &middot; 5 briefs</strong></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- RIGHT: dept rail -->
+    <div class="dept-rail">
+      <!-- Ada insight -->
+      <div class="ada-insight">
+        <div class="ada-insight-head"><div class="ada-f">F</div><span style="font-family:'Inter Tight',sans-serif;font-size:12px;font-weight:600;color:var(--text);">Ada nota</span></div>
+        <div class="ada-insight-txt"><strong>Pao</strong> lleva <strong>1h 12m sin interrupcion</strong> en la propuesta de Aurora &mdash; esta cerca de un cierre. Le silencio sus notificaciones por <strong>15 min mas</strong>.</div>
+      </div>
+      <!-- Next meeting -->
+      <div>
+        <div class="rail-section-head"><span class="rail-section-title">Proxima <span class="grad">cita</span></span><span class="rail-pill live">EN 16 MIN</span></div>
+        <div class="next-meeting-card">
+          <div class="nm-badge">&#9201; 11:00 &middot; revision semanal</div>
+          <div class="nm-title">Pipeline review &middot; cierre de mes</div>
+          <div class="nm-meta">Sala de juntas &middot; 45 min</div>
+          <div class="nm-avs">
+            <div class="nm-av" style="background:linear-gradient(135deg,var(--fd-cyan),var(--fd-blue));">MR</div>
+            <div class="nm-av" style="background:linear-gradient(135deg,var(--fd-magenta),var(--fd-pink));">SG</div>
+            <div class="nm-av" style="background:linear-gradient(135deg,var(--fd-orange),var(--fd-magenta));">DV</div>
+            <div class="nm-av" style="background:linear-gradient(135deg,var(--fd-green),var(--fd-cyan));">PM</div>
+            <div class="nm-av ada">F</div>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--text-3);margin-bottom:8px;">+ Ada y Closer</div>
+          <div class="nm-actions">
+            <button class="nm-enter-btn">Entrar a la sala</button>
+            <button class="nm-ghost-btn">Reagendar</button>
+          </div>
+        </div>
+      </div>
+      <!-- Pulso -->
+      <div>
+        <div class="rail-section-head"><span class="rail-section-title">Pulso de <span class="grad">Ventas</span></span><span class="rail-pill live">EN VIVO</span></div>
+        <div class="activity-feed">
+          <div class="activity-item"><div class="act-icon" style="background:rgba(34,211,153,0.15);color:var(--fd-green);">&#10003;</div><div class="act-text"><strong>Sofia</strong> cerro conversacion con <strong>Telmex</strong>. <strong style="color:var(--fd-green);">+$22K MXN</strong>.</div><div class="act-time">1 min</div></div>
+          <div class="activity-item"><div class="act-icon" style="background:rgba(29,189,240,0.15);color:var(--fd-cyan);font-size:7px;font-family:'Inter Tight',sans-serif;font-weight:800;">F</div><div class="act-text"><strong>Scout</strong> asigno <strong>5 hot leads</strong> a Diego.</div><div class="act-time">8 min</div></div>
+          <div class="activity-item"><div class="act-icon" style="background:rgba(233,30,122,0.15);color:var(--fd-pink);">&#9670;</div><div class="act-text"><strong>Manolo</strong> entro en llamada con <strong>Carlos &middot; Quantia</strong>.</div><div class="act-time">12 min</div></div>
+          <div class="activity-item"><div class="act-icon" style="background:rgba(37,102,232,0.15);color:var(--fd-blue);">&#9679;</div><div class="act-text"><strong>Pao</strong> entro en modo enfoque &middot; propuesta Aurora.</div><div class="act-time">1h 12m</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== VIEW 4: BRAND CLIENTE ============================== -->
+<div class="view" id="view-brand" style="position:relative;">
+
+  <!-- Chip demo — flotante, no ocupa espacio en el flujo -->
+  <div style="position:absolute;top:68px;right:20px;z-index:10;
+              padding:5px 11px;background:rgba(255,107,53,0.10);
+              border:1px solid rgba(255,107,53,0.25);border-radius:99px;">
+    <p style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#FF6B35;letter-spacing:0.09em;white-space:nowrap;">
+      DEMO &mdash; colores extraidos por Claude Vision
+    </p>
+  </div>
+
+  <header class="topbar">
+    <!-- Logo del cliente — sin FlowDesk -->
+    <button class="brand-btn">
+      <div style="width:30px;height:30px;border-radius:9px;flex-shrink:0;
+                  background:linear-gradient(135deg,#FF6B35,#E84B00);
+                  display:flex;align-items:center;justify-content:center;">
+        <span style="font-family:'Inter Tight',sans-serif;font-weight:800;font-size:14px;color:white;">N</span>
+      </div>
+      <span style="font-family:'Inter Tight',sans-serif;font-weight:700;letter-spacing:-0.025em;font-size:17px;color:var(--text);">Nodos Studio</span>
+      <svg class="chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div></div>
+    <div class="topbar-right">
+      <span class="campus-link">Campus</span>
+      <button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+      <span class="date-tag">JUE &middot; 03 JUN &middot; 10:42</span>
+      <div class="avatar" style="background:linear-gradient(135deg,#FF6B35,#FFA500);">CG</div>
+    </div>
+  </header>
+
+  <div class="focus-body">
+    <div class="focus-inner">
+
+      <!-- Banner demo (absoluto — no ocupa espacio en el flujo) -->
+
+      <!-- Greeting -->
+      <div class="greeting">
+        <div class="eyebrow">
+          <span class="eyebrow-date">Jueves &middot; 03 Jun</span>
+          <span class="eyebrow-dot"></span>
+          <span class="eyebrow-status" style="color:#FF6B35;">Lista preparada por Ada</span>
+        </div>
+        <h1>Buenos dias, <span style="background:linear-gradient(100deg,#FF6B35,#E84B00);-webkit-background-clip:text;background-clip:text;color:transparent;">Carlos</span>. Ada preparo tu dia en torno a <em style="font-style:normal;color:var(--text);">Estrategico.</em></h1>
+        <div class="greeting-sub">
+          <p><strong>3 prioridades</strong>. Ada maneja el resto.</p>
+          <div class="momentum-inline">
+            <span class="momentum-label">Racha</span>
+            <span class="momentum-val" style="color:#FF6B35;">12d</span>
+            <div class="momentum-bar"><div class="momentum-fill" style="width:85%;background:linear-gradient(90deg,#FF6B35,#E84B00);"></div></div>
+            <span class="momentum-pct" style="color:#FF6B35;">85%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hero card -->
+      <div class="hero-wrap">
+        <div class="hero-card" style="background:radial-gradient(circle at 90% 10%,rgba(255,107,53,0.15),transparent 40%),radial-gradient(circle at 5% 90%,rgba(232,75,0,0.08),transparent 50%),var(--surface);border-color:rgba(255,107,53,0.28);">
+          <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#FF6B35,transparent);opacity:0.6;"></div>
+          <div class="hero-top">
+            <div class="priority-pill" style="background:rgba(255,107,53,0.12);border-color:rgba(255,107,53,0.28);color:#FF6B35;"><span class="flame" style="background:#FF6B35;box-shadow:0 0 8px #FF6B35;"></span> Prioridad 01 &middot; Alta prioridad</div>
+            <div class="meta-tags"><span class="meta-tag">Estrategico</span><span class="meta-tag">Q3 2026</span></div>
+          </div>
+          <h2>Cerrar alianza con distribuidor regional antes del cierre de Q3.</h2>
+          <p class="hero-why">El acuerdo esta listo para firmar. Retrasar una semana mas desplaza el revenue al Q4 y afecta el pronostico anual.</p>
+          <div class="impact-row">
+            <div class="impact-stat"><div class="k">Impacto estimado</div><div class="v" style="background:linear-gradient(100deg,#FF6B35,#E84B00);-webkit-background-clip:text;background-clip:text;color:transparent;">$380K <span class="unit" style="color:var(--text-3);">MXN</span></div></div>
+            <div class="impact-stat"><div class="k">Tiempo estimado</div><div class="v">60 <span class="unit">min</span></div></div>
+            <div class="impact-stat"><div class="k">Urgencia</div><div class="v" style="color:#FF6B35;">Alta</div></div>
+            <div class="impact-stat"><div class="k">Impacto en KSF</div><div class="v" style="font-size:15px;">Revenue Q3</div></div>
+          </div>
+          <div class="hero-actions">
+            <button class="cta-btn" style="background:linear-gradient(100deg,#FF6B35 0%,#E84B00 60%,#FFA500 130%);box-shadow:0 12px 28px -10px rgba(255,107,53,0.45);">
+              <div class="cta-left"><div class="cta-icon">N</div><div class="cta-text"><div class="l1">Trabajar con Ada</div><div class="l2">Chat &middot; acceso a todas las herramientas</div></div></div>
+              <span class="cta-kbd">F</span>
+            </button>
+            <button class="secondary-btn">Regenerar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- After this -->
+      <div class="after-section">
+        <div class="after-head"><p><span class="muted">y despues</span> 2 acciones mas</p></div>
+        <div class="priority-grid" style="grid-template-columns:repeat(2,1fr);">
+          <div class="priority-card">
+            <div class="priority-card-top"><span>02 &middot; Cliente</span><div class="p-dot" style="background:#FF6B35;"></div></div>
+            <h3>Revisar propuesta de co-marketing con socio Noreste.</h3>
+            <div class="priority-card-foot"><span class="p-accent" style="color:#FF6B35;">Relacion clave</span><span class="p-sep"></span><span>~30 min</span></div>
+          </div>
+          <div class="priority-card">
+            <div class="priority-card-top"><span>03 &middot; Equipo</span><div class="p-dot" style="background:#FFA500;"></div></div>
+            <h3>Entrevistar candidata final para rol de Ops Manager.</h3>
+            <div class="priority-card-foot"><span class="p-accent" style="color:#FFA500;">Cierra rol critico</span><span class="p-sep"></span><span>~45 min</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes blink { 0%,100%{opacity:1;}50%{opacity:0;} }
+
+  /* ===== FOCUS MODE v2 — 2 paneles ===== */
+  .focus-layout { display:grid; grid-template-columns:1fr 360px; flex:1; overflow:hidden; }
+
+  /* Panel izquierdo: contexto del dia */
+  .focus-context { overflow-y:auto; padding:16px 22px 80px; display:flex; flex-direction:column; gap:14px; }
+  .focus-greeting { flex-shrink:0; }
+  .focus-greeting h1 { font-family:'Inter Tight',sans-serif; font-weight:700; letter-spacing:-0.03em; font-size:clamp(20px,2.2vw,28px); color:var(--text); }
+  .focus-greeting .g-sub { display:flex; align-items:center; gap:10px; margin-top:6px; flex-wrap:wrap; }
+  .focus-greeting .g-sub p { font-family:'Fraunces',serif; font-size:13px; color:var(--text-2); }
+  .focus-greeting .g-sub p strong { color:var(--text); font-weight:500; }
+
+  .ctx-section { display:flex; flex-direction:column; gap:8px; }
+  .ctx-head { display:flex; align-items:center; gap:8px; margin-bottom:2px; }
+  .ctx-label { font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-3); }
+  .ctx-badge { font-family:'JetBrains Mono',monospace; font-size:9px; padding:2px 7px; border-radius:5px; background:var(--surface-2); color:var(--text-2); letter-spacing:0.06em; }
+  .ctx-badge.alert { background:rgba(29,189,240,0.12); color:var(--fd-cyan); }
+
+  /* Meeting cards */
+  .ctx-meeting { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:6px; cursor:pointer; transition:background 0.15s; }
+  .ctx-meeting:hover { background:var(--surface-2); }
+  .ctx-meeting.urgent { border-color:rgba(245,154,35,0.3); }
+  .ctx-meeting-top { display:flex; align-items:center; justify-content:space-between; }
+  .ctx-time-badge { font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:600; color:var(--fd-orange); background:rgba(245,154,35,0.12); border:1px solid rgba(245,154,35,0.22); padding:3px 8px; border-radius:999px; letter-spacing:0.08em; }
+  .ctx-time { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-3); }
+  .ctx-duration { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text-3); }
+  .ctx-meeting-title { font-family:'Inter Tight',sans-serif; font-weight:600; font-size:13px; letter-spacing:-0.015em; color:var(--text); }
+  .ctx-meeting-loc { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text-3); letter-spacing:0.04em; }
+  .ctx-context-block { background:rgba(29,189,240,0.06); border:1px solid rgba(29,189,240,0.14); border-radius:8px; padding:9px 11px; }
+  .ctx-context-lbl { font-family:'JetBrains Mono',monospace; font-size:8px; letter-spacing:0.14em; text-transform:uppercase; color:var(--fd-cyan); margin-bottom:4px; }
+  .ctx-context-txt { font-size:12px; color:var(--text-2); line-height:1.45; }
+  .ctx-chips { display:flex; gap:5px; margin-top:7px; flex-wrap:wrap; }
+  .ctx-chip { padding:3px 9px; border-radius:6px; background:rgba(29,189,240,0.09); border:1px solid rgba(29,189,240,0.2); font-family:'Inter Tight',sans-serif; font-size:11px; font-weight:500; color:var(--fd-cyan); cursor:pointer; transition:background 0.15s; }
+  .ctx-chip:hover { background:rgba(29,189,240,0.16); }
+
+  /* Message list (email / whatsapp) */
+  .ctx-msg-list { display:flex; flex-direction:column; gap:4px; }
+  .ctx-msg { display:flex; align-items:flex-start; gap:10px; padding:9px 11px; border-radius:10px; background:var(--surface); cursor:pointer; transition:background 0.15s; position:relative; }
+  .ctx-msg:hover { background:var(--surface-2); }
+  .ctx-msg-av { width:28px; height:28px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-family:'Inter Tight',sans-serif; font-weight:700; font-size:10px; color:white; }
+  .ctx-msg-body { flex:1; min-width:0; }
+  .ctx-msg-from { font-family:'Inter Tight',sans-serif; font-size:12px; font-weight:600; color:var(--text); letter-spacing:-0.01em; }
+  .ctx-msg-subj { font-size:12px; color:var(--text-2); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ctx-msg-preview { font-size:11px; color:var(--text-3); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ctx-msg-time { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text-3); margin-top:3px; }
+  .ctx-unread { width:7px; height:7px; border-radius:50%; background:var(--fd-cyan); flex-shrink:0; margin-top:5px; }
+
+  /* Todos */
+  .ctx-todo-list { display:flex; flex-direction:column; gap:4px; }
+  .ctx-todo { display:flex; align-items:flex-start; gap:10px; padding:9px 11px; border-radius:10px; background:var(--surface); cursor:pointer; transition:background 0.15s; }
+  .ctx-todo:hover { background:var(--surface-2); }
+  .ctx-todo.done { opacity:0.45; }
+  .ctx-todo-box { width:15px; height:15px; border-radius:4px; border:1.5px solid var(--line-strong); flex-shrink:0; margin-top:2px; display:flex; align-items:center; justify-content:center; }
+  .ctx-todo.done .ctx-todo-box { background:var(--fd-green); border-color:var(--fd-green); }
+  .ctx-todo-title { font-family:'Inter Tight',sans-serif; font-size:12px; font-weight:500; color:var(--text); letter-spacing:-0.01em; }
+  .ctx-todo.done .ctx-todo-title { text-decoration:line-through; color:var(--text-3); }
+  .ctx-todo-meta { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text-3); margin-top:2px; }
+
+  /* Ada chat panel (derecho) */
+  .focus-chat { border-left:1px solid var(--line); display:flex; flex-direction:column; background:var(--bg-2); }
+  .chat-header { padding:13px 16px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px; flex-shrink:0; }
+  .chat-ada-av { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,var(--fd-cyan),var(--fd-magenta)); display:flex; align-items:center; justify-content:center; font-family:'Inter Tight',sans-serif; font-weight:700; font-size:11px; color:white; flex-shrink:0; }
+  .chat-ada-name { font-family:'Inter Tight',sans-serif; font-weight:600; font-size:13px; color:var(--text); }
+  .chat-ada-status { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--fd-green); letter-spacing:0.08em; margin-top:1px; }
+  .chat-tool-chips { display:flex; gap:4px; margin-left:auto; }
+  .chat-tool { width:22px; height:22px; border-radius:6px; background:var(--surface); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; }
+  .chat-messages { flex:1; overflow-y:auto; padding:14px 16px; display:flex; flex-direction:column; gap:12px; }
+  .chat-msg-ada { display:flex; gap:8px; align-items:flex-start; }
+  .chat-bubble-ada { background:var(--surface); border-radius:4px 12px 12px 12px; padding:10px 13px; font-size:13px; color:var(--text); line-height:1.5; max-width:260px; }
+  .chat-msg-ts { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text-3); margin-top:4px; padding-left:4px; }
+  .chat-quick-chips { display:flex; flex-wrap:wrap; gap:5px; padding-left:32px; }
+  .ada-chip { padding:5px 10px; border-radius:8px; border:1px solid rgba(29,189,240,0.25); background:rgba(29,189,240,0.08); font-family:'Inter Tight',sans-serif; font-size:11px; font-weight:500; color:var(--fd-cyan); cursor:pointer; transition:background 0.15s; white-space:nowrap; }
+  .ada-chip:hover { background:rgba(29,189,240,0.14); }
+  .chat-msg-user { display:flex; justify-content:flex-end; }
+  .chat-bubble-user { background:linear-gradient(135deg,var(--fd-cyan),var(--fd-blue)); border-radius:12px 12px 4px 12px; padding:10px 13px; font-size:13px; color:white; line-height:1.5; max-width:240px; }
+  .email-draft-card { margin-top:6px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px; max-width:288px; }
+  .email-draft-lbl { font-family:'JetBrains Mono',monospace; font-size:8px; color:var(--text-3); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:7px; }
+  .email-draft-to { font-size:11px; color:var(--text-2); margin-bottom:3px; }
+  .email-draft-subj { font-size:11px; color:var(--text-2); margin-bottom:8px; }
+  .email-draft-body { font-family:'Fraunces',serif; font-size:12px; color:var(--text); line-height:1.5; }
+  .email-draft-actions { display:flex; gap:6px; margin-top:10px; }
+  .draft-btn { padding:6px 13px; border-radius:7px; border:none; cursor:pointer; font-family:'Inter Tight',sans-serif; font-size:11px; font-weight:500; }
+  .draft-btn.primary { background:linear-gradient(100deg,var(--fd-cyan),var(--fd-blue)); color:white; }
+  .draft-btn.ghost { background:var(--surface-2); border:1px solid var(--line); color:var(--text); }
+  .chat-input-area { padding:12px 14px; border-top:1px solid var(--line); flex-shrink:0; }
+  .chat-quick-actions { display:flex; gap:5px; margin-bottom:8px; flex-wrap:wrap; }
+  .chat-quick-btn { padding:4px 10px; border-radius:7px; border:1px solid var(--line); background:var(--surface); font-family:'Inter Tight',sans-serif; font-size:11px; font-weight:500; color:var(--text-2); cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+  .chat-quick-btn:hover { background:var(--surface-2); color:var(--text); }
+  .chat-input-row { display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line-strong); border-radius:12px; padding:8px 12px; }
+  .chat-input { flex:1; background:none; border:none; outline:none; font-family:'Inter',sans-serif; font-size:13px; color:var(--text); }
+  .chat-input::placeholder { color:var(--text-3); }
+  .chat-send-btn { width:28px; height:28px; border-radius:8px; border:none; cursor:pointer; background:linear-gradient(135deg,var(--fd-cyan),var(--fd-blue)); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+  /* Campus goto button */
+  .campus-goto-btn { display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:8px; border:1px solid var(--line-strong); background:var(--surface); color:var(--text); font-family:'Inter Tight',sans-serif; font-size:13px; font-weight:500; cursor:pointer; transition:all 0.15s; letter-spacing:-0.01em; }
+  .campus-goto-btn:hover { border-color:rgba(29,189,240,0.35); color:var(--fd-cyan); background:rgba(29,189,240,0.06); }
+</style>
+<script>
+function showView(name, btn) {
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+  document.querySelectorAll('.demo-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('view-' + name).classList.add('active');
+  btn.classList.add('active');
+  // close all dropdowns when switching views
+  document.querySelectorAll('.brand-btn-wrap').forEach(function(w){ w.classList.remove('open'); });
+}
+function openDrawer() {
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+function toggleDrawer() {
+  var d = document.getElementById('drawer');
+  if (d.classList.contains('open')) { closeDrawer(); } else { openDrawer(); }
+}
+// Cerrar drawer al hacer clic fuera de el
+document.addEventListener('click', function(e) {
+  var drawer = document.getElementById('drawer');
+  var brandBtn = document.querySelector('#view-focus .brand-btn');
+  if (drawer && drawer.classList.contains('open')) {
+    if (!drawer.contains(e.target) && brandBtn && !brandBtn.contains(e.target)) {
+      closeDrawer();
+    }
+  }
+  // Cerrar dropdowns del logo
+  document.querySelectorAll('.brand-btn-wrap').forEach(function(w){ w.classList.remove('open'); });
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeDrawer();
+    document.querySelectorAll('.brand-btn-wrap').forEach(function(w){ w.classList.remove('open'); });
+  }
+});
+</script>
+</body>
+</html>
