@@ -3,6 +3,10 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/store/auth';
 
+function isSuperAdmin(user: { role?: string; platform_admin?: boolean } | null) {
+  return user?.role === 'superadmin' || user?.platform_admin === true;
+}
+
 export default function LoginPage() {
   const login = useAuth((s) => s.login);
   const router = useRouter();
@@ -17,7 +21,8 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-      router.push('/dashboard');
+      const user = useAuth.getState().user;
+      router.push(isSuperAdmin(user) ? '/admin' : '/dashboard');
     } catch (err: any) {
       setError(err.message ?? 'Error al iniciar sesión');
     } finally {

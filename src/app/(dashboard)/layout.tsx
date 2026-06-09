@@ -249,6 +249,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     ? effectiveUser.name.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase()
     : effectiveUser?.email?.slice(0, 2)?.toUpperCase() ?? 'U';
 
+  /* Admin routes — el admin layout cubre todo con fixed inset-0, no necesita este wrapper */
+  if (pathname.startsWith('/admin')) {
+    return <>{children}</>;
+  }
+
   /* Loading screen */
   if (loading || !effectiveUser) {
     return (
