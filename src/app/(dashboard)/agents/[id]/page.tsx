@@ -261,7 +261,7 @@ export default function AgentChatPage() {
         });
       }
 
-      // Si era conversación nueva, establecerla como activa
+      // Actualizar conversación activa y refrescar sidebar
       if (!activeConversation) {
         const newConv: Conversation = {
           id: result.conversation_id,
@@ -272,6 +272,10 @@ export default function AgentChatPage() {
         setActiveConversation(newConv);
         setConversations((prev) => [newConv, ...prev]);
       }
+      // Refrescar la lista de conversaciones en segundo plano para capturar cualquier cambio
+      api.get<Conversation[]>(`/agents/${agentId}/conversations`)
+        .then(convs => setConversations(Array.isArray(convs) ? convs : []))
+        .catch(() => {});
     } catch (err: any) {
       setMessages((prev) => [
         ...prev,
