@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagnóstico — Departamento de Entrega de Servicio | MentorIA</title>
+<style>
+  :root {
+    --brand-dark: #0a0a14;
+    --brand-purple: #6c4de6;
+    --brand-purple-light: #8b6ef5;
+    --brand-purple-dim: rgba(108, 77, 230, 0.15);
+    --brand-cyan: #00d4ff;
+    --brand-cyan-dim: rgba(0, 212, 255, 0.1);
+    --surface: #13131f;
+    --surface-2: #1a1a2e;
+    --surface-3: #1f1f35;
+    --border: rgba(255,255,255,0.08);
+    --border-active: rgba(108, 77, 230, 0.5);
+    --text-primary: #f0f0f8;
+    --text-secondary: #8888aa;
+    --text-muted: #55556a;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--brand-dark);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 0;
+    position: sticky; top: 0; z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+  .header-inner {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .logo-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-dot {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--brand-purple), var(--brand-cyan));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 800; color: white;
+    flex-shrink: 0;
+  }
+  .logo-text { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+  .logo-sub { font-size: 11px; color: var(--text-secondary); font-weight: 400; }
+  .header-title {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: right;
+  }
+
+  /* ── Progress ── */
+  .progress-bar-wrap {
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    padding: 0;
+  }
+  .progress-inner { max-width: 780px; margin: 0 auto; padding: 0 24px; }
+  .progress-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .progress-pct { color: var(--brand-purple-light); font-weight: 600; }
+  .progress-track {
+    height: 3px;
+    background: var(--surface-3);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 0;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--brand-purple), var(--brand-cyan));
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+
+  /* ── Main ── */
+  .main { max-width: 780px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  /* ── Hero section ── */
+  .hero {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--brand-purple), var(--brand-cyan));
+  }
+  .hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--brand-purple-dim);
+    border: 1px solid var(--border-active);
+    color: var(--brand-purple-light);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 4px 10px;
+    border-radius: 99px;
+    margin-bottom: 16px;
+  }
+  .hero h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    line-height: 1.3;
+  }
+  .hero p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    max-width: 560px;
+    line-height: 1.7;
+  }
+  .hero-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 20px;
+  }
+  .chip {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    padding: 5px 12px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .chip span { color: var(--brand-cyan); }
+
+  /* ── Section ── */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 20px;
+    transition: border-color 0.2s;
+  }
+  .section:hover { border-color: var(--border-active); }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-num {
+    width: 36px; height: 36px;
+    background: var(--brand-purple-dim);
+    border: 1px solid var(--border-active);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700;
+    color: var(--brand-purple-light);
+    flex-shrink: 0;
+  }
+  .section-title-wrap {}
+  .section-title { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+  .section-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ── Field ── */
+  .field { margin-bottom: 22px; }
+  .field:last-child { margin-bottom: 0; }
+  .field-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+  .field-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-left: 4px;
+  }
+  .field-optional {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-left: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  select,
+  textarea {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    padding: 11px 14px;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  input[type="text"]:focus,
+  input[type="email"]:focus,
+  input[type="number"]:focus,
+  select:focus,
+  textarea:focus {
+    border-color: var(--brand-purple);
+    background: var(--surface-3);
+    box-shadow: 0 0 0 3px var(--brand-purple-dim);
+  }
+  input::placeholder, textarea::placeholder { color: var(--text-muted); }
+  select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2355556a' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+  }
+  select option { background: var(--surface-2); color: var(--text-primary); }
+  textarea { resize: vertical; min-height: 90px; }
+
+  /* ── Radio / Check groups ── */
+  .options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 8px;
+  }
+  .options-list { display: flex; flex-direction: column; gap: 8px; }
+  .opt-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    user-select: none;
+  }
+  .opt-item:hover { border-color: rgba(108,77,230,0.3); background: var(--surface-3); }
+  .opt-item input[type="radio"],
+  .opt-item input[type="checkbox"] {
+    width: 16px; height: 16px;
+    min-width: 16px; min-height: 16px;
+    margin-top: 1px;
+    accent-color: var(--brand-purple);
+    cursor: pointer;
+    padding: 0;
+  }
+  .opt-item.selected {
+    border-color: var(--brand-purple);
+    background: var(--brand-purple-dim);
+  }
+  .opt-label { font-size: 13px; color: var(--text-primary); line-height: 1.4; }
+  .opt-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ── Scale ── */
+  .scale-wrap { display: flex; flex-direction: column; gap: 8px; }
+  .scale-row { display: flex; gap: 6px; }
+  .scale-btn {
+    flex: 1;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 4px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .scale-btn:hover { border-color: rgba(108,77,230,0.4); color: var(--text-primary); }
+  .scale-btn.active { background: var(--brand-purple-dim); border-color: var(--brand-purple); color: var(--brand-purple-light); }
+  .scale-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); padding: 0 2px; }
+
+  /* ── Divider field ── */
+  .field-divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  /* ── Actions ── */
+  .actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 32px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--brand-purple), var(--brand-purple-light));
+    color: white;
+    box-shadow: 0 4px 16px rgba(108,77,230,0.4);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(108,77,230,0.5); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+  }
+  .btn-ghost:hover { border-color: var(--border-active); color: var(--text-primary); background: var(--surface-2); }
+  .btn-success {
+    background: rgba(34,197,94,0.15);
+    border: 1px solid rgba(34,197,94,0.3);
+    color: var(--success);
+  }
+  .btn-success:hover { background: rgba(34,197,94,0.25); }
+  .save-status {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .save-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--success);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 28px; right: 28px;
+    background: var(--surface-3);
+    border: 1px solid var(--border-active);
+    border-radius: 10px;
+    padding: 14px 20px;
+    font-size: 13px;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: var(--shadow);
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(.34,1.56,.64,1);
+    z-index: 999;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast-icon { font-size: 16px; }
+
+  /* ── Summary panel ── */
+  #summary-panel {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border-active);
+    border-radius: 16px;
+    padding: 32px;
+    margin-top: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  #summary-panel::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--success), var(--brand-cyan));
+  }
+  #summary-panel h2 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  #summary-panel p { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; }
+  .summary-json {
+    background: var(--brand-dark);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 12px;
+    color: var(--brand-cyan);
+    max-height: 300px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .summary-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    .main { padding: 24px 16px 60px; }
+    .hero { padding: 24px 20px; }
+    .section { padding: 20px 16px; }
+    .options-grid { grid-template-columns: 1fr; }
+    .actions { flex-direction: column; align-items: stretch; }
+    .btn { justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo-badge">
+      <div class="logo-dot">M</div>
+      <div>
+        <div class="logo-text">MentorIA Systems</div>
+        <div class="logo-sub">Plataforma de Diagnóstico</div>
+      </div>
+    </div>
+    <div class="header-title">
+      Fase 1 — Diagnóstico<br>
+      <span id="header-empresa" style="color:var(--brand-purple-light);font-size:11px;"></span>
+    </div>
+  </div>
+</header>
+
+<!-- Progress -->
+<div class="progress-bar-wrap">
+  <div class="progress-inner">
+    <div class="progress-meta">
+      <span id="progress-label">Sección 0 de 7</span>
+      <span class="progress-pct" id="progress-pct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-tag">
+      <span>●</span> Diagnóstico Inicial — Entrega de Servicio
+    </div>
+    <h1>Conocemos tu operación.<br>Diseñamos tu transformación.</h1>
+    <p>Este cuestionario nos permite mapear en detalle cómo funciona tu departamento de entrega de servicio hoy — sus procesos, puntos de dolor y oportunidades de mejora. Toda la información se guarda automáticamente mientras la completas.</p>
+    <div class="hero-chips">
+      <div class="chip"><span>7</span> secciones</div>
+      <div class="chip"><span>~15 min</span> de duración</div>
+      <div class="chip"><span>✓</span> Auto-guardado</div>
+      <div class="chip"><span>✓</span> Datos exportables</div>
+    </div>
+  </div>
+
+  <form id="diag-form" novalidate>
+
+    <!-- S1: Datos generales -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">1</div>
+        <div class="section-title-wrap">
+          <div class="section-title">Datos Generales</div>
+          <div class="section-desc">Información básica de la empresa y el respondente</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="empresa">Nombre de la empresa</label>
+        <input type="text" id="empresa" name="empresa" placeholder="Ej. Constructora Norteña S.A." autocomplete="organization">
+      </div>
+      <div class="field">
+        <label class="field-label" for="respondente">Nombre del respondente</label>
+        <input type="text" id="respondente" name="respondente" placeholder="Nombre completo" autocomplete="name">
+      </div>
+      <div class="field">
+        <label class="field-label" for="cargo">Cargo / Rol</label>
+        <input type="text" id="cargo" name="cargo" placeholder="Ej. Gerente de Operaciones, Jefe de Servicio…">
+      </div>
+      <div class="field">
+        <label class="field-label" for="email">Correo electrónico</label>
+        <input type="email" id="email" name="email" placeholder="tu@empresa.com" autocomplete="email">
+      </div>
+      <div class="field">
+        <label class="field-label" for="industria">Industria / Sector</label>
+        <select id="industria" name="industria">
+          <option value="">— Selecciona —</option>
+          <option>Tecnología / Software</option>
+          <option>Construcción y obra civil</option>
+          <option>Salud y clínicas</option>
+          <option>Retail / Comercio</option>
+          <option>Logística y transporte</option>
+          <option>Educación</option>
+          <option>Servicios profesionales (legal, contable, consultoría)</option>
+          <option>Manufactura / Industria</option>
+          <option>Hospitalidad / Turismo</option>
+          <option>Servicios financieros</option>
+          <option>Otro</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label" for="industria-otro">Si seleccionaste "Otro" <span class="field-optional">opcional</span></label>
+        <input type="text" id="industria-otro" name="industria_otro" placeholder="Describe tu industria">
+      </div>
+    </div>
+
+    <!-- S2: El equipo -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">2</div>
+        <div class="section-title-wrap">
+          <div class="section-title">El Equipo y la Estructura</div>
+          <div class="section-desc">Personas, roles y forma de operar</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="tam-equipo">¿Cuántas personas conforman el departamento de entrega de servicio?</label>
+        <select id="tam-equipo" name="tam_equipo">
+          <option value="">— Selecciona —</option>
+          <option>Solo yo (1 persona)</option>
+          <option>2 a 5 personas</option>
+          <option>6 a 15 personas</option>
+          <option>16 a 30 personas</option>
+          <option>Más de 30 personas</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="field-label">¿Cuáles de estos roles existen en el equipo? <span class="field-hint">(selecciona todos los que apliquen)</span></label>
+        <div class="options-grid" id="roles-check"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="modelo-trabajo">Modelo de trabajo actual</label>
+        <div class="options-list" id="modelo-trabajo-opts"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="estructura-nota">¿Hay algo especial en cómo está organizado el equipo que debamos saber? <span class="field-optional">opcional</span></label>
+        <textarea id="estructura-nota" name="estructura_nota" placeholder="Ej. Tenemos subcontratistas, operamos por turnos, tenemos células por cliente…"></textarea>
+      </div>
+    </div>
+
+    <!-- S3: Procesos -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">3</div>
+        <div class="section-title-wrap">
+          <div class="section-title">Procesos Actuales</div>
+          <div class="section-desc">Cómo se gestiona la operación día a día</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">¿Cómo reciben y registran una nueva solicitud de servicio?</label>
+        <div class="options-list" id="canal-entrada-opts"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="herramientas-ops">¿Qué herramientas o sistemas usan para gestionar el trabajo? <span class="field-hint">(selecciona todos los que apliquen)</span></label>
+        <div class="options-grid" id="herramientas-opts"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="herramientas-otras">Otras herramientas que usen <span class="field-optional">opcional</span></label>
+        <input type="text" id="herramientas-otras" name="herramientas_otras" placeholder="Ej. SAP, HubSpot, Freshdesk, sistema propio…">
+      </div>
+
+      <div class="field">
+        <label class="field-label">¿Tienen procedimientos documentados (SOPs, manuales, checklists) para los procesos clave?</label>
+        <div class="options-list" id="sops-opts"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">¿Cómo se asignan las tareas/casos al equipo?</label>
+        <div class="options-list" id="asignacion-opts"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="volumen-mensual">Volumen mensual aproximado de solicitudes, proyectos o casos atendidos</label>
+        <select id="volumen-mensual" name="volumen_mensual">
+          <option value="">— Selecciona —</option>
+          <option>Menos de 10</option>
+          <option>10 a 50</option>
+          <option>51 a 200</option>
+          <option>201 a 500</option>
+          <option>Más de 500</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="tiempo-resolucion">Tiempo promedio de resolución / entrega por caso o proyecto</label>
+        <select id="tiempo-resolucion" name="tiempo_resolucion">
+          <option value="">— Selecciona —</option>
+          <option>Menos de 1 hora</option>
+          <option>1 a 24 horas</option>
+          <option>2 a 5 días</option>
+          <option>1 a 2 semanas</option>
+          <option>Más de 2 semanas</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- S4: Comunicación con el cliente -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">4</div>
+        <div class="section-title-wrap">
+          <div class="section-title">Comunicación con el Cliente</div>
+          <div class="section-desc">Cómo se mantiene informado al cliente durante la entrega</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">¿Por qué canales se comunican con los clientes durante la entrega? <span class="field-hint">(todos los que apliquen)</span></label>
+        <div class="options-grid" id="canales-cliente-opts"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">¿Con qué frecuencia actualizan al cliente sobre el avance de su servicio?</label>
+        <div class="options-list" id="frecuencia-update-opts"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">¿Cómo notifican al cliente cuando el servicio está completado?</label>
+        <div class="options-list" id="notif-fin-opts"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">¿Tienen un proceso formal de escalamiento para quejas o problemas?</label>
+        <div class="options-list" id="escalamiento-opts"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="nps-actual">¿Miden la satisfacción del cliente (NPS, CSAT, encuesta)?</label>
+        <div class="options-list" id="nps-opts"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="nps-score">Si miden NPS / satisfacción, ¿cuál es el puntaje actual aproximado? <span class="field-optional">opcional</span></label>
+        <input type="text" id="nps-score" name="nps_score" placeholder="Ej. NPS 42, CSAT 4.1/5, 87% satisfacción…">
+      </div>
+    </div>
+
+    <!-- S5: Puntos de dolor -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">5</div>
+        <div class="section-title-wrap">
+          <div class="section-title">Puntos de Dolor y Cuellos de Botella</div>
+          <div class="section-desc">Lo que más les quita tiempo, energía y clientes</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">¿Cuáles son los principales problemas operativos del departamento? <span class="field-hint">(marca los que sientas más críticos)</span></label>
+        <div class="options-list" id="problemas-ops-opts"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="dolor-principal">Descríbenos el problema que MÁS les quita tiempo y energía actualmente</label>
+        <textarea id="dolor-principal" name="dolor_principal" placeholder="Sé específico — mientras más detalle, mejor podemos ayudar…" style="min-height:110px;"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="error-recurrente">¿Qué errores o situaciones se repiten con más frecuencia? <span class="field-optional">opcional</span></label>
+        <textarea id="error-recurrente" name="error_recurrente" placeholder="Ej. Se pierden solicitudes, el cliente se queja de no recibir seguimiento, hay retrabajos por falta de información…"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="queja-cliente">¿Cuál es la queja o comentario que más repiten los clientes?</label>
+        <textarea id="queja-cliente" name="queja_cliente" placeholder="Puedes usar sus palabras exactas si las recuerdas…"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label">¿Cuánto tiempo semanal estima que el equipo pierde en tareas que podrían automatizarse?</label>
+        <div class="options-list" id="tiempo-perdido-opts"></div>
+      </div>
+    </div>
+
+    <!-- S6: Métricas y KPIs -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">6</div>
+        <div class="section-title-wrap">
+          <div class="section-title">Métricas y Estado Actual</div>
+          <div class="section-desc">Qué se mide y cómo está el desempeño hoy</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">¿Qué métricas o KPIs miden actualmente en el departamento? <span class="field-hint">(todos los que apliquen)</span></label>
+        <div class="options-grid" id="kpis-opts"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="kpis-otros">Otros KPIs o métricas que miden <span class="field-optional">opcional</span></label>
+        <input type="text" id="kpis-otros" name="kpis_otros" placeholder="Ej. % proyectos en tiempo, costo por ticket, tasa de recompra…">
+      </div>
+
+      <div class="field">
+        <label class="field-label">Califica el desempeño actual del departamento en estas áreas (1 = muy bajo · 5 = excelente)</label>
+        <div style="display:flex;flex-direction:column;gap:16px;margin-top:4px;">
+          <div>
+            <div class="field-label" style="font-size:12px;margin-bottom:6px;">Tiempo de respuesta al cliente</div>
+            <div class="scale-row" id="scale-respuesta"></div>
+          </div>
+          <div>
+            <div class="field-label" style="font-size:12px;margin-bottom:6px;">Calidad del servicio entregado</div>
+            <div class="scale-row" id="scale-calidad"></div>
+          </div>
+          <div>
+            <div class="field-label" style="font-size:12px;margin-bottom:6px;">Comunicación interna del equipo</div>
+            <div class="scale-row" id="scale-comunicacion-int"></div>
+          </div>
+          <div>
+            <div class="field-label" style="font-size:12px;margin-bottom:6px;">Procesos y documentación</div>
+            <div class="scale-row" id="scale-procesos"></div>
+          </div>
+          <div>
+            <div class="field-label" style="font-size:12px;margin-bottom:6px;">Uso de tecnología / herramientas</div>
+            <div class="scale-row" id="scale-tecnologia"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="sla">¿Tienen SLAs (acuerdos de nivel de servicio) definidos con sus clientes?</label>
+        <div class="options-list" id="sla-opts"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="sla-cumplimiento">Si tienen SLAs, ¿qué tan frecuentemente los cumplen? <span class="field-optional">opcional</span></label>
+        <select id="sla-cumplimiento" name="sla_cumplimiento">
+          <option value="">— Selecciona si aplica —</option>
+          <option>Casi siempre (+90%)</option>
+          <option>La mayoría de veces (70–90%)</option>
+          <option>A veces (50–70%)</option>
+          <option>Con frecuencia incumplimos (-50%)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- S7: Oportunidades IA -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">7</div>
+        <div class="section-title-wrap">
+          <div class="section-title">Oportunidades con IA</div>
+          <div class="section-desc">Qué quieren mejorar y qué esperan de la transformación</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">¿Qué tareas repetitivas quisieran automatizar primero? <span class="field-hint">(selecciona las más importantes)</span></label>
+        <div class="options-list" id="automatizar-opts"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="automatizar-otro">¿Hay algo más que les gustaría automatizar? <span class="field-optional">opcional</span></label>
+        <input type="text" id="automatizar-otro" name="automatizar_otro" placeholder="Describe la tarea o proceso…">
+      </div>
+
+      <div class="field">
+        <label class="field-label">¿Cuál sería el resultado más valioso para el negocio en los próximos 6 meses? <span class="field-hint">(elige el más importante)</span></label>
+        <div class="options-list" id="resultado-valioso-opts"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="limitante">¿Qué creen que les ha limitado implementar mejoras antes?</label>
+        <textarea id="limitante" name="limitante" placeholder="Ej. Tiempo, presupuesto, no saber por dónde empezar, resistencia del equipo, falta de herramientas…"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="meta-90d">Si en 90 días una cosa cambiara en la operación, ¿cuál debería ser?</label>
+        <textarea id="meta-90d" name="meta_90d" placeholder="Sé específico — este input guía nuestro plan de implementación…" style="min-height:100px;"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="contexto-extra">¿Hay algo más que quieras que sepamos sobre tu departamento antes de comenzar? <span class="field-optional">opcional</span></label>
+        <textarea id="contexto-extra" name="contexto_extra" placeholder="Proyectos en curso, cambios recientes, contexto especial…"></textarea>
+      </div>
+    </div>
+
+  </form>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button class="btn btn-primary" onclick="guardarYExportar()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Guardar y ver resumen
+    </button>
+    <button class="btn btn-ghost" onclick="exportarJSON()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exportar JSON
+    </button>
+    <button class="btn btn-ghost" onclick="limpiarTodo()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+      Reiniciar
+    </button>
+    <div class="save-status">
+      <div class="save-dot"></div>
+      <span id="save-label">Auto-guardado activo</span>
+    </div>
+  </div>
+
+  <!-- Summary panel -->
+  <div id="summary-panel">
+    <h2>✅ Diagnóstico guardado</h2>
+    <p>Los datos están almacenados en este navegador. Copia el JSON para procesarlo en la siguiente etapa.</p>
+    <pre class="summary-json" id="summary-content"></pre>
+    <div class="summary-actions">
+      <button class="btn btn-success" onclick="copiarJSON()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copiar JSON
+      </button>
+      <button class="btn btn-ghost" onclick="exportarJSON()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Descargar .json
+      </button>
+    </div>
+  </div>
+
+</main>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toast-icon">✅</span>
+  <span id="toast-msg">Guardado correctamente</span>
+</div>
+
+<script>
+// ── Data definitions ──────────────────────────────────────
+const DATA = {
+  roles: [
+    'Atención al cliente / soporte',
+    'Coordinador de proyectos',
+    'Técnico / especialista de campo',
+    'Implementador / instalador',
+    'Gerente / líder del área',
+    'Analista de calidad',
+    'Facturación / administración',
+    'Logística / despacho',
+    'Otro',
+  ],
+  modelo_trabajo: [
+    { v: 'presencial', l: 'Presencial' },
+    { v: 'remoto', l: 'Remoto / home office' },
+    { v: 'hibrido', l: 'Híbrido' },
+    { v: 'campo', l: 'En campo / itinerante' },
+  ],
+  canal_entrada: [
+    { v: 'email', l: 'Email', s: 'Las solicitudes llegan por correo' },
+    { v: 'whatsapp', l: 'WhatsApp', s: 'Chat directo o grupos de WA' },
+    { v: 'telefono', l: 'Teléfono / llamada', s: '' },
+    { v: 'formulario', l: 'Formulario web o portal', s: 'Formulario en el sitio o sistema propio' },
+    { v: 'crm-ticket', l: 'CRM / sistema de tickets', s: 'HubSpot, Zendesk, Freshdesk…' },
+    { v: 'presencial', l: 'En persona', s: '' },
+    { v: 'sin-proceso', l: 'No hay un proceso definido', s: 'Llega como llega' },
+  ],
+  herramientas: [
+    'WhatsApp / WhatsApp Business',
+    'Excel / Google Sheets',
+    'Email (Gmail, Outlook)',
+    'Trello / Asana / Monday',
+    'CRM (HubSpot, Salesforce…)',
+    'Zendesk / Freshdesk',
+    'Sistema propio / ERP',
+    'Google Drive / Dropbox',
+    'Notion / Confluence',
+    'Sin herramienta formal',
+  ],
+  sops: [
+    { v: 'si-completo', l: 'Sí, tenemos documentación completa y actualizada' },
+    { v: 'si-parcial', l: 'Parcialmente — algunas áreas sí, otras no' },
+    { v: 'informal', l: 'Solo de forma informal (en la cabeza del equipo)' },
+    { v: 'no', l: 'No tenemos documentación formal' },
+  ],
+  asignacion: [
+    { v: 'manual-lead', l: 'El líder del área asigna manualmente' },
+    { v: 'rotacion', l: 'Por rotación automática' },
+    { v: 'voluntaria', l: 'El mismo agente toma los casos disponibles' },
+    { v: 'skills', l: 'Por especialidad o habilidad del agente' },
+    { v: 'sistema', l: 'El sistema lo asigna automáticamente' },
+    { v: 'sin-proceso', l: 'No hay un proceso definido de asignación' },
+  ],
+  canales_cliente: [
+    'Email',
+    'WhatsApp',
+    'Teléfono',
+    'Portal / plataforma del cliente',
+    'Videollamada (Zoom, Meet)',
+    'Chat en aplicación propia',
+    'Visita presencial',
+    'SMS / mensajería',
+  ],
+  frecuencia_update: [
+    { v: 'solo-inicio-fin', l: 'Solo al inicio y al cierre', s: 'Sin actualizaciones intermedias' },
+    { v: 'hitos', l: 'Al alcanzar hitos importantes', s: 'Cuando hay avances relevantes' },
+    { v: 'semanal', l: 'Una vez a la semana como mínimo', s: '' },
+    { v: 'diario', l: 'Diariamente', s: '' },
+    { v: 'tiempo-real', l: 'En tiempo real por plataforma', s: 'El cliente ve el estado en cualquier momento' },
+    { v: 'no-hay', l: 'No tenemos un proceso de actualización', s: '' },
+  ],
+  notif_fin: [
+    { v: 'email-auto', l: 'Email automático del sistema' },
+    { v: 'email-manual', l: 'Email manual del agente' },
+    { v: 'whatsapp', l: 'WhatsApp' },
+    { v: 'llamada', l: 'Llamada telefónica' },
+    { v: 'portal', l: 'Notificación en portal/plataforma' },
+    { v: 'sin-proceso', l: 'El cliente tiene que preguntar' },
+  ],
+  escalamiento: [
+    { v: 'si-formal', l: 'Sí, tenemos un proceso formal con niveles' },
+    { v: 'si-informal', l: 'Sí, pero es informal (llaman al jefe directamente)' },
+    { v: 'no', l: 'No tenemos proceso de escalamiento definido' },
+  ],
+  nps: [
+    { v: 'si-regular', l: 'Sí, de forma regular (mensual o trimestral)' },
+    { v: 'si-eventual', l: 'Sí, pero eventualmente (sin periodicidad fija)' },
+    { v: 'informal', l: 'Solo de forma informal (feedback verbal)' },
+    { v: 'no', l: 'No medimos la satisfacción del cliente' },
+  ],
+  problemas_ops: [
+    '🕐 Tiempos de respuesta lentos al cliente',
+    '📋 Falta de visibilidad del estado de cada caso',
+    '🔁 Información que se pierde o duplica entre áreas',
+    '👥 Equipo sobrecargado, sin tiempo para nada más',
+    '📄 Falta de procesos documentados / cada quien hace las cosas diferente',
+    '🔔 Clientes que no reciben seguimiento proactivo',
+    '⚠️ Errores por falta de información al inicio del servicio',
+    '📊 No sabemos qué métricas mirar ni cómo están',
+    '🔧 Herramientas dispersas / falta de sistema central',
+    '💬 Comunicación interna caótica (todo por WhatsApp)',
+  ],
+  tiempo_perdido: [
+    { v: '0-5', l: 'Menos de 5 horas por semana' },
+    { v: '5-10', l: '5 a 10 horas por semana' },
+    { v: '10-20', l: '10 a 20 horas por semana' },
+    { v: '20+', l: 'Más de 20 horas por semana' },
+    { v: 'no-se', l: 'No tengo visibilidad de esto' },
+  ],
+  kpis: [
+    'Tiempo de respuesta inicial',
+    'Tiempo de resolución / entrega',
+    'Satisfacción del cliente (NPS/CSAT)',
+    'Volumen de casos / proyectos',
+    '% cumplimiento de SLA',
+    'Tasa de retrabajos o errores',
+    'Costo por caso / proyecto',
+    'Retención de clientes',
+    'Ninguno / no medimos formalmente',
+  ],
+  sla: [
+    { v: 'si-formal', l: 'Sí, formalizados en contrato con cada cliente' },
+    { v: 'si-informal', l: 'Sí, tenemos estándares internos pero no están en contrato' },
+    { v: 'no', l: 'No tenemos SLAs definidos' },
+  ],
+  automatizar: [
+    '📨 Confirmaciones y acuses de recibo automáticos',
+    '🔔 Notificaciones de avance al cliente',
+    '📅 Agendamiento de citas / visitas',
+    '📝 Generación de reportes y documentos',
+    '🔁 Asignación automática de casos',
+    '📊 Cálculo de métricas y KPIs',
+    '❓ Respuesta a preguntas frecuentes de clientes',
+    '📋 Captura y validación de información al inicio',
+    '⚠️ Alertas de SLA próximos a vencer',
+    '📬 Encuestas de satisfacción post-servicio',
+  ],
+  resultado_valioso: [
+    { v: 'tiempo-respuesta', l: '⚡ Reducir el tiempo de respuesta al cliente a menos de 1 hora', s: '' },
+    { v: 'visibilidad', l: '👁️ Tener visibilidad total del estado de cada caso en tiempo real', s: '' },
+    { v: 'carga-equipo', l: '💪 Reducir la carga operativa del equipo en al menos 30%', s: '' },
+    { v: 'sin-errores', l: '✅ Eliminar los errores y retrabajos por información incompleta', s: '' },
+    { v: 'satisfaccion', l: '⭐ Incrementar la satisfacción del cliente de forma medible', s: '' },
+    { v: 'escalar', l: '📈 Poder atender más volumen sin contratar más personas', s: '' },
+  ],
+};
+
+// ── State ────────────────────────────────────────────────
+const STORAGE_KEY = 'mentoria_diag_entrega_v1';
+let state = {};
+
+// ── Build options ────────────────────────────────────────
+function buildCheckboxGroup(containerId, items, stateKey) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = '';
+  items.forEach((item) => {
+    const val = typeof item === 'string' ? item : item.v;
+    const label = typeof item === 'string' ? item : item.l;
+    const sub = typeof item === 'object' && item.s ? item.s : null;
+    const checked = Array.isArray(state[stateKey]) && state[stateKey].includes(val);
+    const div = document.createElement('label');
+    div.className = 'opt-item' + (checked ? ' selected' : '');
+    div.innerHTML = `
+      <input type="checkbox" name="${stateKey}" value="${val}" ${checked ? 'checked' : ''}>
+      <div>
+        <div class="opt-label">${label}</div>
+        ${sub ? `<div class="opt-sub">${sub}</div>` : ''}
+      </div>`;
+    div.querySelector('input').addEventListener('change', (e) => {
+      div.classList.toggle('selected', e.target.checked);
+      if (!Array.isArray(state[stateKey])) state[stateKey] = [];
+      if (e.target.checked) {
+        state[stateKey].push(val);
+      } else {
+        state[stateKey] = state[stateKey].filter(v => v !== val);
+      }
+      autoSave();
+    });
+    el.appendChild(div);
+  });
+}
+
+function buildRadioGroup(containerId, items, stateKey) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = '';
+  items.forEach((item) => {
+    const val = typeof item === 'string' ? item : item.v;
+    const label = typeof item === 'string' ? item : item.l;
+    const sub = typeof item === 'object' && item.s ? item.s : null;
+    const checked = state[stateKey] === val;
+    const div = document.createElement('label');
+    div.className = 'opt-item' + (checked ? ' selected' : '');
+    div.innerHTML = `
+      <input type="radio" name="${stateKey}" value="${val}" ${checked ? 'checked' : ''}>
+      <div>
+        <div class="opt-label">${label}</div>
+        ${sub ? `<div class="opt-sub">${sub}</div>` : ''}
+      </div>`;
+    div.querySelector('input').addEventListener('change', (e) => {
+      el.querySelectorAll('.opt-item').forEach(i => i.classList.remove('selected'));
+      div.classList.add('selected');
+      state[stateKey] = val;
+      autoSave();
+    });
+    el.appendChild(div);
+  });
+}
+
+function buildScale(containerId, stateKey) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'scale-btn' + (state[stateKey] === i ? ' active' : '');
+    btn.textContent = i;
+    btn.addEventListener('click', () => {
+      el.querySelectorAll('.scale-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state[stateKey] = i;
+      autoSave();
+    });
+    el.appendChild(btn);
+  }
+}
+
+// ── Form text inputs ──────────────────────────────────────
+function bindTextInputs() {
+  document.querySelectorAll('input[type="text"], input[type="email"], input[type="number"], select, textarea').forEach(el => {
+    const key = el.id || el.name;
+    if (!key) return;
+    if (state[key] !== undefined) el.value = state[key];
+    el.addEventListener('input', () => {
+      state[key] = el.value;
+      if (key === 'empresa') {
+        document.getElementById('header-empresa').textContent = el.value;
+      }
+      autoSave();
+    });
+    el.addEventListener('change', () => {
+      state[key] = el.value;
+      autoSave();
+    });
+  });
+}
+
+// ── Progress ─────────────────────────────────────────────
+function updateProgress() {
+  const fields = [
+    'empresa', 'respondente', 'cargo', 'email', 'industria',
+    'tam_equipo', 'roles', 'modelo_trabajo_val',
+    'canal_entrada', 'herramientas', 'sops', 'asignacion', 'volumen_mensual', 'tiempo_resolucion',
+    'canales_cliente', 'frecuencia_update', 'notif_fin', 'escalamiento', 'nps',
+    'problemas_ops', 'dolor_principal',
+    'kpis', 'scale_respuesta', 'scale_calidad', 'scale_comunicacion_int', 'scale_procesos', 'scale_tecnologia', 'sla',
+    'automatizar', 'resultado_valioso', 'limitante', 'meta_90d',
+  ];
+  const sectionCounts = [6, 3, 6, 5, 4, 5, 5]; // per section
+  let filled = 0;
+  const total = fields.length;
+  fields.forEach(k => {
+    const v = state[k];
+    if (v !== undefined && v !== '' && v !== null && !(Array.isArray(v) && v.length === 0)) filled++;
+  });
+  const pct = Math.round((filled / total) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+  // which section
+  const sections = document.querySelectorAll('.section');
+  let current = 0;
+  sections.forEach((s, i) => {
+    const rect = s.getBoundingClientRect();
+    if (rect.top < window.innerHeight * 0.6) current = i + 1;
+  });
+  document.getElementById('progress-label').textContent = `Sección ${current} de 7`;
+}
+
+// ── Auto save ─────────────────────────────────────────────
+let saveTimer;
+function autoSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    state._meta = {
+      saved_at: new Date().toISOString(),
+      version: 1,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    document.getElementById('save-label').textContent = 'Guardado ' + new Date().toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit'});
+    updateProgress();
+  }, 600);
+}
+
+// ── Load state ────────────────────────────────────────────
+function loadState() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) {
+    try { state = JSON.parse(raw); } catch(e) { state = {}; }
+  }
+}
+
+// ── Init all widgets ──────────────────────────────────────
+function initAll() {
+  loadState();
+
+  buildCheckboxGroup('roles-check', DATA.roles, 'roles');
+  buildRadioGroup('modelo-trabajo-opts', DATA.modelo_trabajo, 'modelo_trabajo_val');
+  buildRadioGroup('canal-entrada-opts', DATA.canal_entrada, 'canal_entrada');
+  buildCheckboxGroup('herramientas-opts', DATA.herramientas, 'herramientas');
+  buildRadioGroup('sops-opts', DATA.sops, 'sops');
+  buildRadioGroup('asignacion-opts', DATA.asignacion, 'asignacion');
+  buildCheckboxGroup('canales-cliente-opts', DATA.canales_cliente, 'canales_cliente');
+  buildRadioGroup('frecuencia-update-opts', DATA.frecuencia_update, 'frecuencia_update');
+  buildRadioGroup('notif-fin-opts', DATA.notif_fin, 'notif_fin');
+  buildRadioGroup('escalamiento-opts', DATA.escalamiento, 'escalamiento');
+  buildRadioGroup('nps-opts', DATA.nps, 'nps');
+  buildCheckboxGroup('problemas-ops-opts', DATA.problemas_ops, 'problemas_ops');
+  buildRadioGroup('tiempo-perdido-opts', DATA.tiempo_perdido, 'tiempo_perdido');
+  buildCheckboxGroup('kpis-opts', DATA.kpis, 'kpis');
+  buildScale('scale-respuesta', 'scale_respuesta');
+  buildScale('scale-calidad', 'scale_calidad');
+  buildScale('scale-comunicacion-int', 'scale_comunicacion_int');
+  buildScale('scale-procesos', 'scale_procesos');
+  buildScale('scale-tecnologia', 'scale_tecnologia');
+  buildRadioGroup('sla-opts', DATA.sla, 'sla');
+  buildCheckboxGroup('automatizar-opts', DATA.automatizar, 'automatizar');
+  buildRadioGroup('resultado-valioso-opts', DATA.resultado_valioso, 'resultado_valioso');
+
+  bindTextInputs();
+
+  // Restore empresa header
+  if (state.empresa) {
+    document.getElementById('header-empresa').textContent = state.empresa;
+  }
+
+  updateProgress();
+
+  window.addEventListener('scroll', updateProgress, { passive: true });
+}
+
+// ── Export ────────────────────────────────────────────────
+function buildExportData() {
+  return {
+    meta: {
+      tipo: 'diagnostico-entrega-servicio',
+      version: 1,
+      generado: new Date().toISOString(),
+      empresa: state.empresa || '',
+      respondente: state.respondente || '',
+      email: state.email || '',
+    },
+    datos: {
+      empresa: state.empresa,
+      respondente: state.respondente,
+      cargo: state.cargo,
+      email: state.email,
+      industria: state.industria === 'Otro' ? (state.industria_otro || 'Otro') : state.industria,
+      equipo: {
+        tamano: state.tam_equipo,
+        roles: state.roles || [],
+        modelo_trabajo: state.modelo_trabajo_val,
+        nota: state.estructura_nota,
+      },
+      procesos: {
+        canal_entrada: state.canal_entrada,
+        herramientas: [...(state.herramientas || []), state.herramientas_otras].filter(Boolean),
+        documentacion_sops: state.sops,
+        asignacion: state.asignacion,
+        volumen_mensual: state.volumen_mensual,
+        tiempo_resolucion: state.tiempo_resolucion,
+      },
+      comunicacion_cliente: {
+        canales: state.canales_cliente || [],
+        frecuencia_actualizacion: state.frecuencia_update,
+        notificacion_cierre: state.notif_fin,
+        proceso_escalamiento: state.escalamiento,
+        miden_satisfaccion: state.nps,
+        score_actual: state.nps_score,
+      },
+      puntos_dolor: {
+        problemas_principales: state.problemas_ops || [],
+        dolor_principal: state.dolor_principal,
+        errores_recurrentes: state.error_recurrente,
+        queja_mas_frecuente: state.queja_cliente,
+        tiempo_perdido_semanal: state.tiempo_perdido,
+      },
+      metricas: {
+        kpis_actuales: [...(state.kpis || []), state.kpis_otros].filter(Boolean),
+        autoevaluacion: {
+          tiempo_respuesta: state.scale_respuesta,
+          calidad_servicio: state.scale_calidad,
+          comunicacion_interna: state.scale_comunicacion_int,
+          procesos_documentacion: state.scale_procesos,
+          uso_tecnologia: state.scale_tecnologia,
+        },
+        tiene_sla: state.sla,
+        cumplimiento_sla: state.sla_cumplimiento,
+      },
+      oportunidades_ia: {
+        tareas_a_automatizar: [...(state.automatizar || []), state.automatizar_otro].filter(Boolean),
+        resultado_mas_valioso: state.resultado_valioso,
+        limitantes_pasadas: state.limitante,
+        meta_90_dias: state.meta_90d,
+        contexto_adicional: state.contexto_extra,
+      },
+    },
+  };
+}
+
+function guardarYExportar() {
+  autoSave();
+  const data = buildExportData();
+  const panel = document.getElementById('summary-panel');
+  document.getElementById('summary-content').textContent = JSON.stringify(data, null, 2);
+  panel.style.display = 'block';
+  setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  showToast('✅', 'Diagnóstico guardado correctamente');
+}
+
+function exportarJSON() {
+  const data = buildExportData();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const empresa = (state.empresa || 'empresa').replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+  a.href = url;
+  a.download = `diagnostico-${empresa}-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('⬇️', 'Archivo descargado');
+}
+
+function copiarJSON() {
+  const data = buildExportData();
+  navigator.clipboard.writeText(JSON.stringify(data, null, 2)).then(() => {
+    showToast('📋', 'Copiado al portapapeles');
+  });
+}
+
+function limpiarTodo() {
+  if (!confirm('¿Seguro que quieres borrar todas las respuestas? Esta acción no se puede deshacer.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  state = {};
+  location.reload();
+}
+
+// ── Toast ─────────────────────────────────────────────────
+let toastTimer;
+function showToast(icon, msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-icon').textContent = icon;
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── Boot ──────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', initAll);
+</script>
+</body>
+</html>

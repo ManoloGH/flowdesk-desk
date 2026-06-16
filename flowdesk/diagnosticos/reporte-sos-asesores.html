@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reporte de Diagnóstico — Sos Asesores | MentorIA</title>
+<style>
+  :root {
+    --brand-dark: #0a0a14;
+    --brand-purple: #6c4de6;
+    --brand-purple-light: #8b6ef5;
+    --brand-purple-dim: rgba(108,77,230,0.12);
+    --brand-cyan: #00d4ff;
+    --brand-cyan-dim: rgba(0,212,255,0.08);
+    --surface: #13131f;
+    --surface-2: #1a1a2e;
+    --surface-3: #1f1f35;
+    --border: rgba(255,255,255,0.07);
+    --border-active: rgba(108,77,230,0.4);
+    --text-primary: #f0f0f8;
+    --text-secondary: #8888aa;
+    --text-muted: #55556a;
+    --red: #ef4444;
+    --red-dim: rgba(239,68,68,0.12);
+    --yellow: #f59e0b;
+    --yellow-dim: rgba(245,158,11,0.12);
+    --green: #22c55e;
+    --green-dim: rgba(34,197,94,0.12);
+    --blue: #3b82f6;
+    --blue-dim: rgba(59,130,246,0.12);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    background: var(--brand-dark);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+  a { color: var(--brand-purple-light); }
+
+  /* ── Print ── */
+  @media print {
+    body { background: #fff; color: #111; font-size: 12px; }
+    .no-print { display: none !important; }
+    .card, .section { border-color: #ddd !important; background: #fff !important; }
+    .header { background: #fff; border-bottom: 2px solid #6c4de6; position: static; }
+    .tag { border: 1px solid currentColor; }
+  }
+
+  /* ── Header ── */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-inner {
+    max-width: 900px; margin: 0 auto; padding: 16px 28px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .logo-dot {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--brand-purple), var(--brand-cyan));
+    border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 800; color: #fff; flex-shrink: 0;
+  }
+  .header-meta { flex: 1; }
+  .header-meta .t1 { font-size: 13px; font-weight: 700; }
+  .header-meta .t2 { font-size: 11px; color: var(--text-muted); }
+  .header-actions { display: flex; gap: 8px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 7px; font-size: 12px; font-weight: 600;
+    cursor: pointer; border: none; font-family: inherit; transition: all 0.15s;
+  }
+  .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+  .btn-ghost:hover { border-color: var(--border-active); color: var(--text-primary); }
+  .btn-primary { background: linear-gradient(135deg,var(--brand-purple),var(--brand-purple-light)); color: #fff; }
+
+  /* ── Layout ── */
+  .wrap { max-width: 900px; margin: 0 auto; padding: 36px 28px 80px; }
+
+  /* ── Cover ── */
+  .cover {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px;
+    margin-bottom: 28px;
+    position: relative; overflow: hidden;
+  }
+  .cover::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background: linear-gradient(90deg, var(--brand-purple), var(--brand-cyan));
+  }
+  .cover-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--brand-purple-dim); border: 1px solid var(--border-active);
+    color: var(--brand-purple-light);
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
+    padding: 3px 10px; border-radius: 99px; margin-bottom: 18px;
+  }
+  .cover h1 { font-size: 28px; font-weight: 800; line-height: 1.2; margin-bottom: 6px; }
+  .cover .sub { font-size: 14px; color: var(--text-secondary); margin-bottom: 24px; }
+  .cover-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: 12px;
+  }
+  .cover-stat {
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px;
+  }
+  .cover-stat .cs-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+  .cover-stat .cs-value { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+
+  /* ── Section title ── */
+  .section-title {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--text-muted); margin-bottom: 14px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::before {
+    content: ''; display: inline-block; width: 3px; height: 14px;
+    background: var(--brand-purple); border-radius: 2px;
+  }
+
+  /* ── Cards ── */
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 28px; }
+  .cards-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 28px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px;
+  }
+  .card.red { border-color: rgba(239,68,68,.3); }
+  .card.yellow { border-color: rgba(245,158,11,.3); }
+  .card.green { border-color: rgba(34,197,94,.3); }
+  .card.blue { border-color: rgba(59,130,246,.3); }
+  .card.purple { border-color: var(--border-active); }
+  .card-icon { font-size: 22px; margin-bottom: 10px; }
+  .card-title { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .card-body { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+  .card-value { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+  .card-value.red { color: var(--red); }
+  .card-value.green { color: var(--green); }
+  .card-value.yellow { color: var(--yellow); }
+  .card-value.purple { color: var(--brand-purple-light); }
+
+  /* ── Tags ── */
+  .tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 9px; border-radius: 99px; font-size: 11px; font-weight: 600;
+    margin: 2px;
+  }
+  .tag.red { background: var(--red-dim); color: var(--red); }
+  .tag.yellow { background: var(--yellow-dim); color: var(--yellow); }
+  .tag.green { background: var(--green-dim); color: var(--green); }
+  .tag.blue { background: var(--blue-dim); color: var(--blue); }
+  .tag.purple { background: var(--brand-purple-dim); color: var(--brand-purple-light); }
+  .tag.gray { background: var(--surface-2); color: var(--text-secondary); }
+
+  /* ── Hallazgos ── */
+  .hallazgo {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 18px; margin-bottom: 10px;
+    display: flex; gap: 14px; align-items: flex-start;
+  }
+  .hallazgo.critico { border-left: 3px solid var(--red); }
+  .hallazgo.importante { border-left: 3px solid var(--yellow); }
+  .hallazgo.positivo { border-left: 3px solid var(--green); }
+  .hallazgo-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .hallazgo-content {}
+  .hallazgo-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .hallazgo-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+  .hallazgo-impact {
+    display: inline-block; margin-top: 6px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    padding: 2px 8px; border-radius: 99px;
+  }
+  .hallazgo.critico .hallazgo-impact { background: var(--red-dim); color: var(--red); }
+  .hallazgo.importante .hallazgo-impact { background: var(--yellow-dim); color: var(--yellow); }
+  .hallazgo.positivo .hallazgo-impact { background: var(--green-dim); color: var(--green); }
+
+  /* ── Radar / scores ── */
+  .scores-wrap { display: flex; flex-direction: column; gap: 10px; }
+  .score-row { display: flex; align-items: center; gap: 12px; }
+  .score-label { font-size: 12px; color: var(--text-secondary); width: 180px; flex-shrink: 0; }
+  .score-track { flex: 1; height: 6px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+  .score-fill { height: 100%; border-radius: 99px; transition: width .6s ease; }
+  .score-num { font-size: 12px; font-weight: 700; width: 28px; text-align: right; }
+
+  /* ── BPMN ── */
+  .bpmn-flow {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px; margin-bottom: 28px; overflow: auto;
+  }
+  .flow-title { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 20px; }
+  .flow-steps { display: flex; align-items: flex-start; gap: 0; flex-wrap: nowrap; min-width: max-content; }
+  .flow-step {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 8px; position: relative;
+  }
+  .flow-step + .flow-step::before {
+    content: '→';
+    position: absolute; left: -18px; top: 22px;
+    font-size: 16px; color: var(--text-muted);
+  }
+  .flow-node {
+    width: 110px; min-height: 60px;
+    border-radius: 10px; border: 1px solid var(--border);
+    background: var(--surface-2);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 10px 8px; gap: 4px;
+  }
+  .flow-node.start { border-color: var(--green); background: var(--green-dim); }
+  .flow-node.end { border-color: var(--brand-cyan); background: var(--brand-cyan-dim); }
+  .flow-node.problem { border-color: var(--red); background: var(--red-dim); }
+  .flow-node.ai { border-color: var(--brand-purple); background: var(--brand-purple-dim); }
+  .flow-node-icon { font-size: 18px; }
+  .flow-node-text { font-size: 10px; font-weight: 600; color: var(--text-primary); line-height: 1.3; }
+  .flow-node-sub { font-size: 9px; color: var(--text-muted); line-height: 1.3; }
+  .flow-row { display: flex; flex-direction: row; align-items: center; gap: 0; overflow-x: auto; padding-bottom: 8px; }
+  .arrow { font-size: 18px; color: var(--text-muted); padding: 0 6px; flex-shrink: 0; }
+  .arrow.ai { color: var(--brand-purple); }
+
+  /* ── Plan ── */
+  .plan-phase {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden; margin-bottom: 16px;
+  }
+  .plan-phase-header {
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .phase-num {
+    width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800;
+  }
+  .phase-num.p1 { background: rgba(34,197,94,.15); color: var(--green); }
+  .phase-num.p2 { background: var(--brand-purple-dim); color: var(--brand-purple-light); }
+  .phase-num.p3 { background: rgba(59,130,246,.12); color: var(--blue); }
+  .plan-phase-title { font-size: 14px; font-weight: 700; }
+  .plan-phase-sub { font-size: 11px; color: var(--text-muted); }
+  .plan-phase-timing {
+    margin-left: auto; font-size: 11px; font-weight: 600;
+    padding: 4px 10px; border-radius: 99px;
+  }
+  .plan-phase-timing.p1 { background: var(--green-dim); color: var(--green); }
+  .plan-phase-timing.p2 { background: var(--brand-purple-dim); color: var(--brand-purple-light); }
+  .plan-phase-timing.p3 { background: var(--blue-dim); color: var(--blue); }
+  .plan-items { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+  .plan-item { display: flex; gap: 12px; align-items: flex-start; }
+  .plan-item-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .plan-item-content {}
+  .plan-item-title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .plan-item-desc { font-size: 12px; color: var(--text-secondary); }
+  .plan-item-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+
+  /* ── ROI ── */
+  .roi-box {
+    background: linear-gradient(135deg, rgba(108,77,230,.12), rgba(0,212,255,.08));
+    border: 1px solid var(--border-active);
+    border-radius: 14px; padding: 28px; margin-bottom: 28px;
+  }
+  .roi-box h3 { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
+  .roi-box .roi-sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 22px; }
+  .roi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+  .roi-card {
+    background: rgba(0,0,0,.25); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px;
+  }
+  .roi-card .rc-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+  .roi-card .rc-value { font-size: 22px; font-weight: 800; color: var(--brand-cyan); }
+  .roi-card .rc-unit { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .roi-note { font-size: 11px; color: var(--text-muted); margin-top: 16px; }
+
+  /* ── Next steps ── */
+  .next-steps {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px; margin-bottom: 28px;
+  }
+  .next-item {
+    display: flex; gap: 14px; align-items: flex-start;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .next-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .next-num {
+    width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0;
+    background: var(--brand-purple-dim); color: var(--brand-purple-light);
+    font-size: 12px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .next-text { font-size: 13px; }
+  .next-text strong { color: var(--text-primary); }
+  .next-text span { color: var(--text-secondary); }
+
+  /* ── Footer ── */
+  .footer {
+    border-top: 1px solid var(--border); padding: 24px 0; margin-top: 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 11px; color: var(--text-muted);
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    .wrap { padding: 20px 16px 60px; }
+    .cover { padding: 24px 20px; }
+    .cards, .cards-3 { grid-template-columns: 1fr; }
+    .score-label { width: 130px; }
+    .header-actions .btn span { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo-dot">M</div>
+    <div class="header-meta">
+      <div class="t1">MentorIA Systems — Reporte de Diagnóstico</div>
+      <div class="t2">Sos Asesores · Departamento de Entrega de Servicio · Fase 1</div>
+    </div>
+    <div class="header-actions no-print">
+      <button class="btn btn-ghost" onclick="window.print()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        <span>Imprimir</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- Cover -->
+  <div class="cover">
+    <div class="cover-tag">● Fase 1 — Diagnóstico Completado</div>
+    <h1>Sos Asesores</h1>
+    <div class="sub">Departamento de Entrega de Servicio · Servicios Financieros</div>
+    <div class="cover-grid">
+      <div class="cover-stat">
+        <div class="cs-label">Respondente</div>
+        <div class="cs-value">Virginia Abad</div>
+      </div>
+      <div class="cover-stat">
+        <div class="cs-label">Cargo</div>
+        <div class="cs-value">Dir. de Operaciones</div>
+      </div>
+      <div class="cover-stat">
+        <div class="cs-label">Fecha diagnóstico</div>
+        <div class="cs-value">12 junio 2026</div>
+      </div>
+      <div class="cover-stat">
+        <div class="cs-label">Score tecnología (self-eval)</div>
+        <div class="cs-value" style="color:var(--red)">1 / 5 ⚠️</div>
+      </div>
+      <div class="cover-stat">
+        <div class="cs-label">Horas semanales en riesgo</div>
+        <div class="cs-value" style="color:var(--yellow)">10–20 h/sem</div>
+      </div>
+      <div class="cover-stat">
+        <div class="cs-label">Prioridad de atención</div>
+        <div class="cs-value" style="color:var(--brand-purple-light)">Alta</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Autoevaluación -->
+  <div class="section-title">Autoevaluación del departamento (1–5)</div>
+  <div class="card" style="margin-bottom:28px;">
+    <div class="scores-wrap">
+      <div class="score-row">
+        <div class="score-label">Tiempo de respuesta</div>
+        <div class="score-track"><div class="score-fill" style="width:80%;background:var(--green)"></div></div>
+        <div class="score-num" style="color:var(--green)">4</div>
+      </div>
+      <div class="score-row">
+        <div class="score-label">Calidad del servicio</div>
+        <div class="score-track"><div class="score-fill" style="width:80%;background:var(--green)"></div></div>
+        <div class="score-num" style="color:var(--green)">4</div>
+      </div>
+      <div class="score-row">
+        <div class="score-label">Comunicación interna</div>
+        <div class="score-track"><div class="score-fill" style="width:80%;background:var(--green)"></div></div>
+        <div class="score-num" style="color:var(--green)">4</div>
+      </div>
+      <div class="score-row">
+        <div class="score-label">Procesos y documentación</div>
+        <div class="score-track"><div class="score-fill" style="width:80%;background:var(--green)"></div></div>
+        <div class="score-num" style="color:var(--green)">4</div>
+      </div>
+      <div class="score-row">
+        <div class="score-label">Uso de tecnología</div>
+        <div class="score-track"><div class="score-fill" style="width:20%;background:var(--red)"></div></div>
+        <div class="score-num" style="color:var(--red)">1</div>
+      </div>
+    </div>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);font-size:12px;color:var(--text-secondary);">
+      <strong style="color:var(--red)">Insight clave:</strong> El equipo percibe que opera bien en todas las áreas humanas — pero la tecnología es el único cuello de botella con 1/5. Esto indica que las mejoras de IA van a encontrar un equipo receptivo y un baseline sólido desde donde escalar.
+    </div>
+  </div>
+
+  <!-- Hallazgos -->
+  <div class="section-title">Hallazgos principales</div>
+
+  <div class="hallazgo critico">
+    <div class="hallazgo-icon">🔴</div>
+    <div class="hallazgo-content">
+      <div class="hallazgo-title">Sin KPIs ni métricas formales — operación a ciegas</div>
+      <div class="hallazgo-desc">El equipo seleccionó "Ninguno / no medimos formalmente" como único KPI activo. Esto significa que no hay datos para tomar decisiones, no se puede demostrar mejora y el negocio no sabe si el servicio está funcionando o deteriorándose. Es el primer problema a resolver.</div>
+      <span class="hallazgo-impact">Impacto crítico — bloquea toda toma de decisión</span>
+    </div>
+  </div>
+
+  <div class="hallazgo critico">
+    <div class="hallazgo-icon">🔴</div>
+    <div class="hallazgo-content">
+      <div class="hallazgo-title">Tecnología: 1/5 con solo Excel como herramienta operativa</div>
+      <div class="hallazgo-desc">A pesar de tener un CRM/ticket como canal de entrada, la operación interna corre sobre Excel/Google Sheets. Esta brecha indica que el CRM no está siendo explotado — probablemente solo se usa para recibir solicitudes pero no para gestionar, medir ni automatizar.</div>
+      <span class="hallazgo-impact">Impacto crítico — fuente principal de las 10–20 h perdidas</span>
+    </div>
+  </div>
+
+  <div class="hallazgo critico">
+    <div class="hallazgo-icon">🔴</div>
+    <div class="hallazgo-content">
+      <div class="hallazgo-title">10–20 horas semanales en tareas automatizables</div>
+      <div class="hallazgo-desc">El equipo estima perder entre 10 y 20 horas semanales en tareas que podrían automatizarse. Eso equivale a 40–80 horas/mes — entre 1 y 2 semanas de trabajo de una persona. Las 6 tareas seleccionadas para automatizar (confirmaciones, notificaciones, reportes, métricas, FAQs, captura de info) son todas de alta automatizabilidad con IA.</div>
+      <span class="hallazgo-impact">Impacto crítico — ROI inmediato y medible</span>
+    </div>
+  </div>
+
+  <div class="hallazgo importante">
+    <div class="hallazgo-icon">🟡</div>
+    <div class="hallazgo-content">
+      <div class="hallazgo-title">Comunicación fragmentada en 4 canales sin centralización</div>
+      <div class="hallazgo-desc">El equipo atiende clientes por Email, Teléfono, WhatsApp y Portal simultáneamente. Sin una bandeja unificada, las solicitudes pueden caer en cualquier canal y no quedar registradas en el CRM. El cierre de servicio se hace por WhatsApp — canal difícil de auditar y con alta probabilidad de que la retroalimentación se pierda.</div>
+      <span class="hallazgo-impact">Impacto importante — riesgo de solicitudes perdidas</span>
+    </div>
+  </div>
+
+  <div class="hallazgo importante">
+    <div class="hallazgo-icon">🟡</div>
+    <div class="hallazgo-content">
+      <div class="hallazgo-title">Satisfacción del cliente solo informal — sin datos reales</div>
+      <div class="hallazgo-desc">La medición de satisfacción es verbal e informal. Tienen SLAs definidos internamente pero no los miden ni los tienen en contrato. Esto significa que no tienen evidencia para defender la calidad del servicio frente a un cliente insatisfecho ni para identificar problemas antes de que escalen.</div>
+      <span class="hallazgo-impact">Impacto importante — riesgo de churn no detectado</span>
+    </div>
+  </div>
+
+  <div class="hallazgo importante">
+    <div class="hallazgo-icon">🟡</div>
+    <div class="hallazgo-content">
+      <div class="hallazgo-title">SOPs parciales — riesgo de variabilidad en calidad</div>
+      <div class="hallazgo-desc">La documentación existe en algunas áreas pero no en todas. En equipos con rotación (modelo de asignación actual) y modelo híbrido, esto crea dependencia de personas específicas. Si alguien sale del equipo, el conocimiento se va con él.</div>
+      <span class="hallazgo-impact">Impacto importante — riesgo operativo ante cambios de equipo</span>
+    </div>
+  </div>
+
+  <div class="hallazgo positivo">
+    <div class="hallazgo-icon">🟢</div>
+    <div class="hallazgo-content">
+      <div class="hallazgo-title">Equipo sólido con percepción alta de calidad y respuesta</div>
+      <div class="hallazgo-desc">4/5 en calidad, respuesta y comunicación interna indica que el equipo humano funciona bien. Las mejoras de IA no van a reparar algo roto — van a potenciar algo que ya está funcionando.</div>
+      <span class="hallazgo-impact">Fortaleza — base sólida para escalar</span>
+    </div>
+  </div>
+
+  <div class="hallazgo positivo">
+    <div class="hallazgo-icon">🟢</div>
+    <div class="hallazgo-content">
+      <div class="hallazgo-title">Canal de entrada centralizado (CRM/ticket) y escalamiento formal</div>
+      <div class="hallazgo-desc">La puerta de entrada al servicio es estructurada, y el proceso de escalamiento ya está formalizado. Esto significa que la plomería básica existe — solo hay que extenderla con automatización hacia adentro y hacia el cliente.</div>
+      <span class="hallazgo-impact">Fortaleza — reduce el tiempo de implementación</span>
+    </div>
+  </div>
+
+  <div class="hallazgo positivo">
+    <div class="hallazgo-icon">🟢</div>
+    <div class="hallazgo-content">
+      <div class="hallazgo-title">Alta motivación para cambiar — sin resistencia técnica ideológica</div>
+      <div class="hallazgo-desc">La limitante declarada fue "no tenemos la capacidad técnica para hacerlo" — no es resistencia al cambio, es falta de acceso. Eso es exactamente lo que MentorIA resuelve. El equipo quiere automatizar y tiene claridad de qué quiere lograr.</div>
+      <span class="hallazgo-impact">Fortaleza — implementación con baja fricción esperada</span>
+    </div>
+  </div>
+
+  <!-- BPMN AS-IS -->
+  <div class="section-title" style="margin-top:32px;">Proceso actual (AS-IS)</div>
+  <div class="bpmn-flow">
+    <div class="flow-title">Flujo de entrega de servicio — estado actual</div>
+    <div class="flow-row">
+      <div class="flow-node start">
+        <div class="flow-node-icon">📥</div>
+        <div class="flow-node-text">Solicitud entra</div>
+        <div class="flow-node-sub">CRM / ticket</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="flow-node problem">
+        <div class="flow-node-icon">⚠️</div>
+        <div class="flow-node-text">Sin confirmación automática</div>
+        <div class="flow-node-sub">Cliente no sabe si se recibió</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="flow-node">
+        <div class="flow-node-icon">🔁</div>
+        <div class="flow-node-text">Asignación por rotación</div>
+        <div class="flow-node-sub">Manual</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="flow-node problem">
+        <div class="flow-node-icon">📊</div>
+        <div class="flow-node-text">Gestión en Excel</div>
+        <div class="flow-node-sub">Sin visibilidad centralizada</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="flow-node">
+        <div class="flow-node-icon">🏁</div>
+        <div class="flow-node-text">Actualización en hitos</div>
+        <div class="flow-node-sub">Solo cuando hay avance</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="flow-node problem">
+        <div class="flow-node-icon">💬</div>
+        <div class="flow-node-text">Cierre por WhatsApp</div>
+        <div class="flow-node-sub">Sin registro formal</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="flow-node problem">
+        <div class="flow-node-icon">🤷</div>
+        <div class="flow-node-text">Satisfacción informal</div>
+        <div class="flow-node-sub">Sin datos ni seguimiento</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="flow-node end">
+        <div class="flow-node-icon">📈</div>
+        <div class="flow-node-text">Reportes</div>
+        <div class="flow-node-sub">No existen / manuales</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BPMN TO-BE -->
+  <div class="section-title">Proceso objetivo con Agente IA (TO-BE)</div>
+  <div class="bpmn-flow" style="border-color:rgba(108,77,230,.3);">
+    <div class="flow-title" style="color:var(--brand-purple-light);">Flujo del agente — ciclo operativo completo</div>
+    <div class="flow-row">
+      <div class="flow-node start">
+        <div class="flow-node-icon">💬</div>
+        <div class="flow-node-text">Cliente solicita</div>
+        <div class="flow-node-sub">WhatsApp · Email · Portal</div>
+      </div>
+      <div class="arrow ai">→</div>
+      <div class="flow-node ai">
+        <div class="flow-node-icon">🧠</div>
+        <div class="flow-node-text">Claude interpreta</div>
+        <div class="flow-node-sub">tipo, asegurado, cobertura, operación</div>
+      </div>
+      <div class="arrow ai">→</div>
+      <div class="flow-node ai">
+        <div class="flow-node-icon">🤖</div>
+        <div class="flow-node-text">RPA entra al portal</div>
+        <div class="flow-node-sub">aseguradora correspondiente</div>
+      </div>
+      <div class="arrow ai">→</div>
+      <div class="flow-node ai" style="border-color:var(--brand-cyan);background:rgba(0,212,255,.08);">
+        <div class="flow-node-icon">⚡</div>
+        <div class="flow-node-text">Ejecuta operación</div>
+        <div class="flow-node-sub">cotiza · emite póliza · abre ticket · consulta pago</div>
+      </div>
+      <div class="arrow ai">→</div>
+      <div class="flow-node ai">
+        <div class="flow-node-icon">🧠</div>
+        <div class="flow-node-text">Claude formatea</div>
+        <div class="flow-node-sub">resultado en lenguaje natural</div>
+      </div>
+      <div class="arrow ai">→</div>
+      <div class="flow-node ai">
+        <div class="flow-node-icon">🗄️</div>
+        <div class="flow-node-text">Sistema interno</div>
+        <div class="flow-node-sub">registra vía API</div>
+      </div>
+      <div class="arrow ai">→</div>
+      <div class="flow-node end">
+        <div class="flow-node-icon">📤</div>
+        <div class="flow-node-text">Entrega al cliente</div>
+        <div class="flow-node-sub">WhatsApp · Email · Portal</div>
+      </div>
+    </div>
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+      <span style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;">El agente cubre:</span>
+      <span class="tag purple">Cotización en 3 aseguradoras</span>
+      <span class="tag purple">Emisión de póliza</span>
+      <span class="tag purple">Levantamiento de tickets</span>
+      <span class="tag purple">Consulta de pagos y estatus</span>
+      <span class="tag purple">Alertas proactivas de vencimiento</span>
+      <span class="tag yellow">Aprobación humana en emisión de póliza</span>
+    </div>
+  </div>
+
+  <!-- ROI -->
+  <div class="roi-box">
+    <h3>📊 ROI Estimado</h3>
+    <div class="roi-sub">Basado en 10–20 h/semana declaradas, las 6 automatizaciones seleccionadas y el ciclo completo de operaciones con aseguradoras</div>
+    <div class="roi-grid">
+      <div class="roi-card">
+        <div class="rc-label">Horas recuperadas/mes</div>
+        <div class="rc-value">40–80</div>
+        <div class="rc-unit">horas mensuales</div>
+      </div>
+      <div class="roi-card">
+        <div class="rc-label">Equivalente en personal</div>
+        <div class="rc-value">1–2</div>
+        <div class="rc-unit">semanas de trabajo liberadas</div>
+      </div>
+      <div class="roi-card">
+        <div class="rc-label">Reducción carga operativa</div>
+        <div class="rc-value">~35%</div>
+        <div class="rc-unit">en tareas repetitivas</div>
+      </div>
+      <div class="roi-card">
+        <div class="rc-label">Tasa de automatización objetivo</div>
+        <div class="rc-value">+70%</div>
+        <div class="rc-unit">casos sin intervención humana</div>
+      </div>
+    </div>
+    <div class="roi-note">* Estimados conservadores basados en el diagnóstico. Se refinan al completar el mapeo técnico (Fase 0).</div>
+  </div>
+
+  <!-- Plan de implementación -->
+  <div class="section-title">Plan de implementación</div>
+
+  <!-- Fase 0 -->
+  <div class="plan-phase">
+    <div class="plan-phase-header">
+      <div class="phase-num" style="background:rgba(255,255,255,.06);color:var(--text-secondary);">0</div>
+      <div>
+        <div class="plan-phase-title">Mapeo técnico — Blueprint antes de construir</div>
+        <div class="plan-phase-sub">Definir exactamente qué hay, cómo funciona y qué se va a conectar</div>
+      </div>
+    </div>
+    <div class="plan-items">
+      <div class="plan-item">
+        <div class="plan-item-icon">🗺️</div>
+        <div class="plan-item-content">
+          <div class="plan-item-title">Mapeo de portales de las 3 aseguradoras</div>
+          <div class="plan-item-desc">Documentar el flujo completo de cada portal: login, formularios de cotización, campos requeridos por tipo de seguro, pantallas de emisión de póliza, secciones de tickets y consulta de pagos. Este mapeo define cómo se construye cada RPA.</div>
+          <div class="plan-item-chips">
+            <span class="tag gray">RPA / Playwright</span><span class="tag gray">3 aseguradoras</span>
+          </div>
+        </div>
+      </div>
+      <div class="plan-item">
+        <div class="plan-item-icon">🔌</div>
+        <div class="plan-item-content">
+          <div class="plan-item-title">Documentación de APIs del sistema interno</div>
+          <div class="plan-item-desc">Mapear los endpoints disponibles: qué puede recibir el sistema, qué devuelve, cómo se autentifica y cuáles son los modelos de datos para cotizaciones, pólizas y tickets. Esto define cómo el agente escribe resultados de vuelta.</div>
+          <div class="plan-item-chips">
+            <span class="tag gray">Sistema interno</span><span class="tag gray">APIs existentes</span>
+          </div>
+        </div>
+      </div>
+      <div class="plan-item">
+        <div class="plan-item-icon">📐</div>
+        <div class="plan-item-content">
+          <div class="plan-item-title">Definición del modelo de datos</div>
+          <div class="plan-item-desc">Para cada tipo de operación (cotización, póliza, ticket, consulta de pago) definir: qué información necesita el agente para ejecutarla, qué datos extrae del portal y en qué formato los devuelve al sistema interno y al cliente.</div>
+          <div class="plan-item-chips">
+            <span class="tag gray">Entregable: Blueprint técnico</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fase 1 -->
+  <div class="plan-phase">
+    <div class="plan-phase-header">
+      <div class="phase-num p1">1</div>
+      <div>
+        <div class="plan-phase-title">Capa de salida — La infraestructura de entrega</div>
+        <div class="plan-phase-sub">Los canales por donde el agente devuelve información al cliente y al equipo. Sin esta capa el agente puede tener los datos y no tener por dónde enviarlos.</div>
+      </div>
+    </div>
+    <div class="plan-items">
+      <div class="plan-item">
+        <div class="plan-item-icon">💬</div>
+        <div class="plan-item-content">
+          <div class="plan-item-title">WhatsApp Business API + Email automatizado</div>
+          <div class="plan-item-desc">Configurar los canales de salida del agente: WhatsApp para respuestas en tiempo real y email para entrega formal de documentos (cotizaciones, pólizas, reportes). Templates por tipo de respuesta listos desde el inicio.</div>
+          <div class="plan-item-chips">
+            <span class="tag green">Fundación del agente</span><span class="tag gray">WhatsApp API</span><span class="tag gray">n8n</span>
+          </div>
+        </div>
+      </div>
+      <div class="plan-item">
+        <div class="plan-item-icon">🔗</div>
+        <div class="plan-item-content">
+          <div class="plan-item-title">Conexión al sistema interno vía API</div>
+          <div class="plan-item-desc">Integrar el sistema interno como destino central de todos los resultados del agente: cada cotización generada, póliza emitida, ticket abierto y consulta resuelta queda registrada automáticamente.</div>
+          <div class="plan-item-chips">
+            <span class="tag green">Registro centralizado</span><span class="tag gray">APIs existentes</span>
+          </div>
+        </div>
+      </div>
+      <div class="plan-item">
+        <div class="plan-item-icon">📊</div>
+        <div class="plan-item-content">
+          <div class="plan-item-title">Dashboard de KPIs operativos</div>
+          <div class="plan-item-desc">Primer tablero de métricas reales: volumen de solicitudes, solicitudes procesadas por el agente vs. por humano, tiempo de respuesta y casos pendientes. Resuelve el "sin KPIs formales" del diagnóstico.</div>
+          <div class="plan-item-chips">
+            <span class="tag green">Primer KPI formal</span><span class="tag gray">CRM + sistema interno</span>
+          </div>
+        </div>
+      </div>
+      <div class="plan-item">
+        <div class="plan-item-icon">📨</div>
+        <div class="plan-item-content">
+          <div class="plan-item-title">Acuses de recibo y notificaciones automáticas</div>
+          <div class="plan-item-desc">Cada solicitud que entra dispara un acuse automático al cliente. Cuando el agente completa una tarea, el cliente recibe el resultado por el canal correcto sin intervención del equipo.</div>
+          <div class="plan-item-chips">
+            <span class="tag green">Reduce carga inmediata</span><span class="tag gray">n8n + CRM</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fase 2 -->
+  <div class="plan-phase">
+    <div class="plan-phase-header">
+      <div class="phase-num p2">2</div>
+      <div>
+        <div class="plan-phase-title">Primer caso end-to-end — Cotización automática</div>
+        <div class="plan-phase-sub">Un solo tipo de operación, una sola aseguradora. Validar el loop completo antes de escalar.</div>
+      </div>
+    </div>
+    <div class="plan-items">
+      <div class="plan-item">
+        <div class="plan-item-icon">🤖</div>
+        <div class="plan-item-content">
+          <div class="plan-item-title">Agente de cotización — Aseguradora #1</div>
+          <div class="plan-item-desc">El cliente manda la solicitud por WhatsApp o email. Claude interpreta los datos (tipo de seguro, asegurado, cobertura), el RPA entra al portal de la aseguradora prioritaria, llena el formulario, extrae la cotización y la devuelve formateada al cliente — sin intervención humana.</div>
+          <div class="plan-item-chips">
+            <span class="tag purple">Caso de mayor volumen</span><span class="tag gray">Claude + RPA + WhatsApp</span>
+          </div>
+        </div>
+      </div>
+      <div class="plan-item">
+        <div class="plan-item-icon">⚠️</div>
+        <div class="plan-item-content">
+          <div class="plan-item-title">Monitor de RPA + fallback humano</div>
+          <div class="plan-item-desc">Sistema de monitoreo que detecta si el portal de la aseguradora cambió su UI y el RPA falla. Si ocurre, la solicitud se redirige al agente humano automáticamente sin que el cliente lo note, y el equipo recibe alerta inmediata.</div>
+          <div class="plan-item-chips">
+            <span class="tag yellow">Resiliencia crítica</span><span class="tag gray">Alertas automáticas</span>
+          </div>
+        </div>
+      </div>
+      <div class="plan-item">
+        <div class="plan-item-icon">❓</div>
+        <div class="plan-item-content">
+          <div class="plan-item-title">Agente de FAQs — Estatus y consultas frecuentes</div>
+          <div class="plan-item-desc">El agente responde automáticamente las preguntas frecuentes de clientes consultando el sistema interno vía API: estado de su póliza, próximo pago, documentos pendientes y datos de su cobertura.</div>
+          <div class="plan-item-chips">
+            <span class="tag purple">Reduce carga del equipo</span><span class="tag gray">Claude + sistema interno API</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fase 3 -->
+  <div class="plan-phase">
+    <div class="plan-phase-header">
+      <div class="phase-num p3">3</div>
+      <div>
+        <div class="plan-phase-title">Expansión — Las 3 aseguradoras + generación de póliza</div>
+        <div class="plan-phase-sub">Escalar lo validado en Fase 2 y agregar operaciones más complejas con flujo de aprobación humana.</div>
+      </div>
+    </div>
+    <div class="plan-items">
+      <div class="plan-item">
+        <div class="plan-item-icon">🏢</div>
+        <div class="plan-item-content">
+          <div class="plan-item-title">Cotización en las 3 aseguradoras + comparativa automática</div>
+          <div class="plan-item-desc">Replicar el RPA de cotización para las Aseguradoras #2 y #3. El agente cotiza en paralelo en las tres y devuelve una tabla comparativa al cliente con opciones, coberturas y precios — todo en un solo mensaje.</div>
+          <div class="plan-item-chips">
+            <span class="tag blue">3 aseguradoras</span><span class="tag gray">Cotización paralela</span>
+          </div>
+        </div>
+      </div>
+      <div class="plan-item">
+        <div class="plan-item-icon">📄</div>
+        <div class="plan-item-content">
+          <div class="plan-item-title">Generación de póliza con aprobación humana</div>
+          <div class="plan-item-desc">El agente prepara todos los datos y pre-llena el formulario de emisión en el portal. Un humano revisa y aprueba con un clic. El agente ejecuta la emisión y entrega la póliza al cliente por email y WhatsApp. La aprobación humana permanece en este paso por el impacto contractual.</div>
+          <div class="plan-item-chips">
+            <span class="tag blue">Híbrido: agente prepara, humano aprueba</span>
+          </div>
+        </div>
+      </div>
+      <div class="plan-item">
+        <div class="plan-item-icon">🎫</div>
+        <div class="plan-item-content">
+          <div class="plan-item-title">Levantamiento y seguimiento de tickets</div>
+          <div class="plan-item-desc">El agente abre tickets en el portal de la aseguradora correspondiente cuando el cliente reporta un siniestro, solicita un cambio o hace una reclamación. Registra el número de ticket en el sistema interno y notifica al cliente con el folio y los próximos pasos.</div>
+          <div class="plan-item-chips">
+            <span class="tag blue">Siniestros y reclamaciones</span><span class="tag gray">RPA + sistema interno</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fase 4 -->
+  <div class="plan-phase">
+    <div class="plan-phase-header">
+      <div class="phase-num" style="background:rgba(0,212,255,.1);color:var(--brand-cyan);">4</div>
+      <div>
+        <div class="plan-phase-title">Agente completo — Ciclo operativo autónomo</div>
+        <div class="plan-phase-sub">El agente opera el ciclo completo de extremo a extremo. La intervención humana queda solo en excepciones y decisiones estratégicas.</div>
+      </div>
+    </div>
+    <div class="plan-items">
+      <div class="plan-item">
+        <div class="plan-item-icon">💳</div>
+        <div class="plan-item-content">
+          <div class="plan-item-title">Consulta de pagos y estatus de pólizas</div>
+          <div class="plan-item-desc">El agente consulta en tiempo real el estatus de pagos, vigencia y coberturas activas directamente en los portales de las aseguradoras y devuelve la información al cliente por el canal que prefiere: WhatsApp, email o sistema interno.</div>
+          <div class="plan-item-chips">
+            <span class="tag" style="background:rgba(0,212,255,.1);color:var(--brand-cyan);">Consulta en tiempo real</span><span class="tag gray">Omnicanal</span>
+          </div>
+        </div>
+      </div>
+      <div class="plan-item">
+        <div class="plan-item-icon">🔔</div>
+        <div class="plan-item-content">
+          <div class="plan-item-title">Alertas proactivas — Renovaciones y pagos por vencer</div>
+          <div class="plan-item-desc">El agente monitorea las pólizas activas y alerta proactivamente al cliente antes de que venza su póliza o su próximo pago. Sin que el cliente tenga que preguntar — el agente llega primero.</div>
+          <div class="plan-item-chips">
+            <span class="tag" style="background:rgba(0,212,255,.1);color:var(--brand-cyan);">Retención proactiva</span>
+          </div>
+        </div>
+      </div>
+      <div class="plan-item">
+        <div class="plan-item-icon">📈</div>
+        <div class="plan-item-content">
+          <div class="plan-item-title">Reporte mensual ejecutivo para Dirección</div>
+          <div class="plan-item-desc">El agente genera automáticamente el reporte mensual de operaciones: volumen por aseguradora, tiempo de respuesta, tasa de automatización, satisfacción del cliente e incidencias del RPA. La Dirección de Operaciones lo recibe sin pedirlo.</div>
+          <div class="plan-item-chips">
+            <span class="tag" style="background:rgba(0,212,255,.1);color:var(--brand-cyan);">Dirección de Operaciones</span><span class="tag gray">Claude API</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Próximos pasos -->
+  <div class="section-title" style="margin-top:8px;">Próximos pasos</div>
+  <div class="next-steps">
+    <div class="next-item">
+      <div class="next-num">1</div>
+      <div class="next-text">
+        <strong>Sesión de mapeo técnico</strong> <span>— Con la persona de Sos Asesores que opera los portales de las 3 aseguradoras. Se documenta el flujo exacto de cada portal: login, formularios, campos, pantallas de cotización y emisión. Este es el insumo principal para construir los RPA.</span>
+      </div>
+    </div>
+    <div class="next-item">
+      <div class="next-num">2</div>
+      <div class="next-text">
+        <strong>Revisión de APIs del sistema interno</strong> <span>— Compartir la documentación de los endpoints disponibles (o agendar sesión técnica con quien lo desarrolló) para confirmar qué puede recibir el sistema, cómo se autentifica y cuál es el modelo de datos.</span>
+      </div>
+    </div>
+    <div class="next-item">
+      <div class="next-num">3</div>
+      <div class="next-text">
+        <strong>Definir la aseguradora prioritaria para Fase 2</strong> <span>— De las 3 con más tráfico, elegir la que tiene mayor volumen de cotizaciones para construir el primer RPA. El criterio es: más solicitudes = mayor impacto inmediato al automatizar.</span>
+      </div>
+    </div>
+    <div class="next-item">
+      <div class="next-num">4</div>
+      <div class="next-text">
+        <strong>Confirmar canal principal del cliente</strong> <span>— Con 4 canales activos (Email, Teléfono, WhatsApp, Portal), definir cuál es el canal primario por el que los clientes prefieren recibir respuestas. Esto determina el flujo de entrega del agente en Fase 1.</span>
+      </div>
+    </div>
+    <div class="next-item">
+      <div class="next-num">5</div>
+      <div class="next-text">
+        <strong>Completar datos faltantes del diagnóstico</strong> <span>— Tamaño del equipo, volumen mensual de solicitudes por aseguradora y tiempo promedio de resolución actual. Estos datos son la línea base para medir el ROI real de la implementación.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span>MentorIA Systems — Reporte de Diagnóstico · Uso interno</span>
+    <span>Virginia Abad · vabad@socasesores.com.mx</span>
+  </div>
+
+</div>
+
+</body>
+</html>
