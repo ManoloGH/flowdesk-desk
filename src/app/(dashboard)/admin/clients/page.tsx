@@ -14,11 +14,10 @@ interface TenantRow {
 }
 
 const ACCOUNT_TYPES = [
-  { key: 'all',               label: 'Todos' },
-  { key: 'SAAS_ACCOUNT',      label: 'SaaS interno' },
-  { key: 'PARTNERSHIP',       label: 'Partners MentorIA' },
-  { key: 'CONSULTORIA_CLIENT',label: 'Clientes consultoría' },
-  { key: 'DIRECT',            label: 'Clientes FlowDesk' },
+  { key: 'all',         label: 'Todos' },
+  { key: 'HOLDING',     label: 'Holding' },
+  { key: 'PARTNERSHIP', label: 'Partner MentorIA' },
+  { key: 'DIRECT',      label: 'Cliente FlowDesk' },
 ];
 
 const STATUS_FILTERS = [
@@ -28,19 +27,26 @@ const STATUS_FILTERS = [
 ];
 
 const PLAN_COLORS: Record<string, string> = {
-  enterprise: 'text-violet-400', professional: 'text-blue-400', starter: 'text-gray-400', internal: 'text-gray-600',
+  nano: 'text-gray-500', small: 'text-sky-400', medium: 'text-indigo-400', large: 'text-violet-400', enterprise: 'text-amber-400',
+  starter: 'text-gray-400', professional: 'text-blue-400', internal: 'text-gray-600',
+};
+
+const PLAN_LABEL: Record<string, string> = {
+  nano: '-10', small: '10–50', medium: '50–100', large: '+100', enterprise: '+1000',
 };
 
 const TYPE_LABEL: Record<string, string> = {
-  SAAS_ACCOUNT:       'SaaS interno',
+  HOLDING:            'Holding',
   PARTNERSHIP:        'Partner MentorIA',
+  SAAS_ACCOUNT:       'Partner MentorIA',
   CONSULTORIA_CLIENT: 'Cliente consultoría',
   DIRECT:             'Cliente FlowDesk',
 };
 
 const TYPE_ICON: Record<string, React.ReactNode> = {
-  SAAS_ACCOUNT:       <Zap className="w-3.5 h-3.5 text-indigo-400" />,
+  HOLDING:            <Building2 className="w-3.5 h-3.5 text-violet-400" />,
   PARTNERSHIP:        <Handshake className="w-3.5 h-3.5 text-purple-400" />,
+  SAAS_ACCOUNT:       <Handshake className="w-3.5 h-3.5 text-purple-400" />,
   CONSULTORIA_CLIENT: <Briefcase className="w-3.5 h-3.5 text-amber-400" />,
   DIRECT:             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />,
 };
@@ -137,7 +143,7 @@ export default function ClientsPage() {
 
                   <div className="flex items-center gap-2">
                     {TYPE_ICON[t.account_type]}
-                    <span className={`text-[11px] font-medium ${PLAN_COLORS[t.plan] ?? 'text-gray-400'}`}>{t.plan}</span>
+                    <span className={`text-[11px] font-medium ${PLAN_COLORS[t.plan] ?? 'text-gray-400'}`}>{PLAN_LABEL[t.plan] ?? t.plan}</span>
                     {t.secretary_config?.enabled && <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/20">Atlas</span>}
                     {t.billing_config?.enabled && <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/20">Factura</span>}
                   </div>

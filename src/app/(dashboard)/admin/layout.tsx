@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Building2, Users, Bot, Zap,
   CreditCard, Brain, AlertTriangle, Settings,
   LogOut, ChevronRight, Shield, Activity,
-  Circle, ArrowLeft,
+  Circle, ArrowLeft, Package,
 } from 'lucide-react';
 
 function hasAdminAccess(user: { role?: string; platform_admin?: boolean } | null): boolean {
@@ -19,16 +19,17 @@ const NAV_SECTIONS = [
   {
     label: 'PLATAFORMA',
     items: [
-      { label: 'Dashboard',        href: '/admin',             icon: LayoutDashboard, exact: true },
+      { label: 'Panel de Control',  href: '/admin',             icon: LayoutDashboard, exact: true },
       { label: 'Empresas',         href: '/admin/clients',     icon: Building2 },
       { label: 'Usuarios',         href: '/admin/users',       icon: Users,     soon: true },
     ],
   },
   {
-    label: 'PRODUCTOS',
+    label: 'RECURSOS',
     items: [
       { label: 'Agentes',          href: '/admin/agents',      icon: Bot,           soon: true },
       { label: 'Automatizaciones', href: '/admin/automations', icon: Zap,           soon: true },
+      { label: 'Software',         href: '/admin/software',    icon: Package,       soon: true },
     ],
   },
   {

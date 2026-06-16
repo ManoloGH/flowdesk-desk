@@ -16,10 +16,18 @@ interface Overview {
 }
 
 const PLAN_COLORS: Record<string, string> = {
-  enterprise: 'text-violet-400 bg-violet-500/10 border-violet-500/20',
+  nano:         'text-gray-400 bg-gray-500/10 border-gray-500/20',
+  small:        'text-sky-400 bg-sky-500/10 border-sky-500/20',
+  medium:       'text-indigo-400 bg-indigo-500/10 border-indigo-500/20',
+  large:        'text-violet-400 bg-violet-500/10 border-violet-500/20',
+  enterprise:   'text-amber-400 bg-amber-500/10 border-amber-500/20',
+  starter:      'text-gray-400 bg-gray-500/10 border-gray-500/20',
   professional: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
-  starter: 'text-gray-400 bg-gray-500/10 border-gray-500/20',
-  internal: 'text-gray-600 bg-gray-800 border-gray-700/20',
+  internal:     'text-gray-600 bg-gray-800 border-gray-700/20',
+};
+
+const PLAN_LABEL: Record<string, string> = {
+  nano: '-10', small: '10–50', medium: '50–100', large: '+100', enterprise: '+1000',
 };
 
 export default function BillingPage() {
@@ -77,20 +85,20 @@ export default function BillingPage() {
       {/* Desglose de planes */}
       <div className="bg-[#0a0f1e] border border-white/5 rounded-xl p-5 mb-4">
         <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">Distribución de planes (activos)</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
           {[
-            { plan: 'starter',      price: 49,  users: 10 },
-            { plan: 'professional', price: 149, users: 50 },
-            { plan: 'enterprise',   price: 399, users: 999 },
-            { plan: 'internal',     price: 0,   users: 999 },
-          ].map(({ plan, price, users }) => (
+            { plan: 'nano',       label: '-10' },
+            { plan: 'small',      label: '10–50' },
+            { plan: 'medium',     label: '50–100' },
+            { plan: 'large',      label: '+100' },
+            { plan: 'enterprise', label: '+1000' },
+          ].map(({ plan, label }) => (
             <div key={plan} className="bg-white/[0.02] rounded-xl p-4">
-              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${PLAN_COLORS[plan]}`}>{plan}</span>
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${PLAN_COLORS[plan]}`}>{label} empl.</span>
               <p className="text-2xl font-bold text-white mt-3">
                 {data?.plans_breakdown?.[plan] ?? 0}
-                <span className="text-sm font-normal text-gray-600 ml-1">clientes</span>
+                <span className="text-sm font-normal text-gray-600 ml-1">empresas</span>
               </p>
-              <p className="text-[10px] text-gray-600 mt-1">${price}/mes · {users === 999 ? '∞' : users} usuarios</p>
             </div>
           ))}
         </div>
@@ -118,7 +126,7 @@ export default function BillingPage() {
                     <p className="text-[10px] text-gray-600">{t.billing_email ?? '—'}</p>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${PLAN_COLORS[t.plan] ?? PLAN_COLORS.starter}`}>{t.plan}</span>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${PLAN_COLORS[t.plan] ?? PLAN_COLORS.nano}`}>{PLAN_LABEL[t.plan] ?? t.plan}</span>
                   </td>
                   <td className="px-4 py-3">
                     <span className={`text-[10px] font-medium ${t.status === 'active' ? 'text-emerald-400' : 'text-red-400'}`}>● {t.status}</span>

@@ -5,7 +5,7 @@ import { api } from '@/lib/api';
 import {
   Building2, Users, CheckCircle,
   Plus, X, DollarSign, Brain, Loader2, MessageSquare,
-  ChevronRight, Zap, ShieldCheck, Handshake, Briefcase,
+  ChevronRight, ShieldCheck, Handshake, Briefcase,
   TrendingUp, Bot, AlertCircle, Calendar,
 } from 'lucide-react';
 
@@ -25,18 +25,27 @@ interface Stats {
 }
 
 const PLAN_BADGE: Record<string, string> = {
-  enterprise:   'bg-violet-500/20 text-violet-300 border border-violet-500/30',
-  professional: 'bg-blue-500/20 text-blue-300 border border-blue-500/30',
+  nano:         'bg-gray-700/40 text-gray-500 border border-gray-600/30',
+  small:        'bg-sky-500/20 text-sky-300 border border-sky-500/30',
+  medium:       'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30',
+  large:        'bg-violet-500/20 text-violet-300 border border-violet-500/30',
+  enterprise:   'bg-amber-500/20 text-amber-300 border border-amber-500/30',
   starter:      'bg-gray-700/40 text-gray-400 border border-gray-600/30',
+  professional: 'bg-blue-500/20 text-blue-300 border border-blue-500/30',
   internal:     'bg-gray-800/60 text-gray-600 border border-gray-700/30',
 };
 
+const PLAN_LABEL: Record<string, string> = {
+  nano: '-10', small: '10–50', medium: '50–100', large: '+100', enterprise: '+1000',
+};
+
 const ACCOUNT_TYPE_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  SAAS_ACCOUNT:       { label: 'SaaS interno',        color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20',   icon: <Zap className="w-3 h-3" /> },
-  PARTNERSHIP:        { label: 'Partner MentorIA',    color: 'text-purple-400 bg-purple-500/10 border-purple-500/20',   icon: <Handshake className="w-3 h-3" /> },
-  CONSULTORIA_CLIENT: { label: 'Cliente consultoría', color: 'text-amber-400  bg-amber-500/10  border-amber-500/20',    icon: <Briefcase className="w-3 h-3" /> },
-  DIRECT:             { label: 'Cliente FlowDesk',    color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',icon: <ShieldCheck className="w-3 h-3" /> },
-  company:            { label: 'Empresa',              color: 'text-gray-400 bg-gray-500/10 border-gray-500/20',         icon: <Building2 className="w-3 h-3" /> },
+  HOLDING:            { label: 'Holding',           color: 'text-violet-400 bg-violet-500/10 border-violet-500/20',    icon: <Building2 className="w-3 h-3" /> },
+  PARTNERSHIP:        { label: 'Partner MentorIA',  color: 'text-purple-400 bg-purple-500/10 border-purple-500/20',   icon: <Handshake className="w-3 h-3" /> },
+  SAAS_ACCOUNT:       { label: 'Partner MentorIA',  color: 'text-purple-400 bg-purple-500/10 border-purple-500/20',   icon: <Handshake className="w-3 h-3" /> },
+  CONSULTORIA_CLIENT: { label: 'Cliente consultoría', color: 'text-amber-400 bg-amber-500/10 border-amber-500/20',    icon: <Briefcase className="w-3 h-3" /> },
+  DIRECT:             { label: 'Cliente FlowDesk',  color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', icon: <ShieldCheck className="w-3 h-3" /> },
+  company:            { label: 'Holding',           color: 'text-violet-400 bg-violet-500/10 border-violet-500/20',   icon: <Building2 className="w-3 h-3" /> },
 };
 
 function AccountBadge({ type }: { type: string }) {
@@ -70,7 +79,7 @@ function KpiCard({ label, value, sub, icon: Icon, color, accent }: {
 }
 
 function NewTenantModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
-  const [form, setForm] = useState({ name: '', slug: '', plan: 'starter', owner_email: '', owner_name: '', tenant_type: 'NETWORK' });
+  const [form, setForm] = useState({ name: '', slug: '', plan: 'small', account_type: 'DIRECT', owner_email: '', owner_name: '', tenant_type: 'NETWORK' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -113,22 +122,33 @@ function NewTenantModal({ onClose, onCreated }: { onClose: () => void; onCreated
           ))}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] text-gray-500 block mb-1">Plan</label>
+              <label className="text-[10px] text-gray-500 block mb-1">Tamaño de empresa</label>
               <select className="w-full bg-[#040f20] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500/50 transition-all"
                 value={form.plan} onChange={e => setForm(f => ({ ...f, plan: e.target.value }))}>
-                <option value="starter">Starter</option>
-                <option value="professional">Professional</option>
-                <option value="enterprise">Enterprise</option>
+                <option value="nano">-10 empleados</option>
+                <option value="small">10–50 empleados</option>
+                <option value="medium">50–100 empleados</option>
+                <option value="large">+100 empleados</option>
+                <option value="enterprise">+1000 empleados</option>
               </select>
             </div>
             <div>
-              <label className="text-[10px] text-gray-500 block mb-1">Tipo de tenant</label>
+              <label className="text-[10px] text-gray-500 block mb-1">Tipo de cuenta</label>
               <select className="w-full bg-[#040f20] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500/50 transition-all"
-                value={form.tenant_type} onChange={e => setForm(f => ({ ...f, tenant_type: e.target.value }))}>
-                <option value="NETWORK">Network</option>
-                <option value="BRANCH">Branch</option>
+                value={form.account_type} onChange={e => setForm(f => ({ ...f, account_type: e.target.value }))}>
+                <option value="HOLDING">Holding</option>
+                <option value="PARTNERSHIP">Partner MentorIA</option>
+                <option value="DIRECT">Cliente FlowDesk</option>
               </select>
             </div>
+          </div>
+          <div>
+            <label className="text-[10px] text-gray-500 block mb-1">Tipo de tenant</label>
+            <select className="w-full bg-[#040f20] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500/50 transition-all"
+              value={form.tenant_type} onChange={e => setForm(f => ({ ...f, tenant_type: e.target.value }))}>
+              <option value="NETWORK">Network</option>
+              <option value="BRANCH">Branch</option>
+            </select>
           </div>
           {error && <p className="text-xs text-red-400 bg-red-500/10 px-3 py-2 rounded-lg border border-red-500/20">{error}</p>}
           <button type="submit" disabled={loading}
@@ -173,21 +193,20 @@ export default function AdminPage() {
   }).length;
   const suspended = tenants.filter(t => t.status === 'suspended').length;
   const whatsappActive = tenants.filter(t => t.secretary_config?.owner_phone).length;
-  const totalAgents = tenants.reduce((s, t) => s + (t._count.team_slots > 0 ? 1 : 0), 0);
 
   const row1 = [
-    { label: 'MRR',            value: `$${mrr.toLocaleString()}`,       sub: 'Ingresos mensuales',    icon: DollarSign,   color: 'text-emerald-400', accent: 'bg-emerald-500/[0.04] border-emerald-500/10' },
-    { label: 'ARR',            value: `$${arr.toLocaleString()}`,        sub: 'MRR × 12',              icon: TrendingUp,   color: 'text-blue-400',    accent: 'bg-blue-500/[0.04] border-blue-500/10' },
-    { label: 'Empresas activas',value: activeCount,                      sub: `de ${stats?.total ?? tenants.length} totales`, icon: Building2, color: 'text-violet-400', accent: 'bg-violet-500/[0.04] border-violet-500/10' },
-    { label: 'Nuevas este mes', value: newThisMonth,                     sub: 'Onboardings del mes',   icon: Calendar,     color: 'text-indigo-400',  accent: 'bg-indigo-500/[0.04] border-indigo-500/10' },
+    { label: 'MRR',             value: `$${mrr.toLocaleString()}`,       sub: 'Ingresos mensuales',    icon: DollarSign,   color: 'text-emerald-400', accent: 'bg-emerald-500/[0.04] border-emerald-500/10' },
+    { label: 'ARR',             value: `$${arr.toLocaleString()}`,        sub: 'MRR × 12',              icon: TrendingUp,   color: 'text-blue-400',    accent: 'bg-blue-500/[0.04] border-blue-500/10' },
+    { label: 'Empresas activas',value: activeCount,                       sub: `de ${stats?.total ?? tenants.length} totales`, icon: Building2, color: 'text-violet-400', accent: 'bg-violet-500/[0.04] border-violet-500/10' },
+    { label: 'Nuevas este mes', value: newThisMonth,                      sub: 'Onboardings del mes',   icon: Calendar,     color: 'text-indigo-400',  accent: 'bg-indigo-500/[0.04] border-indigo-500/10' },
   ];
 
   const row2 = [
-    { label: 'Usuarios',       value: totalUsers,                        sub: 'Slots activos',         icon: Users,        color: 'text-sky-400',     accent: 'bg-white/[0.02] border-white/[0.05]' },
-    { label: 'Brain docs',     value: stats?.brain_docs ?? tenants.reduce((s, t) => s + t._count.brain_documents, 0), sub: 'Documentos cargados', icon: Brain, color: 'text-amber-400', accent: 'bg-white/[0.02] border-white/[0.05]' },
-    { label: 'Conversaciones', value: stats?.conversations ?? 0,         sub: 'Total histórico',       icon: MessageSquare,color: 'text-pink-400',    accent: 'bg-white/[0.02] border-white/[0.05]' },
-    { label: 'WhatsApp activos',value: whatsappActive,                   sub: 'Atlas conectados',      icon: Bot,          color: 'text-green-400',   accent: 'bg-white/[0.02] border-white/[0.05]' },
-    { label: 'Suspendidas',    value: suspended,                         sub: suspended > 0 ? 'Requieren atención' : 'Sin alertas', icon: AlertCircle, color: suspended > 0 ? 'text-red-400' : 'text-gray-600', accent: suspended > 0 ? 'bg-red-500/[0.04] border-red-500/10' : 'bg-white/[0.02] border-white/[0.05]' },
+    { label: 'Usuarios',        value: totalUsers,                        sub: 'Slots activos',         icon: Users,        color: 'text-sky-400',     accent: 'bg-white/[0.02] border-white/[0.05]' },
+    { label: 'Brain docs',      value: stats?.brain_docs ?? tenants.reduce((s, t) => s + t._count.brain_documents, 0), sub: 'Documentos cargados', icon: Brain, color: 'text-amber-400', accent: 'bg-white/[0.02] border-white/[0.05]' },
+    { label: 'Conversaciones',  value: stats?.conversations ?? 0,         sub: 'Total histórico',       icon: MessageSquare,color: 'text-pink-400',    accent: 'bg-white/[0.02] border-white/[0.05]' },
+    { label: 'WhatsApp activos',value: whatsappActive,                    sub: 'Atlas conectados',      icon: Bot,          color: 'text-green-400',   accent: 'bg-white/[0.02] border-white/[0.05]' },
+    { label: 'Suspendidas',     value: suspended,                         sub: suspended > 0 ? 'Requieren atención' : 'Sin alertas', icon: AlertCircle, color: suspended > 0 ? 'text-red-400' : 'text-gray-600', accent: suspended > 0 ? 'bg-red-500/[0.04] border-red-500/10' : 'bg-white/[0.02] border-white/[0.05]' },
   ];
 
   return (
@@ -197,7 +216,7 @@ export default function AdminPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-lg font-bold text-white">Dashboard</h1>
+          <h1 className="text-lg font-bold text-white">Panel de Control</h1>
           <p className="text-[11px] text-gray-600 mt-0.5">
             Vista global de la plataforma · actualizado ahora
           </p>
@@ -230,9 +249,11 @@ export default function AdminPage() {
             </p>
           </div>
           <div className="flex items-center gap-3 text-[9px] text-gray-700 font-semibold tracking-wider uppercase">
-            {Object.entries(ACCOUNT_TYPE_CONFIG).slice(0, 4).map(([k, v]) => (
-              <span key={k} className="flex items-center gap-1">{v.icon} {v.label}</span>
-            ))}
+            {['HOLDING', 'PARTNERSHIP', 'DIRECT'].map(k => {
+              const v = ACCOUNT_TYPE_CONFIG[k];
+              if (!v) return null;
+              return <span key={k} className="flex items-center gap-1">{v.icon} {v.label}</span>;
+            })}
           </div>
         </div>
 
@@ -249,7 +270,7 @@ export default function AdminPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-white/[0.05]">
-                {['Empresa', 'Tipo', 'Owner', 'Plan', 'Estado', 'Usuarios', 'Brain', ''].map(h => (
+                {['Empresa', 'Tipo', 'Owner', 'Tamaño', 'Estado', 'Usuarios', 'Brain', ''].map(h => (
                   <th key={h} className="text-left text-[9px] font-bold text-gray-700 uppercase tracking-widest px-4 py-3">{h}</th>
                 ))}
               </tr>
@@ -280,8 +301,8 @@ export default function AdminPage() {
                       : <span className="text-xs text-gray-700">—</span>}
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${PLAN_BADGE[t.plan] ?? PLAN_BADGE.starter}`}>
-                      {t.plan}
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${PLAN_BADGE[t.plan] ?? PLAN_BADGE.nano}`}>
+                      {PLAN_LABEL[t.plan] ?? t.plan}
                     </span>
                   </td>
                   <td className="px-4 py-3">

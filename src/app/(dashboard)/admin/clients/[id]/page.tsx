@@ -26,10 +26,18 @@ interface TenantDetail {
 }
 
 const PLAN_BADGE: Record<string, string> = {
-  enterprise:   'bg-violet-500/20 text-violet-300 border-violet-500/30',
-  professional: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+  nano:         'bg-gray-700/50 text-gray-400 border-gray-600/30',
+  small:        'bg-sky-500/20 text-sky-300 border-sky-500/30',
+  medium:       'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
+  large:        'bg-violet-500/20 text-violet-300 border-violet-500/30',
+  enterprise:   'bg-amber-500/20 text-amber-300 border-amber-500/30',
   starter:      'bg-gray-700/50 text-gray-400 border-gray-600/30',
+  professional: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
   internal:     'bg-gray-800 text-gray-600 border-gray-700/30',
+};
+
+const PLAN_LABEL: Record<string, string> = {
+  nano: '-10', small: '10–50', medium: '50–100', large: '+100', enterprise: '+1000',
 };
 
 function HealthBar({ score, label }: { score: number; label: string }) {
@@ -124,7 +132,7 @@ export default function TenantDetailPage() {
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-white">{tenant.name}</h1>
-            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${PLAN_BADGE[tenant.plan] ?? PLAN_BADGE.starter}`}>{tenant.plan}</span>
+            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${PLAN_BADGE[tenant.plan] ?? PLAN_BADGE.nano}`}>{PLAN_LABEL[tenant.plan] ?? tenant.plan}</span>
             <span className={`text-[10px] font-medium ${tenant.status === 'active' ? 'text-emerald-400' : 'text-red-400'}`}>● {tenant.status}</span>
           </div>
           {tenant.tagline && <p className="text-xs text-gray-500 mt-0.5">{tenant.tagline}</p>}
@@ -146,7 +154,13 @@ export default function TenantDetailPage() {
           )}
           <select value={tenant.plan} onChange={e => setPlan(e.target.value)} disabled={updating}
             className="bg-[#0a0f1e] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-gray-400 focus:outline-none focus:border-indigo-500">
-            {['starter', 'professional', 'enterprise', 'internal'].map(p => <option key={p} value={p}>{p}</option>)}
+            {[
+              { v: 'nano', l: '-10 empleados' }, { v: 'small', l: '10–50 empleados' },
+              { v: 'medium', l: '50–100 empleados' }, { v: 'large', l: '+100 empleados' },
+              { v: 'enterprise', l: '+1000 empleados' },
+              ...(!['nano','small','medium','large','enterprise'].includes(tenant.plan)
+                ? [{ v: tenant.plan, l: `${tenant.plan} (legacy)` }] : []),
+            ].map(({ v, l }) => <option key={v} value={v}>{l}</option>)}
           </select>
         </div>
       </div>
