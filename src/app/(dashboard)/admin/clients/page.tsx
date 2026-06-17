@@ -15,7 +15,7 @@ interface TenantRow {
 
 const ACCOUNT_TYPES = [
   { key: 'all',         label: 'Todos' },
-  { key: 'HOLDING',     label: 'Holding' },
+  { key: 'HOLDING',     label: 'Clientes MentorIA' },
   { key: 'PARTNERSHIP', label: 'Partner MentorIA' },
   { key: 'DIRECT',      label: 'Cliente FlowDesk' },
 ];
@@ -36,11 +36,12 @@ const PLAN_LABEL: Record<string, string> = {
 };
 
 const TYPE_LABEL: Record<string, string> = {
-  HOLDING:            'Holding',
+  HOLDING:            'Clientes MentorIA',
   PARTNERSHIP:        'Partner MentorIA',
   SAAS_ACCOUNT:       'Partner MentorIA',
-  CONSULTORIA_CLIENT: 'Cliente consultoría',
+  CONSULTORIA_CLIENT: 'Clientes MentorIA',
   DIRECT:             'Cliente FlowDesk',
+  company:            'Clientes MentorIA',
 };
 
 const TYPE_ICON: Record<string, React.ReactNode> = {

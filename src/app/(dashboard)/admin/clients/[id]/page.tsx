@@ -111,6 +111,14 @@ export default function TenantDetailPage() {
     setUpdating(false);
   }
 
+  async function setAccountType(account_type: string) {
+    if (!tenant) return;
+    setUpdating(true);
+    await api.patch(`/platform/network/${id}/account-type`, { account_type }).catch(() => {});
+    await load();
+    setUpdating(false);
+  }
+
   if (loading) {
     return <div className="min-h-screen bg-[#050a14] flex items-center justify-center"><Loader2 className="w-6 h-6 text-indigo-500 animate-spin" /></div>;
   }
@@ -152,6 +160,12 @@ export default function TenantDetailPage() {
               Activar
             </button>
           )}
+          <select value={tenant.account_type} onChange={e => setAccountType(e.target.value)} disabled={updating}
+            className="bg-[#0a0f1e] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-gray-400 focus:outline-none focus:border-indigo-500">
+            <option value="HOLDING">Clientes MentorIA</option>
+            <option value="PARTNERSHIP">Partner MentorIA</option>
+            <option value="DIRECT">Cliente FlowDesk</option>
+          </select>
           <select value={tenant.plan} onChange={e => setPlan(e.target.value)} disabled={updating}
             className="bg-[#0a0f1e] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-gray-400 focus:outline-none focus:border-indigo-500">
             {[

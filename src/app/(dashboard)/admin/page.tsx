@@ -40,12 +40,12 @@ const PLAN_LABEL: Record<string, string> = {
 };
 
 const ACCOUNT_TYPE_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  HOLDING:            { label: 'Holding',           color: 'text-violet-400 bg-violet-500/10 border-violet-500/20',    icon: <Building2 className="w-3 h-3" /> },
+  HOLDING:            { label: 'Clientes MentorIA', color: 'text-violet-400 bg-violet-500/10 border-violet-500/20',    icon: <Building2 className="w-3 h-3" /> },
   PARTNERSHIP:        { label: 'Partner MentorIA',  color: 'text-purple-400 bg-purple-500/10 border-purple-500/20',   icon: <Handshake className="w-3 h-3" /> },
   SAAS_ACCOUNT:       { label: 'Partner MentorIA',  color: 'text-purple-400 bg-purple-500/10 border-purple-500/20',   icon: <Handshake className="w-3 h-3" /> },
-  CONSULTORIA_CLIENT: { label: 'Cliente consultoría', color: 'text-amber-400 bg-amber-500/10 border-amber-500/20',    icon: <Briefcase className="w-3 h-3" /> },
+  CONSULTORIA_CLIENT: { label: 'Clientes MentorIA', color: 'text-violet-400 bg-violet-500/10 border-violet-500/20',   icon: <Building2 className="w-3 h-3" /> },
   DIRECT:             { label: 'Cliente FlowDesk',  color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', icon: <ShieldCheck className="w-3 h-3" /> },
-  company:            { label: 'Holding',           color: 'text-violet-400 bg-violet-500/10 border-violet-500/20',   icon: <Building2 className="w-3 h-3" /> },
+  company:            { label: 'Clientes MentorIA', color: 'text-violet-400 bg-violet-500/10 border-violet-500/20',   icon: <Building2 className="w-3 h-3" /> },
 };
 
 function AccountBadge({ type }: { type: string }) {
@@ -136,7 +136,7 @@ function NewTenantModal({ onClose, onCreated }: { onClose: () => void; onCreated
               <label className="text-[10px] text-gray-500 block mb-1">Tipo de cuenta</label>
               <select className="w-full bg-[#040f20] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500/50 transition-all"
                 value={form.account_type} onChange={e => setForm(f => ({ ...f, account_type: e.target.value }))}>
-                <option value="HOLDING">Holding</option>
+                <option value="HOLDING">Clientes MentorIA</option>
                 <option value="PARTNERSHIP">Partner MentorIA</option>
                 <option value="DIRECT">Cliente FlowDesk</option>
               </select>
