@@ -195,8 +195,8 @@ export default function AdminPage() {
   const whatsappActive = tenants.filter(t => t.secretary_config?.owner_phone).length;
 
   const row1 = [
-    { label: 'MRR',             value: `$${mrr.toLocaleString()}`,       sub: 'Ingresos mensuales',    icon: DollarSign,   color: 'text-emerald-400', accent: 'bg-emerald-500/[0.04] border-emerald-500/10' },
-    { label: 'ARR',             value: `$${arr.toLocaleString()}`,        sub: 'MRR × 12',              icon: TrendingUp,   color: 'text-blue-400',    accent: 'bg-blue-500/[0.04] border-blue-500/10' },
+    { label: 'Ing. Mensual',    value: `$${mrr.toLocaleString()}`,       sub: 'Ingresos mensuales',    icon: DollarSign,   color: 'text-emerald-400', accent: 'bg-emerald-500/[0.04] border-emerald-500/10' },
+    { label: 'Ing. Anual',      value: `$${arr.toLocaleString()}`,        sub: 'Ing. Mensual × 12',     icon: TrendingUp,   color: 'text-blue-400',    accent: 'bg-blue-500/[0.04] border-blue-500/10' },
     { label: 'Empresas activas',value: activeCount,                       sub: `de ${stats?.total ?? tenants.length} totales`, icon: Building2, color: 'text-violet-400', accent: 'bg-violet-500/[0.04] border-violet-500/10' },
     { label: 'Nuevas este mes', value: newThisMonth,                      sub: 'Onboardings del mes',   icon: Calendar,     color: 'text-indigo-400',  accent: 'bg-indigo-500/[0.04] border-indigo-500/10' },
   ];

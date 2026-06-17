@@ -94,7 +94,7 @@ function AdminSidebar() {
                       {itemLabel}
                     </div>
                     {soon
-                      ? <span className="text-[8px] font-bold tracking-wider text-gray-700 bg-white/[0.03] px-1 rounded uppercase">soon</span>
+                      ? <span className="text-[8px] font-bold tracking-wider text-gray-700 bg-white/[0.03] px-1 rounded uppercase">próximo</span>
                       : active
                         ? <ChevronRight className="w-3 h-3 text-violet-500" />
                         : null

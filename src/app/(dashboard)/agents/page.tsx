@@ -20,7 +20,7 @@ interface Agent {
 }
 
 const ROLE_LABEL: Record<string, string> = {
-  ceo:               'CEO Agent',
+  ceo:               'CEO Digital',
   focus_agent:       'Agente de Enfoque',
   daily_assistant:   'Asistente Diario',
   department_agent:  'Agente de Área',
@@ -86,7 +86,7 @@ export default function AgentsPage() {
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-bold tracking-widest text-indigo-400 uppercase">CEO Agent</span>
+                  <span className="text-[10px] font-bold tracking-widest text-indigo-400 uppercase">CEO Digital</span>
                   <span className={clsx(
                     'text-[10px] font-semibold px-2 py-0.5 rounded-full',
                     ceo.status === 'ONLINE' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-700 text-gray-500'

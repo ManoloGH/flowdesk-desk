@@ -66,9 +66,10 @@ export default function OnboardingPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [chatLoading, setChatLoading] = useState(false);
   const [completed, setCompleted] = useState(false);
-  const [postStep, setPostStep] = useState<null | 'ai' | 'conmutador'>(null);
+  const [postStep, setPostStep] = useState<null | 'nombre_ceo' | 'ai' | 'conmutador'>(null);
   const [onboardingTenantId, setOnboardingTenantId] = useState<string | null>(null);
   const [postSaving, setPostSaving] = useState(false);
+  const [ceoName, setCeoName] = useState('');
   const [ceoForm, setCeoForm] = useState({ ceo_ai_provider: 'anthropic', ceo_model: 'claude-sonnet-4-6', ceo_api_key: '' });
   const [agentForm, setAgentForm] = useState({ ai_provider: 'openrouter', model: 'meta-llama/llama-3.3-70b-instruct:free', api_key: '' });
   const [pbxForm, setPbxForm] = useState({ enabled: false, main_number: '', greeting_text: '', deployment: 'local' });
@@ -116,7 +117,7 @@ export default function OnboardingPage() {
         setCompleted(true);
         if (data.tenant_id) {
           setOnboardingTenantId(data.tenant_id);
-          setPostStep('ai'); // iniciar pasos opcionales post-onboarding
+          setPostStep('nombre_ceo'); // iniciar pasos opcionales post-onboarding
         } else {
           setTimeout(() => router.push('/login?onboarding=done'), 3000);
         }
@@ -366,6 +367,60 @@ export default function OnboardingPage() {
               </div>
             )}
 
+            {/* Paso post-onboarding: Nombre del CEO Digital */}
+            {postStep === 'nombre_ceo' && (
+              <div className="mx-4 my-4 bg-gray-900 border border-indigo-500/30 rounded-2xl p-6 space-y-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-indigo-600/20 rounded-xl border border-indigo-500/30 flex items-center justify-center">
+                    <Bot size={18} className="text-indigo-400" />
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold text-sm">Ponle nombre a tu CEO Digital</p>
+                    <p className="text-gray-500 text-xs">Tú eres el CEO. Él es tu socio digital — dale el nombre que quieras.</p>
+                  </div>
+                </div>
+
+                <div className="bg-indigo-950/40 border border-indigo-500/20 rounded-xl px-4 py-3 text-xs text-indigo-300 leading-relaxed">
+                  Tu CEO Digital nació como <span className="font-semibold text-white">Atlas</span>. Puedes dejarlo así o ponerle el nombre que mejor represente a tu co-fundador digital — ese nombre es como te va a responder y como lo va a conocer tu equipo.
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-400 mb-2">Nombre del CEO Digital</label>
+                  <input
+                    value={ceoName}
+                    onChange={e => setCeoName(e.target.value)}
+                    placeholder="Atlas"
+                    maxLength={40}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                  <p className="text-[10px] text-gray-600 mt-1.5">Si lo dejas vacío, quedará como "Atlas"</p>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    disabled={postSaving}
+                    onClick={async () => {
+                      const nombre = ceoName.trim() || 'Atlas';
+                      setPostSaving(true);
+                      try {
+                        await fetch(`${API}/onboarding/rename-ceo`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ tenantId: onboardingTenantId, name: nombre }),
+                        });
+                      } catch {}
+                      setPostSaving(false);
+                      setPostStep('ai');
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
+                  >
+                    {postSaving ? <Loader2 size={13} className="animate-spin" /> : <ChevronRight size={13} />}
+                    {postSaving ? 'Guardando...' : `Continuar con "${ceoName.trim() || 'Atlas'}"`}
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Pasos post-onboarding: Motor de IA */}
             {postStep === 'ai' && (
               <div className="mx-4 my-4 bg-gray-900 border border-gray-700 rounded-2xl p-6 space-y-5">
@@ -447,7 +502,7 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {/* Pasos post-onboarding: Agente Conmutador */}
+            {/* Pasos post-onboarding: Agente de Comunicación */}
             {postStep === 'conmutador' && (
               <div className="mx-4 my-4 bg-gray-900 border border-gray-700 rounded-2xl p-6 space-y-5">
                 <div className="flex items-center gap-3">
@@ -455,13 +510,13 @@ export default function OnboardingPage() {
                     <Phone size={16} className="text-emerald-400" />
                   </div>
                   <div>
-                    <p className="text-white font-semibold text-sm">Agente Conmutador</p>
+                    <p className="text-white font-semibold text-sm">Agente de Comunicación</p>
                     <p className="text-gray-400 text-xs">Recibe y redirige llamadas con IA</p>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-white">Activar conmutador telefónico</span>
+                  <span className="text-sm text-white">Activar Agente de Comunicación</span>
                   <button
                     onClick={() => setPbxForm(p => ({ ...p, enabled: !p.enabled }))}
                     className={`relative w-10 h-5 rounded-full transition-colors ${pbxForm.enabled ? 'bg-indigo-600' : 'bg-gray-700'}`}
@@ -488,6 +543,47 @@ export default function OnboardingPage() {
                         className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                       />
                     </div>
+
+                    {/* LLM de razonamiento */}
+                    <div className="pt-1 border-t border-gray-800">
+                      <label className="block text-xs text-gray-400 mb-1.5">LLM de razonamiento</label>
+                      <select value={(pbxForm as any).llm_model ?? 'meta-llama/llama-3.3-70b-instruct:free'}
+                        onChange={e => setPbxForm(p => ({ ...p, llm_model: e.target.value } as any))}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (gratis)</option>
+                        <option value="openai/gpt-4o-mini">GPT-4o mini</option>
+                        <option value="openai/gpt-4o">GPT-4o</option>
+                        <option value="anthropic/claude-haiku-4-5">Claude Haiku (rápido)</option>
+                        <option value="anthropic/claude-sonnet-4-6">Claude Sonnet</option>
+                      </select>
+                    </div>
+
+                    {/* STT */}
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1.5">Transcripción de voz (STT)</label>
+                      <div className="flex gap-2">
+                        {[{ v: 'whisper', l: 'Whisper local' }, { v: 'deepgram', l: 'Deepgram' }, { v: 'openai', l: 'OpenAI' }].map(opt => (
+                          <button key={opt.v} onClick={() => setPbxForm(p => ({ ...p, stt_provider: opt.v }))}
+                            className={`flex-1 py-2 text-xs font-medium rounded-lg border transition-colors ${
+                              pbxForm.stt_provider === opt.v ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-300'
+                            }`}>{opt.l}</button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* TTS */}
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1.5">Síntesis de voz (TTS)</label>
+                      <div className="flex gap-2">
+                        {[{ v: 'piper', l: 'Piper local' }, { v: 'elevenlabs', l: 'ElevenLabs' }, { v: 'openai', l: 'OpenAI' }].map(opt => (
+                          <button key={opt.v} onClick={() => setPbxForm(p => ({ ...p, tts_provider: opt.v }))}
+                            className={`flex-1 py-2 text-xs font-medium rounded-lg border transition-colors ${
+                              pbxForm.tts_provider === opt.v ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-300'
+                            }`}>{opt.l}</button>
+                        ))}
+                      </div>
+                    </div>
+
                     <div>
                       <label className="block text-xs text-gray-400 mb-1.5">Servidor</label>
                       <div className="flex gap-2">

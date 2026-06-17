@@ -27,7 +27,7 @@ const INTEGRATIONS = [
   {
     key: 'google',
     name: 'Google Workspace',
-    desc: 'Gmail y Google Calendar para el CEO Agent',
+    desc: 'Gmail y Google Calendar para el CEO Digital',
     color: 'from-red-500 to-orange-400',
     letter: 'G',
     type: 'oauth' as const,
@@ -37,7 +37,7 @@ const INTEGRATIONS = [
   {
     key: 'microsoft365',
     name: 'Microsoft 365',
-    desc: 'Outlook y calendario Teams para el CEO Agent',
+    desc: 'Outlook y calendario Teams para el CEO Digital',
     color: 'from-blue-600 to-cyan-500',
     letter: 'M',
     type: 'oauth' as const,
@@ -336,7 +336,7 @@ export default function IntegrationsPage() {
                 {int.type === 'oauth' && (
                   <div className="mt-3 pt-3 border-t border-gray-800">
                     <p className="text-xs text-gray-600">
-                      Integración personal — FlowDesk accederá a tu cuenta para que el CEO Agent pueda leer tu calendario y email.
+                      Integración personal — FlowDesk accederá a tu cuenta para que el CEO Digital pueda leer tu calendario y email.
                       Solo se almacena el token de actualización cifrado.
                     </p>
                   </div>

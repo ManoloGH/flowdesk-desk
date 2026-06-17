@@ -64,7 +64,7 @@ export default function SettingsPage() {
   const [aiSaved, setAiSaved] = useState(false);
   const [aiLoaded, setAiLoaded] = useState(false);
 
-  // Agente Conmutador
+  // Agente de Comunicación
   const [pbx, setPbx] = useState({
     enabled: false, main_number: '', greeting_text: '', stt_provider: 'whisper',
     tts_provider: 'piper', deployment: 'local', asterisk_url: 'http://asterisk:8088',
@@ -405,13 +405,13 @@ export default function SettingsPage() {
                   ))}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="API Key del CEO">
+                  <Field label="API Key del CEO Digital">
                     <input type="password" value={ceoAi.ceo_api_key}
                       onChange={e => setCeoAi(p => ({ ...p, ceo_api_key: e.target.value }))}
                       placeholder={ceoAi.ceo_ai_provider === 'anthropic' ? 'sk-ant-...' : 'sk-...'}
                       className={INPUT} />
                   </Field>
-                  <Field label="Modelo del CEO">
+                  <Field label="Modelo del CEO Digital">
                     <input value={ceoAi.ceo_model}
                       onChange={e => setCeoAi(p => ({ ...p, ceo_model: e.target.value }))}
                       placeholder={ceoAi.ceo_ai_provider === 'anthropic' ? 'claude-sonnet-4-6' : 'gpt-4o'}
@@ -481,14 +481,14 @@ export default function SettingsPage() {
           </Section>
         )}
 
-        {/* Agente Conmutador */}
+        {/* Agente de Comunicación */}
         {canEdit && (
-          <Section title="Agente Conmutador" icon={Phone}>
+          <Section title="Agente de Comunicación" icon={Phone}>
             <div className="space-y-5">
               {/* Toggle activar */}
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-white font-medium">Activar Conmutador</p>
+                  <p className="text-sm text-white font-medium">Activar Agente de Comunicación</p>
                   <p className="text-xs text-gray-400 mt-0.5">Recibe llamadas con IA y redirecciónalas a tu equipo</p>
                 </div>
                 <button
@@ -591,7 +591,7 @@ export default function SettingsPage() {
                   className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
                 >
                   {pbxLoading ? <Loader2 size={13} className="animate-spin" /> : pbxSaved ? <Check size={13} /> : <Phone size={13} />}
-                  {pbxLoading ? 'Guardando...' : pbxSaved ? 'Guardado' : 'Guardar Conmutador'}
+                  {pbxLoading ? 'Guardando...' : pbxSaved ? 'Guardado' : 'Guardar configuración'}
                 </button>
               </div>
             </div>

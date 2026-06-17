@@ -294,7 +294,7 @@ export default function TenantDetailPage() {
             <div className="flex justify-between"><span className="text-gray-500">Alta</span><span className="text-white">{new Date(tenant.created_at).toLocaleDateString('es-MX')}</span></div>
             <div className="flex justify-between"><span className="text-gray-500">Slug</span><span className="text-gray-400 font-mono">{tenant.slug}</span></div>
             <div className="flex justify-between"><span className="text-gray-500">ID</span><span className="text-gray-600 font-mono text-[10px] truncate max-w-[120px]">{tenant.id}</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">MRR</span><span className="text-emerald-400 font-medium">${(tenant.mrr || 0).toLocaleString()}/mes</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Ing. Mensual</span><span className="text-emerald-400 font-medium">${(tenant.mrr || 0).toLocaleString()}/mes</span></div>
           </div>
         </div>
       </div>

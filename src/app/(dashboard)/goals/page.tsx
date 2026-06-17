@@ -540,7 +540,7 @@ export default function GoalsPage() {
           <EmptyState
             icon={Target}
             title="Sin KSFs configurados"
-            subtitle="Habla con el CEO Agent para definir tus Factores Clave de Éxito usando la metodología AUP."
+            subtitle="Habla con el CEO Digital para definir tus Factores Clave de Éxito usando la metodología AUP."
           />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">

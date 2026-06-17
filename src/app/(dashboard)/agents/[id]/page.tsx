@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import {
   ArrowLeft, Bot, Send, Plus, MessageSquare, Sparkles,
   Loader2, ChevronRight, Clock, Mic, MicOff, Volume2, VolumeX,
+  Settings, User, Brain,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -16,7 +17,16 @@ interface Agent {
   agent_role: string | null;
   status: string;
   avatar_url: string | null;
-  agent_config: { instructions?: string; model?: string } | null;
+  agent_config: {
+    instructions?: string;
+    model?: string;
+    stt_provider?: string;
+    stt_model?: string;
+    tts_provider?: string;
+    tts_model?: string;
+    tts_voice_id?: string;
+  } | null;
+  reports_to?: { id: string; name: string } | null;
 }
 
 interface Message {
@@ -72,8 +82,12 @@ export default function AgentChatPage() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [isListening, setIsListening]     = useState(false);
   const [autoSpeak, setAutoSpeak]         = useState(false);
-  const [convMode, setConvMode]           = useState(false); // modo videoconferencia
-  const convModeRef                        = useRef(false);   // ref para closures
+  const [convMode, setConvMode]           = useState(false);
+  const convModeRef                        = useRef(false);
+  const [sidebarTab, setSidebarTab]        = useState<'chats' | 'config'>('chats');
+  const [configSaving, setConfigSaving]    = useState(false);
+  const [configSaved, setConfigSaved]      = useState(false);
+  const [agentConfig, setAgentConfig]      = useState<Agent['agent_config']>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef    = useRef<HTMLTextAreaElement>(null);
@@ -113,6 +127,7 @@ export default function AgentChatPage() {
         const slots = Array.isArray(slotsData) ? slotsData : (slotsData.data ?? []);
         const found = slots.find((s: any) => s.id === agentId);
         setAgent(found ?? null);
+        setAgentConfig(found?.agent_config ?? null);
         setConversations(Array.isArray(convs) ? convs : []);
       })
       .catch(() => {})
@@ -349,65 +364,201 @@ export default function AgentChatPage() {
             <div className="min-w-0">
               <p className="text-sm font-semibold text-white truncate">{agent?.name ?? 'Agente'}</p>
               <p className="text-[10px] text-gray-500">
-                {isAtlas ? 'CEO Agent' : (agent?.agent_role?.replace('_', ' ') ?? 'Agente IA')}
+                {isAtlas ? 'CEO Digital' : (agent?.agent_role?.replace('_', ' ') ?? 'Agente IA')}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Nueva conversación */}
-        <div className="p-3 border-b border-gray-800">
-          <button
-            onClick={startNewConversation}
-            className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors"
-          >
-            <Plus size={14} />
-            Nueva conversación
-          </button>
+        {/* Tabs: Conversaciones | Configurar */}
+        <div className="flex border-b border-gray-800">
+          {[
+            { key: 'chats', label: 'Conversaciones', icon: MessageSquare },
+            { key: 'config', label: 'Configurar', icon: Settings },
+          ].map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setSidebarTab(tab.key as 'chats' | 'config')}
+              className={clsx(
+                'flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors border-b-2',
+                sidebarTab === tab.key
+                  ? 'text-indigo-400 border-indigo-500'
+                  : 'text-gray-500 border-transparent hover:text-gray-300',
+              )}
+            >
+              <tab.icon size={12} />
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        {/* Lista de conversaciones */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
-          {conversations.length === 0 && (
-            <div className="text-center py-8">
-              <MessageSquare size={18} className="text-gray-700 mx-auto mb-2" />
-              <p className="text-xs text-gray-600">Sin conversaciones aún.</p>
-            </div>
-          )}
-          {conversations.map((conv) => {
-            const isActive = activeConversation?.id === conv.id;
-            return (
+        {/* Tab: Conversaciones */}
+        {sidebarTab === 'chats' && (
+          <>
+            <div className="p-3 border-b border-gray-800">
               <button
-                key={conv.id}
-                onClick={() => openConversation(conv)}
-                className={clsx(
-                  'w-full text-left px-3 py-2.5 rounded-lg transition-colors group',
-                  isActive
-                    ? 'bg-indigo-600/20 border border-indigo-500/30'
-                    : 'hover:bg-gray-800 border border-transparent',
-                )}
+                onClick={startNewConversation}
+                className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <p className={clsx(
-                    'text-xs font-medium truncate',
-                    isActive ? 'text-indigo-300' : 'text-gray-300',
-                  )}>
-                    Conversación
-                  </p>
-                  <span className="text-[10px] text-gray-600 flex-shrink-0 flex items-center gap-0.5">
-                    <Clock size={9} />
-                    {timeAgo(conv.started_at)}
-                  </span>
-                </div>
-                {conv._count && (
-                  <p className="text-[10px] text-gray-600 mt-0.5">
-                    {conv._count.messages} mensajes
-                  </p>
-                )}
+                <Plus size={14} />
+                Nueva conversación
               </button>
-            );
-          })}
-        </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+              {conversations.length === 0 && (
+                <div className="text-center py-8">
+                  <MessageSquare size={18} className="text-gray-700 mx-auto mb-2" />
+                  <p className="text-xs text-gray-600">Sin conversaciones aún.</p>
+                </div>
+              )}
+              {conversations.map((conv) => {
+                const isActive = activeConversation?.id === conv.id;
+                return (
+                  <button
+                    key={conv.id}
+                    onClick={() => openConversation(conv)}
+                    className={clsx(
+                      'w-full text-left px-3 py-2.5 rounded-lg transition-colors group',
+                      isActive
+                        ? 'bg-indigo-600/20 border border-indigo-500/30'
+                        : 'hover:bg-gray-800 border border-transparent',
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className={clsx('text-xs font-medium truncate', isActive ? 'text-indigo-300' : 'text-gray-300')}>
+                        Conversación
+                      </p>
+                      <span className="text-[10px] text-gray-600 flex-shrink-0 flex items-center gap-0.5">
+                        <Clock size={9} />
+                        {timeAgo(conv.started_at)}
+                      </span>
+                    </div>
+                    {conv._count && (
+                      <p className="text-[10px] text-gray-600 mt-0.5">{conv._count.messages} mensajes</p>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* Tab: Configurar */}
+        {sidebarTab === 'config' && agentConfig !== undefined && (
+          <div className="flex-1 overflow-y-auto p-4 space-y-5">
+
+            {/* Supervisor */}
+            {agent?.reports_to && (
+              <div className="bg-gray-800/50 rounded-xl p-3 flex items-center gap-2.5">
+                <User size={13} className="text-gray-400 flex-shrink-0" />
+                <div>
+                  <p className="text-[10px] text-gray-500">Supervisor</p>
+                  <p className="text-xs text-white font-medium">{agent.reports_to.name}</p>
+                </div>
+              </div>
+            )}
+
+            {/* LLM de razonamiento */}
+            <div>
+              <label className="block text-[10px] text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                <Brain size={10} /> LLM de razonamiento
+              </label>
+              <select
+                value={agentConfig?.model ?? 'meta-llama/llama-3.3-70b-instruct:free'}
+                onChange={e => setAgentConfig(prev => ({ ...prev, model: e.target.value }))}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (gratis)</option>
+                <option value="openai/gpt-4o-mini">GPT-4o mini</option>
+                <option value="openai/gpt-4o">GPT-4o</option>
+                <option value="anthropic/claude-haiku-4-5-20251001">Claude Haiku (rápido)</option>
+                <option value="anthropic/claude-sonnet-4-6">Claude Sonnet</option>
+                <option value="anthropic/claude-opus-4-8">Claude Opus</option>
+                <option value="google/gemini-2.0-flash-exp:free">Gemini 2.0 Flash (gratis)</option>
+              </select>
+            </div>
+
+            {/* STT/TTS solo para agente de comunicación */}
+            {(agent?.agent_role === 'comunicacion' || agent?.agent_role === 'conmutador') && (
+              <>
+                <div className="border-t border-gray-800 pt-4">
+                  <label className="block text-[10px] text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                    <Mic size={10} /> Transcripción de voz (STT)
+                  </label>
+                  <div className="flex flex-col gap-1.5">
+                    {[
+                      { v: 'whisper', l: 'Whisper (local)' },
+                      { v: 'deepgram', l: 'Deepgram (cloud)' },
+                      { v: 'openai', l: 'OpenAI Whisper API' },
+                    ].map(opt => (
+                      <button
+                        key={opt.v}
+                        onClick={() => setAgentConfig(prev => ({ ...prev, stt_provider: opt.v }))}
+                        className={clsx(
+                          'text-left px-3 py-2 rounded-lg text-xs border transition-colors',
+                          (agentConfig?.stt_provider ?? 'whisper') === opt.v
+                            ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-300'
+                            : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-gray-600',
+                        )}
+                      >
+                        {opt.l}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                    <Volume2 size={10} /> Síntesis de voz (TTS)
+                  </label>
+                  <div className="flex flex-col gap-1.5">
+                    {[
+                      { v: 'piper', l: 'Piper (local, gratis)' },
+                      { v: 'elevenlabs', l: 'ElevenLabs (natural)' },
+                      { v: 'openai', l: 'OpenAI TTS' },
+                      { v: 'none', l: 'Sin voz' },
+                    ].map(opt => (
+                      <button
+                        key={opt.v}
+                        onClick={() => setAgentConfig(prev => ({ ...prev, tts_provider: opt.v }))}
+                        className={clsx(
+                          'text-left px-3 py-2 rounded-lg text-xs border transition-colors',
+                          (agentConfig?.tts_provider ?? 'piper') === opt.v
+                            ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-300'
+                            : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-gray-600',
+                        )}
+                      >
+                        {opt.l}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Botón guardar */}
+            <button
+              disabled={configSaving}
+              onClick={async () => {
+                setConfigSaving(true);
+                try {
+                  await api.patch(`/team-slots/${agentId}`, { agent_config: agentConfig });
+                  setAgent(prev => prev ? { ...prev, agent_config: agentConfig } : prev);
+                  setConfigSaved(true);
+                  setTimeout(() => setConfigSaved(false), 2000);
+                } catch {}
+                setConfigSaving(false);
+              }}
+              className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold py-2.5 rounded-xl transition-colors"
+            >
+              {configSaving
+                ? <><Loader2 size={12} className="animate-spin" /> Guardando...</>
+                : configSaved
+                ? '✓ Guardado'
+                : <><Settings size={12} /> Guardar configuración</>}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── Área principal de chat ─────────────────────────────────────────── */}

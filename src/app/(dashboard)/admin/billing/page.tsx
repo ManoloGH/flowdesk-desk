@@ -49,7 +49,7 @@ export default function BillingPage() {
   }
 
   const kpis = [
-    { label: 'MRR Total', value: `$${(data?.mrr ?? 0).toLocaleString()}`, icon: TrendingUp, color: 'text-indigo-400', sub: 'USD / mes' },
+    { label: 'Ingreso Mensual', value: `$${(data?.mrr ?? 0).toLocaleString()}`, icon: TrendingUp, color: 'text-indigo-400', sub: 'USD / mes' },
     { label: 'Activos', value: data?.active ?? 0, icon: CheckCircle, color: 'text-emerald-400', sub: `de ${data?.total ?? 0} clientes` },
     { label: 'Fact. configurada', value: data?.billing_configured ?? 0, icon: FileText, color: 'text-amber-400', sub: `de ${data?.total ?? 0} clientes` },
     { label: 'Vencidos', value: data?.past_due ?? 0, icon: AlertCircle, color: 'text-red-400', sub: 'requieren atención' },
@@ -60,7 +60,7 @@ export default function BillingPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-white mb-1">Facturación</h1>
-          <p className="text-xs text-gray-500">MRR, planes y estado de facturación por cliente</p>
+          <p className="text-xs text-gray-500">Ingresos mensuales, planes y estado de facturación por cliente</p>
         </div>
         <button onClick={() => load(true)} disabled={refreshing}
           className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#0a0f1e] border border-white/5 text-gray-400 text-xs hover:text-white transition-colors">
@@ -113,7 +113,7 @@ export default function BillingPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/5">
-                {['Empresa', 'Plan', 'Estado', 'MRR', 'RFC', 'Facturapi', 'Stripe'].map(h => (
+                {['Empresa', 'Plan', 'Estado', 'Ing. Mensual', 'RFC', 'Facturapi', 'Stripe'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-[10px] text-gray-600 font-semibold uppercase tracking-widest">{h}</th>
                 ))}
               </tr>
