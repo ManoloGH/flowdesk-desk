@@ -168,13 +168,11 @@ export default function TenantDetailPage() {
           </select>
           <select value={tenant.plan} onChange={e => setPlan(e.target.value)} disabled={updating}
             className="bg-[#0a0f1e] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-gray-400 focus:outline-none focus:border-indigo-500">
-            {[
-              { v: 'nano', l: '-10 empleados' }, { v: 'small', l: '10–50 empleados' },
-              { v: 'medium', l: '50–100 empleados' }, { v: 'large', l: '+100 empleados' },
-              { v: 'enterprise', l: '+1000 empleados' },
-              ...(!['nano','small','medium','large','enterprise'].includes(tenant.plan)
-                ? [{ v: tenant.plan, l: `${tenant.plan} (legacy)` }] : []),
-            ].map(({ v, l }) => <option key={v} value={v}>{l}</option>)}
+            <option value="nano">-10 empleados</option>
+            <option value="small">10–50 empleados</option>
+            <option value="medium">50–100 empleados</option>
+            <option value="large">+100 empleados</option>
+            <option value="enterprise">+1000 empleados</option>
           </select>
         </div>
       </div>
