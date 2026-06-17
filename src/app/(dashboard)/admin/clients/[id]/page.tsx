@@ -5,16 +5,27 @@ import { api } from '@/lib/api';
 import {
   ArrowLeft, Building2, Users, Brain, MessageSquare, CheckCircle, XCircle,
   Phone, FileText, DollarSign, Bot, User, Loader2, RefreshCw, Activity,
+  Server, Download, PackageOpen, AlertTriangle,
 } from 'lucide-react';
 
 interface TeamSlotRow {
   id: string; name: string; email: string | null; role: string; type: string; status: string; agent_role: string | null;
 }
 
+interface MigrationBundle {
+  tenant_name: string;
+  tenant_slug: string;
+  docker_compose: string;
+  env_template: string;
+  instructions: string;
+  generated_at: string;
+}
+
 interface TenantDetail {
   id: string; name: string; slug: string; plan: string; status: string;
   account_type: string; mission: string | null; tagline: string | null;
   created_at: string; mrr: number;
+  migration_status: string | null; migration_at: string | null; self_hosted_url: string | null;
   health: { score: number; label: string; active_humans: number; active_agents: number; completed_today: number; overdue_tasks: number; recent_conversations: number };
   team_slots: TeamSlotRow[];
   secretary_config: { enabled: boolean; owner_phone: string; morning_brief_time: string; morning_brief_enabled: boolean } | null;
@@ -85,6 +96,8 @@ export default function TenantDetailPage() {
   const [tenant, setTenant] = useState<TenantDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [migrating, setMigrating] = useState(false);
+  const [bundle, setBundle] = useState<MigrationBundle | null>(null);
 
   async function load() {
     setLoading(true);
@@ -117,6 +130,26 @@ export default function TenantDetailPage() {
     await api.patch(`/platform/network/${id}/account-type`, { account_type }).catch(() => {});
     await load();
     setUpdating(false);
+  }
+
+  async function generateMigrationBundle() {
+    setMigrating(true);
+    try {
+      const result = await api.post<MigrationBundle>(`/platform/network/${id}/migration-bundle`, {});
+      setBundle(result);
+      await load();
+    } catch {}
+    setMigrating(false);
+  }
+
+  function downloadFile(content: string, filename: string) {
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   if (loading) {
@@ -297,6 +330,69 @@ export default function TenantDetailPage() {
             <div className="flex justify-between"><span className="text-gray-500">Ing. Mensual</span><span className="text-emerald-400 font-medium">${(tenant.mrr || 0).toLocaleString()}/mes</span></div>
           </div>
         </div>
+      </div>
+
+      {/* ── Migración a servidor propio ─────────────────────────────────────── */}
+      <div className="mt-4 bg-[#0a0f1e] border border-white/5 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2.5">
+            <Server className="w-4 h-4 text-violet-400" />
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Migración a servidor propio</h3>
+            {tenant.migration_status === 'bundle_generated' && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">Bundle generado</span>
+            )}
+            {tenant.migration_status === 'migrated' && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">Migrado</span>
+            )}
+          </div>
+
+          {!bundle && (
+            <button
+              onClick={generateMigrationBundle}
+              disabled={migrating}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 text-xs font-medium border border-violet-500/20 transition-colors disabled:opacity-50"
+            >
+              {migrating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PackageOpen className="w-3.5 h-3.5" />}
+              {migrating ? 'Generando...' : 'Generar bundle de migración'}
+            </button>
+          )}
+        </div>
+
+        {!bundle && (
+          <div className="flex items-start gap-3 bg-amber-500/5 border border-amber-500/15 rounded-xl p-4">
+            <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+            <div className="text-xs text-gray-400 leading-relaxed">
+              <p className="text-amber-300 font-medium mb-1">Esto separa completamente la empresa de FlowDesk Cloud</p>
+              <p>Se genera un bundle con <strong className="text-white">docker-compose.yml</strong>, <strong className="text-white">.env</strong> template e instrucciones. El cliente instala FlowDesk en su propia infraestructura y migra sus datos. A partir de ese momento tiene el software en propiedad.</p>
+              {tenant.migration_at && (
+                <p className="mt-2 text-gray-600">Último bundle: {new Date(tenant.migration_at).toLocaleDateString('es-MX')}</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {bundle && (
+          <div className="space-y-3">
+            <p className="text-xs text-gray-500">Generado el {new Date(bundle.generated_at).toLocaleString('es-MX')} · <strong className="text-white">{bundle.tenant_name}</strong></p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                { label: 'docker-compose.yml', desc: 'API, frontend, PostgreSQL+pgvector, Redis', content: bundle.docker_compose, filename: 'docker-compose.yml', color: 'text-cyan-400', bg: 'bg-cyan-500/10 border-cyan-500/20 hover:bg-cyan-500/15' },
+                { label: '.env template', desc: 'Variables de entorno del tenant pre-rellenadas', content: bundle.env_template, filename: `.env.${bundle.tenant_slug}`, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/15' },
+                { label: 'INSTALL.md', desc: 'Guía paso a paso para el cliente', content: bundle.instructions, filename: 'INSTALL.md', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/15' },
+              ].map(file => (
+                <button key={file.filename} onClick={() => downloadFile(file.content, file.filename)}
+                  className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-colors ${file.bg}`}>
+                  <Download className={`w-4 h-4 ${file.color} flex-shrink-0 mt-0.5`} />
+                  <div>
+                    <p className={`text-xs font-semibold font-mono ${file.color}`}>{file.label}</p>
+                    <p className="text-[10px] text-gray-500 mt-0.5 leading-relaxed">{file.desc}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setBundle(null)} className="text-xs text-gray-600 hover:text-gray-400 transition-colors">Cerrar</button>
+          </div>
+        )}
       </div>
     </div>
   );
