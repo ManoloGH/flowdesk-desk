@@ -72,7 +72,7 @@ export default function OnboardingPage() {
   const [ceoName, setCeoName] = useState('');
   const [ceoForm, setCeoForm] = useState({ ceo_ai_provider: 'anthropic', ceo_model: 'claude-sonnet-4-6', ceo_api_key: '' });
   const [agentForm, setAgentForm] = useState({ ai_provider: 'openrouter', model: 'meta-llama/llama-3.3-70b-instruct:free', api_key: '' });
-  const [pbxForm, setPbxForm] = useState({ enabled: false, main_number: '', greeting_text: '', deployment: 'local' });
+  const [pbxForm, setPbxForm] = useState({ enabled: false, main_number: '', greeting_text: '', deployment: 'local', llm_model: 'meta-llama/llama-3.3-70b-instruct:free', stt_provider: 'whisper', tts_provider: 'piper' });
 
   // Upload state
   const [uploads, setUploads] = useState<UploadedDoc[]>([]);
@@ -547,8 +547,8 @@ export default function OnboardingPage() {
                     {/* LLM de razonamiento */}
                     <div className="pt-1 border-t border-gray-800">
                       <label className="block text-xs text-gray-400 mb-1.5">LLM de razonamiento</label>
-                      <select value={(pbxForm as any).llm_model ?? 'meta-llama/llama-3.3-70b-instruct:free'}
-                        onChange={e => setPbxForm(p => ({ ...p, llm_model: e.target.value } as any))}
+                      <select value={pbxForm.llm_model}
+                        onChange={e => setPbxForm(p => ({ ...p, llm_model: e.target.value }))}
                         className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
                         <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (gratis)</option>
                         <option value="openai/gpt-4o-mini">GPT-4o mini</option>

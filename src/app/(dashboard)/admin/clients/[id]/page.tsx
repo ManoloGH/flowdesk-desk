@@ -12,12 +12,17 @@ interface TeamSlotRow {
   id: string; name: string; email: string | null; role: string; type: string; status: string; agent_role: string | null;
 }
 
+interface ExportStat { table: string; count: number }
+
 interface MigrationBundle {
   tenant_name: string;
   tenant_slug: string;
   docker_compose: string;
-  env_template: string;
-  instructions: string;
+  env_content: string;
+  setup_sh: string;
+  install_md: string;
+  data_sql: string;
+  export_stats: ExportStat[];
   generated_at: string;
 }
 
@@ -362,8 +367,8 @@ export default function TenantDetailPage() {
           <div className="flex items-start gap-3 bg-amber-500/5 border border-amber-500/15 rounded-xl p-4">
             <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
             <div className="text-xs text-gray-400 leading-relaxed">
-              <p className="text-amber-300 font-medium mb-1">Esto separa completamente la empresa de FlowDesk Cloud</p>
-              <p>Se genera un bundle con <strong className="text-white">docker-compose.yml</strong>, <strong className="text-white">.env</strong> template e instrucciones. El cliente instala FlowDesk en su propia infraestructura y migra sus datos. A partir de ese momento tiene el software en propiedad.</p>
+              <p className="text-amber-300 font-medium mb-1">Genera una copia idéntica de FlowDesk para este cliente</p>
+              <p>El bundle incluye <strong className="text-white">toda la infraestructura</strong> (docker-compose, .env con valores reales, script de instalación) <strong className="text-white">más una exportación completa de todos los datos</strong> en SQL listo para importar. El cliente instala en su servidor y queda 100% independiente.</p>
               {tenant.migration_at && (
                 <p className="mt-2 text-gray-600">Último bundle: {new Date(tenant.migration_at).toLocaleDateString('es-MX')}</p>
               )}
@@ -372,25 +377,113 @@ export default function TenantDetailPage() {
         )}
 
         {bundle && (
-          <div className="space-y-3">
-            <p className="text-xs text-gray-500">Generado el {new Date(bundle.generated_at).toLocaleString('es-MX')} · <strong className="text-white">{bundle.tenant_name}</strong></p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="space-y-4">
+            {/* Header del bundle */}
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs text-gray-500">
+                  Generado el <strong className="text-white">{new Date(bundle.generated_at).toLocaleString('es-MX')}</strong>
+                  {' · '}<strong className="text-white">{bundle.tenant_name}</strong>
+                </p>
+                {bundle.export_stats.length > 0 && (
+                  <p className="text-[10px] text-gray-600 mt-1">
+                    {bundle.export_stats.reduce((s, r) => s + r.count, 0).toLocaleString()} registros exportados
+                    en {bundle.export_stats.length} tablas
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => {
+                  const files = [
+                    { c: bundle.docker_compose, n: 'docker-compose.yml' },
+                    { c: bundle.env_content, n: `.env` },
+                    { c: bundle.setup_sh, n: 'setup.sh' },
+                    { c: bundle.install_md, n: 'INSTALL.md' },
+                    { c: bundle.data_sql, n: `${bundle.tenant_slug}-data.sql` },
+                  ];
+                  files.forEach(f => setTimeout(() => downloadFile(f.c, f.n), 200));
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 text-xs border border-white/10 transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Descargar todo
+              </button>
+            </div>
+
+            {/* Archivos individuales */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {[
-                { label: 'docker-compose.yml', desc: 'API, frontend, PostgreSQL+pgvector, Redis', content: bundle.docker_compose, filename: 'docker-compose.yml', color: 'text-cyan-400', bg: 'bg-cyan-500/10 border-cyan-500/20 hover:bg-cyan-500/15' },
-                { label: '.env template', desc: 'Variables de entorno del tenant pre-rellenadas', content: bundle.env_template, filename: `.env.${bundle.tenant_slug}`, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/15' },
-                { label: 'INSTALL.md', desc: 'Guía paso a paso para el cliente', content: bundle.instructions, filename: 'INSTALL.md', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/15' },
+                {
+                  label: 'docker-compose.yml',
+                  desc: 'Stack completo: API, frontend, PostgreSQL + pgvector, Redis',
+                  content: bundle.docker_compose,
+                  filename: 'docker-compose.yml',
+                  color: 'text-cyan-400',
+                  bg: 'bg-cyan-500/10 border-cyan-500/20 hover:bg-cyan-500/15',
+                },
+                {
+                  label: '.env',
+                  desc: 'Variables de entorno con valores reales del Vault + credenciales',
+                  content: bundle.env_content,
+                  filename: `.env`,
+                  color: 'text-amber-400',
+                  bg: 'bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/15',
+                },
+                {
+                  label: 'setup.sh',
+                  desc: 'Script automatizado: levanta Docker, aplica schema, importa datos',
+                  content: bundle.setup_sh,
+                  filename: 'setup.sh',
+                  color: 'text-violet-400',
+                  bg: 'bg-violet-500/10 border-violet-500/20 hover:bg-violet-500/15',
+                },
+                {
+                  label: 'INSTALL.md',
+                  desc: 'Guía paso a paso de instalación y configuración de dominio',
+                  content: bundle.install_md,
+                  filename: 'INSTALL.md',
+                  color: 'text-emerald-400',
+                  bg: 'bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/15',
+                },
+                {
+                  label: `${bundle.tenant_slug}-data.sql`,
+                  desc: `Exportación completa de BD — ${bundle.export_stats.reduce((s, r) => s + r.count, 0).toLocaleString()} registros en ${bundle.export_stats.length} tablas`,
+                  content: bundle.data_sql,
+                  filename: `${bundle.tenant_slug}-data.sql`,
+                  color: 'text-blue-400',
+                  bg: 'bg-blue-500/10 border-blue-500/20 hover:bg-blue-500/15',
+                },
               ].map(file => (
                 <button key={file.filename} onClick={() => downloadFile(file.content, file.filename)}
                   className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-colors ${file.bg}`}>
                   <Download className={`w-4 h-4 ${file.color} flex-shrink-0 mt-0.5`} />
-                  <div>
-                    <p className={`text-xs font-semibold font-mono ${file.color}`}>{file.label}</p>
+                  <div className="min-w-0">
+                    <p className={`text-xs font-semibold font-mono ${file.color} truncate`}>{file.label}</p>
                     <p className="text-[10px] text-gray-500 mt-0.5 leading-relaxed">{file.desc}</p>
                   </div>
                 </button>
               ))}
             </div>
-            <button onClick={() => setBundle(null)} className="text-xs text-gray-600 hover:text-gray-400 transition-colors">Cerrar</button>
+
+            {/* Resumen de tablas exportadas */}
+            {bundle.export_stats.length > 0 && (
+              <details className="group">
+                <summary className="text-[10px] text-gray-600 hover:text-gray-400 cursor-pointer transition-colors list-none">
+                  Ver resumen de tablas exportadas
+                </summary>
+                <div className="mt-2 p-3 bg-white/[0.02] rounded-lg border border-white/5 flex flex-wrap gap-2">
+                  {bundle.export_stats.map(s => (
+                    <span key={s.table} className="text-[9px] px-2 py-0.5 rounded bg-white/5 text-gray-500 font-mono">
+                      {s.table}: {s.count.toLocaleString()}
+                    </span>
+                  ))}
+                </div>
+              </details>
+            )}
+
+            <button onClick={() => setBundle(null)} className="text-xs text-gray-600 hover:text-gray-400 transition-colors">
+              Cerrar
+            </button>
           </div>
         )}
       </div>
