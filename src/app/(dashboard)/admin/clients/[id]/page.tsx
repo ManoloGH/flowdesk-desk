@@ -5,7 +5,8 @@ import { api } from '@/lib/api';
 import {
   ArrowLeft, Building2, Users, Brain, MessageSquare, CheckCircle, XCircle,
   Phone, FileText, DollarSign, Bot, User, Loader2, RefreshCw, Activity,
-  Server, Download, PackageOpen, AlertTriangle,
+  Server, Download, PackageOpen, AlertTriangle, ShieldCheck, ClipboardList,
+  Wifi, WifiOff, ChevronDown, ChevronUp, BookOpen,
 } from 'lucide-react';
 
 interface TeamSlotRow {
@@ -20,10 +21,46 @@ interface MigrationBundle {
   docker_compose: string;
   env_content: string;
   setup_sh: string;
+  verify_sh: string;
   install_md: string;
+  migration_manual: string;
   data_sql: string;
   export_stats: ExportStat[];
   generated_at: string;
+}
+
+type CheckStatus = 'pass' | 'fail' | 'warning' | 'info';
+
+interface AuditCheck {
+  id: string;
+  category: string;
+  name: string;
+  status: CheckStatus;
+  detail: string;
+  count?: number;
+  expected?: number;
+  fix?: string;
+}
+
+interface AuditReport {
+  tenant_id: string;
+  tenant_name: string;
+  tenant_slug: string;
+  audited_at: string;
+  overall: CheckStatus;
+  score: number;
+  checks: AuditCheck[];
+  table_stats: ExportStat[];
+  errors: string[];
+  warnings: string[];
+}
+
+interface PingResult {
+  reachable: boolean;
+  status_code: number | null;
+  response_ms: number | null;
+  error: string | null;
+  checks: Array<{ name: string; status: CheckStatus; detail: string }>;
 }
 
 interface TenantDetail {
@@ -103,6 +140,13 @@ export default function TenantDetailPage() {
   const [updating, setUpdating] = useState(false);
   const [migrating, setMigrating] = useState(false);
   const [bundle, setBundle] = useState<MigrationBundle | null>(null);
+  const [auditing, setAuditing] = useState(false);
+  const [auditReport, setAuditReport] = useState<AuditReport | null>(null);
+  const [pinging, setPinging] = useState(false);
+  const [pingResult, setPingResult] = useState<PingResult | null>(null);
+  const [selfHostedUrl, setSelfHostedUrl] = useState('');
+  const [migrationTab, setMigrationTab] = useState<'bundle' | 'audit' | 'verify'>('bundle');
+  const [expandedChecks, setExpandedChecks] = useState<Set<string>>(new Set());
 
   async function load() {
     setLoading(true);
@@ -145,6 +189,35 @@ export default function TenantDetailPage() {
       await load();
     } catch {}
     setMigrating(false);
+  }
+
+  async function runAudit() {
+    setAuditing(true);
+    try {
+      const r = await api.get<AuditReport>(`/platform/network/${id}/migration-audit`);
+      setAuditReport(r);
+      setMigrationTab('audit');
+    } catch {}
+    setAuditing(false);
+  }
+
+  async function pingRemote() {
+    if (!selfHostedUrl) return;
+    setPinging(true);
+    try {
+      const r = await api.post<PingResult>(`/platform/network/${id}/migration-ping`, { self_hosted_url: selfHostedUrl });
+      setPingResult(r);
+      if (r.reachable) await load();
+    } catch {}
+    setPinging(false);
+  }
+
+  function toggleCheck(id: string) {
+    setExpandedChecks(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   }
 
   function downloadFile(content: string, filename: string) {
@@ -339,6 +412,8 @@ export default function TenantDetailPage() {
 
       {/* ── Migración a servidor propio ─────────────────────────────────────── */}
       <div className="mt-4 bg-[#0a0f1e] border border-white/5 rounded-xl p-5">
+
+        {/* Cabecera de la sección */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2.5">
             <Server className="w-4 h-4 text-violet-400" />
@@ -347,28 +422,42 @@ export default function TenantDetailPage() {
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">Bundle generado</span>
             )}
             {tenant.migration_status === 'migrated' && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">Migrado</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">Migrado ✓</span>
             )}
           </div>
 
-          {!bundle && (
+          <div className="flex items-center gap-2">
+            {/* Botón Ejecutar auditoría (siempre visible) */}
             <button
-              onClick={generateMigrationBundle}
-              disabled={migrating}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 text-xs font-medium border border-violet-500/20 transition-colors disabled:opacity-50"
+              onClick={runAudit}
+              disabled={auditing}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/15 hover:bg-indigo-600/25 text-indigo-300 text-xs font-medium border border-indigo-500/20 transition-colors disabled:opacity-50"
             >
-              {migrating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PackageOpen className="w-3.5 h-3.5" />}
-              {migrating ? 'Generando...' : 'Generar bundle de migración'}
+              {auditing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
+              {auditing ? 'Auditando...' : 'Auditoría'}
             </button>
-          )}
+
+            {/* Botón generar bundle */}
+            {!bundle && (
+              <button
+                onClick={generateMigrationBundle}
+                disabled={migrating}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 text-xs font-medium border border-violet-500/20 transition-colors disabled:opacity-50"
+              >
+                {migrating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PackageOpen className="w-3.5 h-3.5" />}
+                {migrating ? 'Generando...' : 'Generar bundle'}
+              </button>
+            )}
+          </div>
         </div>
 
-        {!bundle && (
-          <div className="flex items-start gap-3 bg-amber-500/5 border border-amber-500/15 rounded-xl p-4">
+        {/* Banner informativo (solo sin bundle) */}
+        {!bundle && !auditReport && (
+          <div className="flex items-start gap-3 bg-amber-500/5 border border-amber-500/15 rounded-xl p-4 mb-4">
             <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
             <div className="text-xs text-gray-400 leading-relaxed">
               <p className="text-amber-300 font-medium mb-1">Genera una copia idéntica de FlowDesk para este cliente</p>
-              <p>El bundle incluye <strong className="text-white">toda la infraestructura</strong> (docker-compose, .env con valores reales, script de instalación) <strong className="text-white">más una exportación completa de todos los datos</strong> en SQL listo para importar. El cliente instala en su servidor y queda 100% independiente.</p>
+              <p>El bundle incluye <strong className="text-white">toda la infraestructura</strong> (docker-compose, .env con valores reales, scripts de instalación y verificación, manual) <strong className="text-white">más una exportación completa de datos</strong> en SQL listo para importar.</p>
               {tenant.migration_at && (
                 <p className="mt-2 text-gray-600">Último bundle: {new Date(tenant.migration_at).toLocaleDateString('es-MX')}</p>
               )}
@@ -376,115 +465,315 @@ export default function TenantDetailPage() {
           </div>
         )}
 
-        {bundle && (
-          <div className="space-y-4">
-            {/* Header del bundle */}
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs text-gray-500">
-                  Generado el <strong className="text-white">{new Date(bundle.generated_at).toLocaleString('es-MX')}</strong>
-                  {' · '}<strong className="text-white">{bundle.tenant_name}</strong>
-                </p>
-                {bundle.export_stats.length > 0 && (
-                  <p className="text-[10px] text-gray-600 mt-1">
-                    {bundle.export_stats.reduce((s, r) => s + r.count, 0).toLocaleString()} registros exportados
-                    en {bundle.export_stats.length} tablas
-                  </p>
-                )}
-              </div>
-              <button
-                onClick={() => {
-                  const files = [
-                    { c: bundle.docker_compose, n: 'docker-compose.yml' },
-                    { c: bundle.env_content, n: `.env` },
-                    { c: bundle.setup_sh, n: 'setup.sh' },
-                    { c: bundle.install_md, n: 'INSTALL.md' },
-                    { c: bundle.data_sql, n: `${bundle.tenant_slug}-data.sql` },
-                  ];
-                  files.forEach(f => setTimeout(() => downloadFile(f.c, f.n), 200));
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 text-xs border border-white/10 transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Descargar todo
-              </button>
-            </div>
-
-            {/* Archivos individuales */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {[
-                {
-                  label: 'docker-compose.yml',
-                  desc: 'Stack completo: API, frontend, PostgreSQL + pgvector, Redis',
-                  content: bundle.docker_compose,
-                  filename: 'docker-compose.yml',
-                  color: 'text-cyan-400',
-                  bg: 'bg-cyan-500/10 border-cyan-500/20 hover:bg-cyan-500/15',
-                },
-                {
-                  label: '.env',
-                  desc: 'Variables de entorno con valores reales del Vault + credenciales',
-                  content: bundle.env_content,
-                  filename: `.env`,
-                  color: 'text-amber-400',
-                  bg: 'bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/15',
-                },
-                {
-                  label: 'setup.sh',
-                  desc: 'Script automatizado: levanta Docker, aplica schema, importa datos',
-                  content: bundle.setup_sh,
-                  filename: 'setup.sh',
-                  color: 'text-violet-400',
-                  bg: 'bg-violet-500/10 border-violet-500/20 hover:bg-violet-500/15',
-                },
-                {
-                  label: 'INSTALL.md',
-                  desc: 'Guía paso a paso de instalación y configuración de dominio',
-                  content: bundle.install_md,
-                  filename: 'INSTALL.md',
-                  color: 'text-emerald-400',
-                  bg: 'bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/15',
-                },
-                {
-                  label: `${bundle.tenant_slug}-data.sql`,
-                  desc: `Exportación completa de BD — ${bundle.export_stats.reduce((s, r) => s + r.count, 0).toLocaleString()} registros en ${bundle.export_stats.length} tablas`,
-                  content: bundle.data_sql,
-                  filename: `${bundle.tenant_slug}-data.sql`,
-                  color: 'text-blue-400',
-                  bg: 'bg-blue-500/10 border-blue-500/20 hover:bg-blue-500/15',
-                },
-              ].map(file => (
-                <button key={file.filename} onClick={() => downloadFile(file.content, file.filename)}
-                  className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-colors ${file.bg}`}>
-                  <Download className={`w-4 h-4 ${file.color} flex-shrink-0 mt-0.5`} />
-                  <div className="min-w-0">
-                    <p className={`text-xs font-semibold font-mono ${file.color} truncate`}>{file.label}</p>
-                    <p className="text-[10px] text-gray-500 mt-0.5 leading-relaxed">{file.desc}</p>
-                  </div>
+        {/* Tabs — visibles cuando hay bundle O auditReport */}
+        {(bundle || auditReport) && (
+          <>
+            <div className="flex items-center gap-1 mb-4 border-b border-white/5 pb-0">
+              {([
+                { key: 'bundle' as const,  label: 'Bundle',          icon: PackageOpen,   disabled: !bundle },
+                { key: 'audit'  as const,  label: 'Auditoría',       icon: ShieldCheck,   disabled: !auditReport },
+                { key: 'verify' as const,  label: 'Verificar servidor', icon: ClipboardList, disabled: false },
+              ] as const).map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => setMigrationTab(tab.key)}
+                  disabled={tab.disabled}
+                  className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
+                    migrationTab === tab.key
+                      ? 'border-violet-500 text-violet-300'
+                      : 'border-transparent text-gray-500 hover:text-gray-300'
+                  }`}
+                >
+                  <tab.icon className="w-3.5 h-3.5" />
+                  {tab.label}
                 </button>
               ))}
             </div>
 
-            {/* Resumen de tablas exportadas */}
-            {bundle.export_stats.length > 0 && (
-              <details className="group">
-                <summary className="text-[10px] text-gray-600 hover:text-gray-400 cursor-pointer transition-colors list-none">
-                  Ver resumen de tablas exportadas
-                </summary>
-                <div className="mt-2 p-3 bg-white/[0.02] rounded-lg border border-white/5 flex flex-wrap gap-2">
-                  {bundle.export_stats.map(s => (
-                    <span key={s.table} className="text-[9px] px-2 py-0.5 rounded bg-white/5 text-gray-500 font-mono">
-                      {s.table}: {s.count.toLocaleString()}
-                    </span>
+            {/* ─── TAB: BUNDLE ────────────────────────────────────────────── */}
+            {migrationTab === 'bundle' && bundle && (
+              <div className="space-y-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs text-gray-500">
+                      Generado el <strong className="text-white">{new Date(bundle.generated_at).toLocaleString('es-MX')}</strong>
+                      {' · '}<strong className="text-white">{bundle.tenant_name}</strong>
+                    </p>
+                    {bundle.export_stats.length > 0 && (
+                      <p className="text-[10px] text-gray-600 mt-1">
+                        {bundle.export_stats.reduce((s, r) => s + r.count, 0).toLocaleString()} registros · {bundle.export_stats.length} tablas
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => {
+                      const files = [
+                        { c: bundle.docker_compose,   n: 'docker-compose.yml' },
+                        { c: bundle.env_content,      n: '.env' },
+                        { c: bundle.setup_sh,         n: 'setup.sh' },
+                        { c: bundle.verify_sh,        n: 'verify.sh' },
+                        { c: bundle.install_md,       n: 'INSTALL.md' },
+                        { c: bundle.migration_manual, n: 'migration_manual.md' },
+                        { c: bundle.data_sql,         n: `${bundle.tenant_slug}-data.sql` },
+                      ];
+                      files.forEach((f, i) => setTimeout(() => downloadFile(f.c, f.n), i * 200));
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 text-xs border border-white/10 transition-colors"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Descargar todo (7)
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {([
+                    { label: 'docker-compose.yml', desc: 'Stack completo: API, frontend, PostgreSQL + pgvector, Redis', content: bundle.docker_compose, filename: 'docker-compose.yml', color: 'text-cyan-400', bg: 'bg-cyan-500/10 border-cyan-500/20 hover:bg-cyan-500/15' },
+                    { label: '.env', desc: 'Variables de entorno con valores reales del Vault + ENCRYPTION_KEY', content: bundle.env_content, filename: '.env', color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/15' },
+                    { label: 'setup.sh', desc: 'Script automatizado: levanta Docker, aplica schema, importa datos', content: bundle.setup_sh, filename: 'setup.sh', color: 'text-violet-400', bg: 'bg-violet-500/10 border-violet-500/20 hover:bg-violet-500/15' },
+                    { label: 'verify.sh', desc: 'Verifica conteos por tabla tras la importación', content: bundle.verify_sh, filename: 'verify.sh', color: 'text-pink-400', bg: 'bg-pink-500/10 border-pink-500/20 hover:bg-pink-500/15' },
+                    { label: 'INSTALL.md', desc: 'Guía paso a paso: dominio, SSL, DNS, primera sesión', content: bundle.install_md, filename: 'INSTALL.md', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/15' },
+                    { label: 'migration_manual.md', desc: 'Manual completo de migración en 9 secciones', content: bundle.migration_manual, filename: 'migration_manual.md', color: 'text-sky-400', bg: 'bg-sky-500/10 border-sky-500/20 hover:bg-sky-500/15' },
+                    { label: `${bundle.tenant_slug}-data.sql`, desc: `BD completa — ${bundle.export_stats.reduce((s, r) => s + r.count, 0).toLocaleString()} registros en ${bundle.export_stats.length} tablas`, content: bundle.data_sql, filename: `${bundle.tenant_slug}-data.sql`, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20 hover:bg-blue-500/15' },
+                  ] as const).map(file => (
+                    <button key={file.filename} onClick={() => downloadFile(file.content, file.filename)}
+                      className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-colors ${file.bg}`}>
+                      <Download className={`w-4 h-4 ${file.color} flex-shrink-0 mt-0.5`} />
+                      <div className="min-w-0">
+                        <p className={`text-xs font-semibold font-mono ${file.color} truncate`}>{file.label}</p>
+                        <p className="text-[10px] text-gray-500 mt-0.5 leading-relaxed">{file.desc}</p>
+                      </div>
+                    </button>
                   ))}
                 </div>
-              </details>
+
+                {bundle.export_stats.length > 0 && (
+                  <details className="group">
+                    <summary className="text-[10px] text-gray-600 hover:text-gray-400 cursor-pointer transition-colors list-none">
+                      Ver resumen de tablas exportadas
+                    </summary>
+                    <div className="mt-2 p-3 bg-white/[0.02] rounded-lg border border-white/5 flex flex-wrap gap-2">
+                      {bundle.export_stats.map(s => (
+                        <span key={s.table} className="text-[9px] px-2 py-0.5 rounded bg-white/5 text-gray-500 font-mono">
+                          {s.table}: {s.count.toLocaleString()}
+                        </span>
+                      ))}
+                    </div>
+                  </details>
+                )}
+
+                <button onClick={() => setBundle(null)} className="text-xs text-gray-600 hover:text-gray-400 transition-colors">
+                  Cerrar bundle
+                </button>
+              </div>
             )}
 
-            <button onClick={() => setBundle(null)} className="text-xs text-gray-600 hover:text-gray-400 transition-colors">
-              Cerrar
-            </button>
-          </div>
+            {/* ─── TAB: AUDITORÍA ─────────────────────────────────────────── */}
+            {migrationTab === 'audit' && auditReport && (() => {
+              const statusIcon = (s: CheckStatus) =>
+                s === 'pass'    ? <CheckCircle   className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" /> :
+                s === 'fail'    ? <XCircle        className="w-3.5 h-3.5 text-red-400    flex-shrink-0" /> :
+                s === 'warning' ? <AlertTriangle  className="w-3.5 h-3.5 text-amber-400  flex-shrink-0" /> :
+                                  <Activity       className="w-3.5 h-3.5 text-blue-400   flex-shrink-0" />;
+
+              const categories = [...new Set(auditReport.checks.map(c => c.category))];
+
+              const scoreBg =
+                auditReport.overall === 'pass'    ? 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400' :
+                auditReport.overall === 'fail'    ? 'bg-red-500/15     border-red-500/25     text-red-400'    :
+                auditReport.overall === 'warning' ? 'bg-amber-500/15   border-amber-500/25   text-amber-400'  :
+                                                    'bg-blue-500/15    border-blue-500/25    text-blue-400';
+
+              return (
+                <div className="space-y-4">
+                  {/* Score banner */}
+                  <div className={`flex items-center gap-3 p-3 rounded-xl border ${scoreBg}`}>
+                    <div className="text-2xl font-bold">{auditReport.score}</div>
+                    <div>
+                      <p className="text-xs font-semibold capitalize">{auditReport.overall === 'pass' ? 'Listo para migrar' : auditReport.overall === 'fail' ? 'Hay problemas críticos' : 'Revisar advertencias'}</p>
+                      <p className="text-[10px] opacity-70">Auditado {new Date(auditReport.audited_at).toLocaleString('es-MX')}</p>
+                    </div>
+                    <div className="ml-auto text-right text-[10px] opacity-60">
+                      <p>{auditReport.checks.filter(c => c.status === 'pass').length} pasaron</p>
+                      <p>{auditReport.checks.filter(c => c.status === 'fail').length} fallaron</p>
+                      <p>{auditReport.checks.filter(c => c.status === 'warning').length} advertencias</p>
+                    </div>
+                  </div>
+
+                  {/* Checks por categoría */}
+                  <div className="space-y-3">
+                    {categories.map(cat => (
+                      <div key={cat}>
+                        <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-widest mb-1.5">{cat}</p>
+                        <div className="space-y-1.5">
+                          {auditReport.checks.filter(c => c.category === cat).map(check => (
+                            <div key={check.id} className="bg-white/[0.02] border border-white/5 rounded-lg overflow-hidden">
+                              <button
+                                onClick={() => toggleCheck(check.id)}
+                                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-white/[0.02] transition-colors"
+                              >
+                                {statusIcon(check.status)}
+                                <span className="text-xs text-gray-300 flex-1">{check.name}</span>
+                                {check.count !== undefined && (
+                                  <span className="text-[10px] text-gray-600 font-mono">{check.count.toLocaleString()}{check.expected !== undefined ? `/${check.expected}` : ''}</span>
+                                )}
+                                {check.fix && (
+                                  expandedChecks.has(check.id)
+                                    ? <ChevronUp className="w-3 h-3 text-gray-600" />
+                                    : <ChevronDown className="w-3 h-3 text-gray-600" />
+                                )}
+                              </button>
+                              {/* Detalle */}
+                              <div className="px-3 pb-2 -mt-1">
+                                <p className="text-[10px] text-gray-500">{check.detail}</p>
+                              </div>
+                              {/* Fix expandible */}
+                              {check.fix && expandedChecks.has(check.id) && (
+                                <div className="px-3 pb-3 border-t border-white/5 pt-2">
+                                  <p className="text-[10px] text-amber-300/80 leading-relaxed">
+                                    <span className="font-semibold text-amber-300">Cómo corregir: </span>{check.fix}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Tabla de conteos */}
+                  {auditReport.table_stats.length > 0 && (
+                    <details className="group">
+                      <summary className="text-[10px] text-gray-600 hover:text-gray-400 cursor-pointer transition-colors list-none">
+                        Ver conteos por tabla ({auditReport.table_stats.length} tablas)
+                      </summary>
+                      <div className="mt-2 p-3 bg-white/[0.02] rounded-lg border border-white/5 flex flex-wrap gap-2">
+                        {auditReport.table_stats.filter(t => t.count > 0).map(s => (
+                          <span key={s.table} className="text-[9px] px-2 py-0.5 rounded bg-white/5 text-gray-500 font-mono">
+                            {s.table}: {s.count.toLocaleString()}
+                          </span>
+                        ))}
+                      </div>
+                    </details>
+                  )}
+
+                  <button
+                    onClick={runAudit}
+                    disabled={auditing}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/15 hover:bg-indigo-600/25 text-indigo-300 text-xs border border-indigo-500/20 transition-colors disabled:opacity-50"
+                  >
+                    {auditing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
+                    Re-ejecutar auditoría
+                  </button>
+                </div>
+              );
+            })()}
+
+            {/* ─── TAB: VERIFICAR SERVIDOR ────────────────────────────────── */}
+            {migrationTab === 'verify' && (
+              <div className="space-y-4">
+                <p className="text-xs text-gray-400">
+                  Después de instalar el bundle en el servidor del cliente, verifica que el sistema responde correctamente.
+                </p>
+
+                {/* URL input + botón */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="url"
+                    value={selfHostedUrl}
+                    onChange={e => setSelfHostedUrl(e.target.value)}
+                    placeholder="https://flowdesk.tuempresa.com"
+                    className="flex-1 bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-violet-500/50"
+                  />
+                  <button
+                    onClick={pingRemote}
+                    disabled={pinging || !selfHostedUrl}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 text-xs font-medium border border-violet-500/20 transition-colors disabled:opacity-50"
+                  >
+                    {pinging ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wifi className="w-3.5 h-3.5" />}
+                    {pinging ? 'Verificando...' : 'Verificar'}
+                  </button>
+                </div>
+
+                {/* Resultado del ping */}
+                {pingResult && (
+                  <div className={`rounded-xl border p-4 space-y-3 ${pingResult.reachable ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-red-500/5 border-red-500/20'}`}>
+                    <div className="flex items-center gap-2">
+                      {pingResult.reachable
+                        ? <Wifi className="w-4 h-4 text-emerald-400" />
+                        : <WifiOff className="w-4 h-4 text-red-400" />}
+                      <p className={`text-xs font-semibold ${pingResult.reachable ? 'text-emerald-300' : 'text-red-300'}`}>
+                        {pingResult.reachable
+                          ? `Servidor accesible · ${pingResult.response_ms}ms`
+                          : 'Servidor no accesible'}
+                      </p>
+                    </div>
+
+                    {pingResult.error && (
+                      <p className="text-[10px] text-red-400/70">{pingResult.error}</p>
+                    )}
+
+                    {/* Sub-checks */}
+                    <div className="space-y-1.5">
+                      {pingResult.checks.map((c, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          {c.status === 'pass'
+                            ? <CheckCircle  className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                            : c.status === 'warning'
+                            ? <AlertTriangle className="w-3 h-3 text-amber-400 flex-shrink-0" />
+                            : <XCircle      className="w-3 h-3 text-red-400 flex-shrink-0" />}
+                          <span className="text-[10px] text-gray-400">{c.name}</span>
+                          <span className="text-[10px] text-gray-600 ml-auto">{c.detail}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Marcar como migrado */}
+                    {pingResult.reachable && tenant.migration_status !== 'migrated' && (
+                      <div className="pt-2 border-t border-white/5">
+                        <p className="text-[10px] text-gray-500 mb-2">El servidor responde. Puedes marcarlo como migrado para registrar la URL en el sistema.</p>
+                        <button
+                          onClick={async () => {
+                            await api.patch(`/platform/network/${id}/migration-status`, { self_hosted_url: selfHostedUrl }).catch(() => {});
+                            await load();
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-xs font-medium border border-emerald-500/20 transition-colors"
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          Marcar como migrado
+                        </button>
+                      </div>
+                    )}
+
+                    {tenant.migration_status === 'migrated' && (
+                      <p className="text-[10px] text-emerald-400/70 pt-1 border-t border-white/5">
+                        ✓ Registrado como migrado · {tenant.self_hosted_url}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Instrucciones de verificación */}
+                <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 space-y-2">
+                  <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Lista de verificación manual</p>
+                  {[
+                    'El cliente puede iniciar sesión con su cuenta',
+                    'Los agentes IA responden correctamente',
+                    'Los contactos y conversaciones aparecen en la BD',
+                    'El Brain muestra los documentos importados',
+                    'El Secretario recibe y procesa mensajes de WhatsApp',
+                    'Ejecutar verify.sh del bundle y confirmar 0 errores',
+                    'Hacer copia de seguridad inicial antes de poner en producción',
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <span className="text-[10px] text-gray-700 font-mono mt-0.5">{i + 1}.</span>
+                      <span className="text-[10px] text-gray-400">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
