@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistema de Empleados — FlowDesk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a14; --surface: #13131f; --surface2: #1a1a2e;
+      --line: rgba(255,255,255,0.07); --line2: rgba(255,255,255,0.12);
+      --cyan: #00d4ff; --blue: #3b82f6; --purple: #6c4de6; --purple2: #8b6ef5;
+      --green: #22c55e; --amber: #f59e0b; --red: #ef4444; --orange: #f97316;
+      --text: #f0f0fa; --text2: #a0a0c0; --text3: #606080;
+      --sidebar: 260px;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; font-size: 14px; line-height: 1.7; }
+
+    .layout { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: var(--sidebar); flex-shrink: 0;
+      position: fixed; top: 0; left: 0; height: 100vh;
+      background: var(--surface); border-right: 1px solid var(--line);
+      overflow-y: auto; padding: 0 0 40px;
+    }
+    .main { margin-left: var(--sidebar); flex: 1; padding: 48px 60px 100px; max-width: 900px; }
+
+    .sidebar-brand { padding: 20px 20px 16px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+    .sidebar-brand .logo { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cyan); margin-bottom: 4px; }
+    .sidebar-brand .title { font-size: 13px; font-weight: 700; color: var(--text); }
+    .nav-group-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text3); padding: 10px 20px 4px; }
+    .nav-link {
+      display: block; padding: 7px 20px; font-size: 12px; color: var(--text2);
+      text-decoration: none; cursor: pointer; transition: all 0.12s;
+      border-left: 2px solid transparent;
+    }
+    .nav-link:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+    .nav-link.active { color: var(--cyan); border-left-color: var(--cyan); background: rgba(0,212,255,0.05); }
+
+    h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.1; margin-bottom: 12px; }
+    h1 span { color: var(--cyan); }
+    h2 { font-size: 21px; font-weight: 800; letter-spacing: -0.03em; color: var(--text); margin: 52px 0 16px; padding-top: 52px; border-top: 1px solid var(--line); }
+    h2:first-of-type { margin-top: 32px; padding-top: 32px; border-top: none; }
+    h3 { font-size: 15px; font-weight: 700; color: var(--text); margin: 28px 0 10px; }
+    h4 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); margin: 20px 0 8px; }
+    p { color: var(--text2); margin-bottom: 14px; }
+    strong { color: var(--text); font-weight: 600; }
+    a { color: var(--cyan); text-decoration: none; }
+
+    .hero { background: linear-gradient(135deg, rgba(0,212,255,0.08), rgba(59,130,246,0.06)); border: 1px solid rgba(0,212,255,0.15); border-radius: 16px; padding: 32px; margin-bottom: 40px; }
+    .hero .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--cyan); background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.2); padding: 4px 10px; border-radius: 20px; margin-bottom: 14px; }
+    .hero h1 { margin-bottom: 10px; }
+    .hero p { font-size: 15px; margin-bottom: 0; }
+
+    /* Levels grid */
+    .levels-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+    .level-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; position: relative; overflow: hidden; }
+    .level-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+    .level-card.director::before { background: linear-gradient(90deg, var(--purple), var(--purple2)); }
+    .level-card.gerente::before { background: linear-gradient(90deg, var(--blue), var(--cyan)); }
+    .level-card.empleado::before { background: linear-gradient(90deg, var(--green), #34d399); }
+    .level-card.operativo::before { background: linear-gradient(90deg, var(--amber), var(--orange)); }
+    .level-card .level-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 10px; }
+    .level-card.director .level-icon { background: rgba(108,77,230,0.15); }
+    .level-card.gerente .level-icon { background: rgba(59,130,246,0.15); }
+    .level-card.empleado .level-icon { background: rgba(34,197,94,0.15); }
+    .level-card.operativo .level-icon { background: rgba(245,158,11,0.15); }
+    .level-card h3 { margin: 0 0 4px; font-size: 14px; }
+    .level-card .level-role { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); margin-bottom: 10px; }
+    .level-card p { font-size: 12px; margin: 0 0 12px; line-height: 1.5; }
+    .level-features { display: flex; flex-direction: column; gap: 4px; }
+    .level-features .feat { font-size: 11px; color: var(--text2); display: flex; align-items: center; gap: 6px; }
+    .level-features .feat::before { content: '→'; color: var(--text3); font-size: 10px; }
+
+    /* Flow diagram */
+    .flow { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 24px; margin: 20px 0; }
+    .flow-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); margin-bottom: 16px; }
+    .flow-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .flow-node { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1px solid; white-space: nowrap; }
+    .flow-node.trigger { background: rgba(0,212,255,0.1); border-color: rgba(0,212,255,0.3); color: var(--cyan); }
+    .flow-node.router { background: rgba(108,77,230,0.1); border-color: rgba(108,77,230,0.3); color: var(--purple2); }
+    .flow-node.owner { background: rgba(108,77,230,0.1); border-color: rgba(108,77,230,0.2); color: var(--purple2); }
+    .flow-node.employee { background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.2); color: var(--blue); }
+    .flow-node.operative { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.2); color: var(--amber); }
+    .flow-node.external { background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.2); color: var(--green); }
+    .flow-arrow { color: var(--text3); font-size: 16px; flex-shrink: 0; }
+    .flow-branch { padding: 12px 16px; background: rgba(255,255,255,0.02); border-radius: 8px; border-left: 2px solid var(--line2); margin: 4px 0 4px 20px; }
+    .flow-branch .branch-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .flow-branch .branch-row:last-child { margin-bottom: 0; }
+    .flow-label { font-size: 11px; color: var(--text3); }
+
+    /* Steps */
+    .steps { display: flex; flex-direction: column; gap: 16px; margin: 20px 0; }
+    .step { display: flex; gap: 16px; }
+    .step-num { width: 28px; height: 28px; border-radius: 50%; background: rgba(0,212,255,0.15); border: 1px solid rgba(0,212,255,0.3); color: var(--cyan); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .step-body { flex: 1; }
+    .step-body h3 { margin: 0 0 4px; font-size: 14px; }
+    .step-body p { margin: 0; font-size: 13px; }
+
+    /* Code block */
+    .code-block { background: #050510; border: 1px solid var(--line2); border-radius: 10px; padding: 16px; margin: 16px 0; overflow-x: auto; }
+    .code-block pre { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text2); line-height: 1.6; }
+    .code-block .comment { color: var(--text3); }
+    .code-block .key { color: var(--cyan); }
+    .code-block .value { color: var(--green); }
+    .code-block .string { color: var(--amber); }
+
+    /* Info boxes */
+    .info-box { padding: 14px 16px; border-radius: 10px; margin: 16px 0; border-left: 3px solid; }
+    .info-box.tip { background: rgba(0,212,255,0.06); border-color: var(--cyan); }
+    .info-box.warning { background: rgba(245,158,11,0.06); border-color: var(--amber); }
+    .info-box.danger { background: rgba(239,68,68,0.06); border-color: var(--red); }
+    .info-box .label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+    .info-box.tip .label { color: var(--cyan); }
+    .info-box.warning .label { color: var(--amber); }
+    .info-box.danger .label { color: var(--red); }
+    .info-box p { margin: 0; font-size: 13px; }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+    th { text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); padding: 8px 12px; border-bottom: 1px solid var(--line2); }
+    td { padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--text2); vertical-align: top; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    td strong { color: var(--text); }
+
+    /* Chip */
+    .chip { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .chip.cyan { background: rgba(0,212,255,0.12); color: var(--cyan); }
+    .chip.purple { background: rgba(108,77,230,0.12); color: var(--purple2); }
+    .chip.green { background: rgba(34,197,94,0.12); color: var(--green); }
+    .chip.amber { background: rgba(245,158,11,0.12); color: var(--amber); }
+    .chip.blue { background: rgba(59,130,246,0.12); color: var(--blue); }
+
+    /* API endpoint */
+    .endpoint { display: flex; align-items: center; gap: 10px; background: var(--surface2); border: 1px solid var(--line2); border-radius: 8px; padding: 10px 14px; margin: 10px 0; }
+    .method { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
+    .method.post { background: rgba(34,197,94,0.15); color: var(--green); }
+    .method.get  { background: rgba(59,130,246,0.15); color: var(--blue); }
+    .path { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text); }
+    .ep-desc { font-size: 12px; color: var(--text3); margin-left: auto; }
+
+    /* Checklist */
+    .checklist { list-style: none; display: flex; flex-direction: column; gap: 8px; margin: 16px 0; }
+    .checklist li { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--text2); }
+    .checklist li::before { content: '☐'; color: var(--text3); flex-shrink: 0; margin-top: 1px; }
+    .checklist li.done::before { content: '✓'; color: var(--green); }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-brand">
+      <div class="logo">FlowDesk</div>
+      <div class="title">Sistema de Empleados</div>
+    </div>
+
+    <div class="nav-group-label">Concepto</div>
+    <a class="nav-link active" href="#overview">Visión general</a>
+    <a class="nav-link" href="#levels">Los 4 niveles</a>
+    <a class="nav-link" href="#whatsapp">Arquitectura WhatsApp</a>
+
+    <div class="nav-group-label">Implementación</div>
+    <a class="nav-link" href="#setup">Configuración inicial</a>
+    <a class="nav-link" href="#alta-usuarios">Alta de usuarios</a>
+    <a class="nav-link" href="#whatsapp-setup">Conectar WhatsApp</a>
+    <a class="nav-link" href="#migracion">Migrar empresa existente</a>
+
+    <div class="nav-group-label">Guía de uso</div>
+    <a class="nav-link" href="#uso-director">Director / Owner</a>
+    <a class="nav-link" href="#uso-gerente">Gerente</a>
+    <a class="nav-link" href="#uso-empleado">Empleado</a>
+    <a class="nav-link" href="#uso-operativo">Operativo</a>
+
+    <div class="nav-group-label">Referencia</div>
+    <a class="nav-link" href="#api">Endpoints API</a>
+    <a class="nav-link" href="#faq">FAQ</a>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="badge">📋 Manual de Implementación v1.0</div>
+      <h1>Sistema de <span>Empleados</span> FlowDesk</h1>
+      <p>Guía completa para implementar y operar el sistema de 4 niveles de empleados — desde directores hasta personal operativo de campo — con asistentes IA y reportes automáticos por WhatsApp.</p>
+    </div>
+
+    <!-- OVERVIEW -->
+    <h2 id="overview">Visión general</h2>
+    <p>FlowDesk organiza a todo el equipo humano de una empresa en <strong>4 niveles</strong>. Cada nivel determina qué herramientas tiene disponibles, cómo interactúa con la plataforma y qué tipo de asistente IA le corresponde.</p>
+    <p>El principio central es <strong>apilamiento</strong>: un gerente es también un empleado (tiene sus propias tareas y agenda), y un director es también un gerente. El sistema suma capacidades hacia arriba.</p>
+
+    <div class="info-box tip">
+      <div class="label">Principio de diseño</div>
+      <p>Los empleados de escritorio usan FlowDesk en computadora y WhatsApp en móvil. Los operativos de campo solo usan WhatsApp. <strong>Todos interactúan por WhatsApp, pero solo los de escritorio acceden a la app.</strong></p>
+    </div>
+
+    <!-- LEVELS -->
+    <h2 id="levels">Los 4 niveles</h2>
+
+    <div class="levels-grid">
+      <div class="level-card director">
+        <div class="level-icon">👑</div>
+        <h3>Director / Owner</h3>
+        <div class="level-role">role: owner | admin · worker_type: desk</div>
+        <p>Máximo nivel. Supervisa múltiples equipos, ve la salud organizacional y gestiona KSFs estratégicos.</p>
+        <div class="level-features">
+          <div class="feat">Asistente Director (IA)</div>
+          <div class="feat">Secretario ejecutivo (WhatsApp)</div>
+          <div class="feat">CEO Agent estratégico</div>
+          <div class="feat">Visión de org completa</div>
+          <div class="feat">Aprobaciones y delegaciones</div>
+        </div>
+      </div>
+
+      <div class="level-card gerente">
+        <div class="level-icon">👤</div>
+        <h3>Gerente</h3>
+        <div class="level-role">role: manager · worker_type: desk</div>
+        <p>Gestiona personas y agentes. Tiene sus propias tareas <em>y</em> la coordinación de su equipo.</p>
+        <div class="level-features">
+          <div class="feat">Todo lo del Empleado</div>
+          <div class="feat">Vista de estado de equipo</div>
+          <div class="feat">Reporte de cédulas operativas</div>
+          <div class="feat">Asignación y reasignación de tareas</div>
+          <div class="feat">Asistente Gerente (IA)</div>
+        </div>
+      </div>
+
+      <div class="level-card empleado">
+        <div class="level-icon">💼</div>
+        <h3>Empleado</h3>
+        <div class="level-role">role: employee · worker_type: desk</div>
+        <p>Trabajo de escritorio. Usa la app en computadora y el asistente personal por WhatsApp en móvil.</p>
+        <div class="level-features">
+          <div class="feat">Asistente personal (IA)</div>
+          <div class="feat">Gestión de tareas propias</div>
+          <div class="feat">Standup diario</div>
+          <div class="feat">KSFs personales</div>
+          <div class="feat">WhatsApp + App</div>
+        </div>
+      </div>
+
+      <div class="level-card operativo">
+        <div class="level-icon">🚛</div>
+        <h3>Operativo</h3>
+        <div class="level-role">role: employee · worker_type: operative</div>
+        <p>Personal de campo. No usa la app. Reporta sus resultados diarios mediante una cédula guiada por WhatsApp.</p>
+        <div class="level-features">
+          <div class="feat">Cédula de resultados (3 preguntas)</div>
+          <div class="feat">Solo WhatsApp</div>
+          <div class="feat">Reportes visibles para su gerente</div>
+          <div class="feat">Sin acceso a la app</div>
+          <div class="feat">Sin asistente IA</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WHATSAPP ARCHITECTURE -->
+    <h2 id="whatsapp">Arquitectura WhatsApp</h2>
+    <p>Toda la empresa comparte <strong>un solo número de WhatsApp</strong>. El sistema identifica automáticamente quién está escribiendo y lo redirige al servicio correcto.</p>
+
+    <div class="flow">
+      <div class="flow-title">Flujo de mensaje entrante</div>
+      <div class="flow-row">
+        <div class="flow-node trigger">Mensaje WhatsApp</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node trigger">Evolution API webhook</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node router">WhatsAppRouterService</div>
+      </div>
+      <div class="flow-branch">
+        <div class="branch-row">
+          <div class="flow-node owner">Owner / Admin</div>
+          <div class="flow-arrow">→</div>
+          <span class="flow-label">SecretaryAgentService — secretario ejecutivo con herramientas</span>
+        </div>
+        <div class="branch-row">
+          <div class="flow-node employee">Empleado / Gerente / Director</div>
+          <div class="flow-arrow">→</div>
+          <span class="flow-label">PersonalAssistantService — asistente IA adaptado al nivel</span>
+        </div>
+        <div class="branch-row">
+          <div class="flow-node operative">Operativo</div>
+          <div class="flow-arrow">→</div>
+          <span class="flow-label">OperativeWhatsAppService — cédula de resultados 3 pasos</span>
+        </div>
+        <div class="branch-row">
+          <div class="flow-node external">Cliente externo</div>
+          <div class="flow-arrow">→</div>
+          <span class="flow-label">CustomerWhatsAppService → Chatwoot — atención al cliente</span>
+        </div>
+      </div>
+    </div>
+
+    <p>La identificación funciona por <strong>número de teléfono</strong>. Cada empleado tiene su número registrado en su slot (<code>whatsapp_phone</code>). Si el número no está registrado, se trata como cliente externo.</p>
+
+    <div class="info-box warning">
+      <div class="label">Importante</div>
+      <p>Chatwoot es el buzón de <strong>clientes externos</strong>. Los mensajes de empleados nunca llegan a Chatwoot — van directo a sus asistentes sin crear contactos CRM.</p>
+    </div>
+
+    <!-- SETUP -->
+    <h2 id="setup">Configuración inicial</h2>
+    <p>Para activar el sistema de empleados en una empresa cliente de FlowDesk, sigue estos pasos en orden.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Provisionar el tenant</h3>
+          <p>Al cerrar la propuesta, ejecuta el webhook de provisionamiento. Esto crea el tenant, el slot del dueño con <code>worker_type: desk</code>, su CEO Agent y su Asistente Diario automáticamente.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Conectar WhatsApp Business</h3>
+          <p>En FlowDesk → Integraciones → WhatsApp, el cliente conecta su número de WhatsApp Business a través de Evolution API. Este número recibirá todos los mensajes: dueño, empleados, operativos y clientes.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>Configurar el secretario del dueño</h3>
+          <p>En FlowDesk → Configuración → Secretario, registrar el número de WhatsApp personal del dueño. Esto permite que cuando el dueño escriba al número de la empresa, el sistema lo reconozca y lo conecte con su secretario ejecutivo.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3>Dar de alta al equipo</h3>
+          <p>En FlowDesk → Equipo → Añadir persona, registrar a cada empleado usando el wizard. El sistema asignará automáticamente el tipo de asistente correcto según el nivel elegido.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <h3>Compartir contraseñas y números</h3>
+          <p>Cada empleado de escritorio recibe su contraseña temporal para acceder a la app. Todos los empleados reciben el número de WhatsApp de la empresa para usar su asistente o enviar su cédula.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALTA USUARIOS -->
+    <h2 id="alta-usuarios">Alta de usuarios</h2>
+    <p>Todos los usuarios se crean desde <strong>Equipo → Añadir persona</strong>. El wizard hace 3 preguntas:</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Paso</th>
+          <th>Qué se pregunta</th>
+          <th>Por qué</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1 — Datos básicos</strong></td>
+          <td>Nombre, email, departamento</td>
+          <td>Crea el slot en el sistema</td>
+        </tr>
+        <tr>
+          <td><strong>2 — Tipo de trabajo</strong></td>
+          <td>¿Trabaja en oficina o en campo?<br>Número WhatsApp</td>
+          <td>Determina si tiene asistente IA (desk) o cédula (operative)</td>
+        </tr>
+        <tr>
+          <td><strong>3 — Jerarquía</strong><br><em>Solo para escritorio</em></td>
+          <td>Empleado / Gerente / Director</td>
+          <td>Determina el nivel del asistente y herramientas disponibles</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>Al terminar el wizard:</p>
+    <ul class="checklist">
+      <li class="done">Se crea el slot del empleado con <code>worker_type</code> y <code>whatsapp_phone</code></li>
+      <li class="done">Si es escritorio, se provisiona automáticamente su agente <code>daily_assistant</code></li>
+      <li class="done">Se muestra la contraseña temporal (solo una vez)</li>
+      <li class="done">El empleado ya puede escribir al número de WhatsApp de la empresa</li>
+    </ul>
+
+    <div class="info-box tip">
+      <div class="label">Los operativos no necesitan contraseña</div>
+      <p>Un operativo solo necesita que le des el número de WhatsApp de la empresa y le expliques que debe escribir <strong>"reporte"</strong> para iniciar su cédula diaria.</p>
+    </div>
+
+    <!-- WHATSAPP SETUP -->
+    <h2 id="whatsapp-setup">Conectar WhatsApp</h2>
+    <p>El cliente conecta su WhatsApp Business desde <strong>Integraciones → WhatsApp</strong>. Este es el proceso técnico de fondo:</p>
+
+    <div class="code-block"><pre><span class="comment">// Lo que se guarda en la base de datos al conectar</span>
+Integration {
+  <span class="key">tenant_id</span>:    <span class="string">"empresa-abc"</span>
+  <span class="key">provider</span>:     <span class="string">"whatsapp"</span>
+  <span class="key">status</span>:       <span class="string">"connected"</span>
+  <span class="key">config</span>: {
+    <span class="key">instance_name</span>: <span class="string">"empresa-abc-wa"</span>  <span class="comment">← identificador en Evolution API</span>
+    <span class="key">phone_number</span>:  <span class="string">"5215551234567"</span>
+  }
+}</pre></div>
+
+    <p>El webhook de Evolution API debe estar configurado para enviar a:</p>
+    <div class="endpoint">
+      <span class="method post">POST</span>
+      <span class="path">https://api.flowdesk.io/api/v1/webhooks/evolution</span>
+    </div>
+
+    <h3>Configurar el número del secretario del dueño</h3>
+    <p>Ir a <strong>Configuración → Secretario</strong> e ingresar el número de WhatsApp personal del dueño/owner. Esto es lo que permite que el sistema lo reconozca como owner cuando escribe al número de la empresa.</p>
+
+    <div class="info-box warning">
+      <div class="label">El número del dueño es diferente</div>
+      <p>El número del dueño se registra en <strong>SecretaryConfig</strong>, no como <code>whatsapp_phone</code> en su TeamSlot. Esto le da acceso al secretario ejecutivo con capacidades especiales (aprobar solicitudes, delegar, ver reportes de toda la org).</p>
+    </div>
+
+    <!-- MIGRACIÓN -->
+    <h2 id="migracion">Migrar empresa existente</h2>
+    <p>Para empresas que ya estaban en FlowDesk antes de esta actualización, ejecuta el endpoint de migración. Es <strong>idempotente</strong> — puedes ejecutarlo varias veces sin duplicar datos.</p>
+
+    <h3>Migrar todas las empresas</h3>
+    <div class="endpoint">
+      <span class="method post">POST</span>
+      <span class="path">/api/v1/webhooks/migrate-employee-structure</span>
+    </div>
+
+    <div class="code-block"><pre><span class="comment">// Headers</span>
+x-flowdesk-secret: &lt;FLOWDESK_WEBHOOK_SECRET&gt;
+
+<span class="comment">// Body (vacío para migrar todos los tenants)</span>
+{}
+
+<span class="comment">// Respuesta</span>
+{
+  <span class="key">"ok"</span>: <span class="value">true</span>,
+  <span class="key">"tenants_processed"</span>: <span class="value">12</span>,
+  <span class="key">"report"</span>: [
+    { <span class="key">"tenant"</span>: <span class="string">"Empresa ABC"</span>, <span class="key">"slots_updated"</span>: <span class="value">8</span>, <span class="key">"assistants_created"</span>: <span class="value">8</span> },
+    { <span class="key">"tenant"</span>: <span class="string">"Empresa XYZ"</span>, <span class="key">"slots_updated"</span>: <span class="value">3</span>, <span class="key">"assistants_created"</span>: <span class="value">3</span> }
+  ]
+}</pre></div>
+
+    <h3>Migrar solo una empresa</h3>
+    <div class="code-block"><pre>{ <span class="key">"tenant_id"</span>: <span class="string">"uuid-de-la-empresa"</span> }</pre></div>
+
+    <p>La migración hace lo siguiente por cada empresa:</p>
+    <ul class="checklist">
+      <li class="done">Agrega <code>worker_type: "desk"</code> a todos los slots humanos sin ese campo</li>
+      <li class="done">Crea un agente <code>daily_assistant</code> para cada empleado de escritorio que no tenga uno</li>
+      <li class="done">Asigna el nivel correcto (Empleado / Gerente / Director) según el <code>role</code></li>
+      <li>No modifica operativos (se deben asignar manualmente por su naturaleza)</li>
+      <li>No toca slots que ya tienen <code>worker_type</code> configurado</li>
+    </ul>
+
+    <!-- USO: DIRECTOR -->
+    <h2 id="uso-director">Guía de uso — Director / Owner</h2>
+
+    <h3>En la app (computadora)</h3>
+    <p>El director accede a FlowDesk y tiene disponible su asistente personal en <strong>Mi Asistente</strong>. Desde ahí puede:</p>
+    <ul class="checklist">
+      <li class="done">Ver el estado de todos sus equipos</li>
+      <li class="done">Revisar KSFs de la organización</li>
+      <li class="done">Ver reportes semanales de todos los gerentes</li>
+      <li class="done">Aprobar o rechazar solicitudes pendientes</li>
+      <li class="done">Chatear con su asistente para delegar, priorizar y planificar</li>
+    </ul>
+
+    <h3>Por WhatsApp (móvil)</h3>
+    <p>El dueño escribe al número de WhatsApp de la empresa y es atendido por su <strong>secretario ejecutivo</strong>. Ejemplos de uso:</p>
+
+    <div class="code-block"><pre><span class="comment">Dueño escribe:</span>
+<span class="string">"¿Cómo va el equipo de ventas esta semana?"</span>
+<span class="string">"Aprueba la solicitud de Carlos"</span>
+<span class="string">"¿Qué tiene pendiente Juan del área de operaciones?"</span>
+<span class="string">"Resume el standup de hoy de todos"</span></pre></div>
+
+    <!-- USO: GERENTE -->
+    <h2 id="uso-gerente">Guía de uso — Gerente</h2>
+
+    <h3>En la app (computadora)</h3>
+    <p>El gerente tiene acceso completo a la app. En <strong>Mi Asistente</strong> puede ver:</p>
+    <ul class="checklist">
+      <li class="done">Sus propias tareas y KSFs</li>
+      <li class="done">El standup de su equipo</li>
+      <li class="done">Las cédulas diarias de sus operativos</li>
+      <li class="done">Estado general de su equipo</li>
+    </ul>
+
+    <h3>Por WhatsApp (móvil)</h3>
+    <p>El gerente escribe al número de la empresa y su asistente IA le responde con contexto de equipo:</p>
+
+    <div class="code-block"><pre><span class="comment">Gerente escribe:</span>
+<span class="string">"¿Quiénes no han mandado su reporte hoy?"</span>
+<span class="string">"¿Cómo va el equipo esta semana?"</span>
+<span class="string">"Asigna la tarea X a Juan"</span>
+<span class="string">"¿Hay algún bloqueante en el equipo?"</span></pre></div>
+
+    <!-- USO: EMPLEADO -->
+    <h2 id="uso-empleado">Guía de uso — Empleado</h2>
+
+    <h3>En la app (computadora)</h3>
+    <p>El empleado accede a la app con su email y contraseña temporal (que luego cambia). Tiene acceso a:</p>
+    <ul class="checklist">
+      <li class="done">Sus tareas y objetivos personales</li>
+      <li class="done">Su asistente en la sección <strong>Mi Asistente</strong></li>
+      <li class="done">Registro de standup diario</li>
+      <li class="done">Sus KSFs personales</li>
+    </ul>
+
+    <h3>Por WhatsApp (móvil)</h3>
+    <p>Escribe al número de la empresa y su asistente personal le responde:</p>
+
+    <div class="code-block"><pre><span class="comment">Empleado escribe:</span>
+<span class="string">"¿Qué tengo pendiente para hoy?"</span>
+<span class="string">"Marca la tarea 'Entrega informe' como completada"</span>
+<span class="string">"¿Cómo voy con mis indicadores este mes?"</span>
+<span class="string">"Quiero registrar mi standup"</span></pre></div>
+
+    <!-- USO: OPERATIVO -->
+    <h2 id="uso-operativo">Guía de uso — Operativo</h2>
+
+    <h3>Solo WhatsApp</h3>
+    <p>El operativo <strong>no accede a la app</strong>. Su única interacción es por WhatsApp. Para enviar su cédula diaria:</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Iniciar la cédula</h3>
+          <p>Escribe <strong>"reporte"</strong> al número de WhatsApp de la empresa al final de su turno.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Responder las 3 preguntas</h3>
+          <p>El sistema le guía paso a paso:<br>
+          <strong>1.</strong> ¿Qué realizaste hoy?<br>
+          <strong>2.</strong> ¿Cuántas unidades / tareas completaste?<br>
+          <strong>3.</strong> ¿Hubo alguna novedad o incidente? (si no, escribe "ninguno")</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>Confirmación automática</h3>
+          <p>El sistema confirma que la cédula fue guardada y el gerente la puede ver en FlowDesk.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="code-block"><pre><span class="comment">Ejemplo de conversación:</span>
+<span class="key">Operativo:</span> <span class="string">reporte</span>
+<span class="key">FlowDesk:</span>  ¡Hola Carlos! 📋 Cédula de resultados del día
+            Paso 1 de 3 — ¿Qué realizaste hoy?
+<span class="key">Operativo:</span> <span class="string">Hice 5 visitas de instalación en la zona norte</span>
+<span class="key">FlowDesk:</span>  ✅ Registrado. Paso 2 de 3 — ¿Cuántas unidades completaste?
+<span class="key">Operativo:</span> <span class="string">5 instalaciones completas</span>
+<span class="key">FlowDesk:</span>  ✅ Registrado. Paso 3 de 3 — ¿Alguna novedad?
+<span class="key">Operativo:</span> <span class="string">Una instalación quedó pendiente por falta de cable</span>
+<span class="key">FlowDesk:</span>  ✅ Cédula guardada. Tu gerente puede verla en FlowDesk.</pre></div>
+
+    <div class="info-box tip">
+      <div class="label">Reiniciar la cédula</div>
+      <p>Si el operativo se equivoca o quiere volver a empezar, puede escribir <strong>"reporte"</strong> en cualquier momento para reiniciar el flujo desde el paso 1.</p>
+    </div>
+
+    <!-- API -->
+    <h2 id="api">Endpoints API de referencia</h2>
+
+    <h4>Gestión de empleados</h4>
+    <div class="endpoint">
+      <span class="method post">POST</span>
+      <span class="path">/api/v1/team-slots/human</span>
+      <span class="ep-desc">Crear empleado con wizard</span>
+    </div>
+    <div class="endpoint">
+      <span class="method get">GET</span>
+      <span class="path">/api/v1/team-slots</span>
+      <span class="ep-desc">Listar todo el equipo</span>
+    </div>
+
+    <h4>Asistente personal</h4>
+    <div class="endpoint">
+      <span class="method post">POST</span>
+      <span class="path">/api/v1/assistant/chat</span>
+      <span class="ep-desc">Enviar mensaje al asistente</span>
+    </div>
+    <div class="endpoint">
+      <span class="method get">GET</span>
+      <span class="path">/api/v1/assistant/sessions</span>
+      <span class="ep-desc">Historial de conversaciones</span>
+    </div>
+    <div class="endpoint">
+      <span class="method get">GET</span>
+      <span class="path">/api/v1/assistant/skills</span>
+      <span class="ep-desc">Matriz de habilidades</span>
+    </div>
+
+    <h4>Reportes de trabajo</h4>
+    <div class="endpoint">
+      <span class="method post">POST</span>
+      <span class="path">/api/v1/work-reports</span>
+      <span class="ep-desc">Registrar standup / cédula</span>
+    </div>
+    <div class="endpoint">
+      <span class="method get">GET</span>
+      <span class="path">/api/v1/work-reports/today</span>
+      <span class="ep-desc">Standup del día actual</span>
+    </div>
+
+    <h4>Webhooks internos (requieren secret)</h4>
+    <div class="endpoint">
+      <span class="method post">POST</span>
+      <span class="path">/api/v1/webhooks/provision-tenant</span>
+      <span class="ep-desc">Provisionar nueva empresa</span>
+    </div>
+    <div class="endpoint">
+      <span class="method post">POST</span>
+      <span class="path">/api/v1/webhooks/migrate-employee-structure</span>
+      <span class="ep-desc">Migrar empresas al sistema de 4 niveles</span>
+    </div>
+    <div class="endpoint">
+      <span class="method post">POST</span>
+      <span class="path">/api/v1/webhooks/evolution</span>
+      <span class="ep-desc">Receptor de mensajes WhatsApp</span>
+    </div>
+
+    <!-- FAQ -->
+    <h2 id="faq">Preguntas frecuentes</h2>
+
+    <h3>¿Puedo cambiar el tipo de un empleado después de crearlo?</h3>
+    <p>Sí. Desde <strong>Equipo → editar slot → PATCH /team-slots/:id</strong>, actualiza el campo <code>agent_config.worker_type</code>. Si cambias de operative a desk, ejecuta el endpoint de migración para provisionar su asistente.</p>
+
+    <h3>¿Qué pasa si el operativo escribe algo que no es "reporte"?</h3>
+    <p>Si no tiene una sesión activa, el sistema le pedirá que escriba "reporte" para iniciar la cédula. Si está en medio de una cédula, cualquier mensaje se toma como respuesta a la pregunta actual.</p>
+
+    <h3>¿El gerente puede ver en tiempo real los reportes de sus operativos?</h3>
+    <p>Sí. En su asistente puede preguntar <em>"¿Qué reportaron mis operativos hoy?"</em> y el asistente lee los WorkReports del día. También los ve en el panel lateral de su asistente en la app.</p>
+
+    <h3>¿Cuántos números de WhatsApp necesita una empresa?</h3>
+    <p>Solo <strong>uno</strong>. Ese número recibe mensajes de dueño, empleados, operativos y clientes externos. El router los distingue automáticamente por el número de teléfono del remitente.</p>
+
+    <h3>¿Qué pasa si un empleado no tiene número de WhatsApp registrado?</h3>
+    <p>Su mensaje llega a Chatwoot como si fuera un cliente externo. Para evitar esto, siempre registra el <code>whatsapp_phone</code> al crear el usuario en el wizard.</p>
+
+    <h3>¿El sistema funciona si el empleado cambia de número?</h3>
+    <p>Solo si se actualiza el campo <code>whatsapp_phone</code> en su slot. Mientras no se actualice, el sistema no lo reconocerá con el nuevo número.</p>
+
+    <h3>¿La migración borra datos existentes?</h3>
+    <p>No. La migración solo <em>agrega</em> información faltante. Es completamente segura y se puede ejecutar múltiples veces.</p>
+
+    <div class="info-box tip" style="margin-top: 40px;">
+      <div class="label">Soporte</div>
+      <p>Para dudas sobre implementación, contacta al equipo de MentorIA a través del canal de soporte en WhatsApp o vía el agente de instalación en FlowDesk.</p>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // Highlight active nav link on scroll
+  const sections = document.querySelectorAll('h2[id]');
+  const links = document.querySelectorAll('.nav-link');
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`.nav-link[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

@@ -19,18 +19,20 @@ const DEFAULT_BRAND: BrandConfig = {
 import {
   LayoutDashboard, Users, Map, Plug, BookUser, LogOut, ShieldCheck,
   Building2, CreditCard, ShieldAlert, Settings, Bell, X, CheckCheck,
-  ExternalLink, ChevronLeft, Target, Cctv, Zap, Sparkles, ChevronDown, Brain,
+  ExternalLink, ChevronLeft, Target, Cctv, Zap, Sparkles, ChevronDown, Brain, GraduationCap, BotMessageSquare,
 } from 'lucide-react';
 
 /* ── Navigation ── */
 const BASE_NAV = [
-  { href: '/metrics',      label: 'Dashboard',     icon: LayoutDashboard },
-  { href: '/dashboard',    label: 'Focus Mode',     icon: Zap },
-  { href: '/agents',       label: 'Agentes',        icon: Sparkles },
+  { href: '/metrics',        label: 'Dashboard',     icon: LayoutDashboard },
+  { href: '/dashboard',      label: 'Focus Mode',    icon: Zap },
+  { href: '/mi-asistente',   label: 'Mi Asistente',  icon: BotMessageSquare },
+  { href: '/agents',         label: 'Agentes',       icon: Sparkles },
   { href: '/brain',        label: 'Brain',          icon: Brain },
   { href: '/team',         label: 'Equipo',         icon: Users },
   { href: '/goals',        label: 'Objetivos',      icon: Target },
   { href: '/contacts',     label: 'Contactos',      icon: BookUser },
+  { href: '/mentoria',     label: 'Consultoría',    icon: GraduationCap },
   { href: '/campus',       label: 'Campus',         icon: Map },
   { href: '/spaces',       label: 'Espacios',       icon: Cctv },
   { href: '/integrations', label: 'Integraciones',  icon: Plug },
