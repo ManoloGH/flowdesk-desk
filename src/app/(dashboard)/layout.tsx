@@ -19,7 +19,7 @@ const DEFAULT_BRAND: BrandConfig = {
 import {
   LayoutDashboard, Users, Map, Plug, BookUser, LogOut, ShieldCheck,
   Building2, CreditCard, ShieldAlert, Settings, Bell, X, CheckCheck,
-  ExternalLink, ChevronLeft, Target, Cctv, Zap, Sparkles, ChevronDown, Brain, GraduationCap, BotMessageSquare,
+  ExternalLink, ChevronLeft, Target, Cctv, Zap, Sparkles, ChevronDown, Brain, Globe, GraduationCap, BotMessageSquare,
 } from 'lucide-react';
 
 /* ── Navigation ── */
@@ -36,6 +36,7 @@ const BASE_NAV = [
   { href: '/campus',       label: 'Campus',         icon: Map },
   { href: '/spaces',       label: 'Espacios',       icon: Cctv },
   { href: '/integrations', label: 'Integraciones',  icon: Plug },
+  { href: '/mi-web',       label: 'Mi Web',         icon: Globe },
   { href: '/settings',     label: 'Configuración',  icon: Settings },
 ];
 const NETWORK_NAV_EXTRA = [{ href: '/branches', label: 'Sucursales', icon: Building2 }];
