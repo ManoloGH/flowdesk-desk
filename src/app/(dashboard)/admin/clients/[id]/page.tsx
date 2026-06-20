@@ -127,8 +127,12 @@ export default function TenantDetailPage() {
   async function toggleWebBuilder() {
     if (!tenant) return;
     setUpdating(true);
-    await api.patch(`/platform/network/${id}/web-builder`, { enabled: !tenant.web_builder_enabled }).catch(() => {});
-    await load();
+    try {
+      await api.patch(`/platform/network/${id}/web-builder`, { enabled: !tenant.web_builder_enabled });
+      await load();
+    } catch (e: any) {
+      alert(`Error al cambiar Web Builder: ${e?.message ?? 'Error desconocido'}`);
+    }
     setUpdating(false);
   }
 
