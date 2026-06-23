@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Protocolo de Implementación — FlowDesk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #08080f; --surface: #11111c; --surface2: #18182a; --surface3: #1e1e30;
+      --line: rgba(255,255,255,0.06); --line2: rgba(255,255,255,0.11);
+      --cyan: #00d4ff; --blue: #3b82f6; --purple: #7c3aed; --purple2: #a78bfa;
+      --green: #22c55e; --amber: #f59e0b; --red: #ef4444; --orange: #f97316;
+      --text: #eeeef8; --text2: #9898b8; --text3: #55557a;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.65; min-height: 100vh; }
+
+    /* ── Top bar ── */
+    .topbar { position: sticky; top: 0; z-index: 100; background: rgba(8,8,15,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line2); padding: 0 32px; display: flex; align-items: center; gap: 20px; height: 56px; }
+    .topbar-logo { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--cyan); flex-shrink: 0; }
+    .topbar-title { font-size: 13px; font-weight: 600; color: var(--text); }
+    .topbar-sep { color: var(--text3); }
+    .client-input { background: var(--surface2); border: 1px solid var(--line2); border-radius: 7px; padding: 5px 10px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text); outline: none; width: 200px; }
+    .client-input::placeholder { color: var(--text3); }
+    .client-input:focus { border-color: var(--cyan); }
+    .progress-wrap { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .progress-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); }
+    .progress-bar { width: 140px; height: 4px; background: var(--surface3); border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--cyan)); border-radius: 4px; transition: width 0.4s ease; }
+    .progress-pct { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: var(--cyan); min-width: 36px; text-align: right; }
+
+    /* ── Layout ── */
+    .layout { display: flex; min-height: calc(100vh - 56px); }
+
+    /* ── Phase sidebar ── */
+    .phase-nav { width: 220px; flex-shrink: 0; position: sticky; top: 56px; height: calc(100vh - 56px); overflow-y: auto; background: var(--surface); border-right: 1px solid var(--line); padding: 20px 0; }
+    .phase-nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 18px; cursor: pointer; transition: all 0.15s; border-left: 2px solid transparent; }
+    .phase-nav-item:hover { background: rgba(255,255,255,0.03); }
+    .phase-nav-item.active { border-left-color: var(--cyan); background: rgba(0,212,255,0.05); }
+    .phase-nav-item.done .phase-dot { background: var(--green) !important; }
+    .phase-dot { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; transition: all 0.2s; }
+    .phase-nav-item.active .phase-dot { background: var(--cyan); color: #000; }
+    .phase-nav-item:not(.active):not(.done) .phase-dot { background: var(--surface3); color: var(--text3); }
+    .phase-nav-item.done .phase-dot { color: #000; }
+    .phase-nav-label { font-size: 12px; font-weight: 500; color: var(--text2); line-height: 1.3; }
+    .phase-nav-item.active .phase-nav-label { color: var(--text); font-weight: 600; }
+
+    /* ── Main content ── */
+    .main { flex: 1; padding: 36px 48px 80px; max-width: 860px; }
+
+    /* ── Phase header ── */
+    .phase-header { margin-bottom: 28px; }
+    .phase-tag { display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cyan); background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.2); padding: 3px 10px; border-radius: 20px; margin-bottom: 12px; }
+    .phase-header h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: var(--text); margin-bottom: 8px; }
+    .phase-header p { font-size: 14px; color: var(--text2); max-width: 600px; }
+    .phase-meta { display: flex; gap: 20px; margin-top: 14px; }
+    .phase-meta-item { display: flex; align-items: center; gap: 5px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); }
+    .phase-meta-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── Sections ── */
+    .section { margin-bottom: 28px; }
+    .section-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text3); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .section-label::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+    /* ── Objective box ── */
+    .objective { background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(59,130,246,0.04)); border: 1px solid rgba(0,212,255,0.14); border-radius: 12px; padding: 18px 20px; }
+    .objective p { color: var(--text2); font-size: 13.5px; margin: 0; }
+    .objective strong { color: var(--text); }
+
+    /* ── Tools grid ── */
+    .tools-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tool-btn { display: flex; align-items: center; gap: 7px; padding: 8px 13px; background: var(--surface); border: 1px solid var(--line2); border-radius: 9px; cursor: pointer; text-decoration: none; transition: all 0.15s; color: var(--text2); font-size: 12px; font-weight: 500; }
+    .tool-btn:hover { background: var(--surface2); border-color: var(--cyan); color: var(--text); }
+    .tool-btn .tool-icon { font-size: 14px; }
+
+    /* ── Script block ── */
+    .script-block { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+    .script-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; }
+    .script-header h3 { font-size: 13px; font-weight: 600; color: var(--text); }
+    .script-toggle { font-size: 16px; color: var(--text3); transition: transform 0.2s; }
+    .script-header.open .script-toggle { transform: rotate(180deg); }
+    .script-body { padding: 16px; display: none; }
+    .script-body.open { display: block; }
+    .script-text { font-size: 13px; color: var(--text2); line-height: 1.65; white-space: pre-line; }
+    .script-note { font-size: 11px; color: var(--text3); font-style: italic; margin-top: 8px; }
+
+    /* ── WA templates ── */
+    .wa-templates { display: flex; flex-direction: column; gap: 10px; }
+    .wa-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+    .wa-card-header { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--surface2); }
+    .wa-role-badge { font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 20px; }
+    .wa-role-badge.director { background: rgba(124,58,237,0.2); color: var(--purple2); }
+    .wa-role-badge.gerente   { background: rgba(59,130,246,0.2); color: var(--blue); }
+    .wa-role-badge.empleado  { background: rgba(34,197,94,0.2); color: var(--green); }
+    .wa-role-badge.operativo { background: rgba(245,158,11,0.2); color: var(--amber); }
+    .wa-card-body { padding: 12px 14px; }
+    .wa-message { font-size: 13px; color: var(--text2); line-height: 1.6; white-space: pre-line; background: rgba(0,212,255,0.03); border-radius: 8px; padding: 10px 12px; border-left: 2px solid rgba(0,212,255,0.2); margin-bottom: 8px; }
+    .copy-btn { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text3); background: none; border: none; cursor: pointer; padding: 0; transition: color 0.15s; font-family: 'Inter', sans-serif; }
+    .copy-btn:hover { color: var(--cyan); }
+
+    /* ── Checklist ── */
+    .checklist { display: flex; flex-direction: column; gap: 6px; }
+    .check-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 9px; cursor: pointer; transition: all 0.15s; }
+    .check-item:hover { border-color: var(--line2); }
+    .check-item.checked { background: rgba(34,197,94,0.05); border-color: rgba(34,197,94,0.2); }
+    .check-box { width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--text3); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; transition: all 0.15s; }
+    .check-item.checked .check-box { background: var(--green); border-color: var(--green); }
+    .check-tick { display: none; font-size: 11px; color: #000; font-weight: 700; }
+    .check-item.checked .check-tick { display: block; }
+    .check-text { font-size: 13px; color: var(--text2); line-height: 1.45; }
+    .check-item.checked .check-text { color: var(--text3); text-decoration: line-through; }
+    .check-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+    .check-item.checked .check-sub { color: var(--text3); }
+
+    /* ── Complete phase button ── */
+    .phase-actions { display: flex; align-items: center; gap: 12px; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line); }
+    .btn-complete { padding: 10px 24px; background: var(--green); border: none; border-radius: 10px; color: #000; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+    .btn-complete:hover { background: #16a34a; }
+    .btn-complete:disabled { background: var(--surface2); color: var(--text3); cursor: not-allowed; }
+    .btn-next { padding: 10px 20px; background: var(--surface); border: 1px solid var(--line2); border-radius: 10px; color: var(--text2); font-family: 'Inter', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.15s; }
+    .btn-next:hover { background: var(--surface2); color: var(--text); }
+    .phase-done-badge { display: none; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--green); }
+    .phase-done-badge.show { display: flex; }
+
+    /* ── Info ── */
+    .info { padding: 12px 14px; border-radius: 9px; margin: 10px 0; border-left: 3px solid; font-size: 13px; color: var(--text2); }
+    .info.tip     { background: rgba(0,212,255,0.05);  border-color: var(--cyan); }
+    .info.warning { background: rgba(245,158,11,0.05); border-color: var(--amber); }
+    .info strong  { color: var(--text); }
+
+    /* ── Steps ── */
+    .steps { display: flex; flex-direction: column; gap: 12px; }
+    .step { display: flex; gap: 14px; }
+    .step-n { width: 26px; height: 26px; border-radius: 50%; background: rgba(0,212,255,0.12); border: 1px solid rgba(0,212,255,0.25); color: var(--cyan); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .step-body { flex: 1; }
+    .step-body strong { color: var(--text); display: block; font-size: 13px; margin-bottom: 3px; }
+    .step-body p { font-size: 12.5px; color: var(--text2); margin: 0; }
+
+    /* ── Phase hidden ── */
+    .phase-content { display: none; }
+    .phase-content.active { display: block; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <span class="topbar-logo">FlowDesk</span>
+  <span class="topbar-sep">/</span>
+  <span class="topbar-title">Protocolo de Implementación</span>
+  <input class="client-input" id="clientName" placeholder="Nombre del cliente..." />
+  <div class="progress-wrap">
+    <span class="progress-label">Progreso</span>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <span class="progress-pct" id="progressPct">0%</span>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- PHASE NAV -->
+  <nav class="phase-nav" id="phaseNav">
+    <!-- Generated by JS -->
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         FASE 0 — DIAGNÓSTICO
+    ════════════════════════════════════════════════════════════════ -->
+    <div class="phase-content active" id="phase-0">
+      <div class="phase-header">
+        <div class="phase-tag">Fase 0 · Diagnóstico</div>
+        <h1>Diagnóstico del negocio</h1>
+        <p>Antes de configurar cualquier cosa, hay que entender profundamente cómo opera la empresa, dónde están los cuellos de botella y qué áreas generan o pierden más valor.</p>
+        <div class="phase-meta">
+          <div class="phase-meta-item"><div class="phase-meta-dot" style="background:var(--amber)"></div>2–3 sesiones · 90 min c/u</div>
+          <div class="phase-meta-item"><div class="phase-meta-dot" style="background:var(--blue)"></div>Entregable: diagnóstico por área + mapa de gaps</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Objetivo</div>
+        <div class="objective"><p>Obtener un diagnóstico completo de las áreas de ventas, marketing, operaciones y administración. Identificar los gaps prioritarios y construir el mapa de impacto que guiará todo el diseño del ecosistema.</p></div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Herramientas en orden</div>
+        <div class="tools-grid">
+          <a class="tool-btn" href="./onboarding/onboarding-form.html" target="_blank"><span class="tool-icon">📋</span>Onboarding Form</a>
+          <a class="tool-btn" href="./diagnosticos/checklist-cliente.html" target="_blank"><span class="tool-icon">✅</span>Checklist cliente</a>
+          <a class="tool-btn" href="./diagnosticos/guia-entrevista-1.html" target="_blank"><span class="tool-icon">🎙️</span>Entrevista 1</a>
+          <a class="tool-btn" href="./diagnosticos/diagnostico-ventas.html" target="_blank"><span class="tool-icon">📊</span>Diagnóstico Ventas</a>
+          <a class="tool-btn" href="./diagnosticos/diagnostico-marketing.html" target="_blank"><span class="tool-icon">📣</span>Diagnóstico Marketing</a>
+          <a class="tool-btn" href="./diagnosticos/diagnostico-operaciones.html" target="_blank"><span class="tool-icon">⚙️</span>Diagnóstico Operaciones</a>
+          <a class="tool-btn" href="./diagnosticos/diagnostico-administracion.html" target="_blank"><span class="tool-icon">🏢</span>Diagnóstico Administración</a>
+          <a class="tool-btn" href="./diagnosticos/diagnostico-entrega-servicio.html" target="_blank"><span class="tool-icon">🎯</span>Diagnóstico Entrega de Valor</a>
+          <a class="tool-btn" href="./diagnosticos/guia-entrevista-2.html" target="_blank"><span class="tool-icon">🎙️</span>Entrevista 2 (validación)</a>
+          <a class="tool-btn" href="./diagnosticos/gaps-form.html" target="_blank"><span class="tool-icon">🔍</span>Gaps Form</a>
+          <a class="tool-btn" href="./diagnosticos/matriz-impacto.html" target="_blank"><span class="tool-icon">🎯</span>Matriz de impacto</a>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Script — apertura con el cliente</div>
+        <div class="script-block">
+          <div class="script-header" onclick="toggleScript(this)">
+            <h3>Cómo presentar el diagnóstico al cliente</h3>
+            <span class="script-toggle">▾</span>
+          </div>
+          <div class="script-body">
+            <div class="script-text">"Antes de diseñar cualquier cosa, necesitamos entender exactamente cómo opera tu empresa hoy. Vamos a hacer un diagnóstico completo de tus áreas principales — ventas, marketing, operaciones y administración.
+
+La idea no es encontrar lo que está mal, sino entender dónde hay oportunidades de automatizar, de conectar a tu equipo mejor, y de liberar tiempo a tus personas para que se enfoquen en lo que realmente mueve el negocio.
+
+Esto nos va a tomar 2 sesiones. En la primera te voy a hacer preguntas, en la segunda te presento el mapa de lo que encontramos y decidimos juntos por dónde empezar."</div>
+            <div class="script-note">💡 No menciones agentes IA todavía — el diagnóstico es neutral. Primero entender, luego solucionar.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Checklist de salida — avanza solo cuando todo esté marcado</div>
+        <div class="checklist" id="checklist-0"></div>
+      </div>
+
+      <div class="phase-actions">
+        <button class="btn-complete" id="complete-0" onclick="completePhase(0)">Marcar fase completa ✓</button>
+        <button class="btn-next" onclick="goToPhase(1)">Siguiente fase →</button>
+        <div class="phase-done-badge" id="done-0">✓ Fase completada</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         FASE 1 — DISEÑO DEL ECOSISTEMA
+    ════════════════════════════════════════════════════════════════ -->
+    <div class="phase-content" id="phase-1">
+      <div class="phase-header">
+        <div class="phase-tag">Fase 1 · Diseño</div>
+        <h1>Diseño del ecosistema digital</h1>
+        <p>Con el diagnóstico en mano, diseñamos el mapa completo: quiénes son los humanos, en qué nivel operan, y qué agentes IA los apoyan en cada área.</p>
+        <div class="phase-meta">
+          <div class="phase-meta-item"><div class="phase-meta-dot" style="background:var(--purple2)"></div>1 sesión · 60 min</div>
+          <div class="phase-meta-item"><div class="phase-meta-dot" style="background:var(--blue)"></div>Entregable: organigrama + blueprint de agentes</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Objetivo</div>
+        <div class="objective"><p>Definir la estructura completa del ecosistema: <strong>quién es Director, Gerente, Empleado u Operativo</strong>, qué departamentos existen, y qué agentes IA se necesitan en cada área según los gaps encontrados.</p></div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Los 4 niveles humanos — clasifica a cada persona</div>
+        <div class="steps">
+          <div class="step"><div class="step-n">👑</div><div class="step-body"><strong>Director / Owner</strong><p>Supervisa múltiples áreas. Usa FlowDesk en app + secretario ejecutivo en WhatsApp. Tiene visión de toda la org.</p></div></div>
+          <div class="step"><div class="step-n">👤</div><div class="step-body"><strong>Gerente</strong><p>Tiene equipo a cargo. Usa app + asistente de equipo en WhatsApp. Ve tareas propias Y estado de su gente.</p></div></div>
+          <div class="step"><div class="step-n">💼</div><div class="step-body"><strong>Empleado (escritorio)</strong><p>Trabajo de oficina. Usa app en computadora + asistente personal en WhatsApp. Sin equipo a cargo.</p></div></div>
+          <div class="step"><div class="step-n">🚛</div><div class="step-body"><strong>Operativo (campo)</strong><p>Sin acceso a la app. Solo WhatsApp: reporta su cédula diaria de 3 preguntas. El gerente la ve en FlowDesk.</p></div></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Herramientas</div>
+        <div class="tools-grid">
+          <a class="tool-btn" href="./organigrama.html" target="_blank"><span class="tool-icon">🗂️</span>Organigrama digital</a>
+          <a class="tool-btn" href="./diagnosticos/visualizador.html" target="_blank"><span class="tool-icon">👁️</span>Visualizador de procesos</a>
+          <a class="tool-btn" href="./manual-agentes.html" target="_blank"><span class="tool-icon">🤖</span>Manual de agentes</a>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Script — presentar el diseño al cliente</div>
+        <div class="script-block">
+          <div class="script-header" onclick="toggleScript(this)">
+            <h3>Cómo presentar el blueprint al cliente</h3>
+            <span class="script-toggle">▾</span>
+          </div>
+          <div class="script-body">
+            <div class="script-text">"Con base en lo que encontramos, diseñé el mapa de tu ecosistema digital. Te voy a mostrar dos cosas: primero la estructura de tu equipo humano — cómo los organizamos en FlowDesk para que cada quien tenga las herramientas correctas — y segundo, los agentes IA que vamos a crear para cada área.
+
+Los agentes no reemplazan a nadie. Son como asistentes especializados que hacen el trabajo repetitivo, responden preguntas frecuentes y le dan información a tu equipo para que tomen mejores decisiones.
+
+¿Empezamos revisando quién va en cada nivel?"</div>
+            <div class="script-note">💡 Usa el organigrama durante esta sesión para que el cliente vea visualmente la estructura que propones.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Checklist de salida</div>
+        <div class="checklist" id="checklist-1"></div>
+      </div>
+
+      <div class="phase-actions">
+        <button class="btn-complete" id="complete-1" onclick="completePhase(1)">Marcar fase completa ✓</button>
+        <button class="btn-next" onclick="goToPhase(2)">Siguiente fase →</button>
+        <div class="phase-done-badge" id="done-1">✓ Fase completada</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         FASE 2 — PROVISIONING TÉCNICO
+    ════════════════════════════════════════════════════════════════ -->
+    <div class="phase-content" id="phase-2">
+      <div class="phase-header">
+        <div class="phase-tag">Fase 2 · Técnico</div>
+        <h1>Provisioning técnico</h1>
+        <p>Activar la plataforma: crear el tenant, conectar WhatsApp y configurar el secretario del dueño. El cliente no toca nada en esta fase — el implementador lo hace todo.</p>
+        <div class="phase-meta">
+          <div class="phase-meta-item"><div class="phase-meta-dot" style="background:var(--cyan)"></div>30–45 min · Implementador solo</div>
+          <div class="phase-meta-item"><div class="phase-meta-dot" style="background:var(--blue)"></div>Entregable: plataforma activa y WhatsApp conectado</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Pasos en orden</div>
+        <div class="steps">
+          <div class="step"><div class="step-n">1</div><div class="step-body"><strong>Crear el tenant desde Airtable</strong><p>Cuando la propuesta se marca como Ganada en Airtable, el webhook aprovisiona automáticamente el tenant, el slot del owner y su Asistente Diario y CEO Agent.</p></div></div>
+          <div class="step"><div class="step-n">2</div><div class="step-body"><strong>Verificar el aprovisionamiento</strong><p>Entrar al panel de superadmin y confirmar que el tenant está activo, el owner tiene su slot y sus agentes personales fueron creados.</p></div></div>
+          <div class="step"><div class="step-n">3</div><div class="step-body"><strong>Crear instancia en Evolution API</strong><p>En el panel de Evolution, crear una nueva instancia con el nombre del cliente (ej: <code>empresa-abc</code>). Escanear el QR con el teléfono del número de WhatsApp Business de la empresa.</p></div></div>
+          <div class="step"><div class="step-n">4</div><div class="step-body"><strong>Conectar en FlowDesk</strong><p>En FlowDesk del cliente: Integraciones → WhatsApp → ingresar el <code>instance_name</code> y guardar. El sistema registra la integración y el webhook queda activo.</p></div></div>
+          <div class="step"><div class="step-n">5</div><div class="step-body"><strong>Configurar el secretario del dueño</strong><p>En Configuración → Secretario: ingresar el número de WhatsApp personal del dueño. Desde ese momento, cuando el dueño escriba al número de la empresa, el sistema lo reconoce y conecta con su secretario ejecutivo.</p></div></div>
+          <div class="step"><div class="step-n">6</div><div class="step-body"><strong>Prueba del dueño</strong><p>Pedir al dueño que mande un mensaje al número de la empresa desde su celular. Debe recibir respuesta de su secretario. Si funciona: ✅</p></div></div>
+        </div>
+      </div>
+
+      <div class="info tip"><strong>Número de WhatsApp Business:</strong> La empresa necesita un número de WhatsApp Business — no puede ser una cuenta personal. Si no tienen, ayúdales a crearlo antes de esta sesión.</div>
+
+      <div class="section">
+        <div class="section-label">Checklist de salida</div>
+        <div class="checklist" id="checklist-2"></div>
+      </div>
+
+      <div class="phase-actions">
+        <button class="btn-complete" id="complete-2" onclick="completePhase(2)">Marcar fase completa ✓</button>
+        <button class="btn-next" onclick="goToPhase(3)">Siguiente fase →</button>
+        <div class="phase-done-badge" id="done-2">✓ Fase completada</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         FASE 3 — EQUIPO HUMANO
+    ════════════════════════════════════════════════════════════════ -->
+    <div class="phase-content" id="phase-3">
+      <div class="phase-header">
+        <div class="phase-tag">Fase 3 · Equipo</div>
+        <h1>Configurar el equipo humano</h1>
+        <p>Dar de alta a cada persona en FlowDesk según su nivel. Al finalizar, cada quien recibe en WhatsApp las instrucciones exactas para usar su herramienta desde el día 1.</p>
+        <div class="phase-meta">
+          <div class="phase-meta-item"><div class="phase-meta-dot" style="background:var(--green)"></div>45–90 min según tamaño del equipo</div>
+          <div class="phase-meta-item"><div class="phase-meta-dot" style="background:var(--blue)"></div>Entregable: equipo activo + mensajes de bienvenida enviados</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Proceso por persona</div>
+        <div class="steps">
+          <div class="step"><div class="step-n">1</div><div class="step-body"><strong>Usar el wizard de alta</strong><p>En FlowDesk → Equipo → Añadir persona. El wizard pregunta nombre, email, tipo (desk/operativo), WhatsApp y nivel jerárquico. El sistema crea su asistente automáticamente.</p></div></div>
+          <div class="step"><div class="step-n">2</div><div class="step-body"><strong>Anotar la contraseña temporal</strong><p>Al finalizar el wizard aparece la contraseña temporal — solo se muestra una vez. Copiarla y guardarlo en tu doc del cliente.</p></div></div>
+          <div class="step"><div class="step-n">3</div><div class="step-body"><strong>Enviar mensaje de bienvenida por WhatsApp</strong><p>Inmediatamente después de crear cada usuario, enviarle el mensaje de bienvenida correspondiente a su nivel (ver plantillas abajo). Esto es lo que los activa.</p></div></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Plantillas de bienvenida por WhatsApp — copiar y enviar desde el número de la empresa</div>
+        <div class="wa-templates">
+
+          <div class="wa-card">
+            <div class="wa-card-header">
+              <span class="wa-role-badge director">Director / Owner</span>
+              <span style="font-size:11px;color:var(--text3);margin-left:auto;">Enviado desde el número de la empresa, al número personal del dueño</span>
+            </div>
+            <div class="wa-card-body">
+              <div class="wa-message" id="wa-director">Hola [NOMBRE] 👋
+
+Te doy la bienvenida a *FlowDesk*. Soy tu secretario ejecutivo personal.
+
+Puedo ayudarte con:
+📋 Ver el estado de tus equipos
+✅ Revisar aprobaciones pendientes
+📊 Resumen de indicadores
+🗓️ Tu agenda y prioridades del día
+
+Escríbeme cuando quieras. Estoy disponible las 24 horas.
+
+Para empezar, responde: *¿Qué quieres revisar primero hoy?*</div>
+              <button class="copy-btn" onclick="copyWA('wa-director', this)">📋 Copiar mensaje</button>
+            </div>
+          </div>
+
+          <div class="wa-card">
+            <div class="wa-card-header">
+              <span class="wa-role-badge gerente">Gerente</span>
+            </div>
+            <div class="wa-card-body">
+              <div class="wa-message" id="wa-gerente">Hola [NOMBRE] 👋
+
+Soy tu asistente personal en *FlowDesk*. Voy a ayudarte a coordinar tu día y a tu equipo.
+
+Puedo ayudarte con:
+📋 Tus tareas y entregas pendientes
+👥 Estado de tu equipo
+📊 Tus indicadores de área
+📝 Registrar tu standup diario
+
+También puedes acceder a FlowDesk desde tu computadora en: *app.flowdesk.io*
+Tu usuario: *[EMAIL]* · Contraseña temporal: *[PASSWORD]*
+
+Escríbeme cuando quieras empezar 🚀</div>
+              <button class="copy-btn" onclick="copyWA('wa-gerente', this)">📋 Copiar mensaje</button>
+            </div>
+          </div>
+
+          <div class="wa-card">
+            <div class="wa-card-header">
+              <span class="wa-role-badge empleado">Empleado</span>
+            </div>
+            <div class="wa-card-body">
+              <div class="wa-message" id="wa-empleado">Hola [NOMBRE] 👋
+
+Soy tu asistente personal en *FlowDesk*. Estoy aquí para ayudarte a organizar tu trabajo.
+
+Puedes escribirme aquí por WhatsApp cuando estés en movimiento, o entrar a la app desde tu computadora.
+
+Lo que puedo hacer por ti:
+✅ Recordarte tus tareas pendientes
+🎯 Decirte cómo vas con tus objetivos
+📝 Ayudarte a registrar tu reporte del día
+
+Para entrar a la app:
+🌐 *app.flowdesk.io*
+👤 *[EMAIL]*
+🔑 *[PASSWORD]* (cámbiala en tu primer acceso)
+
+¿Qué tienes pendiente hoy?</div>
+              <button class="copy-btn" onclick="copyWA('wa-empleado', this)">📋 Copiar mensaje</button>
+            </div>
+          </div>
+
+          <div class="wa-card">
+            <div class="wa-card-header">
+              <span class="wa-role-badge operativo">Operativo</span>
+              <span style="font-size:11px;color:var(--text3);margin-left:auto;">No tienen acceso a la app — solo WhatsApp</span>
+            </div>
+            <div class="wa-card-body">
+              <div class="wa-message" id="wa-operativo">Hola [NOMBRE] 👋
+
+A partir de hoy vas a reportar tus actividades diarias por aquí.
+
+Es muy sencillo: al terminar tu turno, escribe la palabra *reporte* y yo te voy a hacer 3 preguntas cortas sobre tu día.
+
+Solo necesitas responder esas 3 preguntas y listo — tu gerente puede ver tu reporte automáticamente.
+
+Pruébalo ahora: escribe *reporte* 👇</div>
+              <button class="copy-btn" onclick="copyWA('wa-operativo', this)">📋 Copiar mensaje</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="info warning"><strong>Importante:</strong> Envía el mensaje de bienvenida inmediatamente después de crear cada usuario, mientras estás en sesión con el cliente. Que el empleado lo reciba y lo lea en ese momento — así el cliente ve el sistema funcionando en vivo.</div>
+
+      <div class="section">
+        <div class="section-label">Checklist de salida</div>
+        <div class="checklist" id="checklist-3"></div>
+      </div>
+
+      <div class="phase-actions">
+        <button class="btn-complete" id="complete-3" onclick="completePhase(3)">Marcar fase completa ✓</button>
+        <button class="btn-next" onclick="goToPhase(4)">Siguiente fase →</button>
+        <div class="phase-done-badge" id="done-3">✓ Fase completada</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         FASE 4 — AGENTES IA
+    ════════════════════════════════════════════════════════════════ -->
+    <div class="phase-content" id="phase-4">
+      <div class="phase-header">
+        <div class="phase-tag">Fase 4 · Agentes</div>
+        <h1>Crear y configurar los agentes IA</h1>
+        <p>Con el equipo humano activo, construimos los agentes de área. Cada agente tiene un rol específico, herramientas definidas y un system prompt calibrado para la empresa.</p>
+        <div class="phase-meta">
+          <div class="phase-meta-item"><div class="phase-meta-dot" style="background:var(--purple2)"></div>60–90 min</div>
+          <div class="phase-meta-item"><div class="phase-meta-dot" style="background:var(--blue)"></div>Entregable: agentes activos por área</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Metodología para crear cada agente</div>
+        <div class="steps">
+          <div class="step"><div class="step-n">1</div><div class="step-body"><strong>Elegir el área según los gaps prioritarios</strong><p>Usar la matriz de impacto de la Fase 0. Empezar por el área con mayor impacto y menor esfuerzo de implementación.</p></div></div>
+          <div class="step"><div class="step-n">2</div><div class="step-body"><strong>Responder el Blueprint de 5 preguntas</strong><p>¿Qué problema resuelve? ¿Quién lo usa? ¿Qué herramientas necesita? ¿Cuál es su tono? ¿Cómo se mide su éxito? Las respuestas construyen el system prompt.</p></div></div>
+          <div class="step"><div class="step-n">3</div><div class="step-body"><strong>Crear en FlowDesk → Agentes</strong><p>Nombre descriptivo, system prompt preciso, modelo según la tarea (gratuito si es posible, de pago si requiere razonamiento complejo).</p></div></div>
+          <div class="step"><div class="step-n">4</div><div class="step-body"><strong>Prueba en vivo con el cliente</strong><p>Hacer una prueba real durante la sesión. El cliente interactúa con el agente y da feedback inmediato para ajustar el prompt.</p></div></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Herramientas</div>
+        <div class="tools-grid">
+          <a class="tool-btn" href="./manual-agentes.html" target="_blank"><span class="tool-icon">🤖</span>Manual de agentes</a>
+          <a class="tool-btn" href="./agentes/agente-ventas.md" target="_blank"><span class="tool-icon">💰</span>Blueprint Ventas</a>
+          <a class="tool-btn" href="./agentes/agente-marketing.md" target="_blank"><span class="tool-icon">📣</span>Blueprint Marketing</a>
+          <a class="tool-btn" href="./agentes/agente-operaciones.md" target="_blank"><span class="tool-icon">⚙️</span>Blueprint Operaciones</a>
+          <a class="tool-btn" href="./agentes/agente-administracion.md" target="_blank"><span class="tool-icon">🏢</span>Blueprint Administración</a>
+          <a class="tool-btn" href="./agentes/agente-finanzas.md" target="_blank"><span class="tool-icon">💵</span>Blueprint Finanzas</a>
+          <a class="tool-btn" href="./agentes/agente-prospeccion.md" target="_blank"><span class="tool-icon">🎯</span>Blueprint Prospección</a>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Script — presentar los agentes al equipo</div>
+        <div class="script-block">
+          <div class="script-header" onclick="toggleScript(this)">
+            <h3>Cómo introducir los agentes al cliente y su equipo</h3>
+            <span class="script-toggle">▾</span>
+          </div>
+          <div class="script-body">
+            <div class="script-text">"Este agente va a ser el experto en [ÁREA] de tu empresa. No sabe todo desde el primer día — lo vamos a ir entrenando con tus procesos, tus productos y cómo quieres que hable con tu equipo.
+
+Lo importante es que no lo veas como un reemplazo. Es como contratar a alguien nuevo que trabaja 24/7, nunca se cansa y siempre da la misma calidad de respuesta.
+
+Vamos a hacer una prueba ahora mismo. [NOMBRE DEL GERENTE DEL ÁREA], hazle una pregunta sobre algo que normalmente te toma tiempo resolver."</div>
+            <div class="script-note">💡 La prueba en vivo es clave. Si el agente responde bien, el cliente se convierte en fan inmediatamente. Si hay algo que corregir, lo ven como algo natural del proceso.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Checklist de salida</div>
+        <div class="checklist" id="checklist-4"></div>
+      </div>
+
+      <div class="phase-actions">
+        <button class="btn-complete" id="complete-4" onclick="completePhase(4)">Marcar fase completa ✓</button>
+        <button class="btn-next" onclick="goToPhase(5)">Siguiente fase →</button>
+        <div class="phase-done-badge" id="done-4">✓ Fase completada</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         FASE 5 — VERIFICACIÓN
+    ════════════════════════════════════════════════════════════════ -->
+    <div class="phase-content" id="phase-5">
+      <div class="phase-header">
+        <div class="phase-tag">Fase 5 · Verificación</div>
+        <h1>Activación y prueba del sistema</h1>
+        <p>Antes de entregar el sistema, el implementador verifica que cada flujo funcione de extremo a extremo. Ningún flujo sin probar.</p>
+        <div class="phase-meta">
+          <div class="phase-meta-item"><div class="phase-meta-dot" style="background:var(--orange)"></div>30–45 min</div>
+          <div class="phase-meta-item"><div class="phase-meta-dot" style="background:var(--blue)"></div>Entregable: todos los flujos verificados</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Pruebas obligatorias</div>
+        <div class="steps">
+          <div class="step"><div class="step-n">🚛</div><div class="step-body"><strong>Flujo operativo</strong><p>Desde el celular del operativo, enviar "reporte" al número de la empresa. Verificar que recibe las 3 preguntas y que al completarlas aparece en FlowDesk.</p></div></div>
+          <div class="step"><div class="step-n">💼</div><div class="step-body"><strong>Flujo empleado</strong><p>Desde el celular del empleado, enviar un mensaje al número de la empresa. Verificar que el asistente responde con contexto correcto (sus tareas, sus KSFs).</p></div></div>
+          <div class="step"><div class="step-n">👤</div><div class="step-body"><strong>Flujo gerente</strong><p>Desde el celular del gerente, preguntar "¿Cómo va mi equipo hoy?". Verificar que el asistente responde con datos reales del equipo.</p></div></div>
+          <div class="step"><div class="step-n">👑</div><div class="step-body"><strong>Flujo dueño</strong><p>Desde el celular del dueño, enviar un mensaje al número de la empresa. Verificar que el secretario ejecutivo responde correctamente.</p></div></div>
+          <div class="step"><div class="step-n">🧑‍💼</div><div class="step-body"><strong>Flujo cliente externo</strong><p>Desde un número NO registrado, enviar un mensaje. Verificar que va a Chatwoot como cliente externo y NO activa ningún asistente interno.</p></div></div>
+          <div class="step"><div class="step-n">🤖</div><div class="step-body"><strong>Flujo agentes de área</strong><p>Cada agente creado en Fase 4: hacer una pregunta real del área. Verificar respuesta coherente y en el tono correcto.</p></div></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Checklist de salida</div>
+        <div class="checklist" id="checklist-5"></div>
+      </div>
+
+      <div class="phase-actions">
+        <button class="btn-complete" id="complete-5" onclick="completePhase(5)">Marcar fase completa ✓</button>
+        <button class="btn-next" onclick="goToPhase(6)">Siguiente fase →</button>
+        <div class="phase-done-badge" id="done-5">✓ Fase completada</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         FASE 6 — ENTREGA
+    ════════════════════════════════════════════════════════════════ -->
+    <div class="phase-content" id="phase-6">
+      <div class="phase-header">
+        <div class="phase-tag">Fase 6 · Entrega</div>
+        <h1>Entrega y primeros 30 días</h1>
+        <p>El sistema está funcionando. Ahora entregamos el control al cliente, activamos a Sensei como guardian del ecosistema y establecemos el ritmo de las primeras semanas.</p>
+        <div class="phase-meta">
+          <div class="phase-meta-item"><div class="phase-meta-dot" style="background:var(--green)"></div>60 min con el cliente</div>
+          <div class="phase-meta-item"><div class="phase-meta-dot" style="background:var(--blue)"></div>Entregable: cliente autónomo + Sensei activo</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">La entrega al dueño</div>
+        <div class="script-block">
+          <div class="script-header" onclick="toggleScript(this)">
+            <h3>Script de entrega — sesión final con el cliente</h3>
+            <span class="script-toggle">▾</span>
+          </div>
+          <div class="script-body">
+            <div class="script-text">"Ya tienes tu ecosistema digital funcionando. Te voy a explicar exactamente qué está activo y cómo mantenerlo:
+
+Tu equipo ya está configurado. Cada persona sabe cómo usar su herramienta — los operativos mandan su reporte diario por WhatsApp, los empleados tienen su asistente personal, y tus gerentes pueden ver el estado de su gente en tiempo real.
+
+Los agentes de área ya están creados. Van a mejorar solos con el uso — Sensei los audita cada semana y propone mejoras.
+
+Lo que necesito de ti para los próximos 30 días:
+1. Que cada operativo mande su reporte diario — si no lo hacen, dímelo y ajustamos.
+2. Que los gerentes revisen el estado de su equipo al menos 2 veces por semana en la app.
+3. Que me avises si algún agente responde algo incorrecto — eso es feedback valioso para mejorarlo.
+
+En 30 días hacemos una revisión. Vemos qué está funcionando bien y qué ajustamos."</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Plantilla WhatsApp — resumen de entrega para el dueño</div>
+        <div class="wa-templates">
+          <div class="wa-card">
+            <div class="wa-card-header">
+              <span class="wa-role-badge director">Mensaje de cierre al dueño</span>
+            </div>
+            <div class="wa-card-body">
+              <div class="wa-message" id="wa-cierre">✅ *Tu ecosistema FlowDesk está activo*
+
+Aquí un resumen de lo que quedó configurado:
+
+👥 *Equipo:* [N] personas activas en la plataforma
+🤖 *Agentes:* [N] agentes de área funcionando
+📱 *WhatsApp:* Conectado al número [NÚMERO]
+
+*Accesos de tu equipo:*
+🌐 app.flowdesk.io
+📲 WhatsApp: [NÚMERO DE LA EMPRESA]
+
+*Tu número registrado como secretario:* [NÚMERO DEL DUEÑO]
+
+Para los próximos 30 días vamos a estar en contacto. Cualquier ajuste que necesites, escríbeme aquí o a tu secretario en la app.
+
+¡Bienvenido al equipo FlowDesk! 🚀</div>
+              <button class="copy-btn" onclick="copyWA('wa-cierre', this)">📋 Copiar mensaje</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Activar Sensei como guardian</div>
+        <div class="info tip"><strong>Sensei</strong> (claude-opus-4-8) audita todos los agentes de la flota semanalmente, propone mejoras y alerta cuando un agente tiene problemas. Asegúrate de que el tenant del cliente esté en el radar de Sensei antes de cerrar esta fase.</div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Checklist de salida</div>
+        <div class="checklist" id="checklist-6"></div>
+      </div>
+
+      <div class="phase-actions">
+        <button class="btn-complete" id="complete-6" onclick="completePhase(6)">Marcar implementación completa ✓</button>
+        <div class="phase-done-badge" id="done-6">🎉 ¡Implementación completa!</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── Data ────────────────────────────────────────────────────────────────────
+
+const PHASES = [
+  { id: 0, label: 'Diagnóstico del negocio',   dot: '0' },
+  { id: 1, label: 'Diseño del ecosistema',      dot: '1' },
+  { id: 2, label: 'Provisioning técnico',       dot: '2' },
+  { id: 3, label: 'Configurar equipo humano',   dot: '3' },
+  { id: 4, label: 'Crear agentes IA',           dot: '4' },
+  { id: 5, label: 'Verificación del sistema',   dot: '5' },
+  { id: 6, label: 'Entrega y primeros 30 días', dot: '6' },
+];
+
+const CHECKLISTS = {
+  0: [
+    { id: 'c0_1', text: 'Onboarding form completado con datos de la empresa', sub: 'Nombre, industria, tamaño, departamentos' },
+    { id: 'c0_2', text: 'Entrevista 1 realizada y grabada/documentada' },
+    { id: 'c0_3', text: 'Diagnósticos por área completados', sub: 'Ventas, Marketing, Operaciones, Administración, Entrega' },
+    { id: 'c0_4', text: 'Entrevista 2 de validación realizada' },
+    { id: 'c0_5', text: 'Gaps Form completado con todos los hallazgos' },
+    { id: 'c0_6', text: 'Matriz de impacto construida y prioridades definidas' },
+    { id: 'c0_7', text: 'Cliente validó el diagnóstico y está de acuerdo con las prioridades' },
+  ],
+  1: [
+    { id: 'c1_1', text: 'Personas clasificadas por nivel', sub: 'Quién es Director, Gerente, Empleado y Operativo' },
+    { id: 'c1_2', text: 'Organigrama digital creado con toda la estructura' },
+    { id: 'c1_3', text: 'Agentes de área definidos según gaps prioritarios', sub: 'Al menos los 2-3 de mayor impacto' },
+    { id: 'c1_4', text: 'Cliente aprobó el blueprint del ecosistema' },
+    { id: 'c1_5', text: 'Número de WhatsApp Business de la empresa confirmado' },
+  ],
+  2: [
+    { id: 'c2_1', text: 'Tenant creado y activo en FlowDesk' },
+    { id: 'c2_2', text: 'Owner slot tiene CEO Agent y Asistente Diario' },
+    { id: 'c2_3', text: 'Instancia creada en Evolution API y WhatsApp conectado' },
+    { id: 'c2_4', text: 'Integración registrada en FlowDesk (instance_name correcto)' },
+    { id: 'c2_5', text: 'Secretario del dueño configurado con su número personal' },
+    { id: 'c2_6', text: 'Prueba del dueño exitosa — recibió respuesta de su secretario' },
+  ],
+  3: [
+    { id: 'c3_1', text: 'Todos los usuarios creados con el wizard' },
+    { id: 'c3_2', text: 'Contraseñas temporales guardadas y entregadas' },
+    { id: 'c3_3', text: 'Mensaje de bienvenida enviado a cada Director/Gerente' },
+    { id: 'c3_4', text: 'Mensaje de bienvenida enviado a cada Empleado' },
+    { id: 'c3_5', text: 'Mensaje de bienvenida enviado a cada Operativo' },
+    { id: 'c3_6', text: 'Al menos un empleado confirmó recibir su mensaje y probó el asistente' },
+    { id: 'c3_7', text: 'Al menos un operativo envió "reporte" y completó la cédula de prueba' },
+  ],
+  4: [
+    { id: 'c4_1', text: 'Agentes de área prioritarios creados en FlowDesk' },
+    { id: 'c4_2', text: 'System prompt de cada agente revisado con el gerente del área' },
+    { id: 'c4_3', text: 'Prueba en vivo con cada agente — cliente interactuó y dio feedback' },
+    { id: 'c4_4', text: 'Ajustes post-prueba aplicados a los prompts' },
+    { id: 'c4_5', text: 'Gerentes saben cómo acceder y usar los agentes de su área' },
+  ],
+  5: [
+    { id: 'c5_1', text: 'Flujo operativo verificado de extremo a extremo' },
+    { id: 'c5_2', text: 'Flujo empleado verificado — asistente responde con contexto correcto' },
+    { id: 'c5_3', text: 'Flujo gerente verificado — ve estado de su equipo' },
+    { id: 'c5_4', text: 'Flujo dueño verificado — secretario responde correctamente' },
+    { id: 'c5_5', text: 'Flujo cliente externo verificado — va a Chatwoot, NO activa asistentes' },
+    { id: 'c5_6', text: 'Todos los agentes de área probados con preguntas reales' },
+  ],
+  6: [
+    { id: 'c6_1', text: 'Sesión de entrega realizada con el dueño' },
+    { id: 'c6_2', text: 'Mensaje de cierre enviado al dueño por WhatsApp' },
+    { id: 'c6_3', text: 'Dueño sabe cómo agregar nuevos empleados' },
+    { id: 'c6_4', text: 'Gerentes saben cómo revisar reportes de su equipo' },
+    { id: 'c6_5', text: 'Tenant registrado en el radar de Sensei' },
+    { id: 'c6_6', text: 'Fecha de revisión de 30 días agendada' },
+  ],
+};
+
+// ── State ────────────────────────────────────────────────────────────────────
+
+let currentPhase = 0;
+let clientKey = '';
+
+function getState() {
+  const raw = localStorage.getItem('fd_impl_' + clientKey);
+  return raw ? JSON.parse(raw) : { checks: {}, done: {} };
+}
+
+function saveState(state) {
+  localStorage.setItem('fd_impl_' + clientKey, JSON.stringify(state));
+}
+
+function getClientKey() {
+  const name = document.getElementById('clientName').value.trim();
+  return name ? name.toLowerCase().replace(/\s+/g, '_') : 'default';
+}
+
+// ── Build UI ─────────────────────────────────────────────────────────────────
+
+function buildNav() {
+  const nav = document.getElementById('phaseNav');
+  nav.innerHTML = PHASES.map(p => `
+    <div class="phase-nav-item${p.id === 0 ? ' active' : ''}" id="nav-${p.id}" onclick="goToPhase(${p.id})">
+      <div class="phase-dot" id="dot-${p.id}">${p.dot}</div>
+      <div class="phase-nav-label">${p.label}</div>
+    </div>
+  `).join('');
+}
+
+function buildChecklists() {
+  Object.entries(CHECKLISTS).forEach(([phaseId, items]) => {
+    const el = document.getElementById('checklist-' + phaseId);
+    if (!el) return;
+    el.innerHTML = items.map(item => `
+      <div class="check-item" id="item-${item.id}" onclick="toggleCheck('${item.id}', ${phaseId})">
+        <div class="check-box"><span class="check-tick">✓</span></div>
+        <div>
+          <div class="check-text">${item.text}</div>
+          ${item.sub ? `<div class="check-sub">${item.sub}</div>` : ''}
+        </div>
+      </div>
+    `).join('');
+  });
+}
+
+// ── Navigation ───────────────────────────────────────────────────────────────
+
+function goToPhase(id) {
+  document.querySelectorAll('.phase-content').forEach(el => el.classList.remove('active'));
+  document.getElementById('phase-' + id).classList.add('active');
+  document.querySelectorAll('.phase-nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('nav-' + id).classList.add('active');
+  currentPhase = id;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Checks ───────────────────────────────────────────────────────────────────
+
+function toggleCheck(checkId, phaseId) {
+  clientKey = getClientKey();
+  const state = getState();
+  state.checks[checkId] = !state.checks[checkId];
+  saveState(state);
+
+  const el = document.getElementById('item-' + checkId);
+  el.classList.toggle('checked', state.checks[checkId]);
+  updatePhaseCompletion(phaseId, state);
+  updateProgress(state);
+}
+
+function updatePhaseCompletion(phaseId, state) {
+  const items = CHECKLISTS[phaseId];
+  if (!items) return;
+  const allDone = items.every(item => state.checks[item.id]);
+  const btn = document.getElementById('complete-' + phaseId);
+  if (btn) btn.disabled = !allDone && !state.done[phaseId];
+}
+
+function completePhase(phaseId) {
+  clientKey = getClientKey();
+  const state = getState();
+  state.done[phaseId] = true;
+  saveState(state);
+
+  document.getElementById('nav-' + phaseId).classList.add('done');
+  document.getElementById('dot-' + phaseId).textContent = '✓';
+  document.getElementById('done-' + phaseId).classList.add('show');
+
+  updateProgress(state);
+
+  if (phaseId < 6) setTimeout(() => goToPhase(phaseId + 1), 600);
+}
+
+function updateProgress(state) {
+  const total = Object.values(CHECKLISTS).flat().length;
+  const done  = Object.values(state.checks).filter(Boolean).length;
+  const pct   = Math.round((done / total) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent  = pct + '%';
+}
+
+// ── Scripts ──────────────────────────────────────────────────────────────────
+
+function toggleScript(header) {
+  header.classList.toggle('open');
+  const body = header.nextElementSibling;
+  body.classList.toggle('open');
+}
+
+// ── WA Copy ──────────────────────────────────────────────────────────────────
+
+function copyWA(elementId, btn) {
+  const text = document.getElementById(elementId).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Copiado';
+    setTimeout(() => { btn.innerHTML = '📋 Copiar mensaje'; }, 2000);
+  });
+}
+
+// ── Client name ──────────────────────────────────────────────────────────────
+
+function loadClientState() {
+  clientKey = getClientKey();
+  const state = getState();
+
+  // Restore checks
+  Object.entries(state.checks).forEach(([checkId, checked]) => {
+    const el = document.getElementById('item-' + checkId);
+    if (el) el.classList.toggle('checked', checked);
+  });
+
+  // Restore done phases
+  Object.entries(state.done).forEach(([phaseId, done]) => {
+    if (done) {
+      const navEl = document.getElementById('nav-' + phaseId);
+      const dotEl = document.getElementById('dot-' + phaseId);
+      const doneEl = document.getElementById('done-' + phaseId);
+      if (navEl) navEl.classList.add('done');
+      if (dotEl) dotEl.textContent = '✓';
+      if (doneEl) doneEl.classList.add('show');
+    }
+  });
+
+  // Update all phase completions
+  Object.keys(CHECKLISTS).forEach(phaseId => updatePhaseCompletion(Number(phaseId), state));
+  updateProgress(state);
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+
+buildNav();
+buildChecklists();
+
+// Initial button states (all disabled until checklist done)
+Object.keys(CHECKLISTS).forEach(id => {
+  const btn = document.getElementById('complete-' + id);
+  if (btn) btn.disabled = true;
+});
+
+// Client name
+document.getElementById('clientName').addEventListener('input', () => {
+  loadClientState();
+});
+
+// Load last client
+const lastClient = localStorage.getItem('fd_last_client') || '';
+document.getElementById('clientName').value = lastClient;
+clientKey = getClientKey();
+loadClientState();
+
+document.getElementById('clientName').addEventListener('change', () => {
+  localStorage.setItem('fd_last_client', document.getElementById('clientName').value);
+});
+</script>
+</body>
+</html>

@@ -214,7 +214,7 @@ export default function TeamPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--line)' }}>
-                {['Nombre', 'Tipo', 'Nivel', 'Canal', 'Departamento', 'Estado'].map(h => (
+                {['Nombre', 'Tipo', 'Nivel', 'Canal', 'Workspace', 'Estado'].map(h => (
                   <th key={h} style={{ textAlign: 'left', fontSize: 10, fontWeight: 500, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '10px 16px', fontFamily: "'JetBrains Mono', monospace" }}>{h}</th>
                 ))}
               </tr>
@@ -355,13 +355,13 @@ export default function TeamPage() {
                         </div>
                       ))}
                       <div>
-                        <label style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 5 }}>Departamento (opcional)</label>
+                        <label style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 5 }}>Workspace (opcional)</label>
                         <select
                           value={wizard.department_id}
                           onChange={e => set({ department_id: e.target.value })}
                           style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: '9px 12px', fontSize: 13, color: 'var(--text)', outline: 'none', fontFamily: "'Inter Tight', sans-serif" }}
                         >
-                          <option value="">Sin departamento</option>
+                          <option value="">Sin workspace</option>
                           {depts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                         </select>
                       </div>

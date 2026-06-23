@@ -65,7 +65,7 @@ const PROVIDER_LABELS: Record<string, string> = {
 
 const SCOPE_LABELS: Record<string, string> = {
   tenant: 'Empresa',
-  department: 'Departamento',
+  department: 'Workspace',
   personal: 'Personal',
 };
 
@@ -356,7 +356,7 @@ export default function RecoveryPage() {
 
                 <ul className="space-y-1.5 mb-4">
                   {[
-                    'Usuarios, departamentos y horarios',
+                    'Usuarios, workspaces y horarios',
                     'Tareas, metas y contactos',
                     'Reuniones + transcripciones completas',
                     'Conversaciones con agentes IA',

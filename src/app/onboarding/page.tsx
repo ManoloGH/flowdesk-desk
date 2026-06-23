@@ -36,7 +36,7 @@ const DOC_TYPES: { type: DocType; icon: any; label: string; desc: string; color:
     type: 'org_chart',
     icon: Users,
     label: 'Organigrama',
-    desc: 'Departamentos y equipo',
+    desc: 'Workspaces y equipo',
     color: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
   },
   {

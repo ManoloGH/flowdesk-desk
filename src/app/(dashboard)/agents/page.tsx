@@ -23,7 +23,7 @@ const ROLE_LABEL: Record<string, string> = {
   ceo:               'CEO Digital',
   focus_agent:       'Agente de Enfoque',
   daily_assistant:   'Asistente Diario',
-  department_agent:  'Agente de Área',
+  department_agent:  'Agente de Workspace',
   company_agent:     'Agente Empresarial',
 };
 
@@ -31,7 +31,7 @@ const ROLE_DESC: Record<string, string> = {
   ceo:             'Socio estratégico con acceso completo: tareas, objetivos, calendario, email, cultura y más.',
   focus_agent:     'Prioriza tus tareas y gestiona tu tiempo con enfoque.',
   daily_assistant: 'Organiza tu jornada y coordina tu agenda del día.',
-  department_agent:'Apoya al equipo con información y procesos del área.',
+  department_agent:'Apoya al equipo con información y procesos del workspace.',
   company_agent:   'Visibilidad completa de la empresa para decisiones informadas.',
 };
 

@@ -20,7 +20,7 @@ interface HumanRow { name: string; email: string; role: string; department_name:
 
 const STEPS = [
   { key: 'company_created',   label: 'Empresa creada',    icon: Building2 },
-  { key: 'departments_set',   label: 'Departamentos',     icon: Building2 },
+  { key: 'departments_set',   label: 'Workspaces',        icon: Building2 },
   { key: 'team_configured',   label: 'Equipo',            icon: Users },
   { key: 'schedule_set',      label: 'Horario',           icon: Clock },
   { key: 'rooms_set',         label: 'Campus',            icon: Map },
@@ -50,9 +50,9 @@ function StepDepartments({ onDone }: { onDone: () => void }) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-white mb-1">Configurar departamentos</h2>
+        <h2 className="text-xl font-bold text-white mb-1">Configurar workspaces</h2>
         <p className="text-sm text-gray-400">
-          FlowDesk usa una arquitectura universal probada. Estos son los departamentos que se crearán:
+          FlowDesk usa una arquitectura universal probada. Estos son los workspaces que se crearán:
         </p>
       </div>
 
@@ -75,7 +75,7 @@ function StepDepartments({ onDone }: { onDone: () => void }) {
       </div>
 
       <p className="text-xs text-gray-600">
-        Podrás renombrar, colorear o añadir departamentos personalizados desde la sección Equipo.
+        Podrás renombrar, colorear o añadir workspaces personalizados desde la sección Equipo.
       </p>
 
       {error && <p className="text-sm text-red-400">{error}</p>}
@@ -86,7 +86,7 @@ function StepDepartments({ onDone }: { onDone: () => void }) {
         className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
       >
         {loading ? <Loader2 size={16} className="animate-spin" /> : <ChevronRight size={16} />}
-        {loading ? 'Configurando...' : 'Crear departamentos'}
+        {loading ? 'Configurando...' : 'Crear workspaces'}
       </button>
     </div>
   );
@@ -160,7 +160,7 @@ function StepTeam({ onDone }: { onDone: () => void }) {
               onChange={e => updateRow(i, 'department_name', e.target.value)}
               className="col-span-3 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
             >
-              <option value="">Sin departamento</option>
+              <option value="">Sin workspace</option>
               {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
             <button
@@ -345,7 +345,7 @@ function StepRooms({ onDone }: { onDone: () => void }) {
     { name: 'Sala de Juntas', color: '#7F1D1D', note: 'Siempre presente' },
     ...(useOpenSpace
       ? [{ name: 'Espacio de Trabajo', color: '#1E1E2E', note: 'Todos en un espacio abierto' }]
-      : deptRooms.map(d => ({ name: d.name, color: d.color ?? '#1E293B', note: 'Sala de departamento' }))),
+      : deptRooms.map(d => ({ name: d.name, color: d.color ?? '#1E293B', note: 'Sala de workspace' }))),
   ];
 
   const handleSubmit = async () => {
@@ -362,7 +362,7 @@ function StepRooms({ onDone }: { onDone: () => void }) {
       <div>
         <h2 className="text-xl font-bold text-white mb-1">Campus virtual</h2>
         <p className="text-sm text-gray-400">
-          Se crearán salas basadas en los departamentos que configuraste. Puedes moverlas y personalizarlas después.
+          Se crearán salas basadas en los workspaces que configuraste. Puedes moverlas y personalizarlas después.
         </p>
       </div>
 
@@ -433,7 +433,7 @@ function StepLaunch({ onDone }: { onDone: () => void }) {
             {[
               { label: 'Usuarios', value: result.stats.humans },
               { label: 'Agentes IA', value: result.stats.agents },
-              { label: 'Departamentos', value: result.stats.departments },
+              { label: 'Workspaces', value: result.stats.departments },
               { label: 'Salas', value: result.stats.rooms },
             ].map(s => (
               <div key={s.label} className="bg-gray-800 rounded-xl p-4 text-center border border-gray-700">
@@ -465,7 +465,7 @@ function StepLaunch({ onDone }: { onDone: () => void }) {
       <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-xl p-5 space-y-3">
         {[
           '✅ Empresa y owner configurados',
-          '✅ Departamentos creados',
+          '✅ Workspaces creados',
           '✅ Equipo añadido',
           '✅ Horario laboral definido',
           '✅ Campus virtual listo',

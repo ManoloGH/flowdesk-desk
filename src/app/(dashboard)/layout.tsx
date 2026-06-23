@@ -19,7 +19,7 @@ const DEFAULT_BRAND: BrandConfig = {
 import {
   LayoutDashboard, Users, Map, Plug, BookUser, LogOut, ShieldCheck,
   Building2, CreditCard, ShieldAlert, Settings, Bell, X, CheckCheck,
-  ExternalLink, ChevronLeft, Target, Cctv, Zap, Sparkles, ChevronDown, Brain, Globe, GraduationCap, BotMessageSquare,
+  ExternalLink, ChevronLeft, Target, Cctv, Zap, Sparkles, ChevronDown, Brain, Globe, GraduationCap, BotMessageSquare, ListChecks,
 } from 'lucide-react';
 
 /* ── Navigation ── */
@@ -41,10 +41,11 @@ const BASE_NAV = [
 ];
 const NETWORK_NAV_EXTRA = [{ href: '/branches', label: 'Sucursales', icon: Building2 }];
 const ADMIN_NAV = [
-  { href: '/admin',          label: 'Overview',      icon: ShieldCheck },
-  { href: '/admin/clients',  label: 'Clientes',      icon: Building2 },
-  { href: '/admin/billing',  label: 'Facturación',   icon: CreditCard },
-  { href: '/admin/recovery', label: 'Recuperación',  icon: ShieldAlert },
+  { href: '/admin',              label: 'Overview',         icon: ShieldCheck },
+  { href: '/admin/clients',      label: 'Clientes',         icon: Building2 },
+  { href: '/admin/billing',      label: 'Facturación',      icon: CreditCard },
+  { href: '/admin/recovery',     label: 'Recuperación',     icon: ShieldAlert },
+  { href: '/implementaciones',   label: 'Implementaciones', icon: ListChecks },
 ];
 
 interface Notification {
