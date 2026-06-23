@@ -8,6 +8,7 @@ interface TenantRow {
   id: string; name: string; slug: string; plan: string; status: string;
   account_type: string; created_at: string; mrr: number;
   web_builder_enabled: boolean;
+  communications_enabled: boolean;
   owner: { name: string; email: string } | null;
   secretary_config: { enabled: boolean } | null;
   billing_config: { enabled: boolean; rfc: string | null } | null;
@@ -58,6 +59,7 @@ export default function ClientsPage() {
   const [tenants, setTenants] = useState<TenantRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [togglingWb, setTogglingWb] = useState<string | null>(null);
+  const [togglingComms, setTogglingComms] = useState<string | null>(null);
 
   const toggleWebBuilder = async (e: React.MouseEvent, t: TenantRow) => {
     e.stopPropagation();
@@ -68,6 +70,17 @@ export default function ClientsPage() {
     } catch {}
     setTogglingWb(null);
   };
+
+  const toggleCommunications = async (e: React.MouseEvent, t: TenantRow) => {
+    e.stopPropagation();
+    setTogglingComms(t.id);
+    try {
+      await api.patch(`/platform/network/${t.id}/communications`, { enabled: !t.communications_enabled });
+      setTenants(prev => prev.map(r => r.id === t.id ? { ...r, communications_enabled: !r.communications_enabled } : r));
+    } catch {}
+    setTogglingComms(null);
+  };
+
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -174,6 +187,17 @@ export default function ClientsPage() {
                           : 'bg-white/5 text-gray-600 border-white/5 hover:bg-white/10 hover:text-gray-400'
                       } ${togglingWb === t.id ? 'opacity-50 cursor-wait' : 'cursor-pointer'}`}>
                       {togglingWb === t.id ? '…' : '🌐 Web'}
+                    </button>
+                    <button
+                      onClick={e => toggleCommunications(e, t)}
+                      disabled={togglingComms === t.id}
+                      title={t.communications_enabled ? 'Desactivar Central de Comunicaciones' : 'Activar Central de Comunicaciones'}
+                      className={`text-[9px] px-1.5 py-0.5 rounded border transition-colors ${
+                        t.communications_enabled
+                          ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/30'
+                          : 'bg-white/5 text-gray-600 border-white/5 hover:bg-white/10 hover:text-gray-400'
+                      } ${togglingComms === t.id ? 'opacity-50 cursor-wait' : 'cursor-pointer'}`}>
+                      {togglingComms === t.id ? '…' : '📡 Comms'}
                     </button>
                   </div>
 
