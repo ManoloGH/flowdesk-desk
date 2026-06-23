@@ -145,7 +145,7 @@ function NavItem({
 
 /* ════════════════════════════════════════════════════════════════ */
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading, loadUser, logout, branchContext, exitBranch } = useAuth();
+  const { user, loading, loadUser, logout, branchContext, exitBranch, impersonating, exitCompany } = useAuth();
   const router   = useRouter();
   const pathname = usePathname();
 
@@ -270,6 +270,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   /* ── Render ── */
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+
+      {/* ════ IMPERSONATION BANNER ════ */}
+      {impersonating && (
+        <div style={{
+          flexShrink: 0, height: 36,
+          background: 'linear-gradient(90deg, #f59e0b, #d97706)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+          fontFamily: "'Inter Tight', sans-serif", fontSize: 12, fontWeight: 600,
+          color: '#1c1000', zIndex: 100,
+        }}>
+          <span>⚡ Estás dentro de: <strong>{impersonating}</strong></span>
+          <button
+            onClick={() => { exitCompany(); router.push('/admin/clients'); }}
+            style={{
+              background: 'rgba(0,0,0,0.15)', border: 'none', borderRadius: 6,
+              padding: '3px 10px', cursor: 'pointer', fontWeight: 700,
+              fontSize: 11, color: '#1c1000',
+            }}
+          >
+            Salir
+          </button>
+        </div>
+      )}
 
       {/* ════ TOP BAR ════ */}
       <header style={{

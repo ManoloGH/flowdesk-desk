@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { useAuth } from '@/store/auth';
 import {
   ArrowLeft, Building2, Users, Brain, MessageSquare, CheckCircle, XCircle,
   Phone, DollarSign, Bot, User, Loader2, RefreshCw, Activity,
@@ -95,6 +96,7 @@ type Tab = 'dashboard' | 'equipo' | 'config' | 'migracion';
 export default function TenantDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { enterCompany } = useAuth();
   const [tenant, setTenant] = useState<TenantDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -155,6 +157,20 @@ export default function TenantDetailPage() {
   function toggleCheck(cid: string) {
     setExpandedChecks(prev => { const n = new Set(prev); n.has(cid) ? n.delete(cid) : n.add(cid); return n; });
   }
+  async function enterAsCompany() {
+    setUpdating(true);
+    try {
+      const data = await api.post<{ access_token: string; company_name: string; user: any }>(
+        `/platform/network/${id}/impersonate`, {}
+      );
+      enterCompany(data.company_name, data.access_token, data.user);
+      router.push('/dashboard');
+    } catch (e: any) {
+      alert(`Error: ${e?.message ?? 'No se pudo entrar a la empresa'}`);
+    }
+    setUpdating(false);
+  }
+
   function downloadFile(content: string, filename: string) {
     const blob = new Blob([content], { type: 'text/plain' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click();
@@ -192,6 +208,10 @@ export default function TenantDetailPage() {
         <div className="flex items-center gap-2 flex-shrink-0">
           <button onClick={load} disabled={updating} className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-500 transition-colors">
             <RefreshCw className={`w-3.5 h-3.5 ${updating ? 'animate-spin' : ''}`} />
+          </button>
+          <button onClick={enterAsCompany} disabled={updating}
+            className="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-xs font-medium border border-indigo-500/30 transition-colors flex items-center gap-1.5">
+            <Globe className="w-3 h-3" /> Entrar como empresa
           </button>
           {tenant.status === 'active'
             ? <button onClick={() => patch('status', { status: 'suspended' })} disabled={updating} className="px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-medium border border-red-500/20 transition-colors">Suspender</button>

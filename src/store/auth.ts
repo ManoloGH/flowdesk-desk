@@ -21,17 +21,21 @@ interface AuthState {
   user: User | null;
   loading: boolean;
   branchContext: BranchContext | null;
+  impersonating: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   loadUser: () => void;
   enterBranch: (branchId: string, branchName: string, accessToken: string, refreshToken: string, branchUser: User) => void;
   exitBranch: () => void;
+  enterCompany: (companyName: string, accessToken: string, companyUser: User) => void;
+  exitCompany: () => void;
 }
 
 export const useAuth = create<AuthState>((set) => ({
   user: null,
   loading: true,
   branchContext: null,
+  impersonating: null,
 
   login: async (email, password) => {
     const data = await api.post('/auth/login', { email, password });
@@ -59,9 +63,10 @@ export const useAuth = create<AuthState>((set) => ({
       }
       const branchRaw = localStorage.getItem('fd_branch_context');
       const branchContext = branchRaw ? JSON.parse(branchRaw) : null;
-      set({ user, loading: false, branchContext });
+      const impersonating = localStorage.getItem('fd_impersonating');
+      set({ user, loading: false, branchContext, impersonating });
     } catch {
-      set({ user: null, loading: false, branchContext: null });
+      set({ user: null, loading: false, branchContext: null, impersonating: null });
     }
   },
 
@@ -97,5 +102,40 @@ export const useAuth = create<AuthState>((set) => ({
 
     const user = parentUser ? JSON.parse(parentUser) : null;
     set({ user, branchContext: null });
+  },
+
+  enterCompany: (companyName, accessToken, companyUser) => {
+    // Guardar tokens actuales como parent
+    const currentAccess = localStorage.getItem('fd_access');
+    const currentRefresh = localStorage.getItem('fd_refresh');
+    const currentUser = localStorage.getItem('fd_user');
+    if (currentAccess)  localStorage.setItem('fd_access_parent',  currentAccess);
+    if (currentRefresh) localStorage.setItem('fd_refresh_parent', currentRefresh);
+    if (currentUser)    localStorage.setItem('fd_user_parent',    currentUser);
+
+    // Activar tokens de la empresa
+    localStorage.setItem('fd_access',       accessToken);
+    localStorage.setItem('fd_user',         JSON.stringify(companyUser));
+    localStorage.setItem('fd_impersonating', companyName);
+
+    set({ user: companyUser, impersonating: companyName });
+  },
+
+  exitCompany: () => {
+    const parentAccess  = localStorage.getItem('fd_access_parent');
+    const parentRefresh = localStorage.getItem('fd_refresh_parent');
+    const parentUser    = localStorage.getItem('fd_user_parent');
+
+    localStorage.removeItem('fd_impersonating');
+    localStorage.removeItem('fd_access_parent');
+    localStorage.removeItem('fd_refresh_parent');
+    localStorage.removeItem('fd_user_parent');
+
+    if (parentAccess)  localStorage.setItem('fd_access',  parentAccess);
+    if (parentRefresh) localStorage.setItem('fd_refresh', parentRefresh);
+    if (parentUser)    localStorage.setItem('fd_user',    parentUser);
+
+    const user = parentUser ? JSON.parse(parentUser) : null;
+    set({ user, impersonating: null });
   },
 }));
