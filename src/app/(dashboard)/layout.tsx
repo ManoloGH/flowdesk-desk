@@ -36,7 +36,6 @@ const BASE_NAV = [
   { href: '/campus',       label: 'Campus',         icon: Map },
   { href: '/spaces',       label: 'Espacios',       icon: Cctv },
   { href: '/integrations', label: 'Integraciones',  icon: Plug },
-  { href: '/mi-web',       label: 'Mi Web',         icon: Globe },
   { href: '/settings',     label: 'Configuración',  icon: Settings },
 ];
 const NETWORK_NAV_EXTRA = [{ href: '/branches', label: 'Sucursales', icon: Building2 }];

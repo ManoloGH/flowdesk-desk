@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { Bot, Sparkles, ChevronRight, Zap, Plus } from 'lucide-react';
+import { Bot, Sparkles, ChevronRight, Zap, Globe } from 'lucide-react';
 import clsx from 'clsx';
 
 interface Agent {
@@ -169,6 +169,37 @@ export default function AgentsPage() {
             <p className="text-xs text-gray-600 mt-1">Pídele a Atlas que cree uno para ti desde el chat.</p>
           </div>
         )}
+
+        {/* ── Herramientas de IA ── */}
+        <div className="mt-10">
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4">Herramientas de IA</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+            {/* Web Builder */}
+            <button
+              onClick={() => router.push('/mi-web')}
+              className="group text-left bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-indigo-500/50 hover:bg-gray-800/60 transition-all"
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600/20 to-violet-600/20 border border-indigo-500/30 flex items-center justify-center group-hover:border-indigo-500/60 transition-colors">
+                  <Globe size={18} className="text-indigo-400" />
+                </div>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                  Web Builder
+                </span>
+              </div>
+              <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-wider mb-0.5">Herramienta</p>
+              <p className="text-sm font-semibold text-white">Crea tu web con IA</p>
+              <p className="text-xs text-gray-500 mt-1.5">
+                Genera una landing page profesional con animaciones de scroll. Solo describe tu negocio y la IA la construye.
+              </p>
+              <div className="flex items-center gap-1 mt-4 text-indigo-400 text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                Abrir <ChevronRight size={13} />
+              </div>
+            </button>
+
+          </div>
+        </div>
 
       </div>
     </div>
