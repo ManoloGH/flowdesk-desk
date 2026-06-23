@@ -19,7 +19,7 @@ const DEFAULT_BRAND: BrandConfig = {
 import {
   LayoutDashboard, Users, Map, Plug, BookUser, LogOut, ShieldCheck,
   Building2, CreditCard, ShieldAlert, Settings, Bell, X, CheckCheck,
-  ExternalLink, ChevronLeft, Target, Cctv, Zap, Sparkles, ChevronDown, Brain, Globe, GraduationCap, BotMessageSquare, ListChecks,
+  ExternalLink, ChevronLeft, Target, Cctv, Zap, Sparkles, ChevronDown, Brain, Globe, GraduationCap, BotMessageSquare, ListChecks, Radio,
 } from 'lucide-react';
 
 /* ── Navigation ── */
@@ -158,9 +158,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const isNetPlatform = !branchContext &&
     (effectiveUser?.tenant_type === 'NETWORK' || effectiveUser?.tenant_type === 'PLATFORM');
-  const NAV = isNetPlatform ? [...BASE_NAV, ...NETWORK_NAV_EXTRA] : BASE_NAV;
 
   const [brand,      setBrand]      = useState<BrandConfig>(DEFAULT_BRAND);
+  const [tenantFeatures, setTenantFeatures] = useState<{ communications_enabled: boolean }>({ communications_enabled: false });
+
+  const HERRAMIENTAS_NAV = tenantFeatures.communications_enabled
+    ? [{ href: '/herramientas/comunicaciones', label: 'Comunicaciones', icon: Radio }]
+    : [];
+
+  const NAV = [
+    ...(isNetPlatform ? [...BASE_NAV, ...NETWORK_NAV_EXTRA] : BASE_NAV),
+    ...HERRAMIENTAS_NAV,
+  ];
+
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [bellOpen,   setBellOpen]   = useState(false);
   const [unread,     setUnread]     = useState(0);
@@ -189,6 +199,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
       })
       .catch(() => { /* usa defaults */ });
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    api.get<{ communications_enabled: boolean }>('/tenants/mine/features')
+      .then(data => setTenantFeatures(data))
+      .catch(() => { /* endpoint not yet implemented */ });
   }, [user]);
 
   const fetchCount = useCallback(async () => {
