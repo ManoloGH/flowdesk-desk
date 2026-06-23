@@ -29,7 +29,7 @@ const NAV_SECTIONS = [
     items: [
       { label: 'Agentes',          href: '/admin/agents',      icon: Bot,           soon: true },
       { label: 'Automatizaciones', href: '/admin/automations', icon: Zap,           soon: true },
-      { label: 'Software',         href: '/admin/software',    icon: Package,       soon: true },
+      { label: 'Herramientas',     href: '/admin/herramientas', icon: Package,      soon: true },
     ],
   },
   {
