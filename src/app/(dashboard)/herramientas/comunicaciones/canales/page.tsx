@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { MessageSquare, Phone, CheckCircle2, XCircle, AlertCircle, ExternalLink } from 'lucide-react';
 
 type ChannelStatus = 'connected' | 'disconnected' | 'unconfigured';
@@ -71,13 +72,13 @@ export default function CanalesPage() {
               <p className="text-xs font-mono text-cyan-300 bg-cyan-500/10 px-2.5 py-1 rounded-lg w-fit">{number}</p>
             )}
 
-            <a
+            <Link
               href={configHref}
               className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-cyan-300 transition-colors"
             >
               <ExternalLink className="w-3 h-3" />
               {status === 'unconfigured' ? 'Configurar canal' : 'Ver configuración'}
-            </a>
+            </Link>
           </div>
         ))}
       </div>
