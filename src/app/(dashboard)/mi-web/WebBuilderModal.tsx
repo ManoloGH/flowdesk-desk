@@ -72,7 +72,9 @@ export default function WebBuilderModal({
   const [dots, setDots] = useState('');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [buildLog, setBuildLog] = useState<string[]>([]);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollCountRef = useRef(0);
 
   // Blob preview
   useEffect(() => {
@@ -97,9 +99,24 @@ export default function WebBuilderModal({
 
   const startPoll = useCallback(() => {
     stopPoll();
+    pollCountRef.current = 0;
     pollRef.current = setInterval(async () => {
+      pollCountRef.current += 1;
+      // Timeout: 8 minutos (120 checks × 4s)
+      if (pollCountRef.current > 120) {
+        stopPoll();
+        setBuilding(false);
+        setStep('input');
+        setError('La generación tardó demasiado. Revisa los logs de Railway y vuelve a intentarlo.');
+        return;
+      }
       try {
-        const r = await api.get<{ files: Record<string, string>; fase: string }>(`/web-builder-agent/${proyectoId}/files`);
+        const r = await api.get<{ files: Record<string, string>; fase: string; build_log?: any[] }>(`/web-builder-agent/${proyectoId}/files`);
+        // Actualizar log de progreso
+        if (r.build_log?.length) {
+          const msgs = r.build_log.map((e: any) => `${e.phase}: ${e.message}`);
+          setBuildLog(msgs.slice(-4));
+        }
         if (r.files && Object.keys(r.files).length > 0) {
           setFiles(r.files);
           setBuilding(false);
@@ -390,11 +407,21 @@ export default function WebBuilderModal({
                   El agente de IA está generando tu landing page. Esto tarda 2–4 minutos.
                 </p>
               </div>
-              <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.12)', borderRadius: 10, padding: '12px 20px', textAlign: 'center', maxWidth: 360 }}>
-                <p style={{ color: '#6b7280', fontSize: 11, margin: 0, lineHeight: 1.6 }}>
-                  📄 Generando páginas · 🎬 Efecto scroll · 📈 SEO · ✅ Vista previa lista
-                </p>
-              </div>
+              {buildLog.length > 0 ? (
+                <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 10, padding: '12px 16px', maxWidth: 420, width: '100%' }}>
+                  {buildLog.map((line, i) => (
+                    <p key={i} style={{ margin: i === 0 ? 0 : '4px 0 0', color: i === buildLog.length - 1 ? '#a5b4fc' : '#4b5563', fontSize: 11, fontFamily: 'monospace' }}>
+                      {i === buildLog.length - 1 ? '▶ ' : '✓ '}{line}
+                    </p>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.12)', borderRadius: 10, padding: '12px 20px', textAlign: 'center', maxWidth: 360 }}>
+                  <p style={{ color: '#6b7280', fontSize: 11, margin: 0, lineHeight: 1.6 }}>
+                    📄 Generando páginas · 🎬 Efecto scroll · 📈 SEO · ✅ Vista previa lista
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
