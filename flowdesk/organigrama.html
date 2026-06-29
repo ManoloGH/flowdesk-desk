@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Organigrama Digital — FlowDesk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a14; --surface: #13131f; --surface2: #1a1a2e;
+      --line: rgba(255,255,255,0.07); --line2: rgba(255,255,255,0.12);
+      --purple: #6c4de6; --purple2: #8b6ef5; --cyan: #00d4ff;
+      --green: #22c55e; --amber: #f59e0b; --red: #ef4444; --blue: #3b82f6;
+      --text: #f0f0fa; --text2: #a0a0c0; --text3: #606080;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; font-size: 14px; line-height: 1.6; min-height: 100vh; }
+
+    /* ── Header ── */
+    .header { padding: 32px 40px 24px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; }
+    .header-left .badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--purple2); margin-bottom: 6px; }
+    .header-left h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.03em; }
+    .header-left p { font-size: 13px; color: var(--text2); margin-top: 4px; }
+    .header-right { display: flex; gap: 10px; align-items: center; }
+    .stat-chip { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; text-align: center; }
+    .stat-chip .num { font-size: 18px; font-weight: 800; color: var(--purple2); }
+    .stat-chip .label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; }
+
+    /* ── Main canvas ── */
+    .canvas { padding: 40px; overflow-x: auto; }
+
+    /* ── CEO ── */
+    .ceo-row { display: flex; justify-content: center; margin-bottom: 0; }
+    .connector-v { width: 2px; background: linear-gradient(to bottom, var(--purple), rgba(108,77,230,0.3)); margin: 0 auto; }
+    .connector-h-row { display: flex; justify-content: center; position: relative; margin-bottom: 0; }
+    .connector-h { height: 2px; background: var(--line2); position: absolute; top: 0; }
+
+    /* ── Tree layout ── */
+    .tree { display: flex; flex-direction: column; align-items: center; gap: 0; }
+    .level { display: flex; justify-content: center; gap: 24px; }
+
+    /* ── Lines ── */
+    .lines-container { position: relative; width: 100%; display: flex; justify-content: center; }
+
+    /* ── Agent cards ── */
+    .agent-card {
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: 12px; padding: 16px 18px; width: 200px;
+      cursor: pointer; transition: all 0.15s; position: relative;
+      text-decoration: none; display: block;
+    }
+    .agent-card:hover { border-color: var(--line2); background: var(--surface2); transform: translateY(-2px); }
+    .agent-card.ceo { width: 260px; border-color: rgba(108,77,230,0.4); background: rgba(108,77,230,0.06); }
+    .agent-card.ceo:hover { border-color: var(--purple2); }
+    .agent-card .area-tag { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+    .agent-card .agent-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .agent-card .agent-role { font-size: 11px; color: var(--text3); line-height: 1.4; margin-bottom: 10px; }
+    .agent-card .model-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 99px; }
+    .model-free { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+    .model-opus { background: rgba(108,77,230,0.12); color: var(--purple2); border: 1px solid rgba(108,77,230,0.3); }
+    .agent-card .supervisor-badge { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+    .sup-ventas { background: rgba(59,130,246,0.15); color: var(--blue); border: 1px solid rgba(59,130,246,0.25); }
+    .sup-ops { background: rgba(0,212,255,0.1); color: var(--cyan); border: 1px solid rgba(0,212,255,0.2); }
+    .sup-admin { background: rgba(245,158,11,0.1); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
+
+    /* ── Area columns ── */
+    .areas-row { display: flex; gap: 24px; justify-content: center; align-items: flex-start; }
+    .area-column { display: flex; flex-direction: column; align-items: center; gap: 0; }
+    .area-supervisor { margin-bottom: 0; }
+    .area-children { display: flex; gap: 12px; align-items: flex-start; }
+
+    /* ── Connectors ── */
+    .v-line { width: 2px; height: 28px; background: var(--line2); margin: 0 auto; }
+    .h-bridge { height: 2px; background: var(--line2); }
+    .branch-container { display: flex; position: relative; gap: 12px; }
+    .branch-v { width: 2px; height: 28px; background: var(--line2); margin: 0 auto; }
+
+    /* ── Legend ── */
+    .legend { display: flex; gap: 20px; padding: 20px 40px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text2); }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* ── Modal ── */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--line2); border-radius: 16px; width: 100%; max-width: 560px; max-height: 85vh; overflow-y: auto; }
+    .modal-header { padding: 24px 24px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .modal-header h2 { font-size: 18px; font-weight: 800; }
+    .modal-close { background: none; border: none; color: var(--text3); font-size: 20px; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
+    .modal-close:hover { color: var(--text); background: var(--surface2); }
+    .modal-body { padding: 20px 24px 24px; }
+    .modal-section { margin-bottom: 16px; }
+    .modal-section h3 { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); margin-bottom: 8px; }
+    .modal-section p, .modal-section li { font-size: 13px; color: var(--text2); line-height: 1.6; }
+    .modal-section ul { padding-left: 16px; }
+    .modal-section li { margin-bottom: 4px; }
+    .modal-tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 99px; margin-right: 6px; margin-bottom: 4px; }
+    .never-list li { color: #fca5a5; }
+    .success-list li { color: #86efac; }
+
+    .open-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--purple2); background: rgba(108,77,230,0.1); border: 1px solid rgba(108,77,230,0.2); border-radius: 6px; padding: 5px 12px; cursor: pointer; margin-top: 10px; text-decoration: none; transition: all 0.12s; }
+    .open-btn:hover { background: rgba(108,77,230,0.2); }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <div class="badge">FlowDesk · Interno</div>
+    <h1>Organigrama Digital</h1>
+    <p>Equipo de agentes IA internos de FlowDesk — todos supervisados por el CEO Digital</p>
+  </div>
+  <div class="header-right">
+    <div class="stat-chip"><div class="num">9</div><div class="label">Agentes</div></div>
+    <div class="stat-chip"><div class="num">3</div><div class="label">Áreas</div></div>
+    <div class="stat-chip"><div class="num">2</div><div class="label">Opus 4.8</div></div>
+  </div>
+</div>
+
+<!-- Org Chart -->
+<div class="canvas">
+  <div class="tree">
+
+    <!-- CEO Digital -->
+    <div class="ceo-row">
+      <div class="agent-card ceo" onclick="openModal('ceo')">
+        <div class="area-tag" style="color:var(--purple2)">✦ Dirección General</div>
+        <div class="agent-name">CEO Digital FlowDesk</div>
+        <div class="agent-role">Supervisa toda la operación digital + equipo humano</div>
+        <span class="model-badge model-opus">claude-opus-4-8</span>
+      </div>
+    </div>
+
+    <!-- CEO → Areas connector -->
+    <div class="v-line" style="height:28px"></div>
+
+    <!-- Horizontal bar spanning areas -->
+    <div style="display:flex; align-items:flex-start; gap:24px; justify-content:center; position:relative;">
+      <!-- Left vertical drop -->
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:2px; height:28px; background:var(--line2)"></div>
+        <!-- Area Ventas -->
+        <div class="agent-card" style="border-color:rgba(59,130,246,0.3); background:rgba(59,130,246,0.04);" onclick="openModal('ventas')">
+          <div class="area-tag" style="color:var(--blue)">📊 Área de Ventas · Supervisor</div>
+          <div class="agent-name">Agente de Ventas</div>
+          <div class="agent-role">Coordina pipeline, Prospección y Marketing</div>
+          <span class="model-badge model-free">Gratuito</span>
+        </div>
+        <div class="v-line" style="height:20px"></div>
+        <!-- H bridge for ventas children -->
+        <div style="display:flex; gap:12px; position:relative;">
+          <div style="position:absolute; top:0; left:50px; right:50px; height:2px; background:var(--line2)"></div>
+          <div style="display:flex; flex-direction:column; align-items:center;">
+            <div style="width:2px; height:20px; background:var(--line2)"></div>
+            <div class="agent-card" onclick="openModal('prospeccion')">
+              <div class="area-tag" style="color:var(--blue)">Ventas</div>
+              <div class="agent-name">Agente de Prospección</div>
+              <div class="agent-role">Captura y califica leads para MentorIA</div>
+              <span class="model-badge model-free">Gratuito</span>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:center;">
+            <div style="width:2px; height:20px; background:var(--line2)"></div>
+            <div class="agent-card" onclick="openModal('marketing')">
+              <div class="area-tag" style="color:var(--blue)">Ventas</div>
+              <div class="agent-name">Agente de Marketing</div>
+              <div class="agent-role">Contenido, campañas y posicionamiento</div>
+              <span class="model-badge model-free">Gratuito</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center vertical drop -->
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:2px; height:28px; background:var(--line2)"></div>
+        <!-- Area Operaciones -->
+        <div class="agent-card" style="border-color:rgba(0,212,255,0.3); background:rgba(0,212,255,0.04);" onclick="openModal('operaciones')">
+          <div class="area-tag" style="color:var(--cyan)">⚙️ Área de Operaciones · Supervisor</div>
+          <div class="agent-name">Agente de Operaciones</div>
+          <div class="agent-role">Entrega, agentes y producto</div>
+          <span class="model-badge model-free">Gratuito</span>
+        </div>
+        <div class="v-line" style="height:20px"></div>
+        <!-- H bridge for ops children -->
+        <div style="display:flex; gap:12px; position:relative;">
+          <div style="position:absolute; top:0; left:50px; right:50px; height:2px; background:var(--line2)"></div>
+          <div style="display:flex; flex-direction:column; align-items:center;">
+            <div style="width:2px; height:20px; background:var(--line2)"></div>
+            <div class="agent-card" onclick="openModal('exito')">
+              <div class="area-tag" style="color:var(--cyan)">Operaciones</div>
+              <div class="agent-name">Agente de Éxito del Cliente</div>
+              <div class="agent-role">Relación y satisfacción de clientes activos</div>
+              <span class="model-badge model-free">Gratuito</span>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:center;">
+            <div style="width:2px; height:20px; background:var(--line2)"></div>
+            <div class="agent-card" style="border-color:rgba(108,77,230,0.25); background:rgba(108,77,230,0.04);" onclick="openModal('sensei')">
+              <div class="area-tag" style="color:var(--purple2)">Operaciones · Maestro</div>
+              <div class="agent-name">Agente Sensei</div>
+              <div class="agent-role">Crea, audita y evoluciona la flota de agentes</div>
+              <span class="model-badge model-opus">claude-opus-4-8</span>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:center;">
+            <div style="width:2px; height:20px; background:var(--line2)"></div>
+            <div class="agent-card" onclick="openModal('producto')">
+              <div class="area-tag" style="color:var(--cyan)">Operaciones</div>
+              <div class="agent-name">Agente de Producto y Tecnología</div>
+              <div class="agent-role">Backlog, bugs y evolución del producto</div>
+              <span class="model-badge model-free">Gratuito</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right vertical drop -->
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:2px; height:28px; background:var(--line2)"></div>
+        <!-- Area Administración -->
+        <div class="agent-card" style="border-color:rgba(245,158,11,0.3); background:rgba(245,158,11,0.04);" onclick="openModal('administracion')">
+          <div class="area-tag" style="color:var(--amber)">🗂️ Área de Administración · Supervisor</div>
+          <div class="agent-name">Agente de Administración</div>
+          <div class="agent-role">Orden administrativo y visibilidad financiera</div>
+          <span class="model-badge model-free">Gratuito</span>
+        </div>
+        <div class="v-line" style="height:20px"></div>
+        <div style="display:flex; flex-direction:column; align-items:center;">
+          <div style="width:2px; height:20px; background:var(--line2)"></div>
+          <div class="agent-card" onclick="openModal('finanzas')">
+            <div class="area-tag" style="color:var(--amber)">Administración</div>
+            <div class="agent-name">Agente de Finanzas</div>
+            <div class="agent-role">Facturación, cobranza y reportes financieros</div>
+            <span class="model-badge model-free">Gratuito</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Modelo gratuito (Gemini Flash / GPT-4o mini / Haiku)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--purple2)"></div>claude-opus-4-8 (requirió autorización)</div>
+  <div class="legend-item" style="margin-left:auto; font-size:11px; color:var(--text3)">Todos los agentes reportan al CEO Digital · v1.0 · 2026-06-18</div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal" id="modalContent">
+    <div class="modal-header">
+      <div>
+        <div id="modalArea" style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px; color:var(--text3)"></div>
+        <h2 id="modalName"></h2>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('modal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+const agents = {
+  ceo: {
+    name: 'CEO Digital FlowDesk',
+    area: '✦ Dirección General',
+    model: 'claude-opus-4-8',
+    modelType: 'opus',
+    role: 'Supervisa toda la operación digital interna de FlowDesk — agentes y personas.',
+    reporta: 'Ejecutivos FlowDesk (Manolo y equipo)',
+    supervisa: 'Agente de Ventas, Agente de Operaciones, Agente de Administración',
+    objetivo: 'Monitorear todas las áreas, detectar bottlenecks, conectar insights cross-departamentales y entregar reportes estratégicos semanales a los ejecutivos.',
+    never: ['Tomar decisiones de negocio sin aprobación ejecutiva','Comunicarse directamente con clientes','Modificar Blueprints o system prompts de agentes','Compartir datos financieros fuera del canal ejecutivo'],
+    success: ['Ejecutivos reciben reporte semanal sin tener que pedirlo','Problemas críticos detectados antes de que el cliente los note','Al menos una optimización accionable identificada por semana'],
+    file: 'agentes/ceo-digital.md'
+  },
+  ventas: {
+    name: 'Agente de Ventas',
+    area: '📊 Área de Ventas · Supervisor',
+    model: 'Gratuito',
+    modelType: 'free',
+    role: 'Supervisor del Área de Ventas. Coordina el pipeline comercial.',
+    reporta: 'CEO Digital FlowDesk',
+    supervisa: 'Agente de Prospección, Agente de Marketing',
+    objetivo: 'Mantener el pipeline saludable: leads entrando, calificándose y convirtiéndose en clientes MentorIA.',
+    never: ['Contactar prospectos o clientes directamente','Prometer precios o condiciones comerciales','Modificar el proceso de ventas sin aprobación ejecutiva'],
+    success: ['Reporte semanal de pipeline llega al CEO Digital cada lunes','Cuellos de botella identificados antes de que cuesten un deal'],
+    file: 'agentes/agente-ventas.md'
+  },
+  prospeccion: {
+    name: 'Agente de Prospección',
+    area: '📊 Ventas',
+    model: 'Gratuito',
+    modelType: 'free',
+    role: 'Primer punto de contacto con prospectos MentorIA. Captura y califica leads.',
+    reporta: 'Agente de Ventas',
+    supervisa: '—',
+    objetivo: 'Engajar visitantes, aplicar micro-diagnóstico de 5 preguntas, entregar diagnóstico personalizado y guiar al prospecto hacia agendar una llamada de discovery.',
+    never: ['Cotizar precios o descuentos en el chat','Prometer timelines o resultados específicos','Continuar si el contacto es un competidor investigando','Presionar o usar tácticas de urgencia falsa'],
+    success: ['El lead recibe un micro-diagnóstico que siente específico a su situación','El registro en CRM está completo y el ejecutivo puede entrar a la llamada preparado'],
+    file: 'agentes/agente-prospeccion.md'
+  },
+  marketing: {
+    name: 'Agente de Marketing',
+    area: '📊 Ventas',
+    model: 'Gratuito',
+    modelType: 'free',
+    role: 'Contenido, campañas y posicionamiento de FlowDesk y MentorIA.',
+    reporta: 'Agente de Ventas',
+    supervisa: '—',
+    objetivo: 'Producir contenido que eduque, genere confianza y atraiga leads calificados para el Agente de Prospección.',
+    never: ['Publicar contenido en ningún canal — solo redacta, humanos publican','Hacer afirmaciones de resultados no verificables','Mencionar competidores por nombre sin aprobación','Usar datos de clientes sin consentimiento documentado'],
+    success: ['Contenido entregado antes del deadline con todos los elementos requeridos','El Agente de Prospección reporta que leads mencionan piezas de contenido específicas'],
+    file: 'agentes/agente-marketing.md'
+  },
+  operaciones: {
+    name: 'Agente de Operaciones',
+    area: '⚙️ Área de Operaciones · Supervisor',
+    model: 'Gratuito',
+    modelType: 'free',
+    role: 'Supervisor del Área de Operaciones. Asegura la excelencia operativa.',
+    reporta: 'CEO Digital FlowDesk',
+    supervisa: 'Agente de Éxito del Cliente, Agente Sensei, Agente de Producto y Tecnología',
+    objetivo: 'Asegurar que FlowDesk cumple sus promesas: implementaciones a tiempo, agentes saludables, clientes satisfechos y producto evolucionando correctamente.',
+    never: ['Contactar clientes directamente','Anular decisiones del Agente Sensei sobre agentes sin aprobación ejecutiva','Comprometer timelines de producto a clientes'],
+    success: ['Cero sorpresas de churn — todo el riesgo detectado y escalado con 2 semanas de anticipación','Fallas de agentes resueltas en 24 horas'],
+    file: 'agentes/agente-operaciones.md'
+  },
+  exito: {
+    name: 'Agente de Éxito del Cliente',
+    area: '⚙️ Operaciones',
+    model: 'Gratuito',
+    modelType: 'free',
+    role: 'Gestión de la relación con cada cliente activo de MentorIA.',
+    reporta: 'Agente de Operaciones',
+    supervisa: '—',
+    objetivo: 'Asegurar que cada cliente adopta exitosamente sus agentes IA y renueva su retainer. Saber cómo se siente el cliente antes de que lo diga.',
+    never: ['Prometer reembolsos, créditos o descuentos sin aprobación ejecutiva','Ocultar un problema de cliente al ejecutivo de implementación','Modificar la configuración del agente del cliente — eso le pertenece al Sensei','Si un cliente menciona acciones legales: detener comunicación y escalar inmediatamente'],
+    success: ['Cada cliente sabe el estado de su implementación sin tener que preguntar','Tasa de renovación superior al 80% de clientes elegibles'],
+    file: 'agentes/agente-exito-cliente.md'
+  },
+  sensei: {
+    name: 'Agente Sensei',
+    area: '⚙️ Operaciones · Maestro de Agentes',
+    model: 'claude-opus-4-8',
+    modelType: 'opus',
+    role: 'Responsable del ciclo de vida completo de todos los agentes FlowDesk.',
+    reporta: 'Agente de Operaciones',
+    supervisa: 'Flota de agentes de clientes + agentes internos FlowDesk',
+    objetivo: 'Crear, auditar, mejorar y diagnosticar fallas en todos los agentes. Hacer crecer la biblioteca de skills compartida. El Sensei gestiona los AGENTES como recurso — no gestiona la relación con el cliente.',
+    never: ['Desplegar un agente sin aprobación explícita del ejecutivo de implementación','Modificar system prompt en producción sin versionar y aprobar','Compartir detalles de un agente de un cliente con otro cliente','Aplicar la misma corrección por 4ª vez sin escalar a revisión de requerimientos'],
+    success: ['Cada agente mejora semana a semana','Fallas diagnosticadas y resueltas en menos de 24 horas','La biblioteca de skills crece con al menos una entrada validada al mes'],
+    file: 'agentes/sensei.md'
+  },
+  producto: {
+    name: 'Agente de Producto y Tecnología',
+    area: '⚙️ Operaciones',
+    model: 'Gratuito',
+    modelType: 'free',
+    role: 'Backlog, bugs y evolución técnica de la plataforma FlowDesk.',
+    reporta: 'Agente de Operaciones',
+    supervisa: '—',
+    objetivo: 'Asegurar que el backlog refleja necesidades reales y que el equipo de desarrollo siempre sabe qué construir a continuación. Traduce problemas de negocio en requerimientos técnicos accionables.',
+    never: ['Comprometer timelines de entrega a clientes — solo el equipo de desarrollo puede comprometer','Tomar decisiones arquitectónicas (qué base de datos, qué framework)','Cerrar un issue como resuelto sin confirmar que el fix fue probado'],
+    success: ['Cada bug reportado tiene un issue registrado dentro de 2 horas','El equipo de desarrollo nunca tiene que preguntar "¿qué necesita hacer exactamente esta feature?"'],
+    file: 'agentes/agente-producto-tecnologia.md'
+  },
+  administracion: {
+    name: 'Agente de Administración',
+    area: '🗂️ Área de Administración · Supervisor',
+    model: 'Gratuito',
+    modelType: 'free',
+    role: 'Supervisor del Área de Administración. Orden y visibilidad financiera.',
+    reporta: 'CEO Digital FlowDesk',
+    supervisa: 'Agente de Finanzas',
+    objetivo: 'Asegurar que las operaciones administrativas y financieras de FlowDesk corren limpiamente: facturas enviadas a tiempo, pagos rastreados, ejecutivos con visibilidad financiera.',
+    never: ['Contactar clientes sobre pagos sin autorización ejecutiva','Autorizar ningún gasto o pago','Dar asesoría legal o fiscal','Si un cliente disputa una factura: escalar inmediatamente, no negociar'],
+    success: ['Ejecutivos siempre saben el estado de flujo de caja sin tener que preguntar','Ninguna factura llega a 30 días de vencida sin conocimiento ejecutivo'],
+    file: 'agentes/agente-administracion.md'
+  },
+  finanzas: {
+    name: 'Agente de Finanzas',
+    area: '🗂️ Administración',
+    model: 'Gratuito',
+    modelType: 'free',
+    role: 'Facturación, cobranza y reportes financieros de FlowDesk.',
+    reporta: 'Agente de Administración',
+    supervisa: '—',
+    objetivo: 'Mantener los registros financieros organizados, rastrear cada factura y pago, y generar reportes que permitan a los ejecutivos tomar decisiones con información precisa.',
+    never: ['Contactar clientes sobre pagos — los ejecutivos manejan toda comunicación financiera con clientes','Modificar montos de facturas sin autorización ejecutiva explícita','Emitir créditos, descuentos o reembolsos sin aprobación escrita del ejecutivo','Compartir datos financieros fuera del canal ejecutivo'],
+    success: ['Reporte financiero semanal preciso al peso','Ninguna factura llega a 30 días de vencida sin que el ejecutivo lo sepa','Los ejecutivos pueden responder "¿cuánto dinero entra este mes?" en menos de 30 segundos'],
+    file: 'agentes/agente-finanzas.md'
+  }
+};
+
+function openModal(id) {
+  const a = agents[id];
+  if (!a) return;
+  document.getElementById('modalArea').textContent = a.area;
+  document.getElementById('modalName').textContent = a.name;
+  const modelColor = a.modelType === 'opus' ? 'var(--purple2)' : 'var(--green)';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="modal-section">
+      <h3>Modelo</h3>
+      <span class="modal-tag" style="background:${a.modelType==='opus'?'rgba(108,77,230,0.12)':'rgba(34,197,94,0.1)'}; color:${modelColor}; border:1px solid ${a.modelType==='opus'?'rgba(108,77,230,0.3)':'rgba(34,197,94,0.2)'}">${a.model}</span>
+    </div>
+    <div class="modal-section">
+      <h3>Objetivo</h3>
+      <p>${a.objetivo}</p>
+    </div>
+    ${a.supervisa !== '—' ? `<div class="modal-section"><h3>Supervisa</h3><p>${a.supervisa}</p></div>` : ''}
+    <div class="modal-section">
+      <h3>Reporta a</h3>
+      <p>${a.reporta}</p>
+    </div>
+    <div class="modal-section">
+      <h3>Líneas Rojas — NUNCA</h3>
+      <ul class="never-list">${a.never.map(n=>`<li>${n}</li>`).join('')}</ul>
+    </div>
+    <div class="modal-section">
+      <h3>Criterio de Éxito</h3>
+      <ul class="success-list">${a.success.map(s=>`<li>${s}</li>`).join('')}</ul>
+    </div>
+    <div class="modal-section">
+      <a href="${a.file}" class="open-btn">📄 Ver Blueprint completo →</a>
+    </div>
+  `;
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modal')) {
+    document.getElementById('modal').classList.remove('open');
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('modal').classList.remove('open');
+});
+</script>
+</body>
+</html>

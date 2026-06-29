@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prepárate para tu sesión con MentorIA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0a0a14;
+      --surface:  #13131f;
+      --surface2: #1a1a2e;
+      --line:     rgba(255,255,255,0.07);
+      --purple:   #6c4de6;
+      --purple2:  #8b6ef5;
+      --cyan:     #00d4ff;
+      --green:    #22c55e;
+      --amber:    #f59e0b;
+      --text:     #f0f0fa;
+      --text2:    #a0a0c0;
+      --text3:    #606080;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+      padding: 0 0 60px;
+    }
+
+    /* ── Header ── */
+    .hero {
+      background: linear-gradient(135deg, #0d0b1a 0%, #13131f 60%, #0d1a1a 100%);
+      border-bottom: 1px solid var(--line);
+      padding: 48px 24px 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -80px; left: 50%; transform: translateX(-50%);
+      width: 500px; height: 300px;
+      background: radial-gradient(ellipse, rgba(108,77,230,0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(108,77,230,0.12);
+      border: 1px solid rgba(108,77,230,0.3);
+      border-radius: 99px;
+      padding: 6px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--purple2);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: clamp(24px, 5vw, 36px);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+    }
+    .hero h1 span { color: var(--purple2); }
+    .hero .subtitle {
+      font-size: 15px;
+      color: var(--text2);
+      max-width: 520px;
+      margin: 0 auto 24px;
+      line-height: 1.6;
+    }
+    .empresa-tag {
+      display: inline-block;
+      background: rgba(0,212,255,0.08);
+      border: 1px solid rgba(0,212,255,0.2);
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--cyan);
+    }
+
+    /* ── Layout ── */
+    .container { max-width: 680px; margin: 0 auto; padding: 0 20px; }
+
+    /* ── Info bar ── */
+    .info-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1px;
+      background: var(--line);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 28px 0;
+    }
+    .info-item {
+      background: var(--surface);
+      padding: 14px 18px;
+    }
+    .info-item .label { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+    .info-item .value { font-size: 14px; font-weight: 600; color: var(--text); }
+
+    /* ── Section ── */
+    .section { margin-bottom: 28px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .section-icon {
+      width: 34px; height: 34px;
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .section-title { font-size: 16px; font-weight: 700; color: var(--text); }
+    .section-sub { font-size: 12px; color: var(--text3); margin-top: 1px; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    /* ── Checklist items ── */
+    .check-group { padding: 6px 0; }
+    .check-group-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.1em; padding: 10px 18px 6px;
+      color: var(--text3); border-bottom: 1px solid var(--line);
+    }
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 13px 18px;
+      border-bottom: 1px solid var(--line);
+      transition: background 0.12s;
+      cursor: pointer;
+    }
+    .check-item:last-child { border-bottom: none; }
+    .check-item:hover { background: var(--surface2); }
+    .check-item.checked { opacity: 0.6; }
+    .check-item.checked .check-text { text-decoration: line-through; color: var(--text3); }
+    .check-box {
+      width: 20px; height: 20px; border-radius: 6px;
+      border: 2px solid var(--line); background: transparent;
+      flex-shrink: 0; margin-top: 1px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .check-item.checked .check-box { background: var(--green); border-color: var(--green); }
+    .check-tick { display: none; color: white; font-size: 12px; font-weight: 700; }
+    .check-item.checked .check-tick { display: block; }
+    .check-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 7px; }
+    .check-text { font-size: 13px; color: var(--text); line-height: 1.5; flex: 1; }
+    .check-note { font-size: 11px; color: var(--text3); margin-top: 3px; }
+    .badge-required {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; padding: 2px 7px; border-radius: 99px;
+      background: rgba(239,68,68,0.12); color: #ef4444;
+      border: 1px solid rgba(239,68,68,0.25); flex-shrink: 0; margin-top: 2px;
+    }
+    .badge-optional {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; padding: 2px 7px; border-radius: 99px;
+      background: rgba(245,158,11,0.1); color: var(--amber);
+      border: 1px solid rgba(245,158,11,0.2); flex-shrink: 0; margin-top: 2px;
+    }
+
+    /* ── Drive section ── */
+    .drive-box {
+      background: var(--surface);
+      border: 1px solid rgba(108,77,230,0.3);
+      border-radius: 14px;
+      padding: 24px;
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .drive-icon { font-size: 40px; margin-bottom: 12px; }
+    .drive-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .drive-sub { font-size: 13px; color: var(--text2); line-height: 1.6; max-width: 440px; margin: 0 auto 20px; }
+    .btn-drive {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--purple);
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 13px 28px;
+      border-radius: 10px;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-drive:hover { opacity: 0.85; }
+    .btn-drive.no-link { background: var(--surface2); color: var(--text3); cursor: default; font-size: 12px; padding: 10px 20px; }
+    .drive-folder-structure {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      padding: 14px 16px;
+      margin-top: 18px;
+      text-align: left;
+    }
+    .drive-folder-structure .title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); margin-bottom: 10px; }
+    .folder-line { font-size: 12px; color: var(--text2); padding: 3px 0; font-family: monospace; }
+    .folder-line .folder { color: var(--amber); }
+    .folder-line .hint { color: var(--text3); font-size: 11px; }
+
+    /* ── Steps ── */
+    .steps { display: flex; flex-direction: column; gap: 0; }
+    .step {
+      display: flex;
+      gap: 16px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+    .step:last-child { border-bottom: none; }
+    .step-num {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: rgba(108,77,230,0.15);
+      border: 1px solid rgba(108,77,230,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 800; color: var(--purple2);
+      flex-shrink: 0;
+    }
+    .step-content .step-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+    .step-content .step-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+
+    /* ── Progress bar ── */
+    .progress-wrap { margin: 20px 0 28px; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text3); margin-bottom: 8px; }
+    .progress-bar { height: 6px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--cyan)); border-radius: 99px; transition: width 0.4s; }
+
+    /* ── CTA ── */
+    .cta-box {
+      background: linear-gradient(135deg, rgba(108,77,230,0.12), rgba(0,212,255,0.05));
+      border: 1px solid rgba(108,77,230,0.25);
+      border-radius: 14px;
+      padding: 24px;
+      text-align: center;
+    }
+    .cta-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .cta-box p { font-size: 13px; color: var(--text2); margin-bottom: 18px; line-height: 1.6; }
+    .btn-wa {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #25D366;
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 12px 24px;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: opacity 0.15s;
+    }
+    .btn-wa:hover { opacity: 0.85; }
+
+    @media print {
+      body { background: white; color: black; }
+      .hero, .card, .drive-box, .cta-box { background: #f8f8f8; border-color: #ddd; }
+      .btn-drive, .btn-wa { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="logo-badge">✦ MentorIA Systems</div>
+  <h1>Tu sesión de <span>diagnóstico</span><br>está por comenzar</h1>
+  <p class="subtitle">Para aprovechar al máximo nuestro tiempo juntos, preparamos este checklist con todo lo que necesitamos antes de la reunión.</p>
+  <div class="empresa-tag" id="empresa-tag">Empresa: —</div>
+</div>
+
+<div class="container">
+
+  <!-- Info bar -->
+  <div class="info-bar" id="info-bar">
+    <div class="info-item"><div class="label">Empresa</div><div class="value" id="info-empresa">—</div></div>
+    <div class="info-item"><div class="label">Fecha de sesión</div><div class="value" id="info-fecha">—</div></div>
+    <div class="info-item"><div class="label">Tu consultor</div><div class="value" id="info-ejecutivo">—</div></div>
+    <div class="info-item"><div class="label">Duración estimada</div><div class="value">2-3 horas</div></div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>Progreso de preparación</span>
+      <span id="progress-label">0 de 7 completados</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  </div>
+
+  <!-- Sección 1: Lo indispensable -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(239,68,68,0.1);">🔴</div>
+      <div>
+        <div class="section-title">Lo indispensable</div>
+        <div class="section-sub">Sin esta información la sesión tarda el doble — súbela al Drive antes de la reunión</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="check-group">
+        <div class="check-item" onclick="toggle(this)" data-id="empleados">
+          <div class="check-box"><span class="check-tick">✓</span></div>
+          <div style="flex:1">
+            <div class="check-text">Lista de empleados por área</div>
+            <div class="check-note">Nombre, puesto y área. Puede ser un Excel, una foto del organigrama o un mensaje de texto. No importa el formato.</div>
+          </div>
+          <span class="badge-required">Esencial</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)" data-id="herramientas">
+          <div class="check-box"><span class="check-tick">✓</span></div>
+          <div style="flex:1">
+            <div class="check-text">Lista de herramientas y software que usan</div>
+            <div class="check-note">WhatsApp, Excel, algún CRM, sistema de facturación, etc. Aunque sea una lista rápida en WhatsApp.</div>
+          </div>
+          <span class="badge-required">Esencial</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)" data-id="procesos">
+          <div class="check-box"><span class="check-tick">✓</span></div>
+          <div style="flex:1">
+            <div class="check-text">Nombres de sus procesos principales por área</div>
+            <div class="check-note">No el detalle — solo los nombres. Ej: "Ventas: recibir lead, cotizar, dar seguimiento, cerrar, facturar."</div>
+          </div>
+          <span class="badge-required">Esencial</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)" data-id="disponibilidad">
+          <div class="check-box"><span class="check-tick">✓</span></div>
+          <div style="flex:1">
+            <div class="check-text">Confirmación de quiénes estarán en la sesión</div>
+            <div class="check-note">Idealmente el responsable de cada área que vamos a diagnosticar. No necesitan preparar nada — solo estar disponibles para responder preguntas.</div>
+          </div>
+          <span class="badge-required">Esencial</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección 2: Si lo tienen -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(245,158,11,0.1);">🟡</div>
+      <div>
+        <div class="section-title">Si lo tienen, mejor</div>
+        <div class="section-sub">No es obligatorio, pero acelera mucho el trabajo y mejora los resultados</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="check-group">
+        <div class="check-item" onclick="toggle(this)" data-id="organigrama">
+          <div class="check-box"><span class="check-tick">✓</span></div>
+          <div style="flex:1">
+            <div class="check-text">Organigrama de la empresa</div>
+            <div class="check-note">Cualquier formato — PowerPoint, imagen, foto de pizarrón. Si no tienen uno formal, la lista de empleados del punto anterior es suficiente.</div>
+          </div>
+          <span class="badge-optional">Opcional</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)" data-id="diagramas">
+          <div class="check-box"><span class="check-tick">✓</span></div>
+          <div style="flex:1">
+            <div class="check-text">Diagramas o flujos de procesos existentes</div>
+            <div class="check-note">Si tienen algún diagrama, aunque sea hecho en Paint o una foto de post-its en una pared. Cualquier cosa que muestre cómo fluye el trabajo.</div>
+          </div>
+          <span class="badge-optional">Opcional</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)" data-id="manuales">
+          <div class="check-box"><span class="check-tick">✓</span></div>
+          <div style="flex:1">
+            <div class="check-text">Manuales, instructivos o SOPs</div>
+            <div class="check-note">Instrucciones de trabajo, aunque sean informales. Archivos de Word, PDFs, incluso mensajes largos de WhatsApp que explican cómo hacer algo.</div>
+          </div>
+          <span class="badge-optional">Opcional</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)" data-id="metricas">
+          <div class="check-box"><span class="check-tick">✓</span></div>
+          <div style="flex:1">
+            <div class="check-text">Métricas actuales de su operación</div>
+            <div class="check-note">Cuántos pedidos al día, cuántos leads al mes, cuánto tiempo tarda un proceso, tasas de error si las miden. Cualquier número real que usen.</div>
+          </div>
+          <span class="badge-optional">Opcional</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)" data-id="sistemas">
+          <div class="check-box"><span class="check-tick">✓</span></div>
+          <div style="flex:1">
+            <div class="check-text">Acceso en vivo a sus sistemas principales</div>
+            <div class="check-note">Durante la sesión, poder ver en pantalla cómo usan sus herramientas vale más que cualquier documento. Muy recomendable tener acceso listo.</div>
+          </div>
+          <span class="badge-optional">Recomendado</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drive -->
+  <div class="drive-box">
+    <div class="drive-icon">📁</div>
+    <div class="drive-title">Sube tus documentos aquí</div>
+    <div class="drive-sub">Creamos una carpeta privada en Google Drive exclusiva para tu empresa. Solo tú y tu consultor tienen acceso.</div>
+    <a class="btn-drive" id="drive-btn" href="#" target="_blank">
+      <span>📂</span> Abrir carpeta de Drive
+    </a>
+    <div class="drive-folder-structure">
+      <div class="title">Estructura de la carpeta</div>
+      <div class="folder-line"><span class="folder">📁 [Tu empresa] — MentorIA/</span></div>
+      <div class="folder-line">&nbsp;&nbsp;<span class="folder">📁 01 - Organigrama y equipo/</span> <span class="hint">← sube aquí el organigrama</span></div>
+      <div class="folder-line">&nbsp;&nbsp;<span class="folder">📁 02 - Procesos y flujos/</span> <span class="hint">← diagramas, flujos, instrucciones</span></div>
+      <div class="folder-line">&nbsp;&nbsp;<span class="folder">📁 03 - Manuales y SOPs/</span> <span class="hint">← manuales, guías, instructivos</span></div>
+      <div class="folder-line">&nbsp;&nbsp;<span class="folder">📁 04 - Datos y métricas/</span> <span class="hint">← reportes, estadísticas, KPIs</span></div>
+      <div class="folder-line">&nbsp;&nbsp;<span class="folder">📁 05 - Entregables MentorIA/</span> <span class="hint">← aquí recibirás los resultados</span></div>
+    </div>
+  </div>
+
+  <!-- Cómo va la sesión -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(0,212,255,0.1);">📋</div>
+      <div>
+        <div class="section-title">¿Cómo será la sesión?</div>
+        <div class="section-sub">Para que sepas qué esperar el día de la reunión</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-title">Entrevista con el dueño o director (~45 min)</div>
+            <div class="step-desc">Hablamos del negocio: qué hacen, para quién, qué los diferencia, cuáles son sus objetivos y qué les preocupa. Sin tecnicismos.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-title">Mapeo de procesos por área (~60-90 min)</div>
+            <div class="step-desc">Entrevistamos a cada responsable de área. Preguntamos qué hace en su día a día, qué herramientas usa, qué le quita tiempo. Usamos los documentos que subieron para agilizar.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-title">Revisión y cierre (~30 min)</div>
+            <div class="step-desc">Confirmamos lo que entendimos, identificamos las prioridades más importantes y explicamos los siguientes pasos.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <div class="step-title">Entrega del diagnóstico (3-5 días después)</div>
+            <div class="step-desc">Recibirán un informe completo con el mapa de su negocio actual, cómo debería funcionar con IA, y el blueprint del agente digital que crearemos para su equipo.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-box">
+    <h3>¿Ya subiste tus documentos?</h3>
+    <p>Manda un mensaje a tu consultor para confirmar que estás listo.<br>Si tienes dudas o necesitas ayuda con algo, escríbenos.</p>
+    <a class="btn-wa" id="wa-btn" href="#">
+      <span>💬</span> Confirmar con mi consultor
+    </a>
+  </div>
+
+</div>
+
+<script>
+  // ── Params ──────────────────────────────────────────────────────────────────
+  const p = new URLSearchParams(location.search);
+  const empresa    = p.get('empresa')    || '';
+  const ejecutivo  = p.get('ejecutivo')  || 'tu consultor';
+  const driveUrl   = p.get('drive')      || '';
+  const fecha      = p.get('fecha')      || '';
+  const whatsapp   = p.get('whatsapp')   || '';
+
+  // Populate fields
+  if (empresa) {
+    document.getElementById('empresa-tag').textContent = empresa;
+    document.getElementById('info-empresa').textContent = empresa;
+    document.title = `Checklist — ${empresa}`;
+  }
+  document.getElementById('info-ejecutivo').textContent = ejecutivo;
+  document.getElementById('info-fecha').textContent = fecha
+    ? new Date(fecha + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })
+    : 'Por confirmar';
+
+  // Drive button
+  const driveBtn = document.getElementById('drive-btn');
+  if (driveUrl) {
+    driveBtn.href = driveUrl;
+  } else {
+    driveBtn.classList.add('no-link');
+    driveBtn.textContent = 'Link pendiente — tu consultor lo enviará pronto';
+    driveBtn.removeAttribute('href');
+  }
+
+  // WhatsApp button
+  const waBtn = document.getElementById('wa-btn');
+  if (whatsapp) {
+    const msg = encodeURIComponent(`Hola ${ejecutivo}, ya revisé el checklist y subí mis documentos al Drive. Listo para la sesión${empresa ? ' de ' + empresa : ''}.`);
+    waBtn.href = `https://wa.me/${whatsapp.replace(/\D/g, '')}?text=${msg}`;
+  } else {
+    waBtn.style.display = 'none';
+  }
+
+  // ── Checklist logic ──────────────────────────────────────────────────────────
+  const STORAGE_KEY = `mentoria_checklist_${empresa || 'default'}`;
+  const TOTAL_REQUIRED = document.querySelectorAll('[data-id]').length;
+
+  function loadChecks() {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    document.querySelectorAll('.check-item').forEach(item => {
+      if (saved[item.dataset.id]) item.classList.add('checked');
+    });
+    updateProgress();
+  }
+
+  function toggle(el) {
+    el.classList.toggle('checked');
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    saved[el.dataset.id] = el.classList.contains('checked');
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const done = document.querySelectorAll('.check-item.checked').length;
+    const pct = Math.round(done / TOTAL_REQUIRED * 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-label').textContent = `${done} de ${TOTAL_REQUIRED} completados`;
+  }
+
+  loadChecks();
+
+  // ── Generate share URL ───────────────────────────────────────────────────────
+  function getShareUrl() {
+    const base = location.origin + location.pathname;
+    const params = new URLSearchParams();
+    if (empresa)   params.set('empresa',   empresa);
+    if (ejecutivo) params.set('ejecutivo', ejecutivo);
+    if (driveUrl)  params.set('drive',     driveUrl);
+    if (fecha)     params.set('fecha',     fecha);
+    if (whatsapp)  params.set('whatsapp',  whatsapp);
+    return base + '?' + params.toString();
+  }
+</script>
+</body>
+</html>

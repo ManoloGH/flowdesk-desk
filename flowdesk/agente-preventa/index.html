@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agente de Prospección — MentorIA</title>
+<style>
+  :root {
+    --bg: #080811; --surface: #0f0f1c; --surface-2: #14142a; --surface-3: #1a1a35;
+    --purple: #6c4de6; --purple-2: #8b6ef5; --purple-glow: rgba(108,77,230,0.25);
+    --cyan: #00d4ff; --cyan-glow: rgba(0,212,255,0.18);
+    --text: #f0f0f8; --text-2: #8888aa; --text-3: #44445a;
+    --border: rgba(255,255,255,0.07); --border-active: rgba(108,77,230,0.4);
+    --success: #22c55e; --warning: #f59e0b; --red: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter',-apple-system,system-ui,sans-serif; overflow: hidden; }
+
+  /* ── CALL SCREEN ── */
+  #call-screen {
+    height: 100vh; display: flex; flex-direction: column;
+    background: radial-gradient(ellipse 80% 60% at 50% 30%, rgba(108,77,230,0.08) 0%, transparent 70%), var(--bg);
+  }
+
+  /* Top bar */
+  .call-bar {
+    height: 56px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+    background: rgba(8,8,17,0.7); backdrop-filter: blur(20px);
+    z-index: 10;
+  }
+  .call-brand { display: flex; align-items: center; gap: 10px; }
+  .call-logo { width: 28px; height: 28px; background: linear-gradient(135deg,var(--purple),var(--cyan)); border-radius: 7px; display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:white; }
+  .call-brand-text { font-size: 14px; font-weight: 700; background: linear-gradient(90deg,var(--purple-2),var(--cyan)); -webkit-background-clip:text;background-clip:text;color:transparent; }
+  .call-timer { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text-2); letter-spacing: 0.08em; }
+  .call-secure { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-3); }
+  .dot-green { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 8px var(--success); animation: pulse-dot 2s infinite; }
+  @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* Main */
+  .call-main { flex: 1; display: flex; gap: 0; min-height: 0; overflow: hidden; }
+
+  /* ── AGENT AREA ── */
+  .agent-video {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; position: relative; padding: 24px 32px;
+    overflow: hidden;
+  }
+
+  /* Agent orb */
+  .agent-orb-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+  .agent-ring { position: absolute; border-radius: 50%; border: 1px solid; animation: ring-pulse 2.5s ease-in-out infinite; }
+  .agent-ring-1 { width: 200px; height: 200px; border-color: rgba(108,77,230,0.25); animation-delay: 0s; }
+  .agent-ring-2 { width: 250px; height: 250px; border-color: rgba(108,77,230,0.12); animation-delay: 0.5s; }
+  .agent-ring-3 { width: 300px; height: 300px; border-color: rgba(0,212,255,0.08); animation-delay: 1s; }
+  @keyframes ring-pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.04);opacity:0.6} }
+  .agent-orb {
+    width: 150px; height: 150px; border-radius: 50%; position: relative; z-index: 2;
+    background: radial-gradient(circle at 35% 35%, var(--purple-2), var(--purple) 50%, #3b1fa8);
+    box-shadow: 0 0 60px var(--purple-glow), 0 0 120px rgba(108,77,230,0.1), inset 0 2px 4px rgba(255,255,255,0.15);
+    display: flex; align-items: center; justify-content: center; font-size: 56px; user-select: none;
+  }
+  .agent-orb.speaking { animation: orb-speak 0.6s ease-in-out infinite alternate; }
+  @keyframes orb-speak { from{box-shadow:0 0 60px var(--purple-glow)} to{box-shadow:0 0 90px rgba(108,77,230,0.55),0 0 180px rgba(108,77,230,0.2)} }
+
+  .agent-name { margin-top: 24px; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+  .agent-role { font-size: 12px; color: var(--text-2); margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+  .agent-role-badge { background: var(--purple-glow); border: 1px solid var(--border-active); color: var(--purple-2); font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .speaking-text {
+    margin-top: 20px; max-width: 420px; text-align: center; line-height: 1.7;
+    font-size: 15px; color: var(--text-2); min-height: 52px; white-space: pre-wrap;
+    transition: opacity 0.3s;
+  }
+  .speaking-text.typing::after { content: '▍'; animation: blink 0.7s infinite; color: var(--purple-2); font-style: normal; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* Progress dots */
+  .q-progress { display: flex; gap: 8px; margin-top: 16px; min-height: 4px; }
+  .q-dot { width: 28px; height: 4px; border-radius: 99px; background: var(--surface-2); transition: all 0.4s; }
+  .q-dot.done { background: var(--success); }
+  .q-dot.active { background: var(--purple); box-shadow: 0 0 8px var(--purple); }
+
+  /* Channel choice */
+  #channel-choice { display: none; flex-direction: column; gap: 12px; margin-top: 20px; width: 100%; max-width: 360px; }
+  .channel-btn {
+    display: flex; align-items: center; gap: 16px; padding: 16px 20px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 14px; cursor: pointer; transition: all 0.2s; width: 100%; text-align: left;
+  }
+  .channel-btn:hover { border-color: var(--border-active); background: var(--surface-3); transform: translateY(-1px); }
+  .channel-btn.selected { border-color: var(--purple); background: rgba(108,77,230,0.12); }
+  .channel-icon { font-size: 28px; flex-shrink: 0; }
+  .channel-label { font-size: 14px; font-weight: 600; color: var(--text); }
+  .channel-desc { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+
+  /* ── USER PIP (picture-in-picture) ── */
+  .user-pip {
+    position: absolute; bottom: 20px; right: 20px;
+    width: 188px; height: 141px; /* 4:3 */
+    border-radius: 14px; overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.1);
+    background: #060610;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+    z-index: 20; transition: all 0.2s;
+  }
+  .user-pip:hover { border-color: rgba(255,255,255,0.2); }
+  #user-video {
+    width: 100%; height: 100%; object-fit: cover;
+    transform: scaleX(-1); display: none;
+  }
+  .pip-placeholder {
+    width: 100%; height: 100%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 8px;
+    background: linear-gradient(135deg, #0d0d20, #0a0a18);
+    color: var(--text-3); font-size: 11px;
+  }
+  .pip-placeholder-icon { font-size: 28px; opacity: 0.4; }
+  .pip-name-label {
+    position: absolute; bottom: 6px; left: 8px;
+    font-size: 10px; color: rgba(255,255,255,0.6);
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
+    padding: 2px 8px; border-radius: 4px; pointer-events: none;
+  }
+  .pip-cam-off-overlay {
+    position: absolute; inset: 0; background: rgba(8,8,17,0.85);
+    display: none; align-items: center; justify-content: center;
+    flex-direction: column; gap: 6px; font-size: 11px; color: var(--text-3);
+  }
+  .pip-cam-off-overlay.show { display: flex; }
+
+  /* ── CHAT SIDE ── */
+  .chat-side {
+    width: 320px; flex-shrink: 0;
+    background: var(--surface); border-left: 1px solid var(--border);
+    display: flex; flex-direction: column;
+  }
+  .chat-header { padding: 14px 18px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .chat-header-title { font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.1em; }
+  .chat-msgs { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 8px; scroll-behavior: smooth; }
+  .chat-msgs::-webkit-scrollbar { width: 3px; }
+  .chat-msgs::-webkit-scrollbar-thumb { background: var(--surface-2); border-radius: 99px; }
+
+  .bubble { max-width: 92%; border-radius: 14px; padding: 9px 13px; font-size: 13px; line-height: 1.55; }
+  .bubble.agent { background: var(--surface-2); border: 1px solid var(--border); color: var(--text); border-top-left-radius: 4px; align-self: flex-start; }
+  .bubble.user { background: var(--purple); color: white; border-top-right-radius: 4px; align-self: flex-end; }
+  .bubble.system { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); color: #4ade80; font-size: 11px; align-self: center; padding: 6px 12px; border-radius: 99px; }
+  .bubble.typing-bubble { display: flex; align-items: center; gap: 4px; padding: 12px 16px; }
+  .typing-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-3); animation: tdot 1.2s infinite; }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes tdot { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+
+  /* ── BOTTOM BAR: controls + input ── */
+  .call-bottom {
+    flex-shrink: 0;
+    background: rgba(8,8,17,0.85); backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+  }
+  .call-controls-row {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    padding: 12px 24px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .ctrl-btn {
+    width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.65); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; transition: all 0.15s; position: relative; title: '';
+  }
+  .ctrl-btn:hover { background: rgba(255,255,255,0.12); color: var(--text); border-color: rgba(255,255,255,0.2); }
+  .ctrl-btn.off { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); color: #fca5a5; }
+  .ctrl-btn.end-call { background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.4); color: #fca5a5; width: 54px; height: 54px; font-size: 20px; }
+  .ctrl-btn.end-call:hover { background: rgba(239,68,68,0.35); }
+  .ctrl-label { font-size: 9px; position: absolute; bottom: -16px; left: 50%; transform: translateX(-50%); white-space: nowrap; color: var(--text-3); }
+
+  .call-controls-row .ctrl-wrap { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .ctrl-wrap { display: flex; flex-direction: column; align-items: center; }
+  .ctrl-wrap span { font-size: 9px; color: var(--text-3); margin-top: 4px; }
+
+  .call-input-area { padding: 10px 16px 14px; display: flex; gap: 10px; align-items: flex-end; }
+  .call-input {
+    flex: 1; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 11px 16px; color: var(--text);
+    font-size: 14px; font-family: inherit; resize: none; outline: none;
+    min-height: 44px; max-height: 120px; transition: border-color 0.2s;
+  }
+  .call-input:focus { border-color: var(--purple); }
+  .call-input::placeholder { color: var(--text-3); }
+  .call-input:disabled { opacity: 0.4; cursor: not-allowed; }
+  .call-send {
+    width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+    background: var(--purple); border: none; cursor: pointer; color: white;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; font-size: 18px; line-height: 1;
+  }
+  .call-send:hover:not(:disabled) { background: var(--purple-2); transform: scale(1.05); }
+  .call-send:disabled { opacity: 0.35; cursor: default; transform: none; }
+
+  /* Speech recognition active */
+  .ctrl-btn.listening { background: rgba(108,77,230,0.2); border-color: rgba(108,77,230,0.5); color: var(--purple-2); animation: listening-pulse 1s infinite; }
+  @keyframes listening-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(108,77,230,0.4)} 50%{box-shadow:0 0 0 8px rgba(108,77,230,0)} }
+
+  /* Camera permission banner */
+  .cam-banner {
+    position: absolute; top: 70px; left: 50%; transform: translateX(-50%);
+    background: rgba(13,13,26,0.92); border: 1px solid var(--border-active);
+    backdrop-filter: blur(12px); border-radius: 10px; padding: 10px 16px;
+    font-size: 12px; color: var(--text-2); display: flex; align-items: center; gap: 10px;
+    z-index: 30; white-space: nowrap;
+  }
+  .cam-banner.hidden { display: none; }
+
+  /* ── RESULTS SCREEN ── */
+  #results-screen { display: none; height: 100vh; overflow-y: auto; background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(108,77,230,0.15) 0%, transparent 60%), var(--bg); }
+  .results-inner { max-width: 680px; margin: 0 auto; padding: 48px 24px 80px; }
+
+  .results-tag { display: inline-flex; align-items: center; gap: 6px; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); color: #4ade80; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 12px; border-radius: 99px; margin-bottom: 14px; }
+  .results-hero { font-size: 26px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 6px; line-height: 1.25; }
+  .results-sub { font-size: 13px; color: var(--text-2); margin-bottom: 32px; }
+
+  .diag-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 22px 24px; margin-bottom: 14px; position: relative; overflow: hidden; }
+  .diag-card::before { content:''; position:absolute;top:0;left:0;right:0;height:2px; }
+  .diag-card.critical::before { background: linear-gradient(90deg,#ef4444,#f59e0b); }
+  .diag-card.opp::before { background: linear-gradient(90deg,var(--purple),var(--cyan)); }
+  .diag-card.positive::before { background: linear-gradient(90deg,#22c55e,#10b981); }
+  .diag-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  .diag-card-title { font-size: 14px; font-weight: 600; }
+  .diag-card-badge { padding: 3px 10px; border-radius: 99px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; flex-shrink: 0; }
+  .badge-critical { background: rgba(239,68,68,0.15); color: #fca5a5; }
+  .badge-opp { background: var(--purple-glow); color: var(--purple-2); }
+  .badge-positive { background: rgba(34,197,94,0.1); color: #4ade80; }
+  .diag-card-body { font-size: 13px; color: var(--text-2); line-height: 1.65; }
+
+  .roi-box { background: linear-gradient(135deg, rgba(108,77,230,0.12), rgba(0,212,255,0.05)); border: 1px solid var(--border-active); border-radius: 14px; padding: 22px 24px; margin: 22px 0; display: flex; align-items: center; gap: 20px; }
+  .roi-num { font-size: 38px; font-weight: 800; color: var(--cyan); letter-spacing: -0.04em; white-space: nowrap; }
+  .roi-label { font-size: 13px; color: var(--text-2); }
+  .roi-desc { font-size: 12px; color: var(--text-3); margin-top: 4px; }
+
+  .send-status { border-radius: 14px; padding: 20px 24px; margin: 22px 0; display: flex; align-items: center; gap: 16px; }
+  .send-status.sending { background: rgba(108,77,230,0.08); border: 1px solid var(--border-active); }
+  .send-status.sent-ok { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.3); }
+  .send-status.sent-err { background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.2); }
+  .send-icon { font-size: 28px; flex-shrink: 0; }
+  .send-title { font-size: 14px; font-weight: 600; }
+  .send-desc { font-size: 12px; color: var(--text-2); margin-top: 3px; }
+  .spinner { width: 20px; height: 20px; border-radius: 50%; border: 2px solid rgba(108,77,230,0.3); border-top-color: var(--purple); animation: spin 0.8s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .cta-box { background: linear-gradient(135deg, var(--purple), #4f2ec9); border-radius: 16px; padding: 28px; text-align: center; margin-top: 24px; }
+  .cta-box h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .cta-box p { font-size: 13px; color: rgba(255,255,255,0.7); margin-bottom: 22px; line-height: 1.6; }
+  .btn-cta { display: inline-flex; align-items: center; gap: 8px; background: white; color: var(--purple); font-size: 14px; font-weight: 700; padding: 13px 26px; border-radius: 10px; text-decoration: none; border: none; cursor: pointer; transition: all 0.15s; }
+  .btn-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+  .btn-cta-ghost { display: inline-flex; align-items: center; gap: 8px; background: transparent; color: rgba(255,255,255,0.65); font-size: 13px; padding: 11px 18px; border-radius: 10px; text-decoration: none; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; margin-left: 10px; transition: all 0.15s; }
+  .btn-cta-ghost:hover { background: rgba(255,255,255,0.08); color: white; }
+  .results-footer { text-align: center; font-size: 11px; color: var(--text-3); margin-top: 36px; line-height: 1.7; }
+
+  @media(max-width:700px) {
+    .chat-side { display: none; }
+    .agent-orb { width: 110px; height: 110px; font-size: 42px; }
+    .agent-ring-1 { width: 150px; height: 150px; }
+    .agent-ring-2,.agent-ring-3 { display: none; }
+    .user-pip { width: 120px; height: 90px; bottom: 12px; right: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════ CALL SCREEN ════ -->
+<div id="call-screen">
+
+  <!-- Top bar -->
+  <div class="call-bar">
+    <div class="call-brand">
+      <div class="call-logo">M</div>
+      <span class="call-brand-text">MentorIA</span>
+    </div>
+    <span class="call-timer" id="call-timer">00:00</span>
+    <div class="call-secure"><div class="dot-green"></div> Sesión segura</div>
+  </div>
+
+  <div class="call-main">
+
+    <!-- ── Agent + User PIP ── -->
+    <div class="agent-video">
+
+      <!-- Camera permission banner -->
+      <div class="cam-banner hidden" id="cam-banner">
+        📷 Activa tu cámara para una mejor experiencia
+        <button onclick="requestCamera()" style="background:var(--purple);border:none;color:white;font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;">Activar</button>
+        <button onclick="document.getElementById('cam-banner').classList.add('hidden')" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:14px;">✕</button>
+      </div>
+
+      <!-- Agent orb -->
+      <div class="agent-orb-wrap">
+        <div class="agent-ring agent-ring-3"></div>
+        <div class="agent-ring agent-ring-2"></div>
+        <div class="agent-ring agent-ring-1"></div>
+        <div class="agent-orb" id="agent-orb">🤖</div>
+      </div>
+      <div class="agent-name">Agente de Prospección</div>
+      <div class="agent-role">
+        <span class="agent-role-badge">IA</span>
+        Asesora de Diagnóstico · MentorIA
+      </div>
+      <div class="speaking-text" id="speaking-text"></div>
+
+      <!-- Channel choice -->
+      <div id="channel-choice">
+        <button class="channel-btn" onclick="selectChannel('email')">
+          <span class="channel-icon">📧</span>
+          <div>
+            <div class="channel-label">Correo electrónico</div>
+            <div class="channel-desc">Recibirás un informe detallado en tu bandeja</div>
+          </div>
+        </button>
+        <button class="channel-btn" onclick="selectChannel('whatsapp')">
+          <span class="channel-icon">💬</span>
+          <div>
+            <div class="channel-label">WhatsApp</div>
+            <div class="channel-desc">Lo recibirás directo en tu teléfono</div>
+          </div>
+        </button>
+      </div>
+
+      <!-- Progress dots -->
+      <div class="q-progress" id="q-progress" style="opacity:0;">
+        <div class="q-dot" id="qdot-0"></div>
+        <div class="q-dot" id="qdot-1"></div>
+        <div class="q-dot" id="qdot-2"></div>
+        <div class="q-dot" id="qdot-3"></div>
+        <div class="q-dot" id="qdot-4"></div>
+      </div>
+
+      <!-- ── User camera PIP ── -->
+      <div class="user-pip" id="user-pip">
+        <video id="user-video" autoplay muted playsinline></video>
+        <div class="pip-placeholder" id="pip-placeholder">
+          <div class="pip-placeholder-icon">📷</div>
+          <span>Sin cámara</span>
+        </div>
+        <div class="pip-cam-off-overlay" id="pip-cam-off">
+          <span style="font-size:20px">📷</span>
+          <span>Cámara apagada</span>
+        </div>
+        <div class="pip-name-label" id="pip-name-label">Tú</div>
+      </div>
+
+    </div>
+
+    <!-- ── Transcript side ── -->
+    <div class="chat-side">
+      <div class="chat-header"><div class="chat-header-title">Transcripción</div></div>
+      <div class="chat-msgs" id="chat-msgs"></div>
+    </div>
+
+  </div><!-- /call-main -->
+
+  <!-- ── Bottom: call controls + text input ── -->
+  <div class="call-bottom">
+
+    <!-- Call controls row -->
+    <div class="call-controls-row">
+      <!-- Mic / Speech -->
+      <div class="ctrl-wrap">
+        <button class="ctrl-btn" id="mic-btn" onclick="toggleMic()" title="Hablar">🎤</button>
+        <span>Micrófono</span>
+      </div>
+      <!-- Camera toggle -->
+      <div class="ctrl-wrap">
+        <button class="ctrl-btn" id="cam-btn" onclick="toggleCamera()" title="Cámara">📹</button>
+        <span>Cámara</span>
+      </div>
+      <!-- End call (decorative until session ends) -->
+      <div class="ctrl-wrap">
+        <button class="ctrl-btn end-call" onclick="confirmEndCall()" title="Terminar llamada">📵</button>
+        <span>Finalizar</span>
+      </div>
+    </div>
+
+    <!-- Text input -->
+    <div class="call-input-area">
+      <textarea class="call-input" id="user-input" placeholder="Escribe tu respuesta o usa el micrófono…" rows="1" disabled></textarea>
+      <button class="call-send" id="send-btn" onclick="sendAnswer()" disabled>↑</button>
+    </div>
+
+  </div>
+
+</div><!-- /call-screen -->
+
+
+<!-- ════ RESULTS SCREEN ════ -->
+<div id="results-screen">
+  <div class="results-inner" id="results-inner"></div>
+</div>
+
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+const N8N_WEBHOOK  = '';
+const CALENDAR_URL = '';
+
+// ── CONVERSACIÓN ────────────────────────────────────────────────────────────
+const DIAGNOSTIC_QUESTIONS = [
+  { id: 'empresa',     text: '¡Perfecto! Empecemos.\n\n¿Me puedes decir el nombre de tu empresa y en qué industria trabajan?',          placeholder: 'Ej. Somos LogiMex, empresa de logística con 45 empleados…' },
+  { id: 'dolores',     text: 'Cuéntame: ¿cuáles son los 2 o 3 procesos que más te quitan tiempo o que no están funcionando bien?',      placeholder: 'Ej. El seguimiento de clientes es manual, tardamos 2 días en mandar cotizaciones…' },
+  { id: 'herramientas',text: '¿Qué herramientas digitales usan actualmente? CRM, Excel, WhatsApp, sistemas de facturación…',            placeholder: 'Ej. Excel para todo, WhatsApp para ventas, Contpaq para facturar…' },
+  { id: 'intentos',    text: '¿Han intentado antes mejorar o automatizar alguno de esos procesos? ¿Qué pasó?',                          placeholder: 'Ej. Probamos un CRM pero nadie lo usó / nunca lo hemos intentado…' },
+  { id: 'impacto',     text: 'Última pregunta. Si resolvieras hoy el problema más grande, ¿cuánto tiempo o dinero estimas que ahorrarías al mes?', placeholder: 'Ej. Unas 30 horas semanales, o unos $50,000 pesos al mes…' },
+];
+
+// ── ESTADO ──────────────────────────────────────────────────────────────────
+let phase = '0a';
+let isTyping = false;
+let timerSecs = 0;
+let timerInterval = null;
+const contact = { nombre: '', canal: '', valor: '' };
+const answers  = {};
+
+// ── CÁMARA + MIC ────────────────────────────────────────────────────────────
+let userStream    = null;
+let cameraActive  = false;
+let micActive     = false;
+let recognition   = null;
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+async function requestCamera() {
+  document.getElementById('cam-banner').classList.add('hidden');
+  try {
+    userStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    const video = $('user-video');
+    video.srcObject = userStream;
+    video.style.display = 'block';
+    $('pip-placeholder').style.display = 'none';
+    cameraActive = true;
+    updateCamBtn();
+  } catch (e) {
+    // Camera denied — silently continue without it
+  }
+}
+
+function toggleCamera() {
+  if (!userStream) { requestCamera(); return; }
+  cameraActive = !cameraActive;
+  userStream.getVideoTracks().forEach(t => { t.enabled = cameraActive; });
+  $('user-video').style.display  = cameraActive ? 'block' : 'none';
+  $('pip-cam-off').classList.toggle('show', !cameraActive);
+  $('pip-placeholder').style.display = 'none';
+  updateCamBtn();
+}
+
+function updateCamBtn() {
+  const btn = $('cam-btn');
+  btn.textContent = cameraActive ? '📹' : '🚫';
+  btn.classList.toggle('off', !cameraActive);
+  btn.title = cameraActive ? 'Apagar cámara' : 'Encender cámara';
+}
+
+function toggleMic() {
+  if (!SpeechRecognition) {
+    alert('Tu navegador no soporta reconocimiento de voz. Usa el campo de texto.');
+    return;
+  }
+  if (micActive) { stopListening(); return; }
+  startListening();
+}
+
+function startListening() {
+  if (micActive) return;
+  recognition = new SpeechRecognition();
+  recognition.lang = 'es-MX';
+  recognition.interimResults = true;
+  recognition.continuous = false;
+
+  recognition.onstart = () => {
+    micActive = true;
+    $('mic-btn').classList.add('listening');
+    $('mic-btn').textContent = '🔴';
+    $('user-input').placeholder = 'Escuchando…';
+  };
+
+  recognition.onresult = (e) => {
+    const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+    $('user-input').value = transcript;
+    if (e.results[e.results.length - 1].isFinal) stopListening();
+  };
+
+  recognition.onend = () => { stopListening(); };
+  recognition.onerror = () => { stopListening(); };
+
+  recognition.start();
+}
+
+function stopListening() {
+  micActive = false;
+  $('mic-btn').classList.remove('listening');
+  $('mic-btn').textContent = '🎤';
+  $('user-input').placeholder = 'Escribe tu respuesta o usa el micrófono…';
+  if (recognition) { try { recognition.stop(); } catch {} recognition = null; }
+}
+
+function confirmEndCall() {
+  if (phase === 'done') return;
+  if (confirm('¿Seguro que quieres terminar la sesión? Se perderá el diagnóstico.')) {
+    location.reload();
+  }
+}
+
+// ── UTILS ────────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function startTimer() {
+  timerInterval = setInterval(() => {
+    timerSecs++;
+    const m = String(Math.floor(timerSecs / 60)).padStart(2,'0');
+    const s = String(timerSecs % 60).padStart(2,'0');
+    $('call-timer').textContent = `${m}:${s}`;
+  }, 1000);
+}
+
+function addBubble(role, text) {
+  const msgs = $('chat-msgs');
+  const div = document.createElement('div');
+  div.className = `bubble ${role}`;
+  div.textContent = text;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function addTypingBubble() {
+  const msgs = $('chat-msgs');
+  const div = document.createElement('div');
+  div.className = 'bubble agent typing-bubble';
+  div.id = 'typing-bubble';
+  div.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTypingBubble() {
+  const b = $('typing-bubble');
+  if (b) b.remove();
+}
+
+async function typeText(el, text, speed = 18) {
+  el.textContent = '';
+  el.classList.add('typing');
+  $('agent-orb').classList.add('speaking');
+  for (const ch of text) { el.textContent += ch; await sleep(speed); }
+  el.classList.remove('typing');
+  $('agent-orb').classList.remove('speaking');
+}
+
+function enableInput(placeholder = '') {
+  $('user-input').placeholder = placeholder || 'Escribe tu respuesta…';
+  $('user-input').disabled = false;
+  $('send-btn').disabled = false;
+  $('user-input').focus();
+}
+function disableInput() {
+  $('user-input').disabled = true;
+  $('send-btn').disabled = true;
+}
+
+function showChannelChoice(show) {
+  $('channel-choice').style.display = show ? 'flex' : 'none';
+  $('user-input').style.display  = show ? 'none' : '';
+  $('send-btn').style.display    = show ? 'none' : '';
+}
+
+function updateDots(activeIdx) {
+  $('q-progress').style.opacity = '1';
+  for (let i = 0; i < 5; i++) {
+    const dot = $(`qdot-${i}`);
+    if (i < activeIdx)      dot.className = 'q-dot done';
+    else if (i === activeIdx) dot.className = 'q-dot active';
+    else                    dot.className = 'q-dot';
+  }
+}
+
+// ── FASE 0: CAPTURA DE CONTACTO ──────────────────────────────────────────────
+
+async function askNombre() {
+  phase = '0a'; disableInput();
+  addTypingBubble(); await sleep(1000); removeTypingBubble();
+  const msg = '¡Hola! Soy el Agente de Prospección de MentorIA. Estoy aquí para hacerte un pre-diagnóstico de automatización gratuito en menos de 5 minutos.\n\n¿Cómo te llamas?';
+  addBubble('agent', msg.replace(/\n\n/g,' '));
+  await typeText($('speaking-text'), msg);
+  enableInput('Tu nombre…');
+}
+
+async function askCanal() {
+  phase = '0b'; disableInput();
+  addTypingBubble(); await sleep(800); removeTypingBubble();
+  const msg = `Mucho gusto, ${contact.nombre}. Antes de empezar, ¿cómo prefieres recibir tu diagnóstico al terminar la sesión?`;
+  addBubble('agent', msg);
+  await typeText($('speaking-text'), msg);
+  showChannelChoice(true);
+}
+
+async function selectChannel(canal) {
+  document.querySelectorAll('.channel-btn').forEach(b => b.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  contact.canal = canal;
+  showChannelChoice(false);
+  addBubble('user', canal === 'email' ? '📧 Correo electrónico' : '💬 WhatsApp');
+  await sleep(400);
+  await askContacto(canal);
+}
+
+async function askContacto(canal) {
+  phase = '0c'; disableInput();
+  addTypingBubble(); await sleep(700); removeTypingBubble();
+  const msg = canal === 'email'
+    ? '¡Perfecto! ¿Cuál es tu correo electrónico?'
+    : '¡Perfecto! ¿Cuál es tu número de WhatsApp? (incluye el código de país, ej. +52 55 1234 5678)';
+  addBubble('agent', msg);
+  await typeText($('speaking-text'), msg);
+  enableInput(canal === 'email' ? 'tu@correo.com' : '+52 55 0000 0000');
+}
+
+// ── FASE 1: DIAGNÓSTICO ───────────────────────────────────────────────────────
+
+async function showDiagnosticQuestion(idx) {
+  phase = idx; disableInput(); updateDots(idx);
+  addTypingBubble(); await sleep(900); removeTypingBubble();
+  const q = DIAGNOSTIC_QUESTIONS[idx];
+  addBubble('agent', q.text.replace(/\n\n/g,' '));
+  await typeText($('speaking-text'), q.text);
+  enableInput(q.placeholder);
+}
+
+// ── ENVÍO ──────────────────────────────────────────────────────────────────────
+
+async function sendAnswer() {
+  if (isTyping) return;
+  const input = $('user-input');
+  const text  = input.value.trim();
+  if (!text) return;
+  input.value = ''; input.style.height = 'auto';
+  disableInput(); addBubble('user', text);
+
+  // Actualizar nombre en PIP
+  if (phase === '0a') {
+    contact.nombre = text.split(' ')[0];
+    $('pip-name-label').textContent = contact.nombre;
+    await askCanal();
+  } else if (phase === '0c') {
+    contact.valor = text;
+    addBubble('system', `✓ Diagnóstico se enviará a ${text}`);
+    await sleep(400);
+    await showDiagnosticQuestion(0);
+  } else if (typeof phase === 'number') {
+    answers[DIAGNOSTIC_QUESTIONS[phase].id] = text;
+    if (phase < DIAGNOSTIC_QUESTIONS.length - 1) {
+      await showDiagnosticQuestion(phase + 1);
+    } else {
+      await generateAndSend();
+    }
+  }
+}
+
+// ── GENERACIÓN DE DIAGNÓSTICO ─────────────────────────────────────────────────
+
+function extractKeywords(text) {
+  const t = text.toLowerCase();
+  return {
+    hasExcel:   /excel|hoja|spreadsheet/.test(t),
+    hasWhatsapp:/whatsapp|wsp/.test(t),
+    hasCRM:     /crm|hubspot|salesforce|zoho|bitrix/.test(t),
+    hasManual:  /manual|papel|teléfono|llamada|correo/.test(t),
+    hasVentas:  /venta|lead|cliente|cotiz|propuesta|seguimiento/.test(t),
+    hasOps:     /operacion|logistic|entrega|inventario|produccion/.test(t),
+    hoursMatch: text.match(/(\d+)\s*(hora|hour)/i),
+    moneyMatch: text.match(/\$?\s*(\d[\d,\.]*)\s*(mil|k|peso|mxn)?/i),
+  };
+}
+
+function estimateROI(allText) {
+  const k = extractKeywords(allText);
+  let money = 0;
+  if (k.hoursMatch) money = parseInt(k.hoursMatch[1]) * 4 * 200;
+  if (k.moneyMatch) {
+    const raw = parseFloat(k.moneyMatch[1].replace(/,/g,''));
+    const sfx = (k.moneyMatch[2] || '').toLowerCase();
+    money = Math.max(money, (sfx === 'mil' || sfx === 'k') ? raw * 1000 : raw);
+  }
+  return money ? '$' + money.toLocaleString('es-MX') + ' MXN' : '$40,000–$80,000 MXN';
+}
+
+function buildHallazgos(answers) {
+  const all = Object.values(answers).join(' ');
+  const k = extractKeywords(all);
+  const kD = extractKeywords(answers.dolores || '');
+  const kH = extractKeywords(answers.herramientas || '');
+  const list = [];
+
+  if (kH.hasExcel) list.push({ type:'critical', icon:'⚠️', title:'Dependencia crítica de Excel', badge:'Riesgo alto', body:'Usar Excel como sistema central genera errores humanos, versiones inconsistentes y cuellos de botella. Es una de las causas más comunes de ineficiencias en empresas en crecimiento.' });
+  if (kH.hasWhatsapp && kD.hasVentas) list.push({ type:'critical', icon:'📱', title:'Ventas por WhatsApp sin estructura', badge:'Pérdida de leads', body:'Gestionar prospectos desde WhatsApp sin CRM provoca pérdida de leads y tiempos de respuesta inconsistentes. Responder tarde reduce la conversión hasta un 80%.' });
+  if (k.hasManual || /manual/.test(all)) list.push({ type:'critical', icon:'🔄', title:'Procesos manuales repetitivos detectados', badge:'Automatizable', body:'Los procesos que mencionaste se pueden automatizar. Implementar flujos automáticos típicamente reduce el tiempo operativo entre 60% y 80%.' });
+  if (!k.hasCRM) list.push({ type:'opp', icon:'🚀', title:'Oportunidad: CRM inteligente con IA', badge:'Quick Win', body:'No tienen un CRM centralizado. Un CRM con automatizaciones de IA puede dar visibilidad completa del pipeline desde el primer día.' });
+  list.push({ type:'opp', icon:'🤖', title:'Oportunidad: agente IA para atención 24/7', badge:'Alto impacto', body:'Un agente IA puede manejar el primer contacto con prospectos a cualquier hora, calificarlos automáticamente y agendar citas. Tu equipo solo interviene en oportunidades calificadas.' });
+
+  return list.slice(0, 4);
+}
+
+async function generateAndSend() {
+  phase = 'done'; disableInput();
+  for (let i = 0; i < 5; i++) $(`qdot-${i}`).className = 'q-dot done';
+
+  addTypingBubble(); await sleep(800); removeTypingBubble();
+  const closeMsg = `¡Gracias, ${contact.nombre}! Con eso tengo todo lo que necesito. Dame un momento mientras proceso el diagnóstico…`;
+  addBubble('agent', closeMsg);
+  await typeText($('speaking-text'), closeMsg);
+  await sleep(2000);
+  await typeText($('speaking-text'), 'Analizando procesos… calculando potencial de automatización… estimando ROI…');
+  await sleep(2500);
+
+  clearInterval(timerInterval);
+  if (userStream) userStream.getTracks().forEach(t => t.stop());
+
+  const allText   = Object.values(answers).join(' ');
+  const hallazgos = buildHallazgos(answers);
+  const roi       = estimateROI(allText);
+  const empresaRaw = (answers.empresa || '').split('\n')[0].split(',')[0].trim();
+
+  const lead = {
+    id: `lead_${Date.now()}`, fecha: new Date().toISOString(),
+    nombre: contact.nombre, canal: contact.canal, contacto: contact.valor,
+    empresa: empresaRaw, answers,
+    hallazgos: hallazgos.map(h => ({ titulo: h.title, tipo: h.type, descripcion: h.body })),
+    roi, duracion_secs: timerSecs,
+  };
+
+  try {
+    const prev = JSON.parse(localStorage.getItem('mentoria_preventa_leads') || '[]');
+    prev.push(lead);
+    localStorage.setItem('mentoria_preventa_leads', JSON.stringify(prev));
+  } catch {}
+
+  $('call-screen').style.transition = 'opacity 0.5s';
+  $('call-screen').style.opacity = '0';
+  await sleep(500);
+  $('call-screen').style.display = 'none';
+  $('results-screen').style.display = 'block';
+  buildResultsHTML(lead, hallazgos, roi, empresaRaw);
+  sendToWebhook(lead);
+}
+
+// ── RESULTADOS ────────────────────────────────────────────────────────────────
+
+function buildResultsHTML(lead, hallazgos, roi, empresa) {
+  const typeMap = { critical:{badge:'badge-critical',cls:'critical'}, opp:{badge:'badge-opp',cls:'opp'}, positive:{badge:'badge-positive',cls:'positive'} };
+  const canalLabel = lead.canal === 'whatsapp' ? 'WhatsApp' : 'correo electrónico';
+  const hallazgosHTML = hallazgos.map(h => {
+    const t = typeMap[h.type] || typeMap.opp;
+    return `<div class="diag-card ${t.cls}"><div class="diag-card-head"><div class="diag-card-title">${h.icon} ${h.title}</div><span class="diag-card-badge ${t.badge}">${h.badge}</span></div><div class="diag-card-body">${h.body}</div></div>`;
+  }).join('');
+
+  $('results-inner').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px;">
+      <div style="width:36px;height:36px;background:linear-gradient(135deg,#6c4de6,#00d4ff);border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:white;">M</div>
+      <span style="font-size:14px;font-weight:700;background:linear-gradient(90deg,#8b6ef5,#00d4ff);-webkit-background-clip:text;background-clip:text;color:transparent;">MentorIA Systems</span>
+    </div>
+    <div class="results-tag">✅ Pre-diagnóstico listo</div>
+    <div class="results-hero">Tu diagnóstico${empresa ? ', ' + empresa : ''}</div>
+    <div class="results-sub">${new Date().toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'})} · Sesión con Agente de Prospección · ${Math.floor(lead.duracion_secs/60)} min ${lead.duracion_secs%60} seg</div>
+    ${hallazgosHTML}
+    <div class="roi-box">
+      <div class="roi-num">${roi}</div>
+      <div><div class="roi-label">Potencial de ahorro mensual estimado</div><div class="roi-desc">Basado en las ineficiencias que describiste. El diagnóstico completo afina este número.</div></div>
+    </div>
+    <div class="diag-card">
+      <div class="diag-card-head"><div class="diag-card-title">🎯 Recomendación principal</div></div>
+      <div class="diag-card-body">Con base en lo que compartiste, el mayor impacto vendría de estructurar y automatizar el proceso de ventas y seguimiento de clientes. Esto genera resultados visibles en las primeras 4 semanas y libera a tu equipo para cerrar negocios, no administrarlos.<br><br>El siguiente paso es una llamada de diagnóstico (30–45 min) donde un asesor humano de MentorIA revisa este pre-diagnóstico contigo y te muestra el plan de implementación con fases, costos y ROI proyectado.</div>
+    </div>
+    <div class="send-status sending" id="send-status">
+      <div class="spinner"></div>
+      <div><div class="send-title">Enviando tu diagnóstico…</div><div class="send-desc">Mandando al ${canalLabel}: ${lead.contacto}</div></div>
+    </div>
+    <div class="cta-box">
+      <h3>¿Agendamos la llamada con un asesor?</h3>
+      <p>Un experto de MentorIA revisará este diagnóstico contigo y te mostrará exactamente cómo quedaría tu empresa con automatizaciones IA implementadas.</p>
+      <button class="btn-cta" onclick="agendarLlamada()">📅 Agendar llamada — gratis</button>
+      <button class="btn-cta-ghost" onclick="compartir()">Compartir</button>
+    </div>
+    <div class="results-footer">Pre-diagnóstico generado por el Agente de Prospección de MentorIA Systems.<br>Los estimados de ROI se basan en promedios de la industria y tus respuestas.</div>
+  `;
+}
+
+// ── WEBHOOK ───────────────────────────────────────────────────────────────────
+
+async function sendToWebhook(lead) {
+  const payload = {
+    trigger: 'mentoria_prospeccion_lead',
+    lead: { ...lead, canal_label: lead.canal === 'whatsapp' ? 'WhatsApp' : 'Email', micro_diagnostico_texto: lead.hallazgos.map(h => `• ${h.titulo}: ${h.descripcion}`).join('\n\n'), roi_display: lead.roi, fecha_humana: new Date(lead.fecha).toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'}) },
+  };
+  if (!N8N_WEBHOOK) { await sleep(2000); updateSendStatus('ok', lead.canal, lead.contacto); return; }
+  try {
+    const res = await fetch(N8N_WEBHOOK, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    updateSendStatus(res.ok ? 'ok' : 'error', lead.canal, lead.contacto);
+  } catch { updateSendStatus('error', lead.canal, lead.contacto); }
+}
+
+function updateSendStatus(status, canal, contacto) {
+  const el = $('send-status');
+  if (!el) return;
+  const canalLabel = canal === 'whatsapp' ? 'WhatsApp' : 'correo';
+  if (status === 'ok') {
+    el.className = 'send-status sent-ok';
+    el.innerHTML = `<div class="send-icon">✅</div><div><div class="send-title">¡Diagnóstico enviado!</div><div class="send-desc">Revisa tu ${canalLabel}: ${contacto}</div></div>`;
+  } else {
+    el.className = 'send-status sent-err';
+    el.innerHTML = `<div class="send-icon">⚠️</div><div><div class="send-title">No pudimos enviar el diagnóstico</div><div class="send-desc">Guarda esta página o toma una captura. Un asesor te contactará pronto.</div></div>`;
+  }
+}
+
+// ── ACCIONES ──────────────────────────────────────────────────────────────────
+
+function agendarLlamada() {
+  if (CALENDAR_URL) { window.open(CALENDAR_URL,'_blank'); }
+  else { alert('Conecta tu link de Calendly o GHL en la variable CALENDAR_URL del archivo.'); }
+}
+function compartir() {
+  if (navigator.share) { navigator.share({ title:'Mi pre-diagnóstico MentorIA', text:'Acabo de recibir mi diagnóstico gratuito de automatización IA con MentorIA Systems.' }).catch(()=>{}); }
+  else { navigator.clipboard?.writeText(window.location.href).then(() => alert('Link copiado al portapapeles.')); }
+}
+
+// ── TEXTAREA + KEYBOARD ───────────────────────────────────────────────────────
+
+$('user-input').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+$('user-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAnswer(); }
+});
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+
+async function init() {
+  startTimer();
+
+  // Solicitar cámara automáticamente
+  try {
+    userStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    const video = $('user-video');
+    video.srcObject = userStream;
+    video.style.display = 'block';
+    $('pip-placeholder').style.display = 'none';
+    cameraActive = true;
+    updateCamBtn();
+  } catch (e) {
+    // Cámara no disponible o denegada — mostrar banner
+    setTimeout(() => $('cam-banner').classList.remove('hidden'), 2000);
+  }
+
+  await sleep(600);
+  await askNombre();
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Configurador de Sesión de Diagnóstico | MentorIA</title>
+<style>
+  :root {
+    --brand-dark: #0a0a14; --brand-purple: #6c4de6; --brand-purple-light: #8b6ef5;
+    --brand-purple-dim: rgba(108,77,230,0.15); --brand-cyan: #00d4ff;
+    --brand-cyan-dim: rgba(0,212,255,0.1);
+    --surface: #13131f; --surface-2: #1a1a2e; --surface-3: #1f1f35;
+    --border: rgba(255,255,255,0.08); --border-active: rgba(108,77,230,0.5);
+    --text-primary: #f0f0f8; --text-secondary: #8888aa; --text-muted: #55556a;
+    --success: #22c55e; --warning: #f59e0b; --danger: #ef4444;
+    --radius: 12px; --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--brand-dark); color: var(--text-primary); font-family: 'Inter',-apple-system,system-ui,sans-serif; font-size: 15px; line-height: 1.6; min-height: 100vh; }
+
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 18px 0; }
+  .header-inner { max-width: 860px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; gap: 14px; }
+  .logo-dot { width: 32px; height: 32px; background: linear-gradient(135deg,var(--brand-purple),var(--brand-cyan)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: white; }
+  .logo-text { font-size: 15px; font-weight: 700; } .logo-sub { font-size: 11px; color: var(--text-secondary); }
+
+  .main { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  .hero { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 36px; margin-bottom: 32px; position: relative; overflow: hidden; }
+  .hero::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--brand-purple),var(--brand-cyan)); }
+  .hero-tag { display: inline-flex; align-items: center; gap: 6px; background: var(--brand-purple-dim); border: 1px solid var(--border-active); color: var(--brand-purple-light); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 10px; border-radius: 99px; margin-bottom: 14px; }
+  .hero h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+  .hero p { font-size: 14px; color: var(--text-secondary); line-height: 1.7; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 20px; }
+  .card-title { font-size: 15px; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+  .card-num { width: 28px; height: 28px; background: var(--brand-purple-dim); border: 1px solid var(--border-active); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--brand-purple-light); flex-shrink: 0; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .field { margin-bottom: 18px; } .field:last-child { margin-bottom: 0; }
+  label.fl { font-size: 13px; font-weight: 500; color: var(--text-secondary); display: block; margin-bottom: 6px; }
+  input.fi, select.fi, textarea.fi { width: 100%; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 11px 14px; color: var(--text-primary); font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s; }
+  input.fi:focus, select.fi:focus, textarea.fi:focus { border-color: var(--brand-purple); box-shadow: 0 0 0 3px var(--brand-purple-dim); }
+  select.fi option { background: var(--surface-2); }
+
+  /* Department list */
+  .dept-list { display: flex; flex-direction: column; gap: 10px; }
+  .dept-row { display: flex; align-items: center; gap: 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; transition: border-color 0.2s; }
+  .dept-row:hover { border-color: var(--border-active); }
+  .dept-num { width: 24px; height: 24px; background: var(--brand-purple-dim); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--brand-purple-light); flex-shrink: 0; }
+  .dept-input { flex: 1; background: transparent; border: none; color: var(--text-primary); font-size: 14px; font-family: inherit; outline: none; }
+  .dept-input::placeholder { color: var(--text-muted); }
+  .dept-tag { padding: 3px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; flex-shrink: 0; white-space: nowrap; }
+  .tag-mapped { background: var(--brand-purple-dim); color: var(--brand-purple-light); border: 1px solid var(--border-active); }
+  .tag-generic { background: rgba(0,212,255,0.1); color: var(--brand-cyan); border: 1px solid rgba(0,212,255,0.3); }
+  .dept-del { background: none; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; line-height: 1; padding: 0 4px; transition: color 0.15s; }
+  .dept-del:hover { color: var(--danger); }
+  .add-dept-btn { display: flex; align-items: center; gap: 8px; background: transparent; border: 1px dashed var(--border-active); border-radius: var(--radius-sm); padding: 12px 16px; color: var(--brand-purple-light); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; width: 100%; margin-top: 8px; }
+  .add-dept-btn:hover { background: var(--brand-purple-dim); }
+
+  /* Result plan */
+  .plan-section { margin-top: 28px; }
+  .plan-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .plan-list { display: flex; flex-direction: column; gap: 10px; }
+  .plan-item { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; display: flex; align-items: center; gap: 14px; transition: border-color 0.2s; }
+  .plan-item:hover { border-color: var(--brand-purple); }
+  .plan-icon { font-size: 20px; flex-shrink: 0; }
+  .plan-info { flex: 1; }
+  .plan-name { font-size: 14px; font-weight: 600; }
+  .plan-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+  .plan-status { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; transition: all 0.2s; }
+  .plan-status.done { background: var(--success); border-color: var(--success); color: white; }
+  .plan-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: none; text-decoration: none; }
+  .btn-primary { background: var(--brand-purple); color: white; } .btn-primary:hover { background: var(--brand-purple-light); transform: translateY(-1px); }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); } .btn-outline:hover { border-color: var(--brand-purple); color: var(--brand-purple-light); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-success { background: var(--success); color: white; }
+
+  /* Summary bar */
+  .summary-bar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-top: 24px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .summary-stat { text-align: center; }
+  .summary-num { font-size: 28px; font-weight: 700; color: var(--brand-purple-light); }
+  .summary-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .summary-actions { margin-left: auto; display: flex; gap: 10px; }
+  .progress-mini { height: 6px; background: var(--surface-3); border-radius: 99px; overflow: hidden; flex: 1; min-width: 120px; }
+  .progress-mini-fill { height: 100%; background: linear-gradient(90deg,var(--brand-purple),var(--brand-cyan)); border-radius: 99px; transition: width 0.4s; }
+
+  /* Checklist info */
+  .info-box { background: var(--brand-cyan-dim); border: 1px solid rgba(0,212,255,0.2); border-radius: var(--radius-sm); padding: 14px 16px; font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; }
+  .info-box strong { color: var(--brand-cyan); }
+
+  /* Known departments reference */
+  .dept-ref { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .dept-ref-chip { background: var(--surface-3); border: 1px solid var(--border); border-radius: 99px; padding: 3px 10px; font-size: 11px; color: var(--text-secondary); cursor: pointer; transition: all 0.15s; }
+  .dept-ref-chip:hover { border-color: var(--brand-purple); color: var(--brand-purple-light); background: var(--brand-purple-dim); }
+
+  @media(max-width:640px) { .two-col { grid-template-columns: 1fr; } .summary-actions { margin-left: 0; width: 100%; } }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="logo-dot">M</div>
+      <div><div class="logo-text">MentorIA Systems</div><div class="logo-sub">Configurador de Diagnóstico</div></div>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="hero">
+    <div class="hero-tag">🎯 Discovery → Diagnóstico</div>
+    <h1>Configurador de Sesión de Diagnóstico</h1>
+    <p>Completa los datos del cliente durante la llamada de discovery. Con el número y nombre de departamentos, el sistema genera automáticamente el plan de cuestionarios con los formularios correctos para cada área.</p>
+  </div>
+
+  <!-- Paso 1: Datos del cliente -->
+  <div class="card">
+    <div class="card-title"><div class="card-num">1</div>Datos del Cliente</div>
+    <div class="two-col">
+      <div class="field">
+        <label class="fl" for="empresa">Nombre de la empresa *</label>
+        <input class="fi" type="text" id="empresa" placeholder="Nombre comercial o razón social" oninput="onClientChange()">
+      </div>
+      <div class="field">
+        <label class="fl" for="contacto">Contacto principal</label>
+        <input class="fi" type="text" id="contacto" placeholder="Nombre del interlocutor" oninput="onClientChange()">
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="field">
+        <label class="fl" for="cargo">Cargo del contacto</label>
+        <input class="fi" type="text" id="cargo" placeholder="Ej. CEO, Gerente de Operaciones…">
+      </div>
+      <div class="field">
+        <label class="fl" for="email">Email de contacto</label>
+        <input class="fi" type="email" id="email" placeholder="correo@empresa.com">
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="field">
+        <label class="fl" for="industria">Industria / sector</label>
+        <input class="fi" type="text" id="industria" placeholder="Ej. Seguros, E-commerce, Manufactura…">
+      </div>
+      <div class="field">
+        <label class="fl" for="tamano">Número total de empleados</label>
+        <select class="fi" id="tamano">
+          <option value="">— Selecciona —</option>
+          <option value="<10">Menos de 10 empleados — $10,000 MXN</option>
+          <option value="10-100">10 a 100 empleados — $30,000 MXN</option>
+          <option value=">100">Más de 100 empleados — $50,000 MXN</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label class="fl" for="notas-discovery">Notas de la llamada de discovery</label>
+      <textarea class="fi" id="notas-discovery" placeholder="Contexto relevante, problemas que mencionaron, prioridades que expresaron…" style="min-height:80px;"></textarea>
+    </div>
+  </div>
+
+  <!-- Paso 2: Departamentos -->
+  <div class="card">
+    <div class="card-title"><div class="card-num">2</div>Departamentos a Diagnosticar</div>
+
+    <div class="info-box">
+      <strong>Pregunta en la llamada:</strong> "¿Cuántos departamentos o áreas tiene la empresa? ¿Me puedes dar el nombre de cada uno?"<br>
+      El sistema asigna automáticamente el cuestionario especializado si el área está mapeada, o el cuestionario genérico para áreas no mapeadas.
+    </div>
+
+    <div class="field">
+      <label class="fl">Sugerencias rápidas — haz clic para agregar</label>
+      <div class="dept-ref">
+        <span class="dept-ref-chip" onclick="addDeptSuggestion('Marketing')">Marketing</span>
+        <span class="dept-ref-chip" onclick="addDeptSuggestion('Ventas')">Ventas</span>
+        <span class="dept-ref-chip" onclick="addDeptSuggestion('Operaciones')">Operaciones</span>
+        <span class="dept-ref-chip" onclick="addDeptSuggestion('Administración')">Administración</span>
+        <span class="dept-ref-chip" onclick="addDeptSuggestion('Recursos Humanos')">Recursos Humanos</span>
+        <span class="dept-ref-chip" onclick="addDeptSuggestion('Tecnología')">Tecnología</span>
+        <span class="dept-ref-chip" onclick="addDeptSuggestion('Atención al Cliente')">Atención al Cliente</span>
+        <span class="dept-ref-chip" onclick="addDeptSuggestion('Logística')">Logística</span>
+        <span class="dept-ref-chip" onclick="addDeptSuggestion('Compras')">Compras</span>
+        <span class="dept-ref-chip" onclick="addDeptSuggestion('Legal')">Legal</span>
+        <span class="dept-ref-chip" onclick="addDeptSuggestion('Dirección General')">Dirección General</span>
+        <span class="dept-ref-chip" onclick="addDeptSuggestion('Producción')">Producción</span>
+        <span class="dept-ref-chip" onclick="addDeptSuggestion('Calidad')">Calidad</span>
+        <span class="dept-ref-chip" onclick="addDeptSuggestion('Finanzas')">Finanzas</span>
+        <span class="dept-ref-chip" onclick="addDeptSuggestion('Servicio al Cliente')">Servicio al Cliente</span>
+      </div>
+    </div>
+
+    <div class="dept-list" id="dept-list"></div>
+    <button class="add-dept-btn" onclick="addDept()">+ Agregar departamento</button>
+  </div>
+
+  <!-- Plan generado -->
+  <div class="plan-section" id="plan-section" style="display:none">
+    <div class="plan-title">📋 Plan de diagnóstico generado</div>
+    <div class="plan-list" id="plan-list"></div>
+
+    <div class="summary-bar">
+      <div class="summary-stat">
+        <div class="summary-num" id="stat-total">0</div>
+        <div class="summary-label">Cuestionarios</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-num" id="stat-done" style="color:var(--success)">0</div>
+        <div class="summary-label">Completados</div>
+      </div>
+      <div style="flex:1;min-width:120px;">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">Progreso</div>
+        <div class="progress-mini"><div class="progress-mini-fill" id="progress-mini-fill" style="width:0%"></div></div>
+      </div>
+      <div class="summary-actions">
+        <button class="btn btn-outline btn-sm" onclick="exportSession()">⬇ Exportar sesión JSON</button>
+        <button class="btn btn-primary btn-sm" onclick="openAll()">Abrir todos los formularios</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ── Mapeo de departamentos conocidos ──────────────────────
+const DEPT_MAP = [
+  {
+    keywords: ['marketing', 'mercadotecnia', 'mkt', 'digital', 'comunicacion', 'comunicación'],
+    form: 'diagnostico-marketing.html',
+    label: 'Marketing',
+    icon: '📊',
+    tag: 'Cuestionario especializado',
+  },
+  {
+    keywords: ['ventas', 'comercial', 'sales', 'negocios', 'business development', 'bd'],
+    form: 'diagnostico-ventas.html',
+    label: 'Ventas',
+    icon: '💼',
+    tag: 'Cuestionario especializado',
+  },
+  {
+    keywords: ['operaciones', 'operación', 'operations', 'producción', 'produccion', 'manufactura', 'planta', 'logística', 'logistica', 'cadena de suministro', 'supply chain', 'calidad'],
+    form: 'diagnostico-operaciones.html',
+    label: 'Operaciones',
+    icon: '⚙️',
+    tag: 'Cuestionario especializado',
+  },
+  {
+    keywords: ['administración', 'administracion', 'admin', 'finanzas', 'contabilidad', 'contabilidad', 'control', 'tesorería', 'tesoreria', 'rrhh', 'recursos humanos', 'nomina', 'nómina', 'legal', 'juridico', 'jurídico'],
+    form: 'diagnostico-administracion.html',
+    label: 'Administración',
+    icon: '📁',
+    tag: 'Cuestionario especializado',
+  },
+];
+
+function mapDept(name) {
+  if (!name.trim()) return null;
+  const lower = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  for (const map of DEPT_MAP) {
+    if (map.keywords.some(k => lower.includes(k))) {
+      return { ...map, isGeneric: false };
+    }
+  }
+  return {
+    form: 'diagnostico-entrega-servicio.html',
+    label: name,
+    icon: '🗂️',
+    tag: 'Cuestionario genérico',
+    isGeneric: true,
+  };
+}
+
+// ── State ──────────────────────────────────────────────────
+let depts = [];
+let completed = new Set();
+
+function addDept(name = '') {
+  depts.push({ name, id: Date.now() });
+  renderDepts();
+  // Focus the new input
+  const rows = document.querySelectorAll('.dept-input');
+  if (rows.length) rows[rows.length - 1].focus();
+}
+
+function addDeptSuggestion(name) {
+  if (depts.some(d => d.name.toLowerCase() === name.toLowerCase())) return;
+  addDept(name);
+}
+
+function removeDept(id) {
+  depts = depts.filter(d => d.id !== id);
+  renderDepts();
+}
+
+function updateDeptName(id, value) {
+  const d = depts.find(x => x.id === id);
+  if (d) { d.name = value; renderPlan(); }
+}
+
+function renderDepts() {
+  const list = document.getElementById('dept-list');
+  list.innerHTML = '';
+  depts.forEach((dept, idx) => {
+    const mapped = dept.name ? mapDept(dept.name) : null;
+    const row = document.createElement('div');
+    row.className = 'dept-row';
+    row.innerHTML = `
+      <div class="dept-num">${idx + 1}</div>
+      <input class="dept-input" type="text" placeholder="Nombre del departamento (ej. Atención al Cliente)" value="${dept.name}" data-id="${dept.id}">
+      ${mapped ? `<span class="dept-tag ${mapped.isGeneric ? 'tag-generic' : 'tag-mapped'}">${mapped.icon} ${mapped.isGeneric ? 'Genérico' : 'Especializado'}</span>` : ''}
+      <button class="dept-del" onclick="removeDept(${dept.id})" title="Eliminar">×</button>
+    `;
+    const input = row.querySelector('.dept-input');
+    input.addEventListener('input', e => { dept.name = e.target.value; renderDepts(); });
+    list.appendChild(row);
+  });
+  renderPlan();
+}
+
+// ── Plan ──────────────────────────────────────────────────
+function renderPlan() {
+  const planSection = document.getElementById('plan-section');
+  const planList = document.getElementById('plan-list');
+  const validDepts = depts.filter(d => d.name.trim());
+
+  if (!validDepts.length) {
+    planSection.style.display = 'none';
+    return;
+  }
+  planSection.style.display = 'block';
+
+  const empresa = document.getElementById('empresa').value.trim();
+
+  planList.innerHTML = '';
+  validDepts.forEach((dept, idx) => {
+    const mapped = mapDept(dept.name);
+    if (!mapped) return;
+    const key = `done_${dept.id}`;
+    const isDone = completed.has(dept.id);
+
+    let url = mapped.form;
+    if (mapped.isGeneric) {
+      url += `?area=${encodeURIComponent(dept.name)}${empresa ? '&empresa=' + encodeURIComponent(empresa) : ''}`;
+    } else if (empresa) {
+      url += `?empresa=${encodeURIComponent(empresa)}`;
+    }
+
+    const item = document.createElement('div');
+    item.className = 'plan-item';
+    item.innerHTML = `
+      <div class="plan-icon">${mapped.icon}</div>
+      <div class="plan-info">
+        <div class="plan-name">${dept.name}</div>
+        <div class="plan-sub">${mapped.isGeneric ? '🗂️ Cuestionario genérico (Entrega de Servicio adaptado)' : `✨ ${mapped.label} — cuestionario especializado`}</div>
+      </div>
+      <div class="plan-status ${isDone ? 'done' : ''}" id="status-${dept.id}">${isDone ? '✓' : ''}</div>
+      <div class="plan-actions">
+        <button class="btn btn-outline btn-sm" onclick="markDone(${dept.id})">Marcar completado</button>
+        <a class="btn btn-primary btn-sm" href="${url}" target="_blank" onclick="trackOpen(${dept.id})">Abrir formulario →</a>
+      </div>
+    `;
+    planList.appendChild(item);
+  });
+
+  updateStats(validDepts.length);
+}
+
+function trackOpen(id) {
+  // Cuando abren el formulario, sugerimos marcarlo como hecho al volver
+}
+
+function markDone(id) {
+  if (completed.has(id)) {
+    completed.delete(id);
+    document.getElementById(`status-${id}`).classList.remove('done');
+    document.getElementById(`status-${id}`).textContent = '';
+  } else {
+    completed.add(id);
+    document.getElementById(`status-${id}`).classList.add('done');
+    document.getElementById(`status-${id}`).textContent = '✓';
+  }
+  const validDepts = depts.filter(d => d.name.trim());
+  updateStats(validDepts.length);
+}
+
+function updateStats(total) {
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-done').textContent = completed.size;
+  const pct = total ? Math.round(completed.size / total * 100) : 0;
+  document.getElementById('progress-mini-fill').style.width = pct + '%';
+}
+
+function onClientChange() {
+  renderPlan(); // re-render para actualizar URLs con empresa
+}
+
+function openAll() {
+  const empresa = document.getElementById('empresa').value.trim();
+  const validDepts = depts.filter(d => d.name.trim());
+  if (!validDepts.length) { alert('Agrega al menos un departamento primero.'); return; }
+  if (!confirm(`¿Abrir los ${validDepts.length} formularios de diagnóstico?\n\nSe abrirán en pestañas nuevas.`)) return;
+  validDepts.forEach(dept => {
+    const mapped = mapDept(dept.name);
+    if (!mapped) return;
+    let url = mapped.form;
+    if (mapped.isGeneric) {
+      url += `?area=${encodeURIComponent(dept.name)}${empresa ? '&empresa=' + encodeURIComponent(empresa) : ''}`;
+    } else if (empresa) {
+      url += `?empresa=${encodeURIComponent(empresa)}`;
+    }
+    window.open(url, '_blank');
+  });
+}
+
+function exportSession() {
+  const empresa = document.getElementById('empresa').value.trim();
+  const validDepts = depts.filter(d => d.name.trim());
+  const session = {
+    meta: {
+      herramienta: 'MentorIA Configurador de Diagnóstico',
+      fecha: new Date().toISOString(),
+    },
+    cliente: {
+      empresa,
+      contacto: document.getElementById('contacto').value.trim(),
+      cargo: document.getElementById('cargo').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      industria: document.getElementById('industria').value.trim(),
+      tamano: document.getElementById('tamano').value,
+      notas_discovery: document.getElementById('notas-discovery').value.trim(),
+    },
+    plan: validDepts.map(dept => {
+      const mapped = mapDept(dept.name);
+      return {
+        departamento: dept.name,
+        formulario: mapped?.form || '',
+        tipo: mapped?.isGeneric ? 'generico' : 'especializado',
+        completado: completed.has(dept.id),
+      };
+    }),
+    resumen: {
+      total_areas: validDepts.length,
+      completadas: completed.size,
+    },
+  };
+  const blob = new Blob([JSON.stringify(session, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const slug = (empresa || 'sesion').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  a.href = url;
+  a.download = `sesion-diagnostico-${slug}-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Init ──────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Agregar 3 filas vacías como punto de partida
+  addDept();
+  addDept();
+  addDept();
+});
+</script>
+</body>
+</html>

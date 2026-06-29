@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matriz Impacto × Facilidad | MentorIA</title>
+<style>
+  :root {
+    --brand-dark: #0a0a14; --brand-purple: #6c4de6; --brand-purple-light: #8b6ef5;
+    --brand-purple-dim: rgba(108,77,230,0.15); --brand-cyan: #00d4ff;
+    --surface: #13131f; --surface-2: #1a1a2e; --surface-3: #1f1f35;
+    --border: rgba(255,255,255,0.08); --border-active: rgba(108,77,230,0.5);
+    --text-primary: #f0f0f8; --text-secondary: #8888aa; --text-muted: #55556a;
+    --success: #22c55e; --warning: #f59e0b; --danger: #ef4444; --info: #3b82f6;
+    --radius: 12px; --radius-sm: 8px;
+    --qw: #22c55e; --hi: #f59e0b; --lw: #3b82f6; --lo: #6b7280;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--brand-dark); color: var(--text-primary); font-family: 'Inter',-apple-system,system-ui,sans-serif; font-size: 15px; line-height: 1.6; min-height: 100vh; }
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 0; }
+  .header-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; gap: 16px; }
+  .logo-dot { width: 32px; height: 32px; background: linear-gradient(135deg,var(--brand-purple),var(--brand-cyan)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: white; }
+  .logo-text { font-size: 15px; font-weight: 700; } .logo-sub { font-size: 11px; color: var(--text-secondary); }
+  .header-actions { margin-left: auto; display: flex; gap: 10px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: none; }
+  .btn-primary { background: var(--brand-purple); color: white; } .btn-primary:hover { background: var(--brand-purple-light); }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); } .btn-outline:hover { border-color: var(--brand-purple); color: var(--brand-purple-light); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-danger { background: var(--danger); color: white; }
+  .main { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+  .top-row { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+  .top-row h1 { font-size: 22px; font-weight: 700; flex: 1; }
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .grid-layout { display: grid; grid-template-columns: 1fr 400px; gap: 24px; }
+  @media(max-width:900px){.grid-layout{grid-template-columns:1fr;}}
+  /* Matrix chart */
+  .matrix-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; position: relative; }
+  .matrix-title { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .matrix-chart { position: relative; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+  .matrix-svg { width: 100%; display: block; }
+  /* Sidebar */
+  .sidebar { display: flex; flex-direction: column; gap: 20px; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .panel-title { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.06em; display: flex; align-items: center; gap: 8px; }
+  .form-group { margin-bottom: 14px; }
+  .form-group:last-child { margin-bottom: 0; }
+  label.fl { font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 5px; font-weight: 500; }
+  input.fi, textarea.fi, select.fi { width: 100%; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 9px 12px; color: var(--text-primary); font-size: 13px; font-family: inherit; outline: none; transition: border-color 0.2s; }
+  input.fi:focus, textarea.fi:focus, select.fi:focus { border-color: var(--brand-purple); }
+  textarea.fi { resize: vertical; min-height: 70px; }
+  .score-row { display: flex; gap: 6px; }
+  .score-btn { width: 36px; height: 36px; border: 1px solid var(--border); background: var(--surface-2); border-radius: 8px; color: var(--text-secondary); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .score-btn:hover { border-color: var(--brand-purple-light); color: var(--brand-purple-light); }
+  .score-btn.active { background: var(--brand-purple); border-color: var(--brand-purple); color: white; }
+  .score-label { font-size: 10px; color: var(--text-muted); margin-top: 3px; display: flex; justify-content: space-between; }
+  /* Table */
+  .table-section { margin-top: 28px; }
+  .table-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+  .badge-qw { background: rgba(34,197,94,0.15); color: var(--qw); }
+  .badge-hi { background: rgba(245,158,11,0.15); color: var(--hi); }
+  .badge-lw { background: rgba(59,130,246,0.15); color: var(--info); }
+  .badge-lo { background: rgba(107,114,128,0.15); color: var(--lo); }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface-2); }
+  .score-cell { display: flex; gap: 4px; align-items: center; }
+  .score-pill { padding: 2px 8px; border-radius: 99px; font-size: 12px; font-weight: 700; }
+  .rank-num { width: 24px; height: 24px; border-radius: 50%; background: var(--brand-purple-dim); border: 1px solid var(--border-active); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--brand-purple-light); flex-shrink: 0; }
+  .action-btns { display: flex; gap: 6px; }
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+  .empty-state p { margin-top: 8px; font-size: 13px; }
+  /* JSON import */
+  .import-zone { border: 2px dashed var(--border); border-radius: var(--radius-sm); padding: 20px; text-align: center; cursor: pointer; transition: border-color 0.2s; }
+  .import-zone:hover { border-color: var(--brand-purple); }
+  .import-zone p { font-size: 13px; color: var(--text-secondary); margin-top: 6px; }
+  /* Tooltip */
+  .tooltip { position: absolute; background: var(--surface); border: 1px solid var(--border-active); border-radius: 8px; padding: 10px 12px; font-size: 12px; pointer-events: none; z-index: 999; max-width: 220px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); display: none; }
+  .tooltip strong { color: var(--brand-purple-light); display: block; margin-bottom: 4px; }
+  .tag-area { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; background: var(--brand-purple-dim); color: var(--brand-purple-light); }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="logo-dot">M</div>
+      <div><div class="logo-text">MentorIA Systems</div><div class="logo-sub">Herramienta de Diagnóstico</div></div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline btn-sm" onclick="importJSON()">📂 Cargar JSON</button>
+      <button class="btn btn-outline btn-sm" onclick="exportJSON()">⬇ Exportar JSON</button>
+      <button class="btn btn-primary btn-sm" onclick="exportMD()">📋 Exportar para Claude</button>
+    </div>
+  </div>
+</header>
+<input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
+
+<main class="main">
+  <div class="top-row">
+    <div>
+      <h1>Matriz Impacto × Facilidad</h1>
+      <p style="font-size:13px;color:var(--text-secondary);margin-top:4px;">Priorización de mejoras y oportunidades IA del diagnóstico</p>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--qw)"></div>Quick Win (alto impacto + fácil)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--hi)"></div>Alto Impacto (difícil pero vale)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--info)"></div>Low Hanging (fácil pero menor impacto)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--lo)"></div>Baja Prioridad</div>
+    </div>
+  </div>
+
+  <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:24px;font-size:13px;color:var(--text-secondary);">
+    ℹ️ <strong style="color:var(--text-primary);">Instrucciones:</strong> Agrega hallazgos desde el panel derecho o carga un JSON generado por Claude. Haz clic en un punto del gráfico para editar. Exporta a Markdown para que Claude genere el informe final.
+  </div>
+
+  <div class="grid-layout">
+    <!-- Matrix -->
+    <div>
+      <div class="matrix-wrap">
+        <div class="matrix-title">Gráfica de priorización — clic en un punto para editar</div>
+        <div class="matrix-chart" id="matrix-chart">
+          <svg id="matrix-svg" class="matrix-svg" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+            <!-- Background quadrants -->
+            <rect x="0" y="0" width="250" height="250" fill="rgba(245,158,11,0.04)"/>
+            <rect x="250" y="0" width="250" height="250" fill="rgba(34,197,94,0.07)"/>
+            <rect x="0" y="250" width="250" height="250" fill="rgba(107,114,128,0.04)"/>
+            <rect x="250" y="250" width="250" height="250" fill="rgba(59,130,246,0.04)"/>
+            <!-- Dividers -->
+            <line x1="250" y1="0" x2="250" y2="500" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+            <line x1="0" y1="250" x2="500" y2="250" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+            <!-- Quadrant labels -->
+            <text x="375" y="30" text-anchor="middle" fill="rgba(34,197,94,0.6)" font-size="11" font-weight="600">⚡ QUICK WINS</text>
+            <text x="125" y="30" text-anchor="middle" fill="rgba(245,158,11,0.6)" font-size="11" font-weight="600">🏆 ALTO IMPACTO</text>
+            <text x="375" y="490" text-anchor="middle" fill="rgba(59,130,246,0.6)" font-size="11" font-weight="600">🍎 LOW HANGING</text>
+            <text x="125" y="490" text-anchor="middle" fill="rgba(107,114,128,0.5)" font-size="11" font-weight="600">⬇ BAJA PRIORIDAD</text>
+            <!-- Axis labels -->
+            <text x="250" y="518" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="10">FACILIDAD →</text>
+            <text x="-250" y="10" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="10" transform="rotate(-90)">IMPACTO →</text>
+            <!-- Axis ticks -->
+            <text x="50" y="515" text-anchor="middle" fill="rgba(255,255,255,0.2)" font-size="9">1</text>
+            <text x="150" y="515" text-anchor="middle" fill="rgba(255,255,255,0.2)" font-size="9">2</text>
+            <text x="250" y="515" text-anchor="middle" fill="rgba(255,255,255,0.2)" font-size="9">3</text>
+            <text x="350" y="515" text-anchor="middle" fill="rgba(255,255,255,0.2)" font-size="9">4</text>
+            <text x="450" y="515" text-anchor="middle" fill="rgba(255,255,255,0.2)" font-size="9">5</text>
+            <text x="8" y="455" text-anchor="middle" fill="rgba(255,255,255,0.2)" font-size="9">1</text>
+            <text x="8" y="355" text-anchor="middle" fill="rgba(255,255,255,0.2)" font-size="9">2</text>
+            <text x="8" y="255" text-anchor="middle" fill="rgba(255,255,255,0.2)" font-size="9">3</text>
+            <text x="8" y="155" text-anchor="middle" fill="rgba(255,255,255,0.2)" font-size="9">4</text>
+            <text x="8" y="55" text-anchor="middle" fill="rgba(255,255,255,0.2)" font-size="9">5</text>
+            <!-- Dots group -->
+            <g id="dots-group"></g>
+          </svg>
+          <div class="tooltip" id="tooltip"></div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-section">
+        <div class="table-title">📋 Mejoras priorizadas <span id="count-badge" style="font-size:12px;color:var(--text-muted);font-weight:400;"></span></div>
+        <div id="table-wrap">
+          <div class="empty-state">
+            <div style="font-size:32px;">📌</div>
+            <p>Aún no hay hallazgos. Agrégalos desde el panel o carga un JSON.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <!-- Add form -->
+      <div class="panel">
+        <div class="panel-title">➕ Agregar hallazgo</div>
+        <div class="form-group">
+          <label class="fl">Nombre / descripción del hallazgo *</label>
+          <input class="fi" type="text" id="new-nombre" placeholder="Ej. Respuesta manual a leads fuera de horario">
+        </div>
+        <div class="form-group">
+          <label class="fl">Área</label>
+          <select class="fi" id="new-area">
+            <option value="">— Selecciona —</option>
+            <option>Marketing</option>
+            <option>Ventas</option>
+            <option>Operaciones</option>
+            <option>Administración</option>
+            <option>Entrega de Servicio</option>
+            <option>General</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="fl">Tipo</label>
+          <select class="fi" id="new-tipo">
+            <option value="problema">🔴 Problema / fricción</option>
+            <option value="oportunidad">🟢 Oportunidad IA</option>
+            <option value="riesgo">🟡 Riesgo operativo</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="fl">Impacto en el negocio (1 = bajo · 5 = crítico)</label>
+          <div class="score-row" id="new-impacto-row"></div>
+          <div class="score-label"><span>Bajo</span><span>Crítico</span></div>
+        </div>
+        <div class="form-group">
+          <label class="fl">Facilidad de implementación (1 = muy difícil · 5 = muy fácil)</label>
+          <div class="score-row" id="new-facilidad-row"></div>
+          <div class="score-label"><span>Muy difícil</span><span>Muy fácil</span></div>
+        </div>
+        <div class="form-group">
+          <label class="fl">Horas estimadas ahorradas por mes <span style="color:var(--text-muted)">(opcional)</span></label>
+          <input class="fi" type="text" id="new-horas" placeholder="Ej. 20 hrs/mes, 80 hrs/mes">
+        </div>
+        <div class="form-group">
+          <label class="fl">Notas adicionales <span style="color:var(--text-muted)">(opcional)</span></label>
+          <textarea class="fi" id="new-notas" placeholder="Contexto, restricciones, alternativas…"></textarea>
+        </div>
+        <button class="btn btn-primary" style="width:100%" onclick="addItem()">Agregar a la matriz</button>
+      </div>
+
+      <!-- Import JSON -->
+      <div class="panel">
+        <div class="panel-title">📂 Cargar desde JSON de diagnóstico</div>
+        <div class="import-zone" onclick="importJSON()">
+          <div style="font-size:24px;">📁</div>
+          <p>Haz clic para cargar un JSON exportado<br>de los cuestionarios de diagnóstico</p>
+        </div>
+        <p style="font-size:11px;color:var(--text-muted);margin-top:10px;text-align:center;">Los hallazgos se agregarán sin puntaje — luego los calificas tú.</p>
+      </div>
+
+      <!-- Stats -->
+      <div class="panel" id="stats-panel" style="display:none">
+        <div class="panel-title">📊 Resumen</div>
+        <div id="stats-content"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Edit modal -->
+<div id="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:none;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid var(--border-active);border-radius:var(--radius);padding:28px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div style="font-size:16px;font-weight:600;">Editar hallazgo</div>
+      <button onclick="closeModal()" style="background:none;border:none;color:var(--text-secondary);font-size:20px;cursor:pointer;">×</button>
+    </div>
+    <div class="form-group"><label class="fl">Nombre *</label><input class="fi" type="text" id="edit-nombre"></div>
+    <div class="form-group"><label class="fl">Área</label><select class="fi" id="edit-area"><option>Marketing</option><option>Ventas</option><option>Operaciones</option><option>Administración</option><option>Entrega de Servicio</option><option>General</option></select></div>
+    <div class="form-group"><label class="fl">Tipo</label><select class="fi" id="edit-tipo"><option value="problema">🔴 Problema</option><option value="oportunidad">🟢 Oportunidad IA</option><option value="riesgo">🟡 Riesgo operativo</option></select></div>
+    <div class="form-group"><label class="fl">Impacto (1–5)</label><div class="score-row" id="edit-impacto-row"></div></div>
+    <div class="form-group"><label class="fl">Facilidad (1–5)</label><div class="score-row" id="edit-facilidad-row"></div></div>
+    <div class="form-group"><label class="fl">Horas ahorradas / mes</label><input class="fi" type="text" id="edit-horas"></div>
+    <div class="form-group"><label class="fl">Notas</label><textarea class="fi" id="edit-notas"></textarea></div>
+    <div style="display:flex;gap:10px;margin-top:4px;">
+      <button class="btn btn-danger btn-sm" onclick="deleteItem()">Eliminar</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveEdit()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let items = [];
+let editIdx = null;
+let newImpacto = 3, newFacilidad = 3;
+let editImpacto = 3, editFacilidad = 3;
+
+const STORAGE_KEY = 'mentoria_matriz_v1';
+
+function getCategory(imp, fac) {
+  if (imp >= 3 && fac >= 3) return 'qw';
+  if (imp >= 3 && fac < 3) return 'hi';
+  if (imp < 3 && fac >= 3) return 'lw';
+  return 'lo';
+}
+function getCategoryLabel(cat) {
+  return {qw:'Quick Win',hi:'Alto Impacto',lw:'Low Hanging',lo:'Baja Prioridad'}[cat];
+}
+function getCategoryColor(cat) {
+  return {qw:'var(--qw)',hi:'var(--hi)',lw:'var(--info)',lo:'var(--lo)'}[cat];
+}
+
+function buildScoreRow(containerId, currentVal, onChange) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'score-btn' + (currentVal === i ? ' active' : '');
+    b.textContent = i;
+    const v = i;
+    b.addEventListener('click', () => {
+      el.querySelectorAll('.score-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      onChange(v);
+    });
+    el.appendChild(b);
+  }
+}
+
+function render() {
+  renderDots();
+  renderTable();
+  renderStats();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+}
+
+function dotX(fac) { return 50 + (fac - 1) * 100; }
+function dotY(imp) { return 450 - (imp - 1) * 100; }
+
+function renderDots() {
+  const g = document.getElementById('dots-group');
+  g.innerHTML = '';
+  const tooltip = document.getElementById('tooltip');
+
+  items.forEach((item, idx) => {
+    const cat = getCategory(item.impacto, item.facilidad);
+    const cx = dotX(item.facilidad);
+    const cy = dotY(item.impacto);
+    const color = getCategoryColor(cat);
+
+    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx', cx);
+    circle.setAttribute('cy', cy);
+    circle.setAttribute('r', 18);
+    circle.setAttribute('fill', color);
+    circle.setAttribute('fill-opacity', '0.15');
+    circle.setAttribute('stroke', color);
+    circle.setAttribute('stroke-width', '2');
+    circle.style.cursor = 'pointer';
+    circle.style.transition = 'r 0.15s';
+
+    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+    text.setAttribute('x', cx);
+    text.setAttribute('y', cy + 5);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('fill', color);
+    text.setAttribute('font-size', '13');
+    text.setAttribute('font-weight', '700');
+    text.style.cursor = 'pointer';
+    text.style.userSelect = 'none';
+    text.textContent = idx + 1;
+
+    const svgEl = document.getElementById('matrix-svg');
+    const rect = svgEl.getBoundingClientRect();
+
+    function showTip(e) {
+      const tx = (cx / 500) * rect.width + rect.left;
+      const ty = (cy / 500) * rect.height + rect.top;
+      tooltip.style.display = 'block';
+      tooltip.style.left = (tx - rect.left + 24) + 'px';
+      tooltip.style.top = (ty - rect.top - 10) + 'px';
+      tooltip.innerHTML = `<strong>#${idx+1} ${item.nombre}</strong><span class="tag-area">${item.area||''}</span><br>Impacto: ${item.impacto}/5 · Facilidad: ${item.facilidad}/5<br>Score: ${item.impacto * item.facilidad}/25${item.horas ? '<br>⏱ '+item.horas+' ahorradas/mes' : ''}`;
+    }
+
+    circle.addEventListener('mouseenter', showTip);
+    text.addEventListener('mouseenter', showTip);
+    circle.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+    text.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+    circle.addEventListener('click', () => openModal(idx));
+    text.addEventListener('click', () => openModal(idx));
+
+    g.appendChild(circle);
+    g.appendChild(text);
+  });
+}
+
+function renderTable() {
+  const wrap = document.getElementById('table-wrap');
+  const badge = document.getElementById('count-badge');
+
+  if (!items.length) {
+    wrap.innerHTML = '<div class="empty-state"><div style="font-size:32px;">📌</div><p>Aún no hay hallazgos. Agrégalos desde el panel o carga un JSON.</p></div>';
+    badge.textContent = '';
+    return;
+  }
+
+  const sorted = [...items].map((item, idx) => ({...item, orig: idx})).sort((a,b) => (b.impacto*b.facilidad) - (a.impacto*a.facilidad));
+  badge.textContent = `(${items.length} hallazgos)`;
+
+  let html = '<table><thead><tr><th>#</th><th>Hallazgo</th><th>Área</th><th>Impacto</th><th>Facilidad</th><th>Score</th><th>Prioridad</th><th></th></tr></thead><tbody>';
+  sorted.forEach((item, rank) => {
+    const cat = getCategory(item.impacto, item.facilidad);
+    const score = item.impacto * item.facilidad;
+    const catLabel = getCategoryLabel(cat);
+    const badgeClass = {qw:'badge-qw',hi:'badge-hi',lw:'badge-lw',lo:'badge-lo'}[cat];
+    const emoji = {qw:'⚡',hi:'🏆',lw:'🍎',lo:'⬇'}[cat];
+    html += `<tr>
+      <td><div class="rank-num">${rank+1}</div></td>
+      <td><div style="font-weight:500">${item.nombre}</div>${item.notas?`<div style="font-size:11px;color:var(--text-muted);margin-top:2px">${item.notas.substring(0,80)}${item.notas.length>80?'…':''}</div>`:''}${item.horas?`<div style="font-size:11px;color:var(--brand-cyan);margin-top:2px">⏱ ${item.horas}/mes</div>`:''}</td>
+      <td><span style="font-size:12px;color:var(--text-secondary)">${item.area||'—'}</span></td>
+      <td><span class="score-pill" style="background:rgba(108,77,230,0.15);color:var(--brand-purple-light)">${item.impacto}/5</span></td>
+      <td><span class="score-pill" style="background:rgba(0,212,255,0.1);color:var(--brand-cyan)">${item.facilidad}/5</span></td>
+      <td><strong>${score}</strong><span style="color:var(--text-muted);font-size:11px">/25</span></td>
+      <td><span class="badge ${badgeClass}">${emoji} ${catLabel}</span></td>
+      <td><button class="btn btn-outline btn-sm" onclick="openModal(${item.orig})">Editar</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+function renderStats() {
+  const panel = document.getElementById('stats-panel');
+  const content = document.getElementById('stats-content');
+  if (!items.length) { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+
+  const cats = {qw:0, hi:0, lw:0, lo:0};
+  items.forEach(i => cats[getCategory(i.impacto, i.facilidad)]++);
+  const totalScore = items.reduce((s,i) => s+(i.impacto*i.facilidad), 0);
+  const avgScore = (totalScore/items.length).toFixed(1);
+
+  content.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div style="background:var(--surface-2);border-radius:8px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:700;color:var(--qw)">${cats.qw}</div><div style="font-size:11px;color:var(--text-muted)">Quick Wins</div></div>
+      <div style="background:var(--surface-2);border-radius:8px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:700;color:var(--hi)">${cats.hi}</div><div style="font-size:11px;color:var(--text-muted)">Alto Impacto</div></div>
+      <div style="background:var(--surface-2);border-radius:8px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:700;color:var(--info)">${cats.lw}</div><div style="font-size:11px;color:var(--text-muted)">Low Hanging</div></div>
+      <div style="background:var(--surface-2);border-radius:8px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:700;color:var(--lo)">${cats.lo}</div><div style="font-size:11px;color:var(--text-muted)">Baja Prioridad</div></div>
+    </div>
+    <div style="font-size:12px;color:var(--text-secondary)">Score promedio: <strong style="color:var(--brand-purple-light)">${avgScore}/25</strong> · Total hallazgos: <strong>${items.length}</strong></div>`;
+}
+
+function addItem() {
+  const nombre = document.getElementById('new-nombre').value.trim();
+  if (!nombre) { alert('El nombre del hallazgo es obligatorio.'); return; }
+  items.push({
+    nombre,
+    area: document.getElementById('new-area').value,
+    tipo: document.getElementById('new-tipo').value,
+    impacto: newImpacto,
+    facilidad: newFacilidad,
+    horas: document.getElementById('new-horas').value.trim(),
+    notas: document.getElementById('new-notas').value.trim(),
+  });
+  document.getElementById('new-nombre').value = '';
+  document.getElementById('new-horas').value = '';
+  document.getElementById('new-notas').value = '';
+  newImpacto = 3; newFacilidad = 3;
+  buildScoreRow('new-impacto-row', newImpacto, v => { newImpacto = v; });
+  buildScoreRow('new-facilidad-row', newFacilidad, v => { newFacilidad = v; });
+  render();
+}
+
+function openModal(idx) {
+  editIdx = idx;
+  const item = items[idx];
+  document.getElementById('edit-nombre').value = item.nombre;
+  document.getElementById('edit-area').value = item.area || '';
+  document.getElementById('edit-tipo').value = item.tipo || 'problema';
+  document.getElementById('edit-horas').value = item.horas || '';
+  document.getElementById('edit-notas').value = item.notas || '';
+  editImpacto = item.impacto;
+  editFacilidad = item.facilidad;
+  buildScoreRow('edit-impacto-row', editImpacto, v => { editImpacto = v; });
+  buildScoreRow('edit-facilidad-row', editFacilidad, v => { editFacilidad = v; });
+  document.getElementById('modal-overlay').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').style.display = 'none';
+  editIdx = null;
+}
+
+function saveEdit() {
+  if (editIdx === null) return;
+  items[editIdx] = {
+    ...items[editIdx],
+    nombre: document.getElementById('edit-nombre').value.trim(),
+    area: document.getElementById('edit-area').value,
+    tipo: document.getElementById('edit-tipo').value,
+    impacto: editImpacto,
+    facilidad: editFacilidad,
+    horas: document.getElementById('edit-horas').value.trim(),
+    notas: document.getElementById('edit-notas').value.trim(),
+  };
+  closeModal();
+  render();
+}
+
+function deleteItem() {
+  if (editIdx === null) return;
+  if (!confirm('¿Eliminar este hallazgo?')) return;
+  items.splice(editIdx, 1);
+  closeModal();
+  render();
+}
+
+function importJSON() {
+  document.getElementById('file-input').click();
+}
+
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (Array.isArray(data)) {
+        data.forEach(item => {
+          if (item.nombre) items.push({nombre: item.nombre, area: item.area||'', tipo: item.tipo||'problema', impacto: item.impacto||3, facilidad: item.facilidad||3, horas: item.horas||'', notas: item.notas||''});
+        });
+      } else if (data.hallazgos && Array.isArray(data.hallazgos)) {
+        data.hallazgos.forEach(item => {
+          items.push({nombre: item.nombre||item.descripcion||JSON.stringify(item), area: item.area||data.meta?.area||'', tipo: item.tipo||'problema', impacto: item.impacto||3, facilidad: item.facilidad||3, horas: item.horas||'', notas: item.notas||''});
+        });
+        alert(`✅ Se importaron ${data.hallazgos.length} hallazgos. Ajusta los puntajes de Impacto y Facilidad haciendo clic en cada punto.`);
+      } else {
+        alert('El JSON no tiene el formato esperado. Debe ser un array de hallazgos o tener una clave "hallazgos".');
+      }
+      render();
+    } catch(err) {
+      alert('Error al leer el archivo JSON: ' + err.message);
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function exportJSON() {
+  const sorted = [...items].map((item,i) => ({...item, rank:i+1})).sort((a,b) => (b.impacto*b.facilidad)-(a.impacto*a.facilidad));
+  sorted.forEach((item,i) => { item.rank = i+1; item.score = item.impacto * item.facilidad; item.categoria = getCategoryLabel(getCategory(item.impacto, item.facilidad)); });
+  const out = {meta:{herramienta:'MentorIA Matriz Impacto×Facilidad',fecha:new Date().toISOString(),total_hallazgos:items.length},hallazgos:sorted};
+  const blob = new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=`matriz-impacto-${new Date().toISOString().split('T')[0]}.json`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportMD() {
+  const sorted = [...items].map((item,i) => ({...item})).sort((a,b) => (b.impacto*b.facilidad)-(a.impacto*a.facilidad));
+  let md = `# Matriz Impacto × Facilidad — MentorIA\n`;
+  md += `_Generado: ${new Date().toLocaleDateString('es-MX')}_\n\n`;
+  md += `## Hallazgos Priorizados (${items.length} total)\n\n`;
+  md += `| # | Hallazgo | Área | Impacto | Facilidad | Score | Categoría | Horas/mes |\n`;
+  md += `|---|----------|------|---------|-----------|-------|-----------|----------|\n`;
+  sorted.forEach((item, i) => {
+    const cat = getCategoryLabel(getCategory(item.impacto, item.facilidad));
+    md += `| ${i+1} | ${item.nombre} | ${item.area||'—'} | ${item.impacto}/5 | ${item.facilidad}/5 | ${item.impacto*item.facilidad}/25 | ${cat} | ${item.horas||'—'} |\n`;
+  });
+  md += `\n## Detalle de Hallazgos\n\n`;
+  sorted.forEach((item, i) => {
+    const cat = getCategoryLabel(getCategory(item.impacto, item.facilidad));
+    md += `### ${i+1}. ${item.nombre}\n`;
+    md += `- **Área:** ${item.area||'—'}\n`;
+    md += `- **Tipo:** ${item.tipo||'—'}\n`;
+    md += `- **Categoría:** ${cat}\n`;
+    md += `- **Impacto:** ${item.impacto}/5\n`;
+    md += `- **Facilidad:** ${item.facilidad}/5\n`;
+    md += `- **Score:** ${item.impacto*item.facilidad}/25\n`;
+    if (item.horas) md += `- **Horas ahorradas/mes:** ${item.horas}\n`;
+    if (item.notas) md += `- **Notas:** ${item.notas}\n`;
+    md += '\n';
+  });
+  const blob = new Blob([md],{type:'text/markdown'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=`matriz-prioridades-${new Date().toISOString().split('T')[0]}.md`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function init() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) { try { items = JSON.parse(saved); } catch(e) { items = []; } }
+  buildScoreRow('new-impacto-row', newImpacto, v => { newImpacto = v; });
+  buildScoreRow('new-facilidad-row', newFacilidad, v => { newFacilidad = v; });
+  render();
+}
+
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+});
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

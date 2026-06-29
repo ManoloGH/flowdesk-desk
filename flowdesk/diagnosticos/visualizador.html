@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visualizador BPMN | MentorIA</title>
+<style>
+  :root {
+    --brand-dark: #0a0a14; --brand-purple: #6c4de6; --brand-purple-light: #8b6ef5;
+    --brand-purple-dim: rgba(108,77,230,0.15); --brand-cyan: #00d4ff;
+    --surface: #13131f; --surface-2: #1a1a2e; --surface-3: #1f1f35;
+    --border: rgba(255,255,255,0.08); --border-active: rgba(108,77,230,0.5);
+    --text-primary: #f0f0f8; --text-secondary: #8888aa; --text-muted: #55556a;
+    --success: #22c55e; --radius: 12px; --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--brand-dark); color: var(--text-primary); font-family: 'Inter',-apple-system,system-ui,sans-serif; font-size: 14px; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* Header */
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; gap: 14px; flex-shrink: 0; z-index: 10; }
+  .logo-dot { width: 28px; height: 28px; background: linear-gradient(135deg,var(--brand-purple),var(--brand-cyan)); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: white; flex-shrink: 0; }
+  .logo-text { font-size: 13px; font-weight: 700; } .logo-sub { font-size: 10px; color: var(--text-secondary); }
+  .header-mid { flex: 1; display: flex; align-items: center; gap: 8px; overflow: hidden; }
+  .file-name { font-size: 13px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px; }
+  .type-badge { padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 600; flex-shrink: 0; }
+  .badge-bpmn { background: var(--brand-purple-dim); color: var(--brand-purple-light); border: 1px solid var(--border-active); }
+  .badge-html { background: rgba(0,212,255,0.1); color: var(--brand-cyan); border: 1px solid rgba(0,212,255,0.3); }
+  .badge-svg { background: rgba(34,197,94,0.1); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+  .header-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: none; }
+  .btn-primary { background: var(--brand-purple); color: white; } .btn-primary:hover { background: var(--brand-purple-light); }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); } .btn-outline:hover { border-color: var(--brand-purple); color: var(--brand-purple-light); }
+
+  /* Toolbar */
+  .toolbar { background: var(--surface-2); border-bottom: 1px solid var(--border); padding: 8px 20px; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .tool-group { display: flex; align-items: center; gap: 4px; }
+  .tool-btn { width: 32px; height: 32px; border: 1px solid var(--border); background: var(--surface-3); border-radius: 6px; color: var(--text-secondary); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .tool-btn:hover { border-color: var(--brand-purple); color: var(--brand-purple-light); }
+  .tool-sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+  .zoom-label { font-size: 11px; color: var(--text-secondary); min-width: 44px; text-align: center; }
+
+  /* Canvas area */
+  .canvas-wrap { flex: 1; position: relative; overflow: hidden; }
+  #drop-zone { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; z-index: 5; }
+  #drop-zone.hidden { display: none; }
+  .drop-inner { border: 2px dashed var(--border-active); border-radius: var(--radius); padding: 48px 60px; text-align: center; background: var(--brand-purple-dim); }
+  .drop-icon { font-size: 48px; margin-bottom: 12px; }
+  .drop-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .drop-sub { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+  .drop-formats { display: flex; gap: 8px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+  .format-chip { padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; background: var(--surface-3); border: 1px solid var(--border); color: var(--text-secondary); }
+
+  /* BPMN viewer */
+  #bpmn-container { position: absolute; inset: 0; display: none; }
+  #bpmn-canvas { width: 100%; height: 100%; }
+
+  /* HTML / SVG viewer */
+  #content-container { position: absolute; inset: 0; overflow: auto; display: none; background: var(--surface-2); }
+  #html-frame { width: 100%; height: 100%; border: none; background: white; }
+  #svg-container { padding: 24px; min-height: 100%; display: flex; align-items: flex-start; justify-content: center; }
+  #svg-container svg { max-width: 100%; height: auto; }
+
+  /* Drag over state */
+  body.drag-over #drop-zone { background: rgba(108,77,230,0.1); }
+  body.drag-over .drop-inner { border-color: var(--brand-purple); }
+
+  /* Status bar */
+  .statusbar { background: var(--surface); border-top: 1px solid var(--border); padding: 6px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .status-text { font-size: 11px; color: var(--text-muted); }
+  .status-keys { display: flex; gap: 12px; }
+  .key-hint { font-size: 10px; color: var(--text-muted); }
+  kbd { background: var(--surface-3); border: 1px solid var(--border); border-radius: 3px; padding: 1px 5px; font-size: 10px; font-family: inherit; }
+
+  /* Toast */
+  #toast { position: fixed; bottom: 48px; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border-active); border-radius: var(--radius-sm); padding: 10px 18px; font-size: 13px; color: var(--text-primary); z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+  #toast.show { opacity: 1; }
+</style>
+<!-- bpmn-js via CDN -->
+<script src="https://unpkg.com/bpmn-js@17/dist/bpmn-viewer.production.min.js"></script>
+</head>
+<body>
+
+<header class="header">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="logo-dot">M</div>
+    <div><div class="logo-text">MentorIA Systems</div><div class="logo-sub">Visualizador de Diagramas</div></div>
+  </div>
+  <div class="header-mid">
+    <span class="file-name" id="file-name">Ningún archivo cargado</span>
+    <span class="type-badge" id="type-badge" style="display:none"></span>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-outline" onclick="openFile()">📂 Abrir archivo</button>
+    <button class="btn btn-outline" id="btn-export-svg" onclick="exportSVG()" style="display:none">⬇ Exportar SVG</button>
+    <button class="btn btn-primary" onclick="pasteXML()">📋 Pegar XML/BPMN</button>
+  </div>
+</header>
+
+<input type="file" id="file-input" accept=".bpmn,.xml,.html,.htm,.svg,.json" style="display:none" onchange="handleFile(event)">
+
+<div class="toolbar" id="toolbar" style="display:none">
+  <div class="tool-group">
+    <button class="tool-btn" onclick="zoomIn()" title="Acercar">+</button>
+    <span class="zoom-label" id="zoom-label">100%</span>
+    <button class="tool-btn" onclick="zoomOut()" title="Alejar">−</button>
+  </div>
+  <div class="tool-sep"></div>
+  <div class="tool-group">
+    <button class="tool-btn" onclick="zoomFit()" title="Ajustar a pantalla">⊡</button>
+    <button class="tool-btn" onclick="zoomReset()" title="Zoom original">⊙</button>
+  </div>
+  <div class="tool-sep"></div>
+  <div class="tool-group">
+    <button class="tool-btn" onclick="rotateLeft()" title="Girar izquierda" id="btn-rotate" style="display:none">↺</button>
+  </div>
+</div>
+
+<div class="canvas-wrap" id="canvas-wrap">
+  <div id="drop-zone">
+    <div class="drop-inner">
+      <div class="drop-icon">🗺️</div>
+      <div class="drop-title">Visualizador de Diagramas MentorIA</div>
+      <div class="drop-sub">Arrastra y suelta un archivo aquí,<br>o haz clic en "Abrir archivo" para seleccionarlo.<br>También puedes pegar XML directamente.</div>
+      <div class="drop-formats">
+        <span class="format-chip">📐 .bpmn</span>
+        <span class="format-chip">📄 .xml</span>
+        <span class="format-chip">🌐 .html</span>
+        <span class="format-chip">🖼️ .svg</span>
+        <span class="format-chip">📋 .json</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="bpmn-container">
+    <div id="bpmn-canvas"></div>
+  </div>
+
+  <div id="content-container">
+    <iframe id="html-frame" style="display:none"></iframe>
+    <div id="svg-container" style="display:none"></div>
+  </div>
+</div>
+
+<div class="statusbar">
+  <div class="status-text" id="status-text">Listo — arrastra un archivo o pega XML para comenzar</div>
+  <div class="status-keys">
+    <span class="key-hint"><kbd>Scroll</kbd> Zoom</span>
+    <span class="key-hint"><kbd>Drag</kbd> Pan</span>
+    <span class="key-hint"><kbd>Ctrl+V</kbd> Pegar XML</span>
+    <span class="key-hint"><kbd>F</kbd> Ajustar</span>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- Paste dialog -->
+<div id="paste-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid var(--border-active);border-radius:var(--radius);padding:28px;width:90%;max-width:640px;">
+    <div style="font-size:16px;font-weight:600;margin-bottom:16px;">📋 Pegar XML / BPMN</div>
+    <textarea id="paste-content" style="width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;color:var(--text-primary);font-family:monospace;font-size:12px;line-height:1.5;resize:vertical;min-height:200px;outline:none;" placeholder="Pega aquí el XML del diagrama BPMN generado por Claude…"></textarea>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
+      <button class="btn btn-outline" onclick="closePaste()">Cancelar</button>
+      <button class="btn btn-primary" onclick="loadPasted()">Cargar diagrama</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let viewer = null;
+let currentType = null;
+let svgRotation = 0;
+let currentZoom = 1;
+
+function showToast(msg, duration = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function setStatus(msg) {
+  document.getElementById('status-text').textContent = msg;
+}
+
+function showToolbar(show = true) {
+  document.getElementById('toolbar').style.display = show ? 'flex' : 'none';
+}
+
+function setFileName(name, type) {
+  document.getElementById('file-name').textContent = name;
+  const badge = document.getElementById('type-badge');
+  badge.style.display = 'inline-flex';
+  const labels = { bpmn: 'BPMN 2.0', xml: 'XML', html: 'HTML', svg: 'SVG', json: 'JSON' };
+  const classes = { bpmn: 'badge-bpmn', xml: 'badge-bpmn', html: 'badge-html', svg: 'badge-svg', json: 'badge-bpmn' };
+  badge.textContent = labels[type] || type.toUpperCase();
+  badge.className = 'type-badge ' + (classes[type] || 'badge-bpmn');
+}
+
+function showDropZone(show) {
+  document.getElementById('drop-zone').classList.toggle('hidden', !show);
+}
+
+// ── BPMN loader ──────────────────────────────────────────
+async function loadBPMN(xml, fileName = 'diagrama.bpmn') {
+  showDropZone(false);
+  document.getElementById('content-container').style.display = 'none';
+  document.getElementById('bpmn-container').style.display = 'block';
+  document.getElementById('btn-export-svg').style.display = 'inline-flex';
+  showToolbar(true);
+  document.getElementById('btn-rotate').style.display = 'none';
+
+  if (!viewer) {
+    viewer = new BpmnJS({ container: '#bpmn-canvas' });
+  }
+  try {
+    await viewer.importXML(xml);
+    const canvas = viewer.get('canvas');
+    canvas.zoom('fit-viewport', 'auto');
+    currentZoom = Math.round(canvas.zoom() * 100);
+    updateZoomLabel();
+    setFileName(fileName, 'bpmn');
+    setStatus(`✅ Diagrama cargado — ${fileName}`);
+    currentType = 'bpmn';
+    showToast('✅ Diagrama BPMN cargado');
+  } catch (err) {
+    showToast('❌ Error al cargar el BPMN: ' + err.message);
+    setStatus('Error al cargar el diagrama');
+  }
+}
+
+// ── HTML loader ──────────────────────────────────────────
+function loadHTML(content, fileName) {
+  showDropZone(false);
+  document.getElementById('bpmn-container').style.display = 'none';
+  document.getElementById('btn-export-svg').style.display = 'none';
+  showToolbar(false);
+  const cc = document.getElementById('content-container');
+  cc.style.display = 'block';
+  document.getElementById('svg-container').style.display = 'none';
+  const frame = document.getElementById('html-frame');
+  frame.style.display = 'block';
+  frame.srcdoc = content;
+  setFileName(fileName, 'html');
+  setStatus(`✅ HTML cargado — ${fileName}`);
+  currentType = 'html';
+  showToast('✅ Archivo HTML cargado');
+}
+
+// ── SVG loader ──────────────────────────────────────────
+function loadSVG(content, fileName) {
+  showDropZone(false);
+  document.getElementById('bpmn-container').style.display = 'none';
+  document.getElementById('btn-export-svg').style.display = 'none';
+  showToolbar(true);
+  document.getElementById('btn-rotate').style.display = 'inline-flex';
+  const cc = document.getElementById('content-container');
+  cc.style.display = 'block';
+  document.getElementById('html-frame').style.display = 'none';
+  const svgCont = document.getElementById('svg-container');
+  svgCont.style.display = 'flex';
+  svgCont.innerHTML = content;
+  svgRotation = 0;
+  setFileName(fileName, 'svg');
+  setStatus(`✅ SVG cargado — ${fileName}`);
+  currentType = 'svg';
+  showToast('✅ Imagen SVG cargada');
+}
+
+// ── File handler ──────────────────────────────────────────
+function openFile() { document.getElementById('file-input').click(); }
+
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  readFile(file);
+  e.target.value = '';
+}
+
+function readFile(file) {
+  const name = file.name;
+  const ext = name.split('.').pop().toLowerCase();
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const content = ev.target.result;
+    if (ext === 'bpmn' || ext === 'xml') {
+      loadBPMN(content, name);
+    } else if (ext === 'html' || ext === 'htm') {
+      loadHTML(content, name);
+    } else if (ext === 'svg') {
+      loadSVG(content, name);
+    } else if (ext === 'json') {
+      try {
+        const data = JSON.parse(content);
+        if (data.bpmn_xml) { loadBPMN(data.bpmn_xml, name); }
+        else { showToast('JSON cargado. No contiene clave "bpmn_xml". Usa "Pegar XML" para BPMN.'); }
+      } catch(err) { showToast('Error al parsear JSON: ' + err.message); }
+    } else {
+      if (content.trim().startsWith('<?xml') || content.includes('<definitions')) {
+        loadBPMN(content, name);
+      } else if (content.trim().startsWith('<svg')) {
+        loadSVG(content, name);
+      } else {
+        loadHTML(content, name);
+      }
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ── Drag & drop ──────────────────────────────────────────
+document.body.addEventListener('dragover', e => { e.preventDefault(); document.body.classList.add('drag-over'); });
+document.body.addEventListener('dragleave', e => { if (!e.relatedTarget) document.body.classList.remove('drag-over'); });
+document.body.addEventListener('drop', e => {
+  e.preventDefault();
+  document.body.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) readFile(file);
+});
+
+// ── Paste dialog ──────────────────────────────────────────
+function pasteXML() {
+  document.getElementById('paste-overlay').style.display = 'flex';
+  setTimeout(() => document.getElementById('paste-content').focus(), 100);
+}
+function closePaste() {
+  document.getElementById('paste-overlay').style.display = 'none';
+  document.getElementById('paste-content').value = '';
+}
+function loadPasted() {
+  const xml = document.getElementById('paste-content').value.trim();
+  if (!xml) { showToast('⚠️ Pega el XML primero'); return; }
+  closePaste();
+  if (xml.startsWith('<svg')) { loadSVG(xml, 'pegado.svg'); }
+  else { loadBPMN(xml, 'pegado.bpmn'); }
+}
+
+// Keyboard shortcut Ctrl+V
+document.addEventListener('keydown', e => {
+  if (e.key === 'f' || e.key === 'F') zoomFit();
+  if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+    if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+      pasteXML();
+    }
+  }
+});
+
+// ── Zoom controls ──────────────────────────────────────────
+function updateZoomLabel() {
+  const pct = currentType === 'bpmn' ? Math.round(viewer.get('canvas').zoom() * 100) : Math.round(currentZoom * 100);
+  document.getElementById('zoom-label').textContent = pct + '%';
+}
+
+function zoomIn() {
+  if (currentType === 'bpmn' && viewer) {
+    const canvas = viewer.get('canvas');
+    canvas.zoom(canvas.zoom() * 1.2);
+    updateZoomLabel();
+  }
+}
+function zoomOut() {
+  if (currentType === 'bpmn' && viewer) {
+    const canvas = viewer.get('canvas');
+    canvas.zoom(canvas.zoom() / 1.2);
+    updateZoomLabel();
+  }
+}
+function zoomFit() {
+  if (currentType === 'bpmn' && viewer) {
+    viewer.get('canvas').zoom('fit-viewport', 'auto');
+    updateZoomLabel();
+  }
+}
+function zoomReset() {
+  if (currentType === 'bpmn' && viewer) {
+    viewer.get('canvas').zoom(1);
+    updateZoomLabel();
+  }
+}
+
+function rotateLeft() {
+  if (currentType === 'svg') {
+    svgRotation = (svgRotation - 90 + 360) % 360;
+    const svgEl = document.querySelector('#svg-container svg');
+    if (svgEl) svgEl.style.transform = `rotate(${svgRotation}deg)`;
+  }
+}
+
+// ── Export ──────────────────────────────────────────
+async function exportSVG() {
+  if (currentType !== 'bpmn' || !viewer) return;
+  try {
+    const { svg } = await viewer.saveSVG();
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `diagrama-${new Date().toISOString().split('T')[0]}.svg`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('✅ SVG exportado');
+  } catch(e) { showToast('Error al exportar SVG: ' + e.message); }
+}
+
+// Close paste overlay on click outside
+document.getElementById('paste-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('paste-overlay')) closePaste();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagnóstico — Área de Marketing | MentorIA</title>
+<style>
+  :root {
+    --brand-dark: #0a0a14;
+    --brand-purple: #6c4de6;
+    --brand-purple-light: #8b6ef5;
+    --brand-purple-dim: rgba(108, 77, 230, 0.15);
+    --brand-cyan: #00d4ff;
+    --brand-cyan-dim: rgba(0, 212, 255, 0.1);
+    --surface: #13131f;
+    --surface-2: #1a1a2e;
+    --surface-3: #1f1f35;
+    --border: rgba(255,255,255,0.08);
+    --border-active: rgba(108, 77, 230, 0.5);
+    --text-primary: #f0f0f8;
+    --text-secondary: #8888aa;
+    --text-muted: #55556a;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--brand-dark); color: var(--text-primary); font-family: 'Inter', -apple-system, system-ui, sans-serif; font-size: 15px; line-height: 1.6; min-height: 100vh; }
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 0; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(12px); }
+  .header-inner { max-width: 780px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; gap: 16px; }
+  .logo-badge { display: flex; align-items: center; gap: 10px; }
+  .logo-dot { width: 32px; height: 32px; background: linear-gradient(135deg, var(--brand-purple), var(--brand-cyan)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: white; flex-shrink: 0; }
+  .logo-text { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+  .logo-sub { font-size: 11px; color: var(--text-secondary); font-weight: 400; }
+  .header-title { margin-left: auto; font-size: 12px; color: var(--text-secondary); text-align: right; }
+  .progress-bar-wrap { background: var(--surface-2); border-bottom: 1px solid var(--border); }
+  .progress-inner { max-width: 780px; margin: 0 auto; padding: 0 24px; }
+  .progress-meta { display: flex; justify-content: space-between; align-items: center; padding: 10px 0 8px; font-size: 12px; color: var(--text-secondary); }
+  .progress-pct { color: var(--brand-purple-light); font-weight: 600; }
+  .progress-track { height: 3px; background: var(--surface-3); border-radius: 99px; overflow: hidden; margin-bottom: 0; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--brand-purple), var(--brand-cyan)); border-radius: 99px; transition: width 0.4s ease; }
+  .main { max-width: 780px; margin: 0 auto; padding: 40px 24px 80px; }
+  .hero { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 36px; margin-bottom: 32px; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--brand-purple), var(--brand-cyan)); }
+  .hero-tag { display: inline-flex; align-items: center; gap: 6px; background: var(--brand-purple-dim); border: 1px solid var(--border-active); color: var(--brand-purple-light); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 10px; border-radius: 99px; margin-bottom: 16px; }
+  .hero h1 { font-size: 26px; font-weight: 700; color: var(--text-primary); margin-bottom: 10px; line-height: 1.3; }
+  .hero p { font-size: 14px; color: var(--text-secondary); max-width: 560px; line-height: 1.7; }
+  .hero-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+  .chip { display: flex; align-items: center; gap: 6px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 99px; padding: 5px 12px; font-size: 12px; color: var(--text-secondary); }
+  .chip span { color: var(--brand-cyan); }
+  .section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 20px; transition: border-color 0.2s; }
+  .section:hover { border-color: var(--border-active); }
+  .section-header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .section-num { width: 36px; height: 36px; background: var(--brand-purple-dim); border: 1px solid var(--border-active); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: var(--brand-purple-light); flex-shrink: 0; }
+  .section-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+  .section-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+  .field { margin-bottom: 24px; }
+  .field:last-child { margin-bottom: 0; }
+  .field-label { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 10px; display: block; }
+  .field-hint { font-size: 12px; color: var(--text-secondary); font-weight: 400; }
+  .field-optional { font-size: 11px; color: var(--text-muted); font-weight: 400; background: var(--surface-3); padding: 2px 6px; border-radius: 4px; }
+  input[type="text"], input[type="number"], input[type="email"], textarea, select { width: 100%; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 11px 14px; color: var(--text-primary); font-size: 14px; font-family: inherit; transition: border-color 0.2s; outline: none; }
+  input:focus, textarea:focus, select:focus { border-color: var(--brand-purple); box-shadow: 0 0 0 3px var(--brand-purple-dim); }
+  textarea { resize: vertical; min-height: 90px; }
+  select option { background: var(--surface-2); }
+  .options-list { display: flex; flex-direction: column; gap: 8px; }
+  .options-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+  .opt-item { display: flex; align-items: flex-start; gap: 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; cursor: pointer; transition: all 0.15s; user-select: none; }
+  .opt-item:hover { border-color: var(--border-active); background: var(--surface-3); }
+  .opt-item.selected { border-color: var(--brand-purple); background: var(--brand-purple-dim); }
+  .opt-item input { display: none; }
+  .opt-item .opt-label { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+  .opt-item .opt-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .scale-row { display: flex; gap: 8px; align-items: center; }
+  .scale-btn { width: 44px; height: 44px; border: 1px solid var(--border); background: var(--surface-2); border-radius: var(--radius-sm); color: var(--text-secondary); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .scale-btn:hover { border-color: var(--brand-purple-light); color: var(--brand-purple-light); }
+  .scale-btn.active { background: var(--brand-purple); border-color: var(--brand-purple); color: white; }
+  .scale-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .footer-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; z-index: 100; }
+  .footer-inner { max-width: 780px; margin: 0 auto; width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .save-status { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+  .save-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: none; }
+  .btn-primary { background: var(--brand-purple); color: white; }
+  .btn-primary:hover { background: var(--brand-purple-light); transform: translateY(-1px); }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+  .btn-outline:hover { border-color: var(--brand-purple); color: var(--brand-purple-light); }
+  @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } .options-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="logo-badge">
+      <div class="logo-dot">M</div>
+      <div><div class="logo-text">MentorIA Systems</div><div class="logo-sub">Diagnóstico de Área</div></div>
+    </div>
+    <div class="header-title">Área de Marketing<br><span style="color:var(--brand-purple-light);font-weight:600;">12 secciones</span></div>
+  </div>
+</header>
+
+<div class="progress-bar-wrap">
+  <div class="progress-inner">
+    <div class="progress-meta">
+      <span id="progress-label">Completado</span>
+      <span class="progress-pct" id="progress-pct">0%</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  </div>
+</div>
+
+<main class="main">
+  <div class="hero">
+    <div class="hero-tag">📊 Diagnóstico MentorIA</div>
+    <h1>Área de Marketing</h1>
+    <p>Este cuestionario es llenado por el ejecutivo de implementación MentorIA durante o después de la sesión de descubrimiento. La información capturada alimenta directamente el análisis, la matriz de priorización y el informe de diagnóstico.</p>
+    <div class="hero-chips">
+      <div class="chip">🏢 <span>Datos del cliente</span></div>
+      <div class="chip">🔧 <span>Herramientas actuales</span></div>
+      <div class="chip">📈 <span>Métricas y KPIs</span></div>
+      <div class="chip">🤖 <span>Oportunidades IA</span></div>
+    </div>
+  </div>
+
+  <!-- S1: Datos generales -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <div class="section-title-wrap">
+        <div class="section-title">Datos Generales del Cliente</div>
+        <div class="section-desc">Identificación, equipo y estructura del área de marketing</div>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="field">
+        <label class="field-label" for="empresa">Nombre de la empresa</label>
+        <input type="text" id="empresa" name="empresa" placeholder="Razón social o nombre comercial">
+      </div>
+      <div class="field">
+        <label class="field-label" for="contacto">Nombre del contacto</label>
+        <input type="text" id="contacto" name="contacto" placeholder="Nombre completo">
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="field">
+        <label class="field-label" for="rol">Rol del contacto en la empresa</label>
+        <div class="options-list" id="rol-opts"></div>
+      </div>
+      <div class="field">
+        <label class="field-label" for="tamano-equipo">Tamaño del equipo de marketing</label>
+        <div class="options-list" id="tamano-mkt-opts"></div>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label" for="responsabilidades">¿Quién hace qué dentro del equipo? Describe brevemente las responsabilidades individuales</label>
+      <textarea id="responsabilidades" name="responsabilidades" placeholder="Ej. Ana: redes sociales y contenido. Carlos: Google Ads y reportes. Agencia: estrategia y creatividad..."></textarea>
+    </div>
+    <div class="field">
+      <label class="field-label" for="dependencias-criticas">¿Qué tareas o conocimiento dependen de UNA SOLA persona en el área?</label>
+      <textarea id="dependencias-criticas" name="dependencias_criticas" placeholder="Ej. Solo el director sabe cómo configurar las campañas de paid, si sale no sabemos qué hacer..."></textarea>
+    </div>
+  </div>
+
+  <!-- S2: Gestión del marketing -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <div class="section-title-wrap">
+        <div class="section-title">Gestión del Marketing</div>
+        <div class="section-desc">Cómo se organiza y ejecuta el marketing hoy</div>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">¿Cómo ejecutan el marketing actualmente?</label>
+      <div class="options-list" id="ejecucion-opts"></div>
+    </div>
+    <div class="field" id="agencia-section">
+      <label class="field-label" for="agencia-nombre">Nombre de la agencia o proveedor externo <span class="field-optional">si aplica</span></label>
+      <input type="text" id="agencia-nombre" name="agencia_nombre" placeholder="Nombre de la agencia / freelancer">
+    </div>
+    <div class="field">
+      <label class="field-label" for="agencia-costo">Costo mensual de agencia / proveedor externo <span class="field-optional">si aplica</span></label>
+      <input type="text" id="agencia-costo" name="agencia_costo" placeholder="Ej. $15,000 MXN/mes">
+    </div>
+    <div class="field">
+      <label class="field-label">¿Qué actividades maneja la agencia o equipo externo? <span class="field-hint">(todas las que apliquen)</span></label>
+      <div class="options-grid" id="actividades-agencia-opts"></div>
+    </div>
+  </div>
+
+  <!-- S3: Herramientas -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <div class="section-title-wrap">
+        <div class="section-title">Herramientas y Software</div>
+        <div class="section-desc">Stack tecnológico actual del área de marketing</div>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">¿Qué herramientas usan en marketing? <span class="field-hint">(todas las que apliquen)</span></label>
+      <div class="options-grid" id="herramientas-mkt-opts"></div>
+    </div>
+    <div class="field">
+      <label class="field-label" for="herramientas-otras">Otras herramientas que usen <span class="field-optional">opcional</span></label>
+      <input type="text" id="herramientas-otras" name="herramientas_otras" placeholder="Ej. ActiveCampaign, Klaviyo, sistema propio…">
+    </div>
+    <div class="field">
+      <label class="field-label">¿Qué tan integradas están las herramientas entre sí?</label>
+      <div class="options-list" id="integracion-opts"></div>
+    </div>
+  </div>
+
+  <!-- S4: Contenido -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <div class="section-title-wrap">
+        <div class="section-title">Creación de Contenido</div>
+        <div class="section-desc">Cómo producen el contenido que publican</div>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">¿Quién crea el contenido? <span class="field-hint">(todos los que apliquen)</span></label>
+      <div class="options-grid" id="quien-crea-opts"></div>
+    </div>
+    <div class="field">
+      <label class="field-label">¿Qué tipos de contenido producen? <span class="field-hint">(todos los que apliquen)</span></label>
+      <div class="options-grid" id="tipos-contenido-opts"></div>
+    </div>
+    <div class="field">
+      <label class="field-label">¿Cómo es su proceso de creación de contenido?</label>
+      <div class="options-list" id="proceso-contenido-opts"></div>
+    </div>
+    <div class="field">
+      <label class="field-label" for="freq-publicacion">¿Con qué frecuencia publican? <span class="field-optional">por canal si aplica</span></label>
+      <input type="text" id="freq-publicacion" name="freq_publicacion" placeholder="Ej. Instagram: 5 posts/sem + 3 stories/día, LinkedIn: 2 posts/sem, Blog: 2 artículos/mes…">
+    </div>
+    <div class="field">
+      <label class="field-label" for="cuello-botella-contenido">¿Dónde está el cuello de botella en la producción de contenido?</label>
+      <textarea id="cuello-botella-contenido" name="cuello_botella_contenido" placeholder="Ej. El CEO tarda semanas en aprobar el copy, no tenemos diseñador interno, el proceso de grabación es muy lento…"></textarea>
+    </div>
+  </div>
+
+  <!-- S5: Publicación y distribución -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <div class="section-title-wrap">
+        <div class="section-title">Publicación y Distribución</div>
+        <div class="section-desc">Cómo llevan el contenido a los canales</div>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">¿Cómo publican su contenido?</label>
+      <div class="options-list" id="publicacion-opts"></div>
+    </div>
+    <div class="field">
+      <label class="field-label">¿En qué canales distribuyen? <span class="field-hint">(todos los que apliquen)</span></label>
+      <div class="options-grid" id="canales-dist-opts"></div>
+    </div>
+    <div class="field">
+      <label class="field-label" for="proceso-publicacion">Describe el proceso típico desde que el contenido está listo hasta que se publica</label>
+      <textarea id="proceso-publicacion" name="proceso_publicacion" placeholder="Ej. Diseñador envía por WhatsApp → aprobación del director → community manager copia y pega en cada red social manualmente…"></textarea>
+    </div>
+  </div>
+
+  <!-- S6: Campañas, segmentación y CRM -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <div class="section-title-wrap">
+        <div class="section-title">Campañas, CRM y Segmentación</div>
+        <div class="section-desc">Cómo conectan marketing con ventas y resultados</div>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">¿Marketing está conectado a un CRM?</label>
+      <div class="options-list" id="crm-integracion-opts"></div>
+    </div>
+    <div class="field">
+      <label class="field-label" for="crm-nombre">¿Qué CRM usan? <span class="field-optional">si aplica</span></label>
+      <input type="text" id="crm-nombre" name="crm_nombre" placeholder="Ej. HubSpot, Salesforce, GHL, Pipedrive, Excel…">
+    </div>
+    <div class="field">
+      <label class="field-label">¿Cómo segmentan a su audiencia en campañas?</label>
+      <div class="options-list" id="segmentacion-opts"></div>
+    </div>
+    <div class="field">
+      <label class="field-label">¿Miden el ROI o resultado de las campañas de marketing?</label>
+      <div class="options-list" id="medicion-roi-opts"></div>
+    </div>
+    <div class="field">
+      <label class="field-label" for="atribucion-problema">¿Tienen problemas de atribución? ¿Saben qué canal o campaña trae los mejores clientes?</label>
+      <textarea id="atribucion-problema" name="atribucion_problema" placeholder="Ej. No sabemos de dónde vienen los leads, Google Analytics está roto, la agencia nos da sus propios números pero no sabemos si son reales…"></textarea>
+    </div>
+  </div>
+
+  <!-- S7: Generación de leads -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <div class="section-title-wrap">
+        <div class="section-title">Generación y Volumen de Leads</div>
+        <div class="section-desc">Cuántos prospectos entran y cómo</div>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">¿Con qué frecuencia generan leads?</label>
+      <div class="options-list" id="freq-leads-opts"></div>
+    </div>
+    <div class="field">
+      <label class="field-label" for="volumen-leads">Volumen aproximado de leads mensuales</label>
+      <input type="text" id="volumen-leads" name="volumen_leads" placeholder="Ej. ~50 leads/mes, 200-300 consultas/mes…">
+    </div>
+    <div class="field">
+      <label class="field-label" for="picos-captacion">¿Cuándo tienen más captación? ¿Hay estacionalidad?</label>
+      <input type="text" id="picos-captacion" name="picos_captacion" placeholder="Ej. Fin de año, temporada escolar, quincenas, lunes al mediodía…">
+    </div>
+    <div class="field">
+      <label class="field-label">Si duplicaran el volumen de leads de hoy, ¿qué se rompería?</label>
+      <div class="options-list" id="escalabilidad-opts"></div>
+    </div>
+    <div class="field">
+      <label class="field-label" for="bloqueo-escala">¿Qué les impide escalar la captación de leads hoy?</label>
+      <textarea id="bloqueo-escala" name="bloqueo_escala" placeholder="Ej. No tenemos presupuesto para más ads, no damos abasto para responder, la web no convierte…"></textarea>
+    </div>
+  </div>
+
+  <!-- S8: IA en marketing -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <div class="section-title-wrap">
+        <div class="section-title">Uso de IA en Marketing</div>
+        <div class="section-desc">Qué usan hoy y qué potencial identifican</div>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">¿Qué tanto usan IA actualmente en marketing?</label>
+      <div class="options-list" id="uso-ia-opts"></div>
+    </div>
+    <div class="field">
+      <label class="field-label">¿Para qué usan IA en marketing? <span class="field-hint">(todas las que apliquen)</span></label>
+      <div class="options-grid" id="usos-ia-opts"></div>
+    </div>
+    <div class="field">
+      <label class="field-label" for="herramientas-ia">¿Qué herramientas de IA usan? <span class="field-optional">opcional</span></label>
+      <input type="text" id="herramientas-ia" name="herramientas_ia" placeholder="Ej. ChatGPT, Claude, Midjourney, Jasper, Copy.ai…">
+    </div>
+  </div>
+
+  <!-- S9: Automatizaciones actuales -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">9</div>
+      <div class="section-title-wrap">
+        <div class="section-title">Automatizaciones Actuales</div>
+        <div class="section-desc">Qué tienen automatizado hoy en el área de marketing</div>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">¿Tienen automatizaciones activas en marketing?</label>
+      <div class="options-list" id="tiene-automatizaciones-opts"></div>
+    </div>
+    <div class="field">
+      <label class="field-label">¿Qué tienen automatizado? <span class="field-hint">(todas las que apliquen)</span></label>
+      <div class="options-grid" id="que-automatizado-opts"></div>
+    </div>
+    <div class="field">
+      <label class="field-label" for="infra-automatizacion">¿Qué herramientas usan para automatizar? <span class="field-optional">opcional</span></label>
+      <input type="text" id="infra-automatizacion" name="infra_automatizacion" placeholder="Ej. Zapier, Make, n8n, ActiveCampaign, HubSpot Workflows…">
+    </div>
+    <div class="field">
+      <label class="field-label">¿Qué tan bien funcionan las automatizaciones actuales?</label>
+      <div class="options-list" id="calidad-auto-opts"></div>
+    </div>
+    <div class="field">
+      <label class="field-label" for="costo-automatizaciones">Costo mensual en herramientas de automatización/marketing <span class="field-optional">aproximado</span></label>
+      <input type="text" id="costo-automatizaciones" name="costo_automatizaciones" placeholder="Ej. $3,500 MXN/mes (HubSpot + Zapier)">
+    </div>
+    <div class="field">
+      <label class="field-label">¿Por qué no han automatizado más? <span class="field-hint">(si aplica)</span></label>
+      <div class="options-grid" id="razon-no-auto-opts"></div>
+    </div>
+  </div>
+
+  <!-- S10: Tareas manuales -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">10</div>
+      <div class="section-title-wrap">
+        <div class="section-title">Tareas Manuales y Repetitivas</div>
+        <div class="section-desc">Dónde pierde más tiempo el equipo de marketing</div>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">¿Cuáles de estas tareas hacen manualmente hoy? <span class="field-hint">(todas las que apliquen)</span></label>
+      <div class="options-list" id="tareas-manuales-opts"></div>
+    </div>
+    <div class="field">
+      <label class="field-label" for="frustracion-equipo">¿Qué es lo que MÁS frustra al equipo de marketing en el día a día?</label>
+      <textarea id="frustracion-equipo" name="frustracion_equipo" placeholder="Ej. Siempre hacemos lo mismo y nunca tenemos tiempo para estrategia, aprobaciones que tardan semanas…"></textarea>
+    </div>
+    <div class="field">
+      <label class="field-label" for="tiempo-perdido">¿Dónde se va más el tiempo sin generar resultados?</label>
+      <textarea id="tiempo-perdido" name="tiempo_perdido" placeholder="Ej. Reportes manuales que nadie lee, copiar y pegar entre plataformas, atender solicitudes internas…"></textarea>
+    </div>
+    <div class="field">
+      <label class="field-label">¿Cuántas horas semanales estimas que el equipo pierde en tareas que podrían automatizarse?</label>
+      <div class="options-list" id="horas-perdidas-opts"></div>
+    </div>
+  </div>
+
+  <!-- S11: Autoevaluación y métricas -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">11</div>
+      <div class="section-title-wrap">
+        <div class="section-title">Métricas y Autoevaluación</div>
+        <div class="section-desc">Estado actual del desempeño de marketing</div>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">¿Qué métricas miden actualmente? <span class="field-hint">(todas las que apliquen)</span></label>
+      <div class="options-grid" id="metricas-opts"></div>
+    </div>
+    <div class="field">
+      <label class="field-label" for="metricas-otras">Otras métricas que miden <span class="field-optional">opcional</span></label>
+      <input type="text" id="metricas-otras" name="metricas_otras" placeholder="Ej. Share of voice, CLV, ROAS por campaña…">
+    </div>
+    <div class="field">
+      <label class="field-label">Califica el desempeño actual del área de marketing (1 = muy bajo · 5 = excelente)</label>
+      <div style="display:flex;flex-direction:column;gap:16px;margin-top:4px;">
+        <div>
+          <div class="field-label" style="font-size:12px;margin-bottom:6px;">Generación y calidad de leads</div>
+          <div class="scale-row" id="scale-leads"></div>
+        </div>
+        <div>
+          <div class="field-label" style="font-size:12px;margin-bottom:6px;">Consistencia y calidad del contenido</div>
+          <div class="scale-row" id="scale-contenido"></div>
+        </div>
+        <div>
+          <div class="field-label" style="font-size:12px;margin-bottom:6px;">Uso de datos y analítica</div>
+          <div class="scale-row" id="scale-analitica"></div>
+        </div>
+        <div>
+          <div class="field-label" style="font-size:12px;margin-bottom:6px;">Alineación Marketing–Ventas</div>
+          <div class="scale-row" id="scale-alineacion"></div>
+        </div>
+        <div>
+          <div class="field-label" style="font-size:12px;margin-bottom:6px;">Uso de tecnología y automatización</div>
+          <div class="scale-row" id="scale-tecnologia-mkt"></div>
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label" for="presupuesto">Presupuesto disponible para mejoras tecnológicas</label>
+      <div class="options-list" id="presupuesto-opts"></div>
+    </div>
+    <div class="field">
+      <label class="field-label">¿Hay resistencia al cambio en el equipo de marketing?</label>
+      <div class="options-list" id="resistencia-opts"></div>
+    </div>
+  </div>
+
+  <!-- S12: Comentarios -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">12</div>
+      <div class="section-title-wrap">
+        <div class="section-title">Expectativas y Comentarios Adicionales</div>
+        <div class="section-desc">Qué espera conseguir el cliente con este diagnóstico</div>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label" for="tarea-clonar">Si pudieran "clonar" a alguien del equipo para hacer UNA tarea 24/7, ¿cuál sería?</label>
+      <textarea id="tarea-clonar" name="tarea_clonar" placeholder="Ej. Clonar al community manager para responder todos los DMs en segundos y nunca perder un lead…"></textarea>
+    </div>
+    <div class="field">
+      <label class="field-label" for="exito-auditoria">¿Cómo definen el éxito de este diagnóstico? ¿Qué resultado esperan?</label>
+      <textarea id="exito-auditoria" name="exito_auditoria" placeholder="Ej. Saber exactamente qué automatizar primero para que el equipo tenga tiempo de hacer estrategia…"></textarea>
+    </div>
+    <div class="field">
+      <label class="field-label" for="dolores-principales">Principales dolores o problemas de marketing que quieren resolver</label>
+      <textarea id="dolores-principales" name="dolores_principales" placeholder="Los problemas más urgentes, en sus propias palabras…" style="min-height:110px;"></textarea>
+    </div>
+    <div class="field">
+      <label class="field-label" for="comentarios-adicionales">Algo más que sea importante que conozcamos <span class="field-optional">opcional</span></label>
+      <textarea id="comentarios-adicionales" name="comentarios_adicionales" placeholder="Contexto adicional, situaciones especiales, proyectos en curso que afecten el área…"></textarea>
+    </div>
+  </div>
+
+</main>
+
+<div class="footer-bar">
+  <div class="footer-inner">
+    <div class="save-status"><div class="save-dot"></div><span id="save-text">Guardado automáticamente</span></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-outline" onclick="clearForm()">Limpiar</button>
+      <button class="btn btn-outline" onclick="exportJSON()">⬇ Exportar JSON</button>
+      <button class="btn btn-primary" id="btn-api" onclick="enviarAlAPI()">💾 Guardar ahora</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DATA = {
+  rol: [
+    { v: 'ceo', l: 'CEO / Fundador' },
+    { v: 'cmo', l: 'CMO / Director de Marketing' },
+    { v: 'gerente-mkt', l: 'Gerente / Coordinador de Marketing' },
+    { v: 'community', l: 'Community Manager' },
+    { v: 'performance', l: 'Especialista en Paid / Performance' },
+    { v: 'contenido', l: 'Creador de Contenido' },
+    { v: 'otro', l: 'Otro' },
+  ],
+  tamano_mkt: [
+    { v: 'solo', l: 'Solo yo (1 persona)' },
+    { v: '2-3', l: '2 a 3 personas' },
+    { v: '4-7', l: '4 a 7 personas' },
+    { v: '8-15', l: '8 a 15 personas' },
+    { v: '15+', l: 'Más de 15 personas' },
+  ],
+  ejecucion: [
+    { v: 'interno', l: 'Equipo 100% interno', s: 'Todo el marketing se hace dentro de la empresa' },
+    { v: 'agencia', l: 'Agencia externa', s: 'Un proveedor externo maneja el marketing' },
+    { v: 'mixto', l: 'Mixto (interno + externo)', s: 'Parte interna y parte con agencia o freelancers' },
+    { v: 'freelancers', l: 'Freelancers', s: 'Colaboradores por proyecto sin equipo fijo' },
+  ],
+  actividades_agencia: [
+    'Paid Media (Google Ads, Meta Ads)',
+    'SEO / Posicionamiento orgánico',
+    'Redes Sociales',
+    'Creación de contenido',
+    'Email marketing',
+    'Sitio web / landing pages',
+    'Estrategia y planeación',
+    'Diseño gráfico',
+    'Video y producción audiovisual',
+  ],
+  herramientas_mkt: [
+    'Meta Business Suite / Ads Manager',
+    'Google Ads',
+    'Google Analytics / GA4',
+    'Google Search Console',
+    'HubSpot',
+    'Mailchimp / Klaviyo / ActiveCampaign',
+    'Hootsuite / Buffer / Metricool',
+    'Canva',
+    'Adobe Creative Suite',
+    'WordPress',
+    'Notion / ClickUp',
+    'WhatsApp Business',
+    'TikTok Business Center',
+    'Sin herramienta formal',
+  ],
+  integracion: [
+    { v: 'bien-integrado', l: 'Bien integradas — los datos fluyen entre plataformas', s: '' },
+    { v: 'algunas', l: 'Algunas conectadas, otras son islas', s: '' },
+    { v: 'islas', l: 'Son islas totalmente separadas', s: 'Hay que meter datos manualmente en cada una' },
+  ],
+  quien_crea: [
+    'Equipo interno',
+    'Agencia externa',
+    'Freelancers',
+    'IA (ChatGPT, Claude, Midjourney…)',
+    'El CEO / Director',
+    'Los mismos clientes (UGC)',
+  ],
+  tipos_contenido: [
+    'Posts para redes sociales',
+    'Stories / Reels / TikToks',
+    'Videos largos (YouTube)',
+    'Artículos de blog / SEO',
+    'Email / newsletters',
+    'Anuncios pagados (creativos)',
+    'Presentaciones / PDFs',
+    'Podcasts',
+    'Lead magnets / ebooks',
+    'Fotografía de producto / servicio',
+  ],
+  proceso_contenido: [
+    { v: 'manual', l: '100% manual — cada pieza desde cero', s: 'Sin plantillas ni flujo definido' },
+    { v: 'ia-asistido', l: 'Asistido por IA — usamos IA para partes del proceso', s: 'Pero sigue siendo mayormente manual' },
+    { v: 'semi-auto', l: 'Semi-automatizado — tenemos plantillas y flujos definidos', s: '' },
+    { v: 'muy-auto', l: 'Muy automatizado — la mayoría corre solo', s: '' },
+  ],
+  publicacion: [
+    { v: 'manual', l: 'Manual — publicamos en el momento desde cada plataforma', s: '' },
+    { v: 'parcial', l: 'Parcialmente programado — algunas cosas se agendan', s: '' },
+    { v: 'programado', l: 'Programado — todo se agenda con anticipación', s: '' },
+  ],
+  canales_dist: [
+    'Instagram',
+    'Facebook',
+    'TikTok',
+    'LinkedIn',
+    'YouTube',
+    'Twitter / X',
+    'Email',
+    'WhatsApp / Broadcast',
+    'Blog / SEO',
+    'Google My Business',
+    'Podcast',
+    'SMS',
+  ],
+  crm_integracion: [
+    { v: 'si-conectado', l: 'Sí, marketing está conectado al CRM y los datos fluyen', s: '' },
+    { v: 'si-parcial', l: 'Parcialmente — algunos datos llegan al CRM, otros no', s: '' },
+    { v: 'no-conectado', l: 'No está conectado — son sistemas separados', s: '' },
+    { v: 'no-crm', l: 'No tenemos CRM', s: '' },
+  ],
+  segmentacion: [
+    { v: 'avanzada', l: 'Segmentación avanzada — audiencias personalizadas, lookalikes, retargeting', s: '' },
+    { v: 'basica', l: 'Básica — edad, género, ubicación', s: '' },
+    { v: 'masivo', l: 'Masivo — misma comunicación para todos', s: '' },
+    { v: 'no-sabemos', l: 'No lo sabemos / lo decide la agencia', s: '' },
+  ],
+  medicion_roi: [
+    { v: 'bien-medido', l: 'Bien medido — sabemos qué campañas generan más ventas', s: '' },
+    { v: 'parcial', l: 'Parcialmente — medimos algunas cosas pero no el cuadro completo', s: '' },
+    { v: 'no-medimos', l: 'No lo medimos — no sabemos qué funciona', s: '' },
+  ],
+  freq_leads: [
+    { v: 'diario', l: 'Diariamente' },
+    { v: 'semanal', l: 'Semanalmente' },
+    { v: 'mensual', l: 'Mensualmente' },
+    { v: 'irregular', l: 'De forma irregular / por campaña' },
+  ],
+  escalabilidad: [
+    { v: 'si-crece', l: 'Sí podríamos crecer — tenemos capacidad de respuesta', s: '' },
+    { v: 'limitado', l: 'Limitado — podríamos crecer un poco pero no mucho', s: '' },
+    { v: 'techo', l: 'Ya estamos en el techo — más leads nos desbordaría', s: '' },
+  ],
+  uso_ia: [
+    { v: 'mucho', l: 'Mucho — IA es parte central de nuestro flujo de trabajo', s: '' },
+    { v: 'algo', l: 'Algo — usamos IA ocasionalmente para algunas tareas', s: '' },
+    { v: 'nada', l: 'Nada — no usamos IA actualmente', s: '' },
+  ],
+  usos_ia: [
+    'Redacción de copy / textos',
+    'Generación de imágenes',
+    'Edición de video',
+    'Ideas y brainstorming',
+    'Análisis de métricas',
+    'Chatbots de atención al cliente',
+    'Personalización de emails',
+    'Traducción de contenido',
+    'Investigación de mercado',
+  ],
+  tiene_automatizaciones: [
+    { v: 'si', l: 'Sí, tenemos automatizaciones activas', s: '' },
+    { v: 'no', l: 'No, todo es manual', s: '' },
+    { v: 'intentamos', l: 'Lo intentamos pero no funcionó', s: '' },
+  ],
+  que_automatizado: [
+    'Emails de bienvenida / nurturing',
+    'Respuesta automática a leads',
+    'Publicación programada de contenido',
+    'Reportes automáticos',
+    'Retargeting de anuncios',
+    'Segmentación automática de listas',
+    'Notificaciones internas de leads',
+    'Encuestas post-compra',
+  ],
+  calidad_auto: [
+    { v: 'bien', l: 'Funcionan bien — ahorran tiempo real', s: '' },
+    { v: 'regular', l: 'Regular — hay errores o necesitan mucho mantenimiento', s: '' },
+    { v: 'mal', l: 'Mal — nos dan más problemas que soluciones', s: '' },
+  ],
+  razon_no_auto: [
+    'Falta de tiempo para configurarlas',
+    'No sabemos cómo',
+    'Presupuesto limitado',
+    'No era prioridad',
+    'Desconfianza en que funcione',
+  ],
+  tareas_manuales: [
+    '📱 Publicar en redes sociales manualmente',
+    '📊 Hacer reportes copiando datos de varias plataformas',
+    '✉️ Enviar emails uno a uno',
+    '📋 Copiar leads de formularios al CRM',
+    '🔁 Repetir el mismo proceso de aprobación de contenido',
+    '📞 Responder las mismas preguntas de prospectos',
+    '🎨 Adaptar el mismo diseño para distintos formatos',
+    '📅 Agendar publicaciones una por una',
+    '🔔 Avisar internamente de cada nuevo lead',
+    '📈 Construir dashboards manualmente',
+  ],
+  horas_perdidas: [
+    { v: '0-5', l: 'Menos de 5 horas por semana' },
+    { v: '5-10', l: '5 a 10 horas por semana' },
+    { v: '10-20', l: '10 a 20 horas por semana' },
+    { v: '20+', l: 'Más de 20 horas por semana' },
+    { v: 'no-se', l: 'No tengo visibilidad de esto' },
+  ],
+  metricas: [
+    'Alcance / impresiones',
+    'Engagement (likes, comentarios, shares)',
+    'Tráfico al sitio web',
+    'Tasa de conversión (visitas → leads)',
+    'Costo por lead (CPL)',
+    'Costo por adquisición (CPA)',
+    'ROAS (retorno en gasto publicitario)',
+    'Tasa de apertura de emails',
+    'Posicionamiento SEO / palabras clave',
+    'NPS / satisfacción de clientes',
+    'Ninguno / no medimos',
+  ],
+  presupuesto: [
+    { v: 'menos2k', l: 'Menos de $2,000 MXN/mes' },
+    { v: '2k-5k', l: '$2,000 a $5,000 MXN/mes' },
+    { v: '5k-15k', l: '$5,000 a $15,000 MXN/mes' },
+    { v: '15k-30k', l: '$15,000 a $30,000 MXN/mes' },
+    { v: '30k+', l: 'Más de $30,000 MXN/mes' },
+    { v: 'roi', l: 'Depende del ROI demostrado' },
+  ],
+  resistencia: [
+    { v: 'muy-abiertos', l: 'Muy abiertos al cambio — quieren implementar ya', s: '' },
+    { v: 'se-adaptan', l: 'Se adaptan — con un poco de tiempo', s: '' },
+    { v: 'resistencia', l: 'Hay resistencia — van a necesitar convencimiento', s: '' },
+    { v: 'no-se', l: 'No lo sé todavía', s: '' },
+  ],
+};
+
+const STORAGE_KEY = 'mentoria_diag_marketing_v1';
+const AREA = 'marketing';
+const API_BASE = 'http://localhost:3001/api/v1';
+const CLIENTE_ID = new URLSearchParams(window.location.search).get('clienteId') || '';
+let state = {};
+let _syncTimer = null;
+
+function buildCheckboxGroup(containerId, items, stateKey) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = '';
+  items.forEach((item) => {
+    const val = typeof item === 'string' ? item : item.v;
+    const label = typeof item === 'string' ? item : item.l;
+    const sub = typeof item === 'object' && item.s ? item.s : null;
+    const checked = Array.isArray(state[stateKey]) && state[stateKey].includes(val);
+    const div = document.createElement('label');
+    div.className = 'opt-item' + (checked ? ' selected' : '');
+    div.innerHTML = `<input type="checkbox" name="${stateKey}" value="${val}" ${checked ? 'checked' : ''}><div><div class="opt-label">${label}</div>${sub ? `<div class="opt-sub">${sub}</div>` : ''}</div>`;
+    div.querySelector('input').addEventListener('change', (e) => {
+      div.classList.toggle('selected', e.target.checked);
+      if (!Array.isArray(state[stateKey])) state[stateKey] = [];
+      if (e.target.checked) state[stateKey].push(val);
+      else state[stateKey] = state[stateKey].filter(v => v !== val);
+      autoSave();
+    });
+    el.appendChild(div);
+  });
+}
+
+function buildRadioGroup(containerId, items, stateKey) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = '';
+  items.forEach((item) => {
+    const val = typeof item === 'string' ? item : item.v;
+    const label = typeof item === 'string' ? item : item.l;
+    const sub = typeof item === 'object' && item.s ? item.s : null;
+    const checked = state[stateKey] === val;
+    const div = document.createElement('label');
+    div.className = 'opt-item' + (checked ? ' selected' : '');
+    div.innerHTML = `<input type="radio" name="${stateKey}" value="${val}" ${checked ? 'checked' : ''}><div><div class="opt-label">${label}</div>${sub ? `<div class="opt-sub">${sub}</div>` : ''}</div>`;
+    div.querySelector('input').addEventListener('change', () => {
+      el.querySelectorAll('.opt-item').forEach(i => i.classList.remove('selected'));
+      div.classList.add('selected');
+      state[stateKey] = val;
+      autoSave();
+    });
+    el.appendChild(div);
+  });
+}
+
+function buildScale(containerId, stateKey) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'scale-btn' + (state[stateKey] === i ? ' active' : '');
+    btn.textContent = i;
+    btn.addEventListener('click', () => {
+      el.querySelectorAll('.scale-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state[stateKey] = i;
+      autoSave();
+    });
+    el.appendChild(btn);
+  }
+}
+
+function bindText(id, stateKey) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.value = state[stateKey] || '';
+  el.addEventListener('input', () => { state[stateKey] = el.value; autoSave(); });
+}
+
+function bindSelect(id, stateKey) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.value = state[stateKey] || '';
+  el.addEventListener('change', () => { state[stateKey] = el.value; autoSave(); });
+}
+
+function autoSave() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  updateProgress();
+  document.getElementById('save-text').textContent = 'Guardado localmente — ' + new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(syncToAPI, 2000);
+}
+async function syncToAPI() {
+  if (!CLIENTE_ID) return;
+  const token = localStorage.getItem('fd_access');
+  if (!token) return;
+  document.getElementById('save-text').textContent = '☁️ Sincronizando con FlowDesk…';
+  try {
+    const res = await fetch(`${API_BASE}/mentoria/clientes/${CLIENTE_ID}/diagnosticos`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ area: AREA, datos: state }),
+    });
+    if (res.ok) document.getElementById('save-text').textContent = '✅ Guardado en FlowDesk — ' + new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+    else document.getElementById('save-text').textContent = '⚠️ No se pudo sincronizar (guardado local)';
+  } catch { document.getElementById('save-text').textContent = '⚠️ Sin conexión — guardado localmente'; }
+}
+
+function updateProgress() {
+  const total = 28;
+  let filled = 0;
+  const textFields = ['empresa','contacto','responsabilidades','dependencias_criticas','agencia_nombre','agencia_costo','herramientas_otras','cuello_botella_contenido','proceso_publicacion','crm_nombre','atribucion_problema','volumen_leads','picos_captacion','bloqueo_escala','herramientas_ia','infra_automatizacion','costo_automatizaciones','frustracion_equipo','tiempo_perdido','metricas_otras','tarea_clonar','exito_auditoria','dolores_principales','comentarios_adicionales'];
+  const radioFields = ['rol','tamano_mkt','ejecucion','integracion','proceso_contenido','publicacion','crm_integracion','segmentacion','medicion_roi','freq_leads','escalabilidad','uso_ia','tiene_automatizaciones','calidad_auto','presupuesto','resistencia'];
+  const arrayFields = ['actividades_agencia','herramientas_mkt','quien_crea','tipos_contenido','canales_dist','usos_ia','que_automatizado','razon_no_auto','tareas_manuales','metricas'];
+  const scaleFields = ['scale_leads','scale_contenido','scale_analitica','scale_alineacion','scale_tecnologia_mkt'];
+  textFields.forEach(k => { if (state[k] && state[k].trim()) filled++; });
+  radioFields.forEach(k => { if (state[k]) filled++; });
+  arrayFields.forEach(k => { if (state[k] && state[k].length > 0) filled++; });
+  scaleFields.forEach(k => { if (state[k]) filled++; });
+  const pct = Math.round(filled / total * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+}
+
+function init() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) { try { state = JSON.parse(saved); } catch(e) { state = {}; } }
+
+  buildRadioGroup('rol-opts', DATA.rol, 'rol');
+  buildRadioGroup('tamano-mkt-opts', DATA.tamano_mkt, 'tamano_mkt');
+  buildRadioGroup('ejecucion-opts', DATA.ejecucion, 'ejecucion');
+  buildCheckboxGroup('actividades-agencia-opts', DATA.actividades_agencia, 'actividades_agencia');
+  buildCheckboxGroup('herramientas-mkt-opts', DATA.herramientas_mkt, 'herramientas_mkt');
+  buildRadioGroup('integracion-opts', DATA.integracion, 'integracion');
+  buildCheckboxGroup('quien-crea-opts', DATA.quien_crea, 'quien_crea');
+  buildCheckboxGroup('tipos-contenido-opts', DATA.tipos_contenido, 'tipos_contenido');
+  buildRadioGroup('proceso-contenido-opts', DATA.proceso_contenido, 'proceso_contenido');
+  buildRadioGroup('publicacion-opts', DATA.publicacion, 'publicacion');
+  buildCheckboxGroup('canales-dist-opts', DATA.canales_dist, 'canales_dist');
+  buildRadioGroup('crm-integracion-opts', DATA.crm_integracion, 'crm_integracion');
+  buildRadioGroup('segmentacion-opts', DATA.segmentacion, 'segmentacion');
+  buildRadioGroup('medicion-roi-opts', DATA.medicion_roi, 'medicion_roi');
+  buildRadioGroup('freq-leads-opts', DATA.freq_leads, 'freq_leads');
+  buildRadioGroup('escalabilidad-opts', DATA.escalabilidad, 'escalabilidad');
+  buildRadioGroup('uso-ia-opts', DATA.uso_ia, 'uso_ia');
+  buildCheckboxGroup('usos-ia-opts', DATA.usos_ia, 'usos_ia');
+  buildRadioGroup('tiene-automatizaciones-opts', DATA.tiene_automatizaciones, 'tiene_automatizaciones');
+  buildCheckboxGroup('que-automatizado-opts', DATA.que_automatizado, 'que_automatizado');
+  buildRadioGroup('calidad-auto-opts', DATA.calidad_auto, 'calidad_auto');
+  buildCheckboxGroup('razon-no-auto-opts', DATA.razon_no_auto, 'razon_no_auto');
+  buildCheckboxGroup('tareas-manuales-opts', DATA.tareas_manuales, 'tareas_manuales');
+  buildRadioGroup('horas-perdidas-opts', DATA.horas_perdidas, 'horas_perdidas');
+  buildCheckboxGroup('metricas-opts', DATA.metricas, 'metricas');
+  buildRadioGroup('presupuesto-opts', DATA.presupuesto, 'presupuesto');
+  buildRadioGroup('resistencia-opts', DATA.resistencia, 'resistencia');
+
+  buildScale('scale-leads', 'scale_leads');
+  buildScale('scale-contenido', 'scale_contenido');
+  buildScale('scale-analitica', 'scale_analitica');
+  buildScale('scale-alineacion', 'scale_alineacion');
+  buildScale('scale-tecnologia-mkt', 'scale_tecnologia_mkt');
+
+  ['empresa','contacto','responsabilidades','dependencias_criticas','agencia_nombre','agencia_costo','herramientas_otras','cuello_botella_contenido','proceso_publicacion','crm_nombre','atribucion_problema','volumen_leads','picos_captacion','bloqueo_escala','herramientas_ia','infra_automatizacion','costo_automatizaciones','frustracion_equipo','tiempo_perdido','metricas_otras','tarea_clonar','exito_auditoria','dolores_principales','comentarios_adicionales'].forEach(id => {
+    const key = id.replace(/-/g, '_');
+    bindText(id, key);
+  });
+
+  updateProgress();
+}
+
+function exportJSON() {
+  const output = {
+    meta: {
+      area: 'Marketing',
+      version: '1.0',
+      fecha_exportacion: new Date().toISOString(),
+      herramienta: 'MentorIA Diagnóstico',
+    },
+    datos_generales: {
+      empresa: state.empresa || '',
+      contacto: state.contacto || '',
+      rol: state.rol || '',
+      tamano_equipo_mkt: state.tamano_mkt || '',
+      responsabilidades: state.responsabilidades || '',
+      dependencias_criticas: state.dependencias_criticas || '',
+    },
+    gestion_marketing: {
+      modelo_ejecucion: state.ejecucion || '',
+      agencia_nombre: state.agencia_nombre || '',
+      agencia_costo_mxn: state.agencia_costo || '',
+      actividades_externas: state.actividades_agencia || [],
+    },
+    herramientas: {
+      stack: state.herramientas_mkt || [],
+      otras: state.herramientas_otras || '',
+      nivel_integracion: state.integracion || '',
+    },
+    contenido: {
+      quienes_crean: state.quien_crea || [],
+      tipos: state.tipos_contenido || [],
+      proceso: state.proceso_contenido || '',
+      frecuencia_publicacion: state.freq_publicacion || '',
+      cuello_botella: state.cuello_botella_contenido || '',
+    },
+    distribucion: {
+      modelo_publicacion: state.publicacion || '',
+      canales: state.canales_dist || [],
+      proceso_publicacion: state.proceso_publicacion || '',
+    },
+    crm_campanas: {
+      integracion_crm: state.crm_integracion || '',
+      crm_nombre: state.crm_nombre || '',
+      segmentacion: state.segmentacion || '',
+      medicion_roi: state.medicion_roi || '',
+      problema_atribucion: state.atribucion_problema || '',
+    },
+    leads: {
+      frecuencia: state.freq_leads || '',
+      volumen_mensual: state.volumen_leads || '',
+      picos_captacion: state.picos_captacion || '',
+      escalabilidad: state.escalabilidad || '',
+      bloqueos: state.bloqueo_escala || '',
+    },
+    ia_actual: {
+      nivel_uso: state.uso_ia || '',
+      aplicaciones: state.usos_ia || [],
+      herramientas: state.herramientas_ia || '',
+    },
+    automatizaciones: {
+      tiene_automatizaciones: state.tiene_automatizaciones || '',
+      que_esta_automatizado: state.que_automatizado || [],
+      infraestructura: state.infra_automatizacion || '',
+      calidad: state.calidad_auto || '',
+      costo_mensual_mxn: state.costo_automatizaciones || '',
+      razones_no_automatizar: state.razon_no_auto || [],
+    },
+    tareas_manuales: {
+      actividades_manuales: state.tareas_manuales || [],
+      frustracion_equipo: state.frustracion_equipo || '',
+      donde_se_pierde_tiempo: state.tiempo_perdido || '',
+      horas_perdidas_semana: state.horas_perdidas || '',
+    },
+    metricas_y_evaluacion: {
+      metricas_actuales: state.metricas || [],
+      otras_metricas: state.metricas_otras || '',
+      autoevaluacion: {
+        generacion_leads: state.scale_leads || null,
+        calidad_contenido: state.scale_contenido || null,
+        uso_datos_analitica: state.scale_analitica || null,
+        alineacion_mkt_ventas: state.scale_alineacion || null,
+        tecnologia_automatizacion: state.scale_tecnologia_mkt || null,
+      },
+      presupuesto_mejoras: state.presupuesto || '',
+      resistencia_cambio: state.resistencia || '',
+    },
+    expectativas: {
+      tarea_a_clonar: state.tarea_clonar || '',
+      definicion_exito: state.exito_auditoria || '',
+      dolores_principales: state.dolores_principales || '',
+      comentarios_adicionales: state.comentarios_adicionales || '',
+    },
+  };
+  const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const empresa = (state.empresa || 'cliente').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  a.href = url;
+  a.download = `diagnostico-marketing-${empresa}-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function clearForm() {
+  if (!confirm('¿Seguro que quieres limpiar todos los datos? Esta acción no se puede deshacer.')) return;
+  state = {};
+  localStorage.removeItem(STORAGE_KEY);
+  init();
+}
+async function enviarAlAPI() {
+  if (!CLIENTE_ID) { alert('Abre este formulario desde el workspace del cliente en FlowDesk.'); return; }
+  if (!localStorage.getItem('fd_access')) { alert('Debes iniciar sesión en FlowDesk primero.'); return; }
+  const btn = document.getElementById('btn-api');
+  btn.textContent = '⏳ Guardando…'; btn.disabled = true;
+  clearTimeout(_syncTimer);
+  await syncToAPI();
+  btn.textContent = '💾 Guardar ahora';
+  btn.disabled = false;
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

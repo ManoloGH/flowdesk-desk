@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guía Entrevista 1 — Descubrimiento</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0a0a14;--surface:#13131f;--surface2:#1a1a2e;--line:rgba(255,255,255,0.07);
+      --purple:#6c4de6;--purple2:#8b6ef5;--cyan:#00d4ff;--green:#22c55e;
+      --amber:#f59e0b;--red:#ef4444;--text:#f0f0fa;--text2:#a0a0c0;--text3:#606080;
+    }
+    body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding-bottom:80px}
+
+    /* Header */
+    .topbar{background:var(--surface);border-bottom:1px solid var(--line);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:50}
+    .topbar-left{display:flex;align-items:center;gap:10px}
+    .logo{font-size:12px;font-weight:800;color:var(--purple2);letter-spacing:0.1em;text-transform:uppercase}
+    .empresa-label{font-size:13px;color:var(--text2)}
+    .empresa-val{font-weight:700;color:var(--text)}
+    .timer-wrap{display:flex;align-items:center;gap:8px}
+    .timer{font-size:20px;font-weight:800;color:var(--cyan);font-variant-numeric:tabular-nums;min-width:65px;text-align:right}
+    .btn-timer{padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer}
+    .btn-timer.running{border-color:rgba(239,68,68,0.4);color:var(--red)}
+
+    /* Nav tabs */
+    .nav{display:flex;gap:0;overflow-x:auto;background:var(--surface);border-bottom:1px solid var(--line);padding:0 20px;scrollbar-width:none}
+    .nav::-webkit-scrollbar{display:none}
+    .nav-btn{padding:11px 16px;border:none;background:none;color:var(--text3);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:color .15s;flex-shrink:0}
+    .nav-btn.active{color:var(--text);border-bottom-color:var(--purple)}
+    .nav-btn.done{color:var(--green)}
+    .nav-add{padding:11px 12px;border:none;background:none;color:var(--purple2);font-size:18px;cursor:pointer}
+
+    /* Content */
+    .container{max-width:720px;margin:0 auto;padding:20px}
+
+    /* Section header */
+    .section-meta{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+    .section-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+    .section-title{font-size:18px;font-weight:800;letter-spacing:-0.02em}
+    .section-sub{font-size:12px;color:var(--text3);margin-top:2px}
+    .section-time{margin-left:auto;font-size:11px;font-weight:700;color:var(--amber);background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);padding:4px 10px;border-radius:99px;white-space:nowrap}
+
+    /* Question cards */
+    .q-group{margin-bottom:20px}
+    .q-group-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:8px;padding-left:2px}
+    .q-card{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin-bottom:8px;cursor:pointer;transition:all .15s;position:relative}
+    .q-card:hover{border-color:rgba(108,77,230,0.3);background:var(--surface2)}
+    .q-card.asked{border-color:rgba(34,197,94,0.25);background:rgba(34,197,94,0.04);opacity:.75}
+    .q-card.asked .q-text{text-decoration:line-through;color:var(--text3)}
+    .q-header{display:flex;align-items:flex-start;gap:12px}
+    .q-check{width:20px;height:20px;border-radius:5px;border:2px solid var(--line);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;transition:all .15s}
+    .q-card.asked .q-check{background:var(--green);border-color:var(--green);color:white}
+    .q-text{font-size:14px;color:var(--text);line-height:1.5;flex:1}
+    .q-hint{font-size:11px;color:var(--text3);margin-top:4px;line-height:1.5;padding-left:32px}
+    .q-key-badge{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:99px;background:rgba(108,77,230,0.12);color:var(--purple2);border:1px solid rgba(108,77,230,0.2);margin-left:8px;flex-shrink:0}
+
+    /* Notes area */
+    .notes-wrap{margin-top:16px}
+    .notes-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:6px}
+    .notes-area{width:100%;min-height:80px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:10px 12px;color:var(--text);font-size:13px;font-family:inherit;line-height:1.6;resize:vertical;outline:none}
+    .notes-area:focus{border-color:rgba(108,77,230,0.4)}
+
+    /* Progress */
+    .progress-bar-wrap{margin-bottom:18px}
+    .progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:6px}
+    .progress-track{height:4px;background:var(--surface2);border-radius:99px;overflow:hidden}
+    .progress-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--cyan));border-radius:99px;transition:width .4s}
+
+    /* Area config */
+    .area-config{background:var(--surface);border:1px solid rgba(108,77,230,0.25);border-radius:12px;padding:16px;margin-bottom:18px}
+    .area-config h4{font-size:12px;font-weight:700;color:var(--purple2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+    .area-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
+    .area-chip{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:var(--surface2);font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .15s}
+    .area-chip.active{border-color:rgba(108,77,230,0.5);background:rgba(108,77,230,0.12);color:var(--purple2)}
+    .area-chip .remove{color:var(--text3);font-size:14px;line-height:1;margin-left:2px}
+    .area-input-wrap{display:flex;gap:8px}
+    .area-input{flex:1;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:inherit;outline:none}
+    .area-input:focus{border-color:rgba(108,77,230,.4)}
+    .btn-add-area{padding:8px 14px;border-radius:8px;border:none;background:var(--purple);color:white;font-size:12px;font-weight:700;cursor:pointer}
+
+    /* Finish panel */
+    .finish-box{background:var(--surface);border:1px solid rgba(34,197,94,0.25);border-radius:14px;padding:22px;text-align:center}
+    .finish-box h3{font-size:18px;font-weight:800;color:var(--green);margin-bottom:8px}
+    .finish-box p{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px}
+    .cmd-box{background:var(--bg);border:1px solid rgba(108,77,230,0.25);border-radius:9px;padding:12px 16px;font-family:monospace;font-size:13px;color:var(--purple2);text-align:left;margin-bottom:12px}
+    .steps-list{text-align:left;list-style:none;display:flex;flex-direction:column;gap:8px}
+    .steps-list li{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--text2)}
+    .steps-list li::before{content:attr(data-n);width:22px;height:22px;border-radius:50%;background:rgba(108,77,230,.15);border:1px solid rgba(108,77,230,.3);color:var(--purple2);font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+    /* Util */
+    .divider{height:1px;background:var(--line);margin:20px 0}
+    .hidden{display:none!important}
+    .btn-nav{padding:9px 18px;border-radius:9px;border:1px solid var(--line);background:var(--surface2);color:var(--text2);font-size:13px;font-weight:600;cursor:pointer}
+    .btn-primary{background:var(--purple);border:none;color:white}
+    .btn-row{display:flex;gap:8px;margin-top:20px}
+  </style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="topbar-left">
+    <span class="logo">MentorIA</span>
+    <span class="empresa-label">· Entrevista 1 · <span class="empresa-val" id="top-empresa">Empresa</span></span>
+  </div>
+  <div class="timer-wrap">
+    <span class="timer" id="timer">00:00</span>
+    <button class="btn-timer" id="btn-timer" onclick="toggleTimer()">Iniciar</button>
+  </div>
+</div>
+
+<!-- Nav tabs -->
+<div class="nav" id="nav">
+  <button class="nav-btn active" onclick="goTo(0)" id="tab-0">🏢 Empresa</button>
+  <!-- Dynamic area tabs added here -->
+  <button class="nav-add" onclick="showAddArea()" title="Agregar área">+</button>
+</div>
+
+<!-- Sections container -->
+<div class="container" id="sections-container">
+
+  <!-- ── Sección 0: Empresa ── -->
+  <div class="section-content" id="sec-0">
+    <div class="section-meta">
+      <div class="section-icon" style="background:rgba(108,77,230,0.12)">🏢</div>
+      <div>
+        <div class="section-title">Entender la empresa</div>
+        <div class="section-sub">Objetivo: entender qué hace la empresa y por qué existe</div>
+      </div>
+      <div class="section-time">⏱ 30-45 min</div>
+    </div>
+
+    <!-- Areas config -->
+    <div class="area-config">
+      <h4>Áreas que vamos a mapear en esta sesión</h4>
+      <div class="area-chips" id="area-chips"></div>
+      <div class="area-input-wrap">
+        <input class="area-input" id="area-input" placeholder="Agregar área (ej. Logística)" onkeydown="if(event.key==='Enter')addArea()" />
+        <button class="btn-add-area" onclick="addArea()">+ Agregar</button>
+      </div>
+    </div>
+
+    <div class="progress-bar-wrap">
+      <div class="progress-label"><span>Preguntas</span><span id="prog-label-0">0 / 0</span></div>
+      <div class="progress-track"><div class="progress-fill" id="prog-fill-0" style="width:0%"></div></div>
+    </div>
+
+    <!-- Negocio -->
+    <div class="q-group">
+      <div class="q-group-label">Negocio</div>
+      <div class="q-card" onclick="toggleQ(this)" data-sec="0">
+        <div class="q-header"><div class="q-check"></div><div class="q-text">¿Qué vende o qué servicio ofrece la empresa?</div></div>
+        <div class="q-hint">Pídele que lo explique como si no supiera nada del sector. Los primeros 30 segundos de esta respuesta definen el tono de todo.</div>
+      </div>
+      <div class="q-card" onclick="toggleQ(this)" data-sec="0">
+        <div class="q-header"><div class="q-check"></div><div class="q-text">¿Quién es su cliente ideal? ¿A quién le venden más?</div></div>
+        <div class="q-hint">Empresa, tamaño, industria, problema que tiene. ¿Hay un cliente que "ojalá tuviéramos más de esos"?</div>
+      </div>
+      <div class="q-card" onclick="toggleQ(this)" data-sec="0">
+        <div class="q-header"><div class="q-check"></div><div class="q-text">¿Qué los hace diferentes? ¿Por qué un cliente los elegiría a ustedes sobre la competencia?</div></div>
+      </div>
+      <div class="q-card" onclick="toggleQ(this)" data-sec="0">
+        <div class="q-header"><div class="q-check"></div><div class="q-text">¿Cuántos empleados tienen y cómo están organizados?</div></div>
+        <div class="q-hint">Aprovecha para ir completando el organigrama mental. Área por área.</div>
+      </div>
+    </div>
+
+    <!-- Filosofía -->
+    <div class="q-group">
+      <div class="q-group-label">Filosofía y cultura</div>
+      <div class="q-card" onclick="toggleQ(this)" data-sec="0">
+        <div class="q-header"><div class="q-check"></div><div class="q-text">¿Qué jamás harían con un cliente? ¿Qué está fuera de discusión?</div><span class="q-key-badge">Ficha cultura</span></div>
+        <div class="q-hint">Esta respuesta define los límites del agente digital. Escúchala con atención.</div>
+      </div>
+      <div class="q-card" onclick="toggleQ(this)" data-sec="0">
+        <div class="q-header"><div class="q-check"></div><div class="q-text">¿Qué significa para ustedes dar un excelente servicio?</div><span class="q-key-badge">Ficha cultura</span></div>
+      </div>
+      <div class="q-card" onclick="toggleQ(this)" data-sec="0">
+        <div class="q-header"><div class="q-check"></div><div class="q-text">¿Cómo toman las decisiones difíciles? ¿Qué valores guían esas decisiones?</div></div>
+      </div>
+    </div>
+
+    <!-- Estrategia -->
+    <div class="q-group">
+      <div class="q-group-label">Estrategia y objetivos</div>
+      <div class="q-card" onclick="toggleQ(this)" data-sec="0">
+        <div class="q-header"><div class="q-check"></div><div class="q-text">¿Cuáles son sus 3 objetivos más importantes para este año?</div></div>
+      </div>
+      <div class="q-card" onclick="toggleQ(this)" data-sec="0">
+        <div class="q-header"><div class="q-check"></div><div class="q-text">¿Qué es lo que más te preocupa del negocio hoy?</div></div>
+        <div class="q-hint">Aquí aparecen los dolores reales. No interrumpas — déjalos terminar.</div>
+      </div>
+      <div class="q-card" onclick="toggleQ(this)" data-sec="0">
+        <div class="q-header"><div class="q-check"></div><div class="q-text">Si en 6 meses tuviéramos una segunda sesión, ¿qué tendría que haber pasado para que digas que valió la pena?</div><span class="q-key-badge">ROI</span></div>
+        <div class="q-hint">Define el éxito desde el inicio. Esta respuesta es tu criterio de éxito para todo el proyecto.</div>
+      </div>
+    </div>
+
+    <div class="notes-wrap">
+      <div class="notes-label">Notas de la sección</div>
+      <textarea class="notes-area" id="notes-0" placeholder="Contexto adicional, frases clave del dueño, cosas que no encajan en ninguna pregunta…" oninput="saveNotes(0)"></textarea>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-nav btn-primary" onclick="nextSection()">Siguiente: mapeo de áreas →</button>
+    </div>
+  </div>
+
+  <!-- Dynamic area sections rendered by JS -->
+
+  <!-- ── Sección final: Cerrar ── -->
+  <div class="section-content hidden" id="sec-final">
+    <div class="finish-box">
+      <h3>✅ Entrevista 1 completada</h3>
+      <p>Excelente. Ahora procesa el transcript con Claude para extraer la información estructurada, identificar gaps y generar el formulario para el cliente.</p>
+      <div class="cmd-box">/procesar-entrevista</div>
+      <ul class="steps-list">
+        <li data-n="1">Descarga el transcript de Zoom / Google Meet / Otter.ai</li>
+        <li data-n="2">Abre Claude Code y ejecuta <strong>/procesar-entrevista</strong></li>
+        <li data-n="3">Pega el transcript completo en el chat</li>
+        <li data-n="4">Claude generará el JSON del cuestionario y la lista de gaps</li>
+        <li data-n="5">Copia el JSON de gaps en <strong>gaps-form.html</strong> para enviárselo al cliente</li>
+        <li data-n="6">Cuando el cliente responda, agenda la Entrevista 2 con <strong>guia-entrevista-2.html</strong></li>
+      </ul>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+  const P = new URLSearchParams(location.search);
+  const empresa   = P.get('empresa')   || 'Empresa';
+  const ejecutivo = P.get('ejecutivo') || '';
+  const STORAGE   = `mentoria_e1_${empresa.replace(/\s/g,'_')}`;
+
+  document.getElementById('top-empresa').textContent = empresa;
+  document.title = `Entrevista 1 — ${empresa}`;
+
+  // ── Areas ──────────────────────────────────────────────────────────────────
+  const DEFAULT_AREAS = ['Ventas', 'Operaciones', 'Administración', 'Marketing'];
+  let areas = JSON.parse(localStorage.getItem(STORAGE + '_areas') || JSON.stringify(DEFAULT_AREAS));
+  let currentSection = 0;
+
+  function saveAreas() { localStorage.setItem(STORAGE + '_areas', JSON.stringify(areas)); }
+
+  function renderAreaChips() {
+    const el = document.getElementById('area-chips');
+    el.innerHTML = areas.map((a, i) => `
+      <span class="area-chip active" onclick="removeArea(${i})">
+        ${a} <span class="remove">×</span>
+      </span>`).join('');
+  }
+
+  function addArea() {
+    const input = document.getElementById('area-input');
+    const val = input.value.trim();
+    if (!val || areas.includes(val)) return;
+    areas.push(val);
+    saveAreas();
+    input.value = '';
+    renderAreaChips();
+    renderAreaTabs();
+    renderAreaSections();
+  }
+
+  function removeArea(i) {
+    areas.splice(i, 1);
+    saveAreas();
+    renderAreaChips();
+    renderAreaTabs();
+    renderAreaSections();
+  }
+
+  function showAddArea() {
+    document.getElementById('area-input').focus();
+    goTo(0);
+  }
+
+  // ── Tabs ───────────────────────────────────────────────────────────────────
+  function renderAreaTabs() {
+    // Remove old area tabs
+    document.querySelectorAll('.area-tab').forEach(t => t.remove());
+    const nav = document.getElementById('nav');
+    const addBtn = nav.querySelector('.nav-add');
+    areas.forEach((a, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'nav-btn area-tab';
+      btn.textContent = a;
+      btn.id = `tab-area-${i}`;
+      btn.onclick = () => goTo(i + 1);
+      nav.insertBefore(btn, addBtn);
+    });
+    // Final tab
+    let finalTab = document.getElementById('tab-final');
+    if (!finalTab) {
+      finalTab = document.createElement('button');
+      finalTab.className = 'nav-btn area-tab';
+      finalTab.id = 'tab-final';
+      finalTab.textContent = '✅ Cierre';
+      finalTab.onclick = () => goTo(areas.length + 1);
+      nav.insertBefore(finalTab, addBtn);
+    }
+  }
+
+  // ── Area sections ──────────────────────────────────────────────────────────
+  function renderAreaSections() {
+    document.querySelectorAll('.area-section').forEach(s => s.remove());
+    const container = document.getElementById('sections-container');
+    const finalSec = document.getElementById('sec-final');
+
+    areas.forEach((area, i) => {
+      const secId = `sec-area-${i}`;
+      const div = document.createElement('div');
+      div.className = 'section-content area-section hidden';
+      div.id = secId;
+      div.dataset.areaIdx = i;
+      div.innerHTML = buildAreaSection(area, i);
+      container.insertBefore(div, finalSec);
+    });
+    bindQCards();
+    loadAllData();
+  }
+
+  function buildAreaSection(area, i) {
+    return `
+      <div class="section-meta">
+        <div class="section-icon" style="background:rgba(0,212,255,0.1)">📋</div>
+        <div>
+          <div class="section-title">${area}</div>
+          <div class="section-sub">Objetivo: mapear cada proceso y detectar oportunidades de automatización</div>
+        </div>
+        <div class="section-time">⏱ 20-30 min</div>
+      </div>
+
+      <div class="progress-bar-wrap">
+        <div class="progress-label"><span>Preguntas</span><span id="prog-label-area-${i}">0 / 0</span></div>
+        <div class="progress-track"><div class="progress-fill" id="prog-fill-area-${i}" style="width:0%"></div></div>
+      </div>
+
+      <div class="q-group">
+        <div class="q-group-label">Actividades</div>
+        <div class="q-card" onclick="toggleQ(this)" data-sec="area-${i}">
+          <div class="q-header"><div class="q-check"></div><div class="q-text">¿Qué haces todos los días en tu área? ¿Qué es lo primero que haces al llegar?</div></div>
+          <div class="q-hint">Dejar que fluyan. No interrumpir. El ritmo real aparece cuando hablan sin filtro.</div>
+        </div>
+        <div class="q-card" onclick="toggleQ(this)" data-sec="area-${i}">
+          <div class="q-header"><div class="q-check"></div><div class="q-text">¿Qué haces cada semana que no haces todos los días?</div></div>
+        </div>
+        <div class="q-card" onclick="toggleQ(this)" data-sec="area-${i}">
+          <div class="q-header"><div class="q-check"></div><div class="q-text">¿Qué haces cada mes que no haces cada semana?</div></div>
+        </div>
+        <div class="q-card" onclick="toggleQ(this)" data-sec="area-${i}">
+          <div class="q-header"><div class="q-check"></div><div class="q-text">¿Qué herramientas y sistemas usas para hacer tu trabajo?</div></div>
+          <div class="q-hint">WhatsApp, Excel, CRM, ERP, correo, grupos de chat. Todo cuenta.</div>
+        </div>
+      </div>
+
+      <div class="q-group">
+        <div class="q-group-label">Procesos paso a paso</div>
+        <div class="q-card" onclick="toggleQ(this)" data-sec="area-${i}">
+          <div class="q-header"><div class="q-check"></div><div class="q-text">Cuéntame tu proceso más importante de principio a fin. ¿Con qué empieza y con qué termina?</div><span class="q-key-badge">AS-IS</span></div>
+          <div class="q-hint">Para cada paso pregunar: ¿qué información necesitas para hacerlo? ¿qué herramienta usas? ¿cuánto te tarda? ¿qué puede salir mal?</div>
+        </div>
+        <div class="q-card" onclick="toggleQ(this)" data-sec="area-${i}">
+          <div class="q-header"><div class="q-check"></div><div class="q-text">¿Hay pasos en ese proceso que requieren una habilidad especial o criterio tuyo personal? ¿Cuáles?</div><span class="q-key-badge">Humano vs IA</span></div>
+          <div class="q-hint">Esto define qué puede hacer el agente y qué siempre necesitará un humano.</div>
+        </div>
+        <div class="q-card" onclick="toggleQ(this)" data-sec="area-${i}">
+          <div class="q-header"><div class="q-check"></div><div class="q-text">¿Cuántas veces al día / semana / mes ejecutas ese proceso? ¿Cuánto tiempo te tarda en total?</div></div>
+        </div>
+      </div>
+
+      <div class="q-group">
+        <div class="q-group-label">Dolores y decisiones</div>
+        <div class="q-card" onclick="toggleQ(this)" data-sec="area-${i}">
+          <div class="q-header"><div class="q-check"></div><div class="q-text">¿Qué es lo que más te desespera de tu trabajo? ¿Qué harías diferente si pudieras?</div></div>
+          <div class="q-hint">No guiar la respuesta. Los dolores espontáneos son los más valiosos.</div>
+        </div>
+        <div class="q-card" onclick="toggleQ(this)" data-sec="area-${i}">
+          <div class="q-header"><div class="q-check"></div><div class="q-text">¿Qué es lo más repetitivo que haces? ¿Qué haces que sientes que podría hacer otra persona o un sistema?</div></div>
+        </div>
+        <div class="q-card" onclick="toggleQ(this)" data-sec="area-${i}">
+          <div class="q-header"><div class="q-check"></div><div class="q-text">¿Qué decisiones tomas que nadie más puede tomar? ¿Cuándo pides ayuda o escalas algo?</div></div>
+        </div>
+      </div>
+
+      <div class="q-group">
+        <div class="q-group-label">La pregunta del becario <span style="font-size:10px;color:var(--purple2)">(la más importante)</span></div>
+        <div class="q-card" onclick="toggleQ(this)" data-sec="area-${i}" style="border-color:rgba(108,77,230,0.3)">
+          <div class="q-header"><div class="q-check"></div><div class="q-text">"Imagina que mañana entra un becario a reemplazarte. ¿Cómo le explicarías exactamente qué tienes que hacer y cómo hacerlo?"</div><span class="q-key-badge">🎯 Clave</span></div>
+          <div class="q-hint">Esta pregunta desbloquea el SOP real. Déjala fluir sin interrupciones. Si se detiene, pregunta: "¿Y luego qué sigue?"</div>
+        </div>
+      </div>
+
+      <div class="q-group">
+        <div class="q-group-label">Visión del agente digital</div>
+        <div class="q-card" onclick="toggleQ(this)" data-sec="area-${i}">
+          <div class="q-header"><div class="q-check"></div><div class="q-text">Si tuvieras un asistente perfecto que nunca se equivoca, ¿qué le delegarías de lo que haces hoy?</div></div>
+        </div>
+        <div class="q-card" onclick="toggleQ(this)" data-sec="area-${i}">
+          <div class="q-header"><div class="q-check"></div><div class="q-text">¿Qué jamás le delegarías a nadie, ni a un sistema? ¿Por qué?</div><span class="q-key-badge">Ficha cultura</span></div>
+          <div class="q-hint">Esto define los límites de autonomía del agente. Escríbelo textual.</div>
+        </div>
+      </div>
+
+      <div class="notes-wrap">
+        <div class="notes-label">Notas del área — ${area}</div>
+        <textarea class="notes-area" id="notes-area-${i}" placeholder="Observaciones, contexto, cosas raras que mencionaron, herramientas no estándar…" oninput="saveNotes('area-${i}')"></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-nav" onclick="goTo(${i})">← Anterior</button>
+        <button class="btn-nav btn-primary" onclick="goTo(${i + 2})">${i < areas.length - 1 ? 'Siguiente área →' : 'Terminar entrevista ✅'}</button>
+      </div>
+    `;
+  }
+
+  // ── Navigation ─────────────────────────────────────────────────────────────
+  function goTo(idx) {
+    // Sections: 0 = empresa, 1..N = areas, N+1 = final
+    currentSection = idx;
+    document.querySelectorAll('.section-content').forEach(s => s.classList.add('hidden'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+    if (idx === 0) {
+      document.getElementById('sec-0').classList.remove('hidden');
+      document.getElementById('tab-0').classList.add('active');
+    } else if (idx <= areas.length) {
+      const sec = document.getElementById(`sec-area-${idx - 1}`);
+      if (sec) sec.classList.remove('hidden');
+      const tab = document.getElementById(`tab-area-${idx - 1}`);
+      if (tab) tab.classList.add('active');
+    } else {
+      document.getElementById('sec-final').classList.remove('hidden');
+      const finalTab = document.getElementById('tab-final');
+      if (finalTab) finalTab.classList.add('active');
+    }
+    window.scrollTo(0, 0);
+  }
+
+  function nextSection() { goTo(currentSection + 1); }
+
+  // ── Q cards ────────────────────────────────────────────────────────────────
+  function bindQCards() {
+    document.querySelectorAll('.q-card').forEach(card => {
+      card.onclick = function() { toggleQ(this); };
+    });
+  }
+
+  function toggleQ(el) {
+    el.classList.toggle('asked');
+    const check = el.querySelector('.q-check');
+    check.textContent = el.classList.contains('asked') ? '✓' : '';
+    saveQState();
+    updateProgress();
+  }
+
+  function saveQState() {
+    const state = {};
+    document.querySelectorAll('.q-card').forEach((card, i) => {
+      state[i] = card.classList.contains('asked');
+    });
+    localStorage.setItem(STORAGE + '_qstate', JSON.stringify(state));
+  }
+
+  function updateProgress() {
+    // Section 0
+    updateSectionProgress('0');
+    // Areas
+    areas.forEach((_, i) => updateSectionProgress('area-' + i));
+    // Nav done indicators
+    updateNavDone();
+  }
+
+  function updateSectionProgress(secKey) {
+    const cards = document.querySelectorAll(`[data-sec="${secKey}"]`);
+    const done = Array.from(cards).filter(c => c.classList.contains('asked')).length;
+    const total = cards.length;
+    const pct = total ? Math.round(done / total * 100) : 0;
+    const labelEl = document.getElementById(`prog-label-${secKey}`);
+    const fillEl = document.getElementById(`prog-fill-${secKey}`);
+    if (labelEl) labelEl.textContent = `${done} / ${total}`;
+    if (fillEl) fillEl.style.width = pct + '%';
+  }
+
+  function updateNavDone() {
+    const btn0 = document.getElementById('tab-0');
+    const cards0 = document.querySelectorAll('[data-sec="0"]');
+    if (Array.from(cards0).every(c => c.classList.contains('asked'))) btn0?.classList.add('done');
+    areas.forEach((_, i) => {
+      const btn = document.getElementById(`tab-area-${i}`);
+      const cards = document.querySelectorAll(`[data-sec="area-${i}"]`);
+      if (Array.from(cards).every(c => c.classList.contains('asked'))) btn?.classList.add('done');
+    });
+  }
+
+  // ── Notes ──────────────────────────────────────────────────────────────────
+  function saveNotes(key) {
+    const el = document.getElementById(`notes-${key}`);
+    if (el) localStorage.setItem(STORAGE + `_notes_${key}`, el.value);
+  }
+
+  // ── Load all saved data ────────────────────────────────────────────────────
+  function loadAllData() {
+    // Q state
+    const qstate = JSON.parse(localStorage.getItem(STORAGE + '_qstate') || '{}');
+    document.querySelectorAll('.q-card').forEach((card, i) => {
+      if (qstate[i]) {
+        card.classList.add('asked');
+        card.querySelector('.q-check').textContent = '✓';
+      }
+    });
+    // Notes
+    document.querySelectorAll('.notes-area').forEach(ta => {
+      const key = ta.id.replace('notes-', '');
+      const saved = localStorage.getItem(STORAGE + `_notes_${key}`);
+      if (saved) ta.value = saved;
+    });
+    updateProgress();
+  }
+
+  // ── Timer ──────────────────────────────────────────────────────────────────
+  let timerStart = null, timerInterval = null, elapsed = 0;
+
+  function toggleTimer() {
+    const btn = document.getElementById('btn-timer');
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      elapsed += Date.now() - timerStart;
+      btn.textContent = 'Reanudar';
+      btn.classList.remove('running');
+    } else {
+      timerStart = Date.now();
+      btn.textContent = 'Pausar';
+      btn.classList.add('running');
+      timerInterval = setInterval(updateTimer, 1000);
+    }
+  }
+
+  function updateTimer() {
+    const total = Math.floor((elapsed + Date.now() - timerStart) / 1000);
+    const m = String(Math.floor(total / 60)).padStart(2, '0');
+    const s = String(total % 60).padStart(2, '0');
+    document.getElementById('timer').textContent = `${m}:${s}`;
+    const timerEl = document.getElementById('timer');
+    if (total > 10800) timerEl.style.color = 'var(--red)';
+    else if (total > 7200) timerEl.style.color = 'var(--amber)';
+    else timerEl.style.color = 'var(--cyan)';
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  renderAreaChips();
+  renderAreaTabs();
+  renderAreaSections();
+  goTo(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Preguntas adicionales — MentorIA</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0a0a14;--surface:#13131f;--surface2:#1a1a2e;--line:rgba(255,255,255,0.07);
+      --purple:#6c4de6;--purple2:#8b6ef5;--cyan:#00d4ff;--green:#22c55e;
+      --amber:#f59e0b;--text:#f0f0fa;--text2:#a0a0c0;--text3:#606080;
+    }
+    body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding-bottom:60px}
+    .container{max-width:640px;margin:0 auto;padding:28px 20px}
+
+    /* Hero */
+    .hero{text-align:center;padding:36px 0 28px}
+    .badge{display:inline-flex;align-items:center;gap:6px;background:rgba(108,77,230,.12);border:1px solid rgba(108,77,230,.3);border-radius:99px;padding:5px 14px;font-size:11px;font-weight:700;color:var(--purple2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:16px}
+    .hero h1{font-size:clamp(22px,5vw,32px);font-weight:800;letter-spacing:-.03em;line-height:1.2;margin-bottom:10px}
+    .hero h1 span{color:var(--purple2)}
+    .hero p{font-size:14px;color:var(--text2);line-height:1.6;max-width:480px;margin:0 auto 16px}
+    .empresa-tag{display:inline-block;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--cyan)}
+
+    /* Info bar */
+    .info-bar{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:11px;overflow:hidden;margin:20px 0}
+    .info-cell{background:var(--surface);padding:12px 16px}
+    .info-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+    .info-val{font-size:13px;font-weight:600;color:var(--text)}
+
+    /* Context note */
+    .context-note{background:rgba(108,77,230,.06);border:1px solid rgba(108,77,230,.2);border-radius:10px;padding:14px 16px;margin-bottom:22px;font-size:13px;color:var(--text2);line-height:1.6}
+
+    /* Questions */
+    .q-section{margin-bottom:28px}
+    .area-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+    .area-label::after{content:'';flex:1;height:1px;background:var(--line)}
+    .q-item{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:10px;transition:border-color .15s}
+    .q-item:focus-within{border-color:rgba(108,77,230,.4)}
+    .q-num{font-size:10px;font-weight:700;color:var(--text3);margin-bottom:6px}
+    .q-text{font-size:14px;font-weight:600;color:var(--text);margin-bottom:10px;line-height:1.5}
+    .q-input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;font-family:inherit;line-height:1.6;resize:vertical;outline:none;min-height:70px;transition:border-color .15s}
+    .q-input:focus{border-color:rgba(108,77,230,.4)}
+    .q-input::placeholder{color:var(--text3)}
+
+    /* Progress */
+    .progress-wrap{margin:18px 0}
+    .progress-top{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:6px}
+    .progress-track{height:5px;background:var(--surface2);border-radius:99px;overflow:hidden}
+    .progress-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--cyan));border-radius:99px;transition:width .4s}
+
+    /* Actions */
+    .actions{display:flex;flex-direction:column;gap:10px;margin-top:24px}
+    .btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:13px 20px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:opacity .15s;width:100%}
+    .btn:hover{opacity:.85}
+    .btn-primary{background:var(--purple);color:white}
+    .btn-wa{background:#25D366;color:white}
+    .btn-copy{background:var(--surface2);color:var(--text2);border:1px solid var(--line)}
+    .btn-disabled{opacity:.4;cursor:not-allowed}
+
+    /* Feedback */
+    .feedback{text-align:center;padding:18px;border-radius:12px;font-size:13px;font-weight:600;margin-top:12px;display:none}
+    .feedback.show{display:block}
+    .feedback.ok{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);color:var(--green)}
+    .feedback.err{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#ef4444}
+
+    /* ── SETUP MODE ──────────────────────────────────────────────────────────── */
+    .setup-wrap{display:none}
+    .setup-wrap.active{display:block}
+    .setup-card{background:var(--surface);border:1px solid rgba(108,77,230,.25);border-radius:14px;padding:22px}
+    .setup-card h2{font-size:18px;font-weight:800;margin-bottom:6px}
+    .setup-card .sub{font-size:13px;color:var(--text2);margin-bottom:18px}
+    .field{margin-bottom:14px}
+    .field label{display:block;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+    .field input,.field textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:inherit;outline:none}
+    .field input:focus,.field textarea:focus{border-color:rgba(108,77,230,.4)}
+    .field textarea{min-height:100px;resize:vertical;line-height:1.5}
+    .field .hint{font-size:11px;color:var(--text3);margin-top:4px;line-height:1.5}
+    .generated-url{margin-top:18px;background:var(--bg);border:1px solid rgba(34,197,94,.25);border-radius:9px;padding:12px 14px;font-size:12px;color:var(--green);word-break:break-all;display:none}
+    .generated-url.show{display:block}
+
+    .hidden{display:none!important}
+    @media(max-width:480px){.info-bar{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+
+<!-- ── CLIENT VIEW ──────────────────────────────────────────────────────────── -->
+<div id="client-view" class="hidden">
+  <div class="container">
+    <div class="hero">
+      <div class="badge">✦ MentorIA Systems</div>
+      <h1>Unas <span>preguntas rápidas</span><br>antes de tu diagnóstico</h1>
+      <p>Revisamos la información de tu sesión anterior y tenemos algunas preguntas adicionales. No toma más de 10-15 minutos.</p>
+      <div class="empresa-tag" id="client-empresa">Tu empresa</div>
+    </div>
+
+    <div class="info-bar">
+      <div class="info-cell"><div class="info-label">Empresa</div><div class="info-val" id="info-empresa">—</div></div>
+      <div class="info-cell"><div class="info-label">Tu consultor</div><div class="info-val" id="info-ejecutivo">—</div></div>
+    </div>
+
+    <div class="context-note">
+      💡 Con la información de la primera entrevista ya llenamos la mayor parte del diagnóstico. Solo necesitamos confirmar o completar algunos datos puntuales. Responde con la información más real posible — no hay respuestas correctas o incorrectas.
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-top"><span>Progreso</span><span id="prog-label">0 de 0 respondidas</span></div>
+      <div class="progress-track"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+    </div>
+
+    <div id="questions-container"></div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="btn-submit" onclick="submitAnswers()">Enviar respuestas</button>
+      <button class="btn btn-copy" onclick="copyAnswers()">📋 Copiar respuestas como texto</button>
+      <a class="btn btn-wa hidden" id="btn-wa" href="#">💬 Enviar por WhatsApp</a>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+  </div>
+</div>
+
+<!-- ── SETUP VIEW ────────────────────────────────────────────────────────────── -->
+<div id="setup-view" class="hidden">
+  <div class="container">
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:800;color:var(--purple2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">MentorIA · Generador de formulario de gaps</div>
+      <h1 style="font-size:22px;font-weight:800;letter-spacing:-.03em">Crear formulario de gaps</h1>
+      <p style="font-size:13px;color:var(--text2);margin-top:4px">Configura el formulario y genera el link para enviárselo al cliente.</p>
+    </div>
+
+    <div class="setup-card">
+      <h2>Datos del cliente</h2>
+      <div class="sub">Esta información aparecerá personalizada en el formulario que verá el cliente.</div>
+
+      <div class="field">
+        <label>Empresa *</label>
+        <input id="s-empresa" placeholder="LogiMex SA de CV" />
+      </div>
+      <div class="field">
+        <label>Nombre del ejecutivo</label>
+        <input id="s-ejecutivo" placeholder="Manolo" />
+      </div>
+      <div class="field">
+        <label>WhatsApp del ejecutivo (para el botón de envío)</label>
+        <input id="s-whatsapp" placeholder="+52 55 1234 5678" />
+      </div>
+
+      <div style="height:1px;background:var(--line);margin:18px 0"></div>
+      <h2>Preguntas (gaps)</h2>
+      <div class="sub">Pega el JSON de gaps generado por /procesar-entrevista, o escribe las preguntas manualmente en formato JSON.</div>
+
+      <div class="field">
+        <label>JSON de gaps *</label>
+        <textarea id="s-gaps" placeholder='[
+  { "area": "Ventas", "pregunta": "¿Cuánto tiempo tarda en promedio hacer una cotización?" },
+  { "area": "Operaciones", "pregunta": "¿Quién cubre a Ana cuando no está disponible?" }
+]'></textarea>
+        <div class="hint">Formato: array de objetos con campos "area" y "pregunta". Copia y pega directamente desde la salida de /procesar-entrevista.</div>
+      </div>
+
+      <button class="btn btn-primary" onclick="generateUrl()" style="width:100%;margin-top:6px">⚙️ Generar link del formulario</button>
+
+      <div class="generated-url" id="generated-url"></div>
+      <div style="display:flex;gap:8px;margin-top:10px" id="url-actions" style="display:none">
+        <button class="btn btn-copy" onclick="copyUrl()" style="flex:1">📋 Copiar link</button>
+        <a class="btn btn-wa" id="url-wa" href="#" style="flex:1;text-decoration:none">💬 Enviar por WA</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const P = new URLSearchParams(location.search);
+  const empresa   = P.get('empresa')   || '';
+  const ejecutivo = P.get('ejecutivo') || '';
+  const whatsapp  = P.get('whatsapp')  || '';
+  const gapsParam = P.get('gaps')      || '';
+  const mode      = P.get('mode')      || (gapsParam ? 'client' : (empresa ? 'client' : 'setup'));
+
+  // ── Routing ──────────────────────────────────────────────────────────────────
+  if (mode === 'setup' || !gapsParam && !empresa) {
+    document.getElementById('setup-view').classList.remove('hidden');
+  } else {
+    document.getElementById('client-view').classList.remove('hidden');
+    initClientView();
+  }
+
+  // ── Client view ───────────────────────────────────────────────────────────────
+  function initClientView() {
+    document.getElementById('client-empresa').textContent = empresa || 'Tu empresa';
+    document.getElementById('info-empresa').textContent   = empresa || '—';
+    document.getElementById('info-ejecutivo').textContent = ejecutivo || '—';
+    document.title = empresa ? `Preguntas — ${empresa}` : 'Preguntas adicionales';
+
+    if (whatsapp) {
+      document.getElementById('btn-wa').classList.remove('hidden');
+    }
+
+    let questions = [];
+    try {
+      const decoded = atob(gapsParam);
+      questions = JSON.parse(decoded);
+    } catch {
+      document.getElementById('questions-container').innerHTML = `
+        <div style="text-align:center;padding:40px;color:var(--text3);font-size:13px">
+          No se pudieron cargar las preguntas. Solicita un nuevo link a tu consultor.
+        </div>`;
+      return;
+    }
+
+    renderQuestions(questions);
+    initProgress(questions.length);
+  }
+
+  function renderQuestions(questions) {
+    const container = document.getElementById('questions-container');
+    const byArea = {};
+    questions.forEach((q, i) => {
+      const area = q.area || 'General';
+      if (!byArea[area]) byArea[area] = [];
+      byArea[area].push({ ...q, idx: i });
+    });
+
+    let html = '';
+    Object.entries(byArea).forEach(([area, qs]) => {
+      html += `<div class="q-section"><div class="area-label">${area}</div>`;
+      qs.forEach(q => {
+        html += `
+          <div class="q-item">
+            <div class="q-num">Pregunta ${q.idx + 1}</div>
+            <div class="q-text">${q.pregunta}</div>
+            <textarea class="q-input" id="answer-${q.idx}"
+              placeholder="Escribe tu respuesta aquí…"
+              oninput="updateProgress()"></textarea>
+          </div>`;
+      });
+      html += `</div>`;
+    });
+    container.innerHTML = html;
+  }
+
+  let totalQs = 0;
+  function initProgress(n) {
+    totalQs = n;
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const answers = Array.from(document.querySelectorAll('.q-input'));
+    const filled = answers.filter(a => a.value.trim().length > 0).length;
+    const pct = totalQs ? Math.round(filled / totalQs * 100) : 0;
+    document.getElementById('prog-fill').style.width = pct + '%';
+    document.getElementById('prog-label').textContent = `${filled} de ${totalQs} respondidas`;
+
+    const submitBtn = document.getElementById('btn-submit');
+    if (filled < totalQs) {
+      submitBtn.classList.add('btn-disabled');
+    } else {
+      submitBtn.classList.remove('btn-disabled');
+    }
+  }
+
+  function getAnswersJSON() {
+    const answers = [];
+    let questions = [];
+    try { questions = JSON.parse(atob(gapsParam)); } catch {}
+
+    questions.forEach((q, i) => {
+      const input = document.getElementById(`answer-${i}`);
+      answers.push({
+        area: q.area,
+        pregunta: q.pregunta,
+        respuesta: input ? input.value.trim() : ''
+      });
+    });
+    return answers;
+  }
+
+  function getAnswersText() {
+    const data = getAnswersJSON();
+    const lines = [`Respuestas de gaps — ${empresa || 'Cliente'}\n${'─'.repeat(40)}`];
+    let currentArea = '';
+    data.forEach((item, i) => {
+      if (item.area !== currentArea) {
+        lines.push(`\n📋 ${item.area}`);
+        currentArea = item.area;
+      }
+      lines.push(`\nP${i+1}: ${item.pregunta}`);
+      lines.push(`R: ${item.respuesta || '(sin respuesta)'}`);
+    });
+    return lines.join('\n');
+  }
+
+  function submitAnswers() {
+    const data = getAnswersJSON();
+    const unanswered = data.filter(a => !a.respuesta);
+    if (unanswered.length > 0) {
+      showFeedback(`Por favor responde todas las preguntas (faltan ${unanswered.length}).`, false);
+      return;
+    }
+
+    // Save to localStorage
+    const key = `mentoria_gaps_${empresa.replace(/\s/g,'_')}`;
+    localStorage.setItem(key, JSON.stringify(data));
+
+    // Update WA button
+    if (whatsapp) {
+      const text = encodeURIComponent(getAnswersText());
+      document.getElementById('btn-wa').href = `https://wa.me/${whatsapp.replace(/\D/g,'')}?text=${text}`;
+    }
+
+    showFeedback('✅ ¡Respuestas guardadas! Usa el botón de WhatsApp para enviárselas a tu consultor, o cópialas como texto.', true);
+  }
+
+  function copyAnswers() {
+    const text = getAnswersText();
+    navigator.clipboard.writeText(text).then(() => {
+      showFeedback('✅ Respuestas copiadas. Pégalas en WhatsApp o email para enviárselas a tu consultor.', true);
+    }).catch(() => {
+      showFeedback('No se pudo copiar automáticamente. Selecciona el texto de las respuestas manualmente.', false);
+    });
+  }
+
+  function showFeedback(msg, ok) {
+    const el = document.getElementById('feedback');
+    el.textContent = msg;
+    el.className = `feedback show ${ok ? 'ok' : 'err'}`;
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // ── Setup view ────────────────────────────────────────────────────────────────
+  function generateUrl() {
+    const empresaVal  = document.getElementById('s-empresa').value.trim();
+    const ejecutivoVal = document.getElementById('s-ejecutivo').value.trim();
+    const waVal       = document.getElementById('s-whatsapp').value.trim();
+    const gapsRaw     = document.getElementById('s-gaps').value.trim();
+
+    if (!empresaVal || !gapsRaw) {
+      alert('Completa el nombre de empresa y el JSON de gaps.');
+      return;
+    }
+
+    let gapsParsed;
+    try { gapsParsed = JSON.parse(gapsRaw); }
+    catch { alert('El JSON de gaps tiene un error de formato. Verifica que sea un array válido.'); return; }
+
+    const encoded = btoa(JSON.stringify(gapsParsed));
+    const params = new URLSearchParams();
+    params.set('empresa',   empresaVal);
+    if (ejecutivoVal) params.set('ejecutivo', ejecutivoVal);
+    if (waVal)        params.set('whatsapp',  waVal);
+    params.set('gaps', encoded);
+
+    const url = `${location.origin}${location.pathname}?${params.toString()}`;
+    const urlEl = document.getElementById('generated-url');
+    urlEl.textContent = url;
+    urlEl.classList.add('show');
+    document.getElementById('url-actions').style.display = 'flex';
+
+    if (waVal) {
+      const msg = encodeURIComponent(`Hola${empresaVal ? ' equipo de ' + empresaVal : ''}, te comparto unas preguntas rápidas de seguimiento para completar tu diagnóstico MentorIA. No toma más de 10 minutos: ${url}`);
+      document.getElementById('url-wa').href = `https://wa.me/${waVal.replace(/\D/g,'')}?text=${msg}`;
+    }
+  }
+
+  function copyUrl() {
+    const urlEl = document.getElementById('generated-url');
+    navigator.clipboard.writeText(urlEl.textContent)
+      .then(() => alert('Link copiado'))
+      .catch(() => alert('Selecciona el link y cópialo manualmente'));
+  }
+</script>
+</body>
+</html>

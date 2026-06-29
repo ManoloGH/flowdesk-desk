@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Diagnóstico — Departamento de Entrega de Servicio | MentorIA</title>
+<title id="page-title">Diagnóstico — Departamento de Entrega de Servicio | MentorIA</title>
 <style>
   :root {
     --brand-dark: #0a0a14;
@@ -480,10 +480,10 @@
   <!-- Hero -->
   <div class="hero">
     <div class="hero-tag">
-      <span>●</span> Diagnóstico Inicial — Entrega de Servicio
+      <span>●</span> Diagnóstico Inicial — <span id="hero-area-label">Entrega de Servicio</span>
     </div>
     <h1>Conocemos tu operación.<br>Diseñamos tu transformación.</h1>
-    <p>Este cuestionario nos permite mapear en detalle cómo funciona tu departamento de entrega de servicio hoy — sus procesos, puntos de dolor y oportunidades de mejora. Toda la información se guarda automáticamente mientras la completas.</p>
+    <p>Este cuestionario nos permite mapear en detalle cómo funciona el área de <strong id="hero-area-name">Entrega de Servicio</strong> hoy — sus procesos, puntos de dolor y oportunidades de mejora. Toda la información se guarda automáticamente mientras la completas.</p>
     <div class="hero-chips">
       <div class="chip"><span>7</span> secciones</div>
       <div class="chip"><span>~15 min</span> de duración</div>
@@ -1018,9 +1018,28 @@ const DATA = {
   ],
 };
 
+// ── URL params (permite usar este form como template genérico) ──
+const _params = new URLSearchParams(window.location.search);
+const _areaParam = _params.get('area') || '';
+const _empresaParam = _params.get('empresa') || '';
+const _areaSlug = _areaParam ? _areaParam.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') : 'entrega';
+
+// Personalizar UI con el área
+if (_areaParam) {
+  document.getElementById('page-title').textContent = `Diagnóstico — ${_areaParam} | MentorIA`;
+  document.getElementById('hero-area-label').textContent = _areaParam;
+  document.getElementById('hero-area-name').textContent = _areaParam;
+  document.querySelector('.header-title') && (document.querySelector('.header-title').innerHTML = `Diagnóstico — ${_areaParam}<br><span id="header-empresa" style="color:var(--brand-purple-light);font-size:11px;"></span>`);
+}
+
 // ── State ────────────────────────────────────────────────
-const STORAGE_KEY = 'mentoria_diag_entrega_v1';
+const STORAGE_KEY = `mentoria_diag_${_areaSlug}_v1`;
 let state = {};
+
+// Pre-fill empresa si viene en params
+if (_empresaParam && !state.empresa) {
+  state.empresa = _empresaParam;
+}
 
 // ── Build options ────────────────────────────────────────
 function buildCheckboxGroup(containerId, items, stateKey) {
@@ -1203,9 +1222,16 @@ function initAll() {
 
   bindTextInputs();
 
+  // Pre-fill empresa desde URL param si el campo está vacío
+  if (_empresaParam && !state.empresa) {
+    state.empresa = _empresaParam;
+    const empInput = document.getElementById('empresa');
+    if (empInput) empInput.value = _empresaParam;
+  }
   // Restore empresa header
   if (state.empresa) {
-    document.getElementById('header-empresa').textContent = state.empresa;
+    const hdr = document.getElementById('header-empresa');
+    if (hdr) hdr.textContent = state.empresa;
   }
 
   updateProgress();
@@ -1217,10 +1243,11 @@ function initAll() {
 function buildExportData() {
   return {
     meta: {
-      tipo: 'diagnostico-entrega-servicio',
+      tipo: 'diagnostico-area',
+      area: _areaParam || 'Entrega de Servicio',
       version: 1,
       generado: new Date().toISOString(),
-      empresa: state.empresa || '',
+      empresa: state.empresa || _empresaParam || '',
       respondente: state.respondente || '',
       email: state.email || '',
     },

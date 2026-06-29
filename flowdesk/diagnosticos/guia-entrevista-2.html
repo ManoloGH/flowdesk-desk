@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guía Entrevista 2 — Validación</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0a0a14;--surface:#13131f;--surface2:#1a1a2e;--line:rgba(255,255,255,0.07);
+      --purple:#6c4de6;--purple2:#8b6ef5;--cyan:#00d4ff;--green:#22c55e;
+      --amber:#f59e0b;--red:#ef4444;--text:#f0f0fa;--text2:#a0a0c0;--text3:#606080;
+    }
+    body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding-bottom:80px}
+
+    .topbar{background:var(--surface);border-bottom:1px solid var(--line);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:50}
+    .topbar-left{display:flex;align-items:center;gap:10px}
+    .logo{font-size:12px;font-weight:800;color:var(--purple2);letter-spacing:.1em;text-transform:uppercase}
+    .empresa-val{font-size:13px;color:var(--text2)}
+    .timer{font-size:20px;font-weight:800;color:var(--cyan);font-variant-numeric:tabular-nums;min-width:65px;text-align:right}
+    .btn-timer{padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer}
+    .btn-timer.running{border-color:rgba(239,68,68,.4);color:var(--red)}
+
+    .container{max-width:700px;margin:0 auto;padding:20px}
+
+    /* Hero */
+    .session-hero{background:linear-gradient(135deg,rgba(34,197,94,.08),rgba(0,212,255,.05));border:1px solid rgba(34,197,94,.2);border-radius:14px;padding:20px;margin-bottom:24px}
+    .session-hero h1{font-size:22px;font-weight:800;letter-spacing:-.03em;margin-bottom:6px}
+    .session-hero h1 span{color:var(--green)}
+    .session-hero p{font-size:13px;color:var(--text2);line-height:1.6}
+    .time-blocks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+    .time-block{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:10px;text-align:center}
+    .time-block .time{font-size:20px;font-weight:800;color:var(--cyan)}
+    .time-block .label{font-size:10px;color:var(--text3);margin-top:2px}
+
+    /* Checklist prereq */
+    .prereq{background:var(--surface);border:1px solid rgba(245,158,11,.25);border-radius:12px;padding:16px;margin-bottom:20px}
+    .prereq h4{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amber);margin-bottom:10px}
+
+    /* Section blocks */
+    .phase{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:16px;overflow:hidden}
+    .phase-header{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;cursor:pointer;transition:background .12s}
+    .phase-header:hover{background:var(--surface2)}
+    .phase-num{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0}
+    .phase-title{flex:1;font-size:15px;font-weight:700}
+    .phase-time{font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;border:1px solid;white-space:nowrap}
+    .phase-body{padding:14px 18px}
+
+    /* Q cards in phase */
+    .q-card{background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .15s}
+    .q-card:last-child{margin-bottom:0}
+    .q-card:hover{border-color:rgba(108,77,230,.3)}
+    .q-card.asked{opacity:.65;border-color:rgba(34,197,94,.25)}
+    .q-card.asked .q-text{text-decoration:line-through;color:var(--text3)}
+    .q-row{display:flex;align-items:flex-start;gap:10px}
+    .q-box{width:18px;height:18px;border-radius:4px;border:2px solid var(--line);flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;transition:all .15s}
+    .q-card.asked .q-box{background:var(--green);border-color:var(--green);color:white}
+    .q-text{font-size:13px;color:var(--text);line-height:1.5;flex:1}
+    .q-note{font-size:11px;color:var(--text3);margin-top:4px;padding-left:28px;line-height:1.5}
+    .badge{font-size:9px;font-weight:700;text-transform:uppercase;padding:2px 7px;border-radius:99px;margin-left:6px;flex-shrink:0}
+    .badge-red{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+    .badge-green{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+    .badge-amber{background:rgba(245,158,11,.1);color:var(--amber);border:1px solid rgba(245,158,11,.2)}
+
+    /* Blocker log */
+    .blocker-section{margin-top:14px}
+    .blocker-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--red);margin-bottom:8px}
+    .blocker-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+    .blocker-item{display:flex;align-items:flex-start;gap:8px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:8px;padding:10px 12px}
+    .blocker-text{flex:1;font-size:13px;color:var(--text);line-height:1.4}
+    .blocker-remove{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;line-height:1}
+    .blocker-add-row{display:flex;gap:8px}
+    .blocker-input{flex:1;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:inherit;outline:none}
+    .blocker-input:focus{border-color:rgba(239,68,68,.4)}
+    .btn-add-blocker{padding:8px 14px;border-radius:8px;border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.08);color:var(--red);font-size:12px;font-weight:700;cursor:pointer}
+
+    /* Sign-off */
+    .signoff-box{background:var(--surface);border:1px solid rgba(34,197,94,.25);border-radius:14px;padding:20px}
+    .signoff-box h3{font-size:16px;font-weight:800;color:var(--green);margin-bottom:14px}
+    .signoff-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);cursor:pointer}
+    .signoff-item:last-child{border-bottom:none}
+    .signoff-check{width:22px;height:22px;border-radius:6px;border:2px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;transition:all .15s}
+    .signoff-item.signed .signoff-check{background:var(--green);border-color:var(--green);color:white}
+    .signoff-text{font-size:14px;color:var(--text)}
+    .signoff-item.signed .signoff-text{color:var(--text3);text-decoration:line-through}
+
+    /* Finish */
+    .finish-box{background:var(--surface);border:1px solid rgba(108,77,230,.25);border-radius:14px;padding:22px;margin-top:20px;text-align:center}
+    .finish-box h3{font-size:18px;font-weight:800;color:var(--purple2);margin-bottom:8px}
+    .finish-box p{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px}
+    .cmd-row{display:flex;flex-direction:column;gap:8px;text-align:left}
+    .cmd-box{background:var(--bg);border:1px solid rgba(108,77,230,.25);border-radius:9px;padding:10px 14px;font-family:monospace;font-size:13px;color:var(--purple2)}
+    .cmd-label{font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em}
+
+    /* Check item (prereq) */
+    .pre-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer}
+    .pre-item:last-child{border-bottom:none}
+    .pre-box{width:18px;height:18px;border-radius:4px;border:2px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;transition:all .15s}
+    .pre-item.done .pre-box{background:var(--green);border-color:var(--green);color:white}
+    .pre-item.done .pre-text{color:var(--text3);text-decoration:line-through}
+    .pre-text{font-size:13px;color:var(--text)}
+
+    .notes-wrap{margin-top:14px}
+    .notes-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:6px}
+    .notes-area{width:100%;min-height:70px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical;outline:none}
+    .notes-area:focus{border-color:rgba(108,77,230,.4)}
+    .hidden{display:none!important}
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <span class="logo">MentorIA</span>
+    <span class="empresa-val">· Entrevista 2 · Validación · <strong id="top-empresa">Empresa</strong></span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span class="timer" id="timer">00:00</span>
+    <button class="btn-timer" id="btn-timer" onclick="toggleTimer()">Iniciar</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Hero -->
+  <div class="session-hero">
+    <h1>Entrevista 2 — <span>Validación</span></h1>
+    <p>Objetivo: confirmar que el AS-IS es correcto, presentar el nuevo flujo propuesto, identificar bloqueadores reales y obtener el visto bueno para proceder con el informe final.</p>
+    <div class="time-blocks">
+      <div class="time-block"><div class="time">15'</div><div class="label">Validar AS-IS</div></div>
+      <div class="time-block"><div class="time">30'</div><div class="label">Revisar TO-BE</div></div>
+      <div class="time-block"><div class="time">15'</div><div class="label">Bloqueadores y sign-off</div></div>
+    </div>
+  </div>
+
+  <!-- Prereq checklist -->
+  <div class="prereq">
+    <h4>⚠️ Tener listo antes de la sesión</h4>
+    <div class="pre-item" onclick="togglePre(this)"><div class="pre-box"></div><span class="pre-text">Diagrama AS-IS por proceso (cargado en visualizador.html)</span></div>
+    <div class="pre-item" onclick="togglePre(this)"><div class="pre-box"></div><span class="pre-text">Propuesta de flujo TO-BE preparada</span></div>
+    <div class="pre-item" onclick="togglePre(this)"><div class="pre-box"></div><span class="pre-text">Respuestas del formulario de gaps procesadas</span></div>
+    <div class="pre-item" onclick="togglePre(this)"><div class="pre-box"></div><span class="pre-text">Pantalla compartida lista para mostrar los diagramas</span></div>
+    <div class="pre-item" onclick="togglePre(this)"><div class="pre-box"></div><span class="pre-text">Borrador del informe HTML (si ya se generó)</span></div>
+  </div>
+
+  <!-- BLOQUE 1: Validar AS-IS -->
+  <div class="phase">
+    <div class="phase-header" onclick="togglePhase(this)">
+      <div class="phase-num" style="background:rgba(0,212,255,.12);color:var(--cyan)">1</div>
+      <div class="phase-title">Validar el mapa AS-IS</div>
+      <div class="phase-time" style="color:var(--cyan);border-color:rgba(0,212,255,.25)">15 min</div>
+      <span style="color:var(--text3);margin-left:8px;font-size:14px" class="toggle-icon">▾</span>
+    </div>
+    <div class="phase-body">
+      <p style="font-size:12px;color:var(--text3);margin-bottom:12px">Muestra el diagrama AS-IS en pantalla. Pide que lo revisen en silencio 2 minutos antes de hacer preguntas.</p>
+
+      <div class="q-card" onclick="toggleQ(this)">
+        <div class="q-row"><div class="q-box"></div><div class="q-text">¿Este diagrama refleja cómo trabajan hoy? ¿Hay algo que no vean aquí o que esté mal representado?</div><span class="badge badge-red">Crítica</span></div>
+      </div>
+      <div class="q-card" onclick="toggleQ(this)">
+        <div class="q-row"><div class="q-box"></div><div class="q-text">¿Hay algún paso que hacemos pero que no apareció en el diagrama?</div></div>
+        <div class="q-note">Procesos informales, pasos de WhatsApp, validaciones manuales no documentadas.</div>
+      </div>
+      <div class="q-card" onclick="toggleQ(this)">
+        <div class="q-row"><div class="q-box"></div><div class="q-text">¿Los tiempos que aparecen se acercan a la realidad? ¿Hay algún paso que tarda mucho más de lo que dijimos?</div></div>
+      </div>
+      <div class="q-card" onclick="toggleQ(this)">
+        <div class="q-row"><div class="q-box"></div><div class="q-text">¿Quién más debería haber estado en la Entrevista 1 y no estuvo? ¿Hay información que falta de otra persona?</div></div>
+      </div>
+
+      <div class="notes-wrap">
+        <div class="notes-label">Correcciones al AS-IS</div>
+        <textarea class="notes-area" id="notes-asis" placeholder="Pasos faltantes, tiempos incorrectos, actores que no aparecen…" oninput="saveNotes('asis')"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- BLOQUE 2: Revisar TO-BE -->
+  <div class="phase">
+    <div class="phase-header" onclick="togglePhase(this)">
+      <div class="phase-num" style="background:rgba(108,77,230,.12);color:var(--purple2)">2</div>
+      <div class="phase-title">Presentar y revisar el TO-BE</div>
+      <div class="phase-time" style="color:var(--purple2);border-color:rgba(108,77,230,.25)">30 min</div>
+      <span style="color:var(--text3);margin-left:8px;font-size:14px" class="toggle-icon">▾</span>
+    </div>
+    <div class="phase-body">
+      <p style="font-size:12px;color:var(--text3);margin-bottom:12px">Presenta el flujo TO-BE como una propuesta, no como algo definitivo. La actitud debe ser "¿esto funcionaría para ustedes?"</p>
+
+      <div class="q-card" onclick="toggleQ(this)">
+        <div class="q-row"><div class="q-box"></div><div class="q-text">Viendo este nuevo flujo, ¿qué es lo primero que les viene a la mente?</div><span class="badge badge-amber">Apertura</span></div>
+        <div class="q-note">No dirigir la respuesta. Las primeras reacciones revelan los miedos y entusiasmos reales.</div>
+      </div>
+      <div class="q-card" onclick="toggleQ(this)">
+        <div class="q-row"><div class="q-box"></div><div class="q-text">¿Ven algún paso donde el agente digital NO podría hacer lo que se le propone? ¿Por qué?</div><span class="badge badge-red">Bloqueador</span></div>
+        <div class="q-note">Esta es la pregunta más importante de toda la entrevista. Anota cada objeción literalmente.</div>
+      </div>
+      <div class="q-card" onclick="toggleQ(this)">
+        <div class="q-row"><div class="q-box"></div><div class="q-text">¿Hay algún cliente, proveedor o situación especial que haría que este flujo no funcionara?</div><span class="badge badge-red">Bloqueador</span></div>
+        <div class="q-note">Contratos especiales, clientes VIP con trato diferenciado, excepciones frecuentes.</div>
+      </div>
+      <div class="q-card" onclick="toggleQ(this)">
+        <div class="q-row"><div class="q-box"></div><div class="q-text">De todo lo que propone el TO-BE, ¿qué les genera más entusiasmo? ¿Qué les da más miedo?</div></div>
+      </div>
+      <div class="q-card" onclick="toggleQ(this)">
+        <div class="q-row"><div class="q-box"></div><div class="q-text">¿Qué pasaría si implementamos esto y el agente comete un error? ¿Cómo lo detectarían?</div></div>
+        <div class="q-note">Define el sistema de supervisión y corrección del agente desde el inicio.</div>
+      </div>
+      <div class="q-card" onclick="toggleQ(this)">
+        <div class="q-row"><div class="q-box"></div><div class="q-text">¿Cómo creen que reaccionará su equipo cuando les expliquen que habrá un agente digital trabajando con ellos?</div><span class="badge badge-amber">Adopción</span></div>
+        <div class="q-note">La resistencia del equipo es el bloqueador más común y el menos visible en los datos.</div>
+      </div>
+
+      <!-- Blocker log -->
+      <div class="blocker-section">
+        <div class="blocker-label">🚨 Registro de bloqueadores detectados</div>
+        <div class="blocker-list" id="blocker-list"></div>
+        <div class="blocker-add-row">
+          <input class="blocker-input" id="blocker-input" placeholder="Describe el bloqueador literalmente como lo dijeron…" onkeydown="if(event.key==='Enter')addBlocker()" />
+          <button class="btn-add-blocker" onclick="addBlocker()">+ Registrar</button>
+        </div>
+      </div>
+
+      <div class="notes-wrap">
+        <div class="notes-label">Notas del TO-BE</div>
+        <textarea class="notes-area" id="notes-tobe" placeholder="Ajustes al flujo propuesto, funcionalidades a añadir o quitar, preocupaciones específicas…" oninput="saveNotes('tobe')"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- BLOQUE 3: Sign-off -->
+  <div class="phase">
+    <div class="phase-header" onclick="togglePhase(this)">
+      <div class="phase-num" style="background:rgba(34,197,94,.12);color:var(--green)">3</div>
+      <div class="phase-title">Bloqueadores y visto bueno</div>
+      <div class="phase-time" style="color:var(--green);border-color:rgba(34,197,94,.25)">15 min</div>
+      <span style="color:var(--text3);margin-left:8px;font-size:14px" class="toggle-icon">▾</span>
+    </div>
+    <div class="phase-body">
+      <div class="q-card" onclick="toggleQ(this)">
+        <div class="q-row"><div class="q-box"></div><div class="q-text">De los bloqueadores que identificamos, ¿cuáles son negociables y cuáles son definitivos?</div></div>
+      </div>
+      <div class="q-card" onclick="toggleQ(this)">
+        <div class="q-row"><div class="q-box"></div><div class="q-text">Si resolvemos los bloqueadores negociables, ¿están de acuerdo en que procedamos con el informe final y el blueprint del agente?</div><span class="badge badge-green">Sign-off</span></div>
+      </div>
+      <div class="q-card" onclick="toggleQ(this)">
+        <div class="q-row"><div class="q-box"></div><div class="q-text">¿Hay algo que no hayamos discutido y que quieran que tengamos en cuenta para el informe?</div></div>
+      </div>
+
+      <div style="margin-top:20px">
+        <div class="signoff-box">
+          <h3>✅ Checklist de visto bueno</h3>
+          <div class="signoff-item" onclick="toggleSignoff(this)">
+            <div class="signoff-check"></div>
+            <span class="signoff-text">El cliente confirmó que el AS-IS es correcto (con las correcciones anotadas)</span>
+          </div>
+          <div class="signoff-item" onclick="toggleSignoff(this)">
+            <div class="signoff-check"></div>
+            <span class="signoff-text">El cliente revisó el TO-BE propuesto</span>
+          </div>
+          <div class="signoff-item" onclick="toggleSignoff(this)">
+            <div class="signoff-check"></div>
+            <span class="signoff-text">Todos los bloqueadores detectados fueron registrados</span>
+          </div>
+          <div class="signoff-item" onclick="toggleSignoff(this)">
+            <div class="signoff-check"></div>
+            <span class="signoff-text">El cliente aprobó proceder con el informe final</span>
+          </div>
+          <div class="signoff-item" onclick="toggleSignoff(this)">
+            <div class="signoff-check"></div>
+            <span class="signoff-text">Se acordó fecha de entrega del informe</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="notes-wrap">
+        <div class="notes-label">Acuerdos y compromisos</div>
+        <textarea class="notes-area" id="notes-signoff" placeholder="Fecha de entrega acordada, compromisos del cliente (accesos, información), ajustes finales al scope…" oninput="saveNotes('signoff')"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Finish -->
+  <div class="finish-box">
+    <h3>Entrevista 2 completada</h3>
+    <p>Con el visto bueno del cliente y los bloqueadores registrados, ya puedes generar el informe final. Incorpora las correcciones al AS-IS y las notas de los bloqueadores antes de ejecutar los comandos.</p>
+    <div class="cmd-row">
+      <div><div class="cmd-label">1. Analizar y priorizar</div><div class="cmd-box">/analizar → /priorizar</div></div>
+      <div><div class="cmd-label">2. Generar diagramas</div><div class="cmd-box">/generar-bpmn → /generar-tobe</div></div>
+      <div><div class="cmd-label">3. Redactar informe final</div><div class="cmd-box">/redactar-informe</div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const P = new URLSearchParams(location.search);
+  const empresa = P.get('empresa') || 'Empresa';
+  const STORAGE = `mentoria_e2_${empresa.replace(/\s/g,'_')}`;
+  document.getElementById('top-empresa').textContent = empresa;
+  document.title = `Entrevista 2 — ${empresa}`;
+
+  // Timer
+  let timerStart=null,timerInterval=null,elapsed=0;
+  function toggleTimer(){
+    const btn=document.getElementById('btn-timer');
+    if(timerInterval){clearInterval(timerInterval);timerInterval=null;elapsed+=Date.now()-timerStart;btn.textContent='Reanudar';btn.classList.remove('running');}
+    else{timerStart=Date.now();btn.textContent='Pausar';btn.classList.add('running');timerInterval=setInterval(updateTimer,1000);}
+  }
+  function updateTimer(){
+    const total=Math.floor((elapsed+Date.now()-timerStart)/1000);
+    const m=String(Math.floor(total/60)).padStart(2,'0'),s=String(total%60).padStart(2,'0');
+    document.getElementById('timer').textContent=`${m}:${s}`;
+    document.getElementById('timer').style.color=total>3600?'var(--red)':total>2700?'var(--amber)':'var(--cyan)';
+  }
+
+  // Phase toggle
+  function togglePhase(header){
+    const body=header.nextElementSibling;
+    const icon=header.querySelector('.toggle-icon');
+    body.classList.toggle('hidden');
+    icon.textContent=body.classList.contains('hidden')?'▸':'▾';
+  }
+
+  // Q cards
+  function toggleQ(el){
+    el.classList.toggle('asked');
+    el.querySelector('.q-box').textContent=el.classList.contains('asked')?'✓':'';
+    saveState();
+  }
+
+  // Pre items
+  function togglePre(el){
+    el.classList.toggle('done');
+    el.querySelector('.pre-box').textContent=el.classList.contains('done')?'✓':'';
+    saveState();
+  }
+
+  // Sign-off
+  function toggleSignoff(el){
+    el.classList.toggle('signed');
+    el.querySelector('.signoff-check').textContent=el.classList.contains('signed')?'✓':'';
+    saveState();
+  }
+
+  // Blockers
+  let blockers=JSON.parse(localStorage.getItem(STORAGE+'_blockers')||'[]');
+  function renderBlockers(){
+    const list=document.getElementById('blocker-list');
+    list.innerHTML=blockers.map((b,i)=>`
+      <div class="blocker-item">
+        <span class="blocker-text">🚨 ${b}</span>
+        <button class="blocker-remove" onclick="removeBlocker(${i})">×</button>
+      </div>`).join('');
+  }
+  function addBlocker(){
+    const input=document.getElementById('blocker-input');
+    const val=input.value.trim();
+    if(!val)return;
+    blockers.push(val);
+    input.value='';
+    localStorage.setItem(STORAGE+'_blockers',JSON.stringify(blockers));
+    renderBlockers();
+  }
+  function removeBlocker(i){
+    blockers.splice(i,1);
+    localStorage.setItem(STORAGE+'_blockers',JSON.stringify(blockers));
+    renderBlockers();
+  }
+
+  // Notes
+  function saveNotes(key){
+    const el=document.getElementById('notes-'+key);
+    if(el)localStorage.setItem(STORAGE+'_notes_'+key,el.value);
+  }
+
+  // State
+  function saveState(){
+    const state={};
+    document.querySelectorAll('.q-card,.pre-item,.signoff-item').forEach((el,i)=>{state[i]=el.classList.contains('asked')||el.classList.contains('done')||el.classList.contains('signed');});
+    localStorage.setItem(STORAGE+'_state',JSON.stringify(state));
+  }
+
+  // Init
+  function init(){
+    const state=JSON.parse(localStorage.getItem(STORAGE+'_state')||'{}');
+    document.querySelectorAll('.q-card').forEach((el,i)=>{if(state[i]){el.classList.add('asked');el.querySelector('.q-box').textContent='✓';}});
+    document.querySelectorAll('.pre-item').forEach((el,i)=>{if(state[i]){el.classList.add('done');el.querySelector('.pre-box').textContent='✓';}});
+    document.querySelectorAll('.signoff-item').forEach((el,i)=>{if(state[i]){el.classList.add('signed');el.querySelector('.signoff-check').textContent='✓';}});
+    ['asis','tobe','signoff'].forEach(k=>{const el=document.getElementById('notes-'+k);const saved=localStorage.getItem(STORAGE+'_notes_'+k);if(el&&saved)el.value=saved;});
+    renderBlockers();
+  }
+  init();
+</script>
+</body>
+</html>
