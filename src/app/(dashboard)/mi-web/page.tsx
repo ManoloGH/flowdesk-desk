@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '@/lib/api';
+import { useAuth } from '@/store/auth';
 import { Globe, Plus, Eye, Rocket, Loader2, RefreshCw, ExternalLink, Trash2 } from 'lucide-react';
 import WebBuilderModal from './WebBuilderModal';
 
@@ -33,6 +34,7 @@ const FASE_COLOR: Record<string, string> = {
 };
 
 export default function MiWebPage() {
+  const { user } = useAuth();
   const [proyectos, setProyectos] = useState<WebProyecto[]>([]);
   const [loading, setLoading] = useState(true);
   const [blocked, setBlocked] = useState(false);
@@ -51,7 +53,14 @@ export default function MiWebPage() {
     }
   }, []);
 
-  useEffect(() => { fetchProyectos(); }, [fetchProyectos]);
+  // Refrescar proyectos cuando cambia el tenant (impersonación o salida)
+  useEffect(() => {
+    setSelected(null);
+    setProyectos([]);
+    setLoading(true);
+    setBlocked(false);
+    fetchProyectos();
+  }, [user?.tenant_id, fetchProyectos]);
 
   const crearProyecto = async () => {
     if (!newNombre.trim()) return;
@@ -61,7 +70,9 @@ export default function MiWebPage() {
       setSelected(p);
       setNewNombre('');
       setCreando(false);
-    } catch {}
+    } catch (e: any) {
+      alert(`Error al crear el proyecto: ${e?.message ?? 'Error desconocido'}`);
+    }
   };
 
   const eliminarProyecto = async (e: React.MouseEvent, id: string) => {

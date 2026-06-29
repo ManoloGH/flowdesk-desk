@@ -113,8 +113,10 @@ export const useAuth = create<AuthState>((set) => ({
     if (currentRefresh) localStorage.setItem('fd_refresh_parent', currentRefresh);
     if (currentUser)    localStorage.setItem('fd_user_parent',    currentUser);
 
-    // Activar tokens de la empresa
+    // Activar tokens de la empresa — borrar fd_refresh para que el auto-refresh
+    // no revierta silenciosamente al JWT del admin padre si el token expira
     localStorage.setItem('fd_access',       accessToken);
+    localStorage.removeItem('fd_refresh');
     localStorage.setItem('fd_user',         JSON.stringify(companyUser));
     localStorage.setItem('fd_impersonating', companyName);
 
