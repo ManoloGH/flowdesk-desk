@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { ChevronLeft, Edit2, Check, X, Plus, ExternalLink, Save } from 'lucide-react';
 
@@ -129,9 +129,9 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-MX', { day
 
 
 // ── Page ───────────────────────────────────────────────────────────────────────
-export default function ClienteWorkspace({ params }: { params: { id: string } }) {
+export default function ClienteWorkspace() {
   const router = useRouter();
-  const { id } = params;
+  const { id } = useParams<{ id: string }>();
 
   const [cliente, setCliente]   = useState<Cliente | null>(null);
   const [loading, setLoading]   = useState(true);
