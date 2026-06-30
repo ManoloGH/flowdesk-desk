@@ -94,7 +94,7 @@ const PHASES = [
       { id: 'renovacion',    label: 'Renovación / upsell evaluada' },
     ],
   },
-] as const;
+] satisfies { num: number; label: string; duracion: string; color: string; items: { id: string; label: string }[] }[];
 
 const DIAG_FORMS = [
   { key: 'configurador',    label: 'Configurador de sesión', icon: '⚙️', path: '/flowdesk/diagnosticos/configurador.html' },
