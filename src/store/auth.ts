@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+﻿import { create } from 'zustand';
 import { api, clearTokens, setBranchTokens, clearBranchTokens } from '@/lib/api';
 
 interface User {
@@ -23,6 +23,7 @@ interface AuthState {
   branchContext: BranchContext | null;
   impersonating: string | null;
   login: (email: string, password: string) => Promise<void>;
+  loginWithTokens: (accessToken: string, refreshToken: string, user: User) => void;
   logout: () => void;
   loadUser: () => void;
   enterBranch: (branchId: string, branchName: string, accessToken: string, refreshToken: string, branchUser: User) => void;
@@ -42,6 +43,12 @@ export const useAuth = create<AuthState>((set) => ({
     api.setTokens(data.access_token, data.refresh_token);
     localStorage.setItem('fd_user', JSON.stringify(data.user));
     set({ user: data.user, branchContext: null });
+  },
+
+  loginWithTokens: (accessToken, refreshToken, user) => {
+    api.setTokens(accessToken, refreshToken);
+    localStorage.setItem('fd_user', JSON.stringify(user));
+    set({ user, branchContext: null });
   },
 
   logout: () => {
