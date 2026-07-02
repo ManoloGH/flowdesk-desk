@@ -166,7 +166,7 @@ export default function MentoriaPage() {
   const [notes, setNotes]           = useState('');
   const [showAddP, setShowAddP]     = useState(false);
   const [showAddC, setShowAddC]     = useState(false);
-  const [converting, setConverting] = useState(false);
+  const [showConverting, setShowConverting] = useState<Prospecto | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -200,33 +200,31 @@ export default function MentoriaPage() {
     setSelected(prev => prev ? { ...prev, notas: notes } : prev);
   }
 
-  async function convertirACliente(p: Prospecto) {
-    setConverting(true);
+  async function doConvertir(p: Prospecto, datos: { empresa: string; contacto_nombre: string; contacto_cargo: string; precio: number; fecha_inicio: string }) {
     const nuevo: Cliente = {
       id: `c-${Date.now()}`,
-      empresa: p.empresa,
-      contacto_nombre: p.contacto || '',
-      contacto_cargo: '',
+      empresa: datos.empresa,
+      contacto_nombre: datos.contacto_nombre,
+      contacto_cargo: datos.contacto_cargo,
       email: p.email,
       whatsapp: p.whatsapp,
       industria: p.industria || '',
-      tamano: p.tamano || '10-100',
+      tamano: p.tamano || '',
       status: 'activo',
       ejecutivo_asignado: p.ejecutivo_asignado || '',
-      fecha_inicio: new Date().toISOString().split('T')[0],
+      fecha_inicio: datos.fecha_inicio,
       fecha_fin: null,
-      precio: PRECIO_LABEL[p.tamano || '10-100'] ?? 30000,
+      precio: datos.precio,
       fase_actual: 0,
       areas_diagnosticadas: [],
       notas: p.notas || '',
       prospecto_id: p.id,
     };
-    try { await api.post('/mentoria/clientes', nuevo); } catch {}
-    setClientes(prev => [nuevo, ...prev]);
+    try { const saved = await api.post<Cliente>('/mentoria/clientes', nuevo); setClientes(prev => [saved, ...prev]); }
+    catch { setClientes(prev => [nuevo, ...prev]); }
     setProspectos(prev => prev.filter(x => x.id !== p.id));
+    setShowConverting(null);
     setSelected(null);
-    setConverting(false);
-    setTab('activos');
     router.push(`/mentoria/${nuevo.id}`);
   }
 
@@ -320,7 +318,7 @@ export default function MentoriaPage() {
         </div>
       ) : tab === 'prospectos' ? (
         pView === 'pipeline'
-          ? <ProspectosPipeline prospectos={filteredP} onSelect={setSelected} />
+          ? <ProspectosPipeline prospectos={filteredP} clientes={clientes} onSelect={setSelected} />
           : <ProspectosLista prospectos={filteredP} onSelect={setSelected} />
       ) : tab === 'activos' ? (
         <ClientesGrid clientes={activos} onSelect={id => router.push(`/mentoria/${id}`)} />
@@ -334,12 +332,12 @@ export default function MentoriaPage() {
           p={selected} notes={notes} setNotes={setNotes}
           onSave={saveNotes}
           onAdvance={s => advanceStage(selected.id, s)}
-          onConvert={() => convertirACliente(selected)}
-          converting={converting}
+          onConvert={() => setShowConverting(selected)}
           onClose={() => setSelected(null)}
         />
       )}
 
+      {showConverting && <ConvertirModal prospecto={showConverting} onClose={() => setShowConverting(null)} onSave={datos => doConvertir(showConverting, datos)} />}
       {showAddP && <AddProspectoModal onClose={() => setShowAddP(false)} onSave={p => { setProspectos(prev => [p, ...prev]); setShowAddP(false); }} />}
       {showAddC && <AddClienteModal onClose={() => setShowAddC(false)} onSave={c => { setClientes(prev => [c, ...prev]); setShowAddC(false); router.push(`/mentoria/${c.id}`); }} />}
     </div>
@@ -347,23 +345,29 @@ export default function MentoriaPage() {
 }
 
 // ── Prospectos Pipeline ────────────────────────────────────────────────────────
-function ProspectosPipeline({ prospectos, onSelect }: { prospectos: Prospecto[]; onSelect: (p: Prospecto) => void }) {
+const FASE_TO_STAGE: Record<number, string> = { 0: 'contrato', 1: 'kickoff', 2: 'diagnostico', 3: 'implementacion' };
+
+function ProspectosPipeline({ prospectos, clientes, onSelect }: { prospectos: Prospecto[]; clientes: Cliente[]; onSelect: (p: Prospecto) => void }) {
   const groups = Object.fromEntries(PROSPECTO_STAGES.map(s => [s.key, prospectos.filter(p => p.etapa === s.key)]));
+  const clientesByStage = Object.fromEntries(PROSPECTO_STAGES.map(s => [s.key, clientes.filter(c => FASE_TO_STAGE[c.fase_actual] === s.key)]));
   return (
     <div style={{ flex: 1, overflowX: 'auto', overflowY: 'hidden' }}>
       <div style={{ display: 'flex', gap: 12, padding: '18px 28px', minWidth: 'max-content', alignItems: 'flex-start' }}>
         {PROSPECTO_STAGES.map(stage => {
           const items = groups[stage.key] ?? [];
+          const clientItems = clientesByStage[stage.key] ?? [];
+          const total = items.length + clientItems.length;
           return (
             <div key={stage.key} style={{ width: 210, flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 9, padding: '0 2px' }}>
                 <div style={{ width: 7, height: 7, borderRadius: '50%', background: stage.color, boxShadow: `0 0 6px ${stage.color}` }} />
                 <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-2)' }}>{stage.icon} {stage.label}</span>
-                <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--text-3)', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 99, padding: '1px 6px', fontWeight: 600 }}>{items.length}</span>
+                <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--text-3)', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 99, padding: '1px 6px', fontWeight: 600 }}>{total}</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                 {items.map(p => <ProspectoCard key={p.id} p={p} color={stage.color} onClick={() => onSelect(p)} />)}
-                {!items.length && (
+                {clientItems.map(c => <ClientePipelineCard key={c.id} c={c} color={stage.color} />)}
+                {!total && (
                   <div style={{ height: 56, border: '1px dashed var(--line)', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <span style={{ fontSize: 10, color: 'var(--text-3)' }}>vacío</span>
                   </div>
@@ -392,6 +396,24 @@ function ProspectoCard({ p, color, onClick }: { p: Prospecto; color: string; onC
         {p.industria && <span style={{ fontSize: 10, color: 'var(--text-3)', background: 'var(--surface-2)', padding: '1px 6px', borderRadius: 99 }}>{p.industria}</span>}
         <span style={{ fontSize: 10, color: 'var(--text-3)', marginLeft: 'auto' }}>{timeAgo(p.fecha_ultima_accion ?? p.fecha_creacion)}</span>
       </div>
+    </button>
+  );
+}
+
+function ClientePipelineCard({ c, color }: { c: Cliente; color: string }) {
+  const router = useRouter();
+  return (
+    <button onClick={() => router.push(`/mentoria/${c.id}`)}
+      style={{ width: '100%', background: 'var(--surface)', border: `1px solid ${color}40`, borderLeft: `3px solid ${color}`, borderRadius: 9, padding: '11px 13px', cursor: 'pointer', textAlign: 'left', transition: 'border-color 0.15s' }}
+      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = color; (e.currentTarget as HTMLButtonElement).style.borderLeftColor = color; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = `${color}40`; (e.currentTarget as HTMLButtonElement).style.borderLeftColor = color; }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, marginBottom: 4 }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', lineHeight: 1.3 }}>{c.empresa}</span>
+        <span style={{ fontSize: 9, fontWeight: 700, color: color, background: `${color}20`, padding: '1px 6px', borderRadius: 99, flexShrink: 0 }}>CLIENTE</span>
+      </div>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', marginBottom: 3 }}>{fmt$(c.precio)}</div>
+      <div style={{ fontSize: 10, color: 'var(--text-3)' }}>{c.contacto_nombre || '—'} · Fase {c.fase_actual}</div>
     </button>
   );
 }
@@ -478,10 +500,10 @@ function ClientesGrid({ clientes, onSelect, inactive }: { clientes: Cliente[]; o
 }
 
 // ── Prospect Drawer ────────────────────────────────────────────────────────────
-function ProspectoDrawer({ p, notes, setNotes, onSave, onAdvance, onConvert, converting, onClose }: {
+function ProspectoDrawer({ p, notes, setNotes, onSave, onAdvance, onConvert, onClose }: {
   p: Prospecto; notes: string; setNotes: (v: string) => void;
   onSave: () => void; onAdvance: (s: ProspectoStage) => void;
-  onConvert: () => void; converting: boolean; onClose: () => void;
+  onConvert: () => void; onClose: () => void;
 }) {
   const stage = STAGE_MAP[p.etapa];
   const stageIdx = PROSPECTO_STAGES.findIndex(s => s.key === p.etapa);
@@ -512,8 +534,8 @@ function ProspectoDrawer({ p, notes, setNotes, onSave, onAdvance, onConvert, con
           {/* Convertir a cliente — CTA principal */}
           <div style={{ background: 'rgba(108,77,230,0.06)', border: '1px solid rgba(108,77,230,0.25)', borderRadius: 10, padding: '14px 16px' }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Acción principal</div>
-            <button onClick={onConvert} disabled={converting} style={{ width: '100%', padding: '11px', borderRadius: 8, border: 'none', background: '#6c4de6', color: 'white', fontSize: 13, fontWeight: 700, cursor: converting ? 'default' : 'pointer', opacity: converting ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              {converting ? 'Convirtiendo…' : '✅ Convertir a cliente activo →'}
+            <button onClick={onConvert} style={{ width: '100%', padding: '11px', borderRadius: 8, border: 'none', background: '#6c4de6', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              ✅ Convertir a cliente activo →
             </button>
             <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6, textAlign: 'center' }}>Abre el workspace completo del cliente en Fase 0</p>
           </div>
@@ -631,6 +653,46 @@ function AddClienteModal({ onClose, onSave }: { onClose: () => void; onSave: (c:
       <div><label style={labelSt}>Precio MXN</label><input value={f.precio} onChange={e => upd('precio', e.target.value)} style={inputSt} /></div>
     </div>
   </SimpleModal>;
+}
+
+function ConvertirModal({ prospecto, onClose, onSave }: {
+  prospecto: Prospecto;
+  onClose: () => void;
+  onSave: (datos: { empresa: string; contacto_nombre: string; contacto_cargo: string; precio: number; fecha_inicio: string }) => void;
+}) {
+  const today = typeof window !== 'undefined' ? new Date().toISOString().split('T')[0] : '';
+  const [f, setF] = useState({ empresa: prospecto.empresa, contacto_nombre: prospecto.contacto || '', contacto_cargo: '', precio: '', fecha_inicio: today });
+  const upd = (k: keyof typeof f, v: string) => setF(p => ({ ...p, [k]: v }));
+  const valid = f.empresa.trim() && f.precio.trim() && parseInt(f.precio) > 0;
+  function save() {
+    if (!valid) return;
+    onSave({ empresa: f.empresa, contacto_nombre: f.contacto_nombre, contacto_cargo: f.contacto_cargo, precio: parseInt(f.precio), fecha_inicio: f.fecha_inicio });
+  }
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 60 }} />
+      <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 500, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, zIndex: 70, padding: '24px', boxShadow: '0 40px 80px rgba(0,0,0,0.5)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 18 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>Convertir a cliente: {prospecto.empresa}</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)' }}><X size={15} /></button>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div><label style={labelSt}>Empresa *</label><input value={f.empresa} onChange={e => upd('empresa', e.target.value)} style={inputSt} /></div>
+          <div><label style={labelSt}>Nombre del contacto</label><input value={f.contacto_nombre} onChange={e => upd('contacto_nombre', e.target.value)} style={inputSt} /></div>
+          <div><label style={labelSt}>Cargo</label><input value={f.contacto_cargo} onChange={e => upd('contacto_cargo', e.target.value)} placeholder="CEO, Gerente…" style={inputSt} /></div>
+          <div><label style={labelSt}>Fecha inicio</label><input type="date" value={f.fecha_inicio} onChange={e => upd('fecha_inicio', e.target.value)} style={inputSt} /></div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={labelSt}>Valor del contrato (MXN) *</label>
+            <input value={f.precio} onChange={e => upd('precio', e.target.value)} type="number" placeholder="Ingresa el valor acordado" style={{ ...inputSt, borderColor: !f.precio.trim() ? 'rgba(239,68,68,0.5)' : undefined }} />
+            <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 4 }}>Referencia: &lt;10 empleados → $10,000 · 10-100 → $30,000 · &gt;100 → $50,000</div>
+          </div>
+        </div>
+        <button onClick={save} disabled={!valid} style={{ ...btnPrimary, width: '100%', marginTop: 18, justifyContent: 'center', fontSize: 14, opacity: valid ? 1 : 0.4, cursor: valid ? 'pointer' : 'default' }}>
+          ✅ Confirmar conversión a cliente
+        </button>
+      </div>
+    </>
+  );
 }
 
 function SimpleModal({ title, onClose, onSave, children }: { title: string; onClose: () => void; onSave: () => void; children: React.ReactNode }) {
