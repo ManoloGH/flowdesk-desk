@@ -221,10 +221,91 @@
     .gracias-logo { height: 180px; width: auto; }
     .gracias-text { font-size: clamp(72px, 10vw, 140px); font-weight: 900; letter-spacing: -.04em; line-height: 1; }
 
-    @media (max-width: 900px) {
-      .grid-2, .grid-3, .del-parts, .steps-grid { grid-template-columns: 1fr; }
-      .flow-row { flex-wrap: wrap; }
+    /* ── MOBILE ──────────────────────────────────── */
+    @media (max-width: 768px) {
+      html, body { overflow: hidden; }
+
+      .slide {
+        position: absolute; inset: 0;
+        overflow-y: auto; overflow-x: hidden;
+        justify-content: flex-start;
+        padding: 90px 18px 90px;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .logo-corner { top: 12px; left: 12px; padding: 5px 10px; border-radius: 10px; }
+      .logo-corner img { height: 36px; }
+
+      .nav-bar { padding: 8px 14px; gap: 7px; bottom: 14px; }
+      .nav-dot  { width: 6px; height: 6px; }
+      .nav-btn  { font-size: 18px; }
+      .slide-counter { font-size: 11px; min-width: 36px; }
+
+      h1 { font-size: clamp(28px, 8vw, 42px); }
+      h2 { font-size: clamp(22px, 6.5vw, 34px); }
+      .subtitle { font-size: 15px; margin-top: 10px; }
+      .label { font-size: 11px; margin-bottom: 10px; }
+
+      .cb  { max-width: 100% !important; }
+      .cbc { align-items: flex-start; text-align: left; }
+      .cbc .divider { align-self: flex-start; }
+
+      .grid-2, .grid-3, .del-parts, .steps-grid { grid-template-columns: 1fr; gap: 10px; }
       .steps-grid .step-card:last-child:nth-child(odd) { grid-column: 1; }
+
+      .card { padding: 18px; }
+      .card-icon { font-size: 24px; margin-bottom: 8px; }
+      .card-title { font-size: 15px; }
+      .card-body  { font-size: 13px; }
+
+      .phase-item { padding: 14px 16px; gap: 12px; }
+      .phase-num  { width: 32px; height: 32px; font-size: 14px; }
+      .phase-title { font-size: 14px; }
+      .phase-desc  { font-size: 12px; }
+
+      .step-card { padding: 14px 16px; gap: 12px; }
+      .step-badge { min-width: 34px; height: 34px; font-size: 15px; }
+      .step-card-title { font-size: 14px; }
+      .step-card-desc  { font-size: 12px; }
+
+      .linear-content { padding: 0 0 18px 14px; }
+      .linear-circle  { width: 34px; height: 34px; font-size: 15px; }
+      .linear-title   { font-size: 15px; }
+      .linear-desc    { font-size: 13px; }
+      .linear-left    { width: 40px; }
+
+      .del-wrapper { padding: 20px 16px; }
+      .del-header-title { font-size: 18px; }
+      .del-part   { padding: 16px; }
+      .del-part-title { font-size: 16px; }
+      .del-part-desc  { font-size: 12px; }
+
+      .flow-row { flex-direction: column; gap: 0; }
+      .flow-step { padding: 12px; display: flex; align-items: flex-start; gap: 12px; text-align: left; border-radius: 0; border-bottom: none; border-left: 2px solid rgba(77,187,240,.3); border-radius: 0 12px 12px 0; margin-bottom: 8px; }
+      .flow-step-icon  { font-size: 22px; margin-bottom: 0; flex-shrink: 0; }
+      .flow-step-title { font-size: 14px; margin-bottom: 2px; }
+      .flow-step-desc  { font-size: 12px; }
+      .flow-arrow { display: none; }
+
+      .interview-row { flex-direction: column; gap: 10px; }
+      .interview-col { padding: 16px; }
+      .interview-title { font-size: 15px; }
+      .interview-item  { font-size: 12px; }
+
+      .price-card { padding: 22px 20px; }
+      .price-num  { font-size: 48px; }
+      .price-item { font-size: 13px; }
+
+      .nxt-step { gap: 12px; margin-bottom: 10px; }
+      .nxt-num  { width: 30px; height: 30px; font-size: 13px; }
+      .nxt-title { font-size: 14px; }
+      .nxt-desc  { font-size: 13px; }
+
+      .gracias-logo { height: 100px; }
+      .gracias-text { font-size: clamp(52px, 15vw, 80px); }
+
+      /* three-phase numbers on slide 3 */
+      .phase-nums-row > div { padding: 14px 8px !important; }
     }
   </style>
 </head>
@@ -699,9 +780,13 @@
     if (['ArrowLeft','ArrowUp'].includes(e.key))        { e.preventDefault(); navigate(-1); }
   });
 
-  let tx = 0;
-  document.addEventListener('touchstart', e => { tx = e.touches[0].clientX; });
-  document.addEventListener('touchend',   e => { const dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) navigate(dx < 0 ? 1 : -1); });
+  let tx = 0, ty = 0;
+  document.addEventListener('touchstart', e => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; });
+  document.addEventListener('touchend',   e => {
+    const dx = e.changedTouches[0].clientX - tx;
+    const dy = e.changedTouches[0].clientY - ty;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) navigate(dx < 0 ? 1 : -1);
+  });
 </script>
 </body>
 </html>
