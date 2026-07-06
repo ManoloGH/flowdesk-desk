@@ -117,14 +117,16 @@
     }
 
     .logo-area {
-      display: flex;
+      display: inline-flex;
       flex-direction: column;
       gap: 4px;
+      background: rgba(255,255,255,.96);
+      border-radius: 8px;
+      padding: 6px 14px;
     }
     .logo-img {
-      height: 42px;
+      height: 48px;
       width: auto;
-      filter: brightness(0) invert(1);
     }
     .logo-fallback {
       font-family: 'DM Serif Display', serif;
@@ -1073,7 +1075,7 @@
         <div class="sec-label">08 &middot; Acuerdo y Firma</div>
         <h2 class="sec-titulo">NDA y firma<br>digital</h2>
 
-        <div class="nda-block">
+        <div class="nda-block" id="nda-section">
           <div class="nda-titulo">&#128203; Acuerdo de Confidencialidad (NDA)</div>
           <div class="nda-texto">
             <p>Ambas partes acuerdan mantener en estricta confidencialidad toda informaci&#243;n t&#233;cnica, comercial, metodol&#243;gica y de procesos intercambiada durante la relaci&#243;n de negocio descrita en esta propuesta. Esta obligaci&#243;n permanece vigente por <strong>dos (2) a&#241;os</strong> a partir de la fecha de firma, independientemente de que la relaci&#243;n comercial contin&#250;e o concluya.</p>
@@ -1113,7 +1115,7 @@
           <div class="firma-checks">
             <label class="firma-check-row">
               <input type="checkbox" id="fd-check-nda">
-              <span>He le&#237;do y acepto el <strong>Acuerdo de Confidencialidad (NDA)</strong> descrito en esta secci&#243;n.</span>
+              <span>He le&#237;do y acepto el <a href="#nda-section" style="color:inherit;text-decoration:underline;text-underline-offset:2px;"><strong>Acuerdo de Confidencialidad (NDA)</strong></a> &#8212; puedes leerlo en esta misma p&#225;gina.</span>
             </label>
             <label class="firma-check-row">
               <input type="checkbox" id="fd-check-propuesta">
@@ -1211,6 +1213,9 @@
       document.getElementById('conf-fecha').textContent  = fechaStr;
       document.getElementById('firmaForm').style.display         = 'none';
       document.getElementById('firmaConfirmacion').style.display = 'block';
+      const subj = encodeURIComponent('Propuesta firmada: ' + document.title);
+      const bod  = encodeURIComponent('Propuesta firmada' + String.fromCharCode(10) + 'Folio: MS-TA-2026-001' + String.fromCharCode(10) + 'Fecha: ' + fechaStr + String.fromCharCode(10) + 'Nombre: ' + nombre + String.fromCharCode(10) + 'Cargo: ' + cargo + String.fromCharCode(10) + 'Empresa: ' + empresa + String.fromCharCode(10) + 'Email: ' + email);
+      setTimeout(function(){ window.location.href = 'mailto:manolo@mentoriasystems.com?subject=' + subj + '&body=' + bod; }, 700);
     }
   </script>
 </body>
