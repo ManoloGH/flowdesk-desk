@@ -1461,7 +1461,8 @@
     if (docHeader) observer.observe(docHeader);
 
     // Firma digital
-    const N8N_WEBHOOK_URL = ''; // Pegar URL del webhook de n8n aqui
+    const N8N_WEBHOOK_URL = ''; // Opcion A: pegar URL del webhook de n8n
+      const WEB3FORMS_KEY   = ''; // Opcion B: llave de web3forms.com (gratis)
 
     (function() {
       const now = new Date();
@@ -1499,10 +1500,19 @@
         timestamp: now.toISOString(), nda_aceptado: true
       };
       try {
-        if (N8N_WEBHOOK_URL) await fetch(N8N_WEBHOOK_URL, {
-          method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
-        });
-      } catch(e) { console.warn('Webhook no disponible:', e.message); }
+        if (N8N_WEBHOOK_URL) {
+          await fetch(N8N_WEBHOOK_URL, {
+            method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+          });
+        } else if (WEB3FORMS_KEY) {
+          const fd = new FormData();
+          fd.append('access_key', WEB3FORMS_KEY);
+          fd.append('subject', 'Propuesta firmada: ' + payload.folio);
+          fd.append('from_name', nombre + ' - ' + empresa);
+          fd.append('message', 'Propuesta firmada digitalmente\n\nFolio: ' + payload.folio + '\nFecha: ' + fechaStr + '\nNombre: ' + nombre + '\nCargo: ' + cargo + '\nEmpresa: ' + empresa + '\nEmail: ' + email + '\n\nNDA: Si\nTerminos: Si');
+          await fetch('https://api.web3forms.com/submit', { method: 'POST', body: fd });
+        }
+      } catch(e) { console.warn('No se pudo enviar notificacion:', e.message); }
 
       const fechaStr = now.toLocaleDateString('es-MX', {year:'numeric',month:'long',day:'numeric'})
         + ' a las ' + now.toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit'});
