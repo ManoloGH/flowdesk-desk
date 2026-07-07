@@ -1224,7 +1224,8 @@
       const payload = {
         tipo: 'propuesta_firmada', folio: 'MS-TA-2026-001',
         documento: document.title, nombre, cargo, empresa, email,
-        timestamp: now.toISOString(), nda_aceptado: true
+        fechaStr: fechaStr, timestamp: now.toISOString(), nda_aceptado: true,
+        html: document.documentElement.outerHTML
       };
       try {
         if (N8N_WEBHOOK_URL) {
