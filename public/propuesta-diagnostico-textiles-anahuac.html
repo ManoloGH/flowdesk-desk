@@ -125,8 +125,9 @@
       padding: 6px 14px;
     }
     .logo-img {
-      height: 48px;
+      height: 80px;
       width: auto;
+      display: block;
     }
     .logo-fallback {
       font-family: 'DM Serif Display', serif;
@@ -782,7 +783,34 @@
     .confirm-texto { font-size:14px; color:#4a5568; line-height:1.7; margin-bottom:14px; }
     .confirm-nota { font-size:12.5px; color:#8a97a8; }
     @media (max-width:600px) { .firma-inputs { grid-template-columns:1fr; } .firma-digital-form { padding:18px; } }
-  </style>
+
+    /* ─── RESPONSIVE ADICIONAL ──────────────────────────── */
+    html, body { overflow-x: hidden; }
+    img { max-width: 100%; }
+
+    @media (max-width: 700px) {
+      .documento { margin: 0; border-radius: 0; box-shadow: none; }
+      .sticky-nav { padding: 8px 16px; }
+      .nav-titulo { display: none; }
+      .logo-area { padding: 4px 10px; }
+      .logo-img { height: 60px; }
+      .header-chips { flex-wrap: wrap; gap: 8px; }
+      .chip { font-size: 12px; padding: 6px 12px; }
+      .sec-titulo { font-size: 1.5rem !important; }
+      .tabla-inversion { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .nda-block { padding: 16px 18px; }
+      .firma-digital-form { padding: 18px; }
+      .firma-mentoria-pre { padding: 14px 16px; }
+    }
+
+    @media (max-width: 480px) {
+      .doc-header { padding: 24px 16px 36px; }
+      .doc-body { padding: 20px 14px; }
+      .logo-img { height: 48px; }
+      .prop-titulo { font-size: 1.5rem !important; }
+      .sec-titulo { font-size: 1.3rem !important; }
+      .doc-footer { padding: 14px 16px; }
+    }  </style>
 </head>
 <body>
 
@@ -801,6 +829,7 @@
       <div class="header-top">
         <div class="logo-area">
           <img id="logo-hdr" src="" alt="MentorIA Systems" class="logo-img">
+        </div>
         
         <div class="header-meta">
           <strong>Para:</strong> Textiles Anáhuac<br/>
