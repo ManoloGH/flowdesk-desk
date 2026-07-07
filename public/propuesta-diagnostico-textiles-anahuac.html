@@ -1219,6 +1219,8 @@
       btn.disabled = true; btn.textContent = 'Enviando...';
 
       const now = new Date();
+      const fechaStr = now.toLocaleDateString('es-MX', {year:'numeric',month:'long',day:'numeric'})
+        + ' a las ' + now.toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit'});
       const payload = {
         tipo: 'propuesta_firmada', folio: 'MS-TA-2026-001',
         documento: document.title, nombre, cargo, empresa, email,
@@ -1239,8 +1241,6 @@
         }
       } catch(e) { console.warn('No se pudo enviar notificacion:', e.message); }
 
-      const fechaStr = now.toLocaleDateString('es-MX', {year:'numeric',month:'long',day:'numeric'})
-        + ' a las ' + now.toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit'});
       document.getElementById('conf-nombre').textContent = nombre;
       document.getElementById('conf-cargo').textContent  = cargo + ', ' + empresa;
       document.getElementById('conf-fecha').textContent  = fechaStr;
