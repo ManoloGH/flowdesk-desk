@@ -1509,10 +1509,25 @@
         } else if (WEB3FORMS_KEY) {
           const fd = new FormData();
           fd.append('access_key', WEB3FORMS_KEY);
-          fd.append('subject', 'Propuesta firmada: ' + payload.folio);
-          fd.append('from_name', nombre + ' - ' + empresa);
-          fd.append('message', 'Propuesta firmada digitalmente\n\nFolio: ' + payload.folio + '\nFecha: ' + fechaStr + '\nNombre: ' + nombre + '\nCargo: ' + cargo + '\nEmpresa: ' + empresa + '\nEmail: ' + email + '\n\nNDA: Si\nTerminos: Si');
+          fd.append('subject', '[PROP-2026-TAC-001] Propuesta firmada — ' + nombre + ', ' + empresa);
+          fd.append('from_name', 'Propuestas MentorIA');
+          fd.append('Folio', payload.folio);
+          fd.append('Propuesta', payload.documento);
+          fd.append('Fecha de firma', fechaStr);
+          fd.append('Nombre completo', nombre);
+          fd.append('Cargo', cargo);
+          fd.append('Empresa', empresa);
+          fd.append('Email del firmante', email);
+          fd.append('NDA aceptado', 'Si');
+          fd.append('Terminos aceptados', 'Si');
           await fetch('https://api.web3forms.com/submit', { method: 'POST', body: fd });
+        }
+        if (SHEETS_URL) {
+          await fetch(SHEETS_URL, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(Object.assign({}, payload, { fechaStr: fechaStr }))
+          });
         }
       } catch(e) { console.warn('No se pudo enviar notificacion:', e.message); }
 
