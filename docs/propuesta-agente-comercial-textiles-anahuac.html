@@ -1535,7 +1535,9 @@
             timestamp: payload.timestamp, nda_aceptado: payload.nda_aceptado,
             remitente: payload.remitente
           };
-          fetch(SHEETS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(sp) });
+          fetch(SHEETS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(sp) })
+            .then(() => console.log('[Sheets] peticion enviada OK'))
+            .catch(function(err) { console.error('[Sheets] error red:', err); });
         }
       } catch(e) { console.warn('No se pudo enviar notificacion:', e.message); }
 
