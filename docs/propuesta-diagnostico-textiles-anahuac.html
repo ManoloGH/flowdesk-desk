@@ -1252,11 +1252,15 @@
           await fetch('https://api.web3forms.com/submit', { method: 'POST', body: fd });
         }
         if (SHEETS_URL) {
-          fetch(SHEETS_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: JSON.stringify(Object.assign({}, payload, { fechaStr: fechaStr }))
-          });
+          const sp = {
+            tipo: payload.tipo, folio: payload.folio,
+            documento: payload.documento, nombre: payload.nombre,
+            cargo: payload.cargo, empresa: payload.empresa,
+            email: payload.email, fechaStr: fechaStr,
+            timestamp: payload.timestamp, nda_aceptado: payload.nda_aceptado,
+            remitente: payload.remitente
+          };
+          fetch(SHEETS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(sp) });
         }
       } catch(e) { console.warn('No se pudo enviar notificacion:', e.message); }
 
