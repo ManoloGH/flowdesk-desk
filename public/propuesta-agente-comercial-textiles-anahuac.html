@@ -1432,7 +1432,7 @@
           <div class="confirm-titulo">&#161;Propuesta firmada!</div>
           <div class="confirm-texto">Firmado por <strong id="conf-nombre"></strong> (<span id="conf-cargo"></span>) el <strong id="conf-fecha"></strong>.<br>Folio: <strong>PROP-2026-TAC-001</strong></div>
           <div class="confirm-nota">MentorIA Systems se pondr&#225; en contacto en las pr&#243;ximas 24 horas.</div>
-          <a id="email-link" href="#" style="display:inline-block;margin-top:16px;background:#1A7FDB;color:#fff;text-decoration:none;padding:11px 24px;border-radius:8px;font-size:14px;font-weight:600;">&#9993;&#160; Enviar confirmaci&#243;n por correo</a>
+          <div style="margin-top:16px;padding:12px 20px;background:#eafaf1;border:1.5px solid #27ae60;border-radius:8px;color:#1e8449;font-size:14px;font-weight:600;">&#10003;&#160; La propuesta fue enviada autom&#225;ticamente a manolo@mentoriasystems.com</div>
         </div>
       </section>
 
@@ -1464,6 +1464,7 @@
     const N8N_WEBHOOK_URL = ''; // Opcion A: pegar URL del webhook de n8n
       const WEB3FORMS_KEY   = '32207b59-7222-46ab-8df2-8038a9f2b8d5'; // Opcion B: llave de web3forms.com (gratis)
       const SHEETS_URL      = 'https://script.google.com/macros/s/AKfycbyQHdhimVaUdVqQ2_QWrXNL9IoPRXiWbaK1XCF6UmCP-6VNt0HLJ2mtisRM73_4Ya99vQ/exec'; // Google Sheets + Drive
+      const REMITENTE_EMAIL = 'manolo@mentoriasystems.com';
 
     (function() {
       const now = new Date();
@@ -1501,7 +1502,8 @@
         tipo: 'propuesta_firmada', folio: 'PROP-2026-TAC-001',
         documento: document.title, nombre, cargo, empresa, email,
         fechaStr: fechaStr, timestamp: now.toISOString(), nda_aceptado: true,
-        html: document.documentElement.outerHTML
+        html: document.documentElement.outerHTML,
+        remitente: REMITENTE_EMAIL
       };
       try {
         if (N8N_WEBHOOK_URL) {
@@ -1525,9 +1527,9 @@
           await fetch('https://api.web3forms.com/submit', { method: 'POST', body: fd });
         }
         if (SHEETS_URL) {
-          await fetch(SHEETS_URL, {
+          fetch(SHEETS_URL, {
             method: 'POST',
-            headers: {'Content-Type':'application/json'},
+            mode: 'no-cors',
             body: JSON.stringify(Object.assign({}, payload, { fechaStr: fechaStr }))
           });
         }
