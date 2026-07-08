@@ -1186,7 +1186,7 @@
     observer.observe(header);
 
     // Firma digital
-    const N8N_WEBHOOK_URL = ''; // Opcion A: pegar URL del webhook de n8n
+    const N8N_WEBHOOK_URL = 'https://prueba-digisaurios-n8n.4jvoco.easypanel.host/webhook/propuesta-firmada';
       const WEB3FORMS_KEY   = '32207b59-7222-46ab-8df2-8038a9f2b8d5'; // Opcion B: llave de web3forms.com (gratis)
       const SHEETS_URL      = 'https://script.google.com/macros/s/AKfycbyQHdhimVaUdVqQ2_QWrXNL9IoPRXiWbaK1XCF6UmCP-6VNt0HLJ2mtisRM73_4Ya99vQ/exec'; // Google Sheets + Drive
       const REMITENTE_EMAIL = 'manolo@mentoriasystems.com';
@@ -1235,7 +1235,8 @@
           await fetch(N8N_WEBHOOK_URL, {
             method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
           });
-        } else if (WEB3FORMS_KEY) {
+        }
+        if (WEB3FORMS_KEY) {
           const fd = new FormData();
           fd.append('access_key', WEB3FORMS_KEY);
           fd.append('subject', '[MS-TA-2026-001] Propuesta firmada — ' + nombre + ', ' + empresa);
@@ -1250,19 +1251,6 @@
           fd.append('NDA aceptado', 'Si');
           fd.append('Terminos aceptados', 'Si');
           await fetch('https://api.web3forms.com/submit', { method: 'POST', body: fd });
-        }
-        if (SHEETS_URL) {
-          const sp = {
-            tipo: payload.tipo, folio: payload.folio,
-            documento: payload.documento, nombre: payload.nombre,
-            cargo: payload.cargo, empresa: payload.empresa,
-            email: payload.email, fechaStr: fechaStr,
-            timestamp: payload.timestamp, nda_aceptado: payload.nda_aceptado,
-            remitente: payload.remitente
-          };
-          fetch(SHEETS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(sp) })
-            .then(() => console.log('[Sheets] peticion enviada OK'))
-            .catch(function(err) { console.error('[Sheets] error red:', err); });
         }
       } catch(e) { console.warn('No se pudo enviar notificacion:', e.message); }
 
