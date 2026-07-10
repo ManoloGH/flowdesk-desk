@@ -1465,6 +1465,7 @@
       const WEB3FORMS_KEY   = '32207b59-7222-46ab-8df2-8038a9f2b8d5'; // Opcion B: llave de web3forms.com (gratis)
       const SHEETS_URL      = 'https://script.google.com/macros/s/AKfycbyQHdhimVaUdVqQ2_QWrXNL9IoPRXiWbaK1XCF6UmCP-6VNt0HLJ2mtisRM73_4Ya99vQ/exec'; // Google Sheets + Drive
       const REMITENTE_EMAIL = 'manolo@mentoriasystems.com';
+      const PROPUESTA_URL   = 'https://htmlpreview.github.io/?https://github.com/ManoloGH/flowdesk-desk/blob/main/docs/propuesta-agente-comercial-textiles-anahuac.html';
 
     (function() {
       const now = new Date();
@@ -1503,7 +1504,8 @@
         documento: document.title, nombre, cargo, empresa, email,
         fechaStr: fechaStr, timestamp: now.toISOString(), nda_aceptado: true,
         html: document.documentElement.outerHTML,
-        remitente: REMITENTE_EMAIL
+        remitente: REMITENTE_EMAIL,
+        url: PROPUESTA_URL
       };
       try {
         if (N8N_WEBHOOK_URL) {
@@ -1525,7 +1527,15 @@
           fd.append('Email del firmante', email);
           fd.append('NDA aceptado', 'Si');
           fd.append('Terminos aceptados', 'Si');
+          fd.append('Link propuesta', PROPUESTA_URL);
           await fetch('https://api.web3forms.com/submit', { method: 'POST', body: fd });
+        }
+        if (SHEETS_URL) {
+          const qs = new URLSearchParams({
+            folio: payload.folio, documento: payload.documento,
+            nombre, cargo, empresa, email, fecha: fechaStr, url: PROPUESTA_URL
+          });
+          await fetch(SHEETS_URL + '?' + qs.toString());
         }
       } catch(e) { console.warn('No se pudo enviar notificacion:', e.message); }
 
