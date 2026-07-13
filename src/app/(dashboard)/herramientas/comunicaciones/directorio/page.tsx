@@ -1,17 +1,18 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Search, Plus, UserCheck, UserX, Pencil } from 'lucide-react';
+import { api } from '@/lib/api';
 
 type ContactType = 'employee' | 'client' | 'lead';
-type ContactStatus = 'active' | 'inactive';
 
 interface Contact {
   id: string;
   name: string;
   type: ContactType;
   phone: string;
-  status: ContactStatus;
+  status: 'active';
   role?: string;
+  source: 'teamslot' | 'contact';
 }
 
 const TYPE_LABEL: Record<ContactType, string> = {
@@ -26,15 +27,7 @@ const TYPE_COLOR: Record<ContactType, string> = {
   lead: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
 };
 
-const MOCK_CONTACTS: Contact[] = [
-  { id: '1', name: 'Ana García',       type: 'employee', phone: '+52 55 1111 0001', status: 'active',   role: 'Ventas' },
-  { id: '2', name: 'Carlos López',     type: 'employee', phone: '+52 55 1111 0002', status: 'active',   role: 'Operaciones' },
-  { id: '3', name: 'Empresa Acme SA',  type: 'client',   phone: '+52 55 2222 0001', status: 'active' },
-  { id: '4', name: 'Juan Pérez',       type: 'client',   phone: '+52 55 2222 0002', status: 'inactive' },
-  { id: '5', name: 'María Rodríguez',  type: 'lead',     phone: '+52 55 3333 0001', status: 'active' },
-];
-
-const TYPE_FILTERS: { key: string; label: string }[] = [
+const TYPE_FILTERS = [
   { key: 'all',      label: 'Todos' },
   { key: 'employee', label: 'Empleados' },
   { key: 'client',   label: 'Clientes' },
@@ -42,16 +35,27 @@ const TYPE_FILTERS: { key: string; label: string }[] = [
 ];
 
 export default function DirectorioPage() {
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
-  const [contacts] = useState<Contact[]>(MOCK_CONTACTS);
 
-  const filtered = contacts.filter(c => {
-    const q = search.toLowerCase();
-    const matchSearch = !q || c.name.toLowerCase().includes(q) || c.phone.includes(q);
-    const matchType = typeFilter === 'all' || c.type === typeFilter;
-    return matchSearch && matchType;
-  });
+  const fetchContacts = useCallback((q: string, type: string) => {
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (q) params.set('search', q);
+    if (type !== 'all') params.set('type', type);
+    const query = params.toString();
+    api.get<Contact[]>(`/communications/contacts${query ? `?${query}` : ''}`)
+      .then(setContacts)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => fetchContacts(search, typeFilter), 300);
+    return () => clearTimeout(t);
+  }, [search, typeFilter, fetchContacts]);
 
   return (
     <div className="px-6 py-5 space-y-4">
@@ -59,7 +63,6 @@ export default function DirectorioPage() {
         El directorio mapea números de teléfono a identidades. El motor de ruteo lo consulta en cada mensaje entrante para decidir a qué agente enviarlo.
       </p>
 
-      {/* Controls */}
       <div className="flex gap-2 flex-wrap">
         <div className="relative flex-1 min-w-48">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-600" />
@@ -89,7 +92,6 @@ export default function DirectorioPage() {
         </button>
       </div>
 
-      {/* Table */}
       <div className="bg-[#0a0f1e] border border-white/5 rounded-xl overflow-hidden">
         <table className="w-full text-xs">
           <thead>
@@ -103,7 +105,15 @@ export default function DirectorioPage() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map(c => (
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i} className="border-b border-white/[0.03]">
+                  <td colSpan={6} className="px-4 py-3">
+                    <div className="h-3 bg-white/5 rounded animate-pulse" />
+                  </td>
+                </tr>
+              ))
+            ) : contacts.map(c => (
               <tr key={c.id} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors">
                 <td className="px-4 py-3 font-medium text-white">{c.name}</td>
                 <td className="px-4 py-3">
@@ -114,10 +124,9 @@ export default function DirectorioPage() {
                 <td className="px-4 py-3 font-mono text-gray-400">{c.phone}</td>
                 <td className="px-4 py-3 text-gray-500">{c.role ?? '—'}</td>
                 <td className="px-4 py-3">
-                  {c.status === 'active'
-                    ? <span className="flex items-center gap-1 text-emerald-400"><UserCheck className="w-3 h-3" /> Activo</span>
-                    : <span className="flex items-center gap-1 text-gray-600"><UserX className="w-3 h-3" /> Inactivo</span>
-                  }
+                  <span className="flex items-center gap-1 text-emerald-400">
+                    <UserCheck className="w-3 h-3" /> Activo
+                  </span>
                 </td>
                 <td className="px-4 py-3">
                   <button className="text-gray-600 hover:text-cyan-400 transition-colors">
@@ -128,7 +137,7 @@ export default function DirectorioPage() {
             ))}
           </tbody>
         </table>
-        {filtered.length === 0 && (
+        {!loading && contacts.length === 0 && (
           <div className="py-12 text-center text-gray-600 text-xs">Sin contactos que coincidan</div>
         )}
       </div>

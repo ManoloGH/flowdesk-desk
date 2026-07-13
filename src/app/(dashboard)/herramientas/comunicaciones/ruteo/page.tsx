@@ -1,6 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Users, UserCheck, HelpCircle, Plug, Pencil, Check, X } from 'lucide-react';
+import { api } from '@/lib/api';
 
 type SlotType = 'employee' | 'client' | 'unknown';
 
@@ -8,63 +9,31 @@ interface RoutingSlot {
   type: SlotType;
   label: string;
   description: string;
-  icon: React.ElementType;
-  iconColor: string;
   agentLabel: string | null;
   agentConnected: boolean;
   fallbackMessage: string;
   active: boolean;
 }
 
-const INITIAL_SLOTS: RoutingSlot[] = [
-  {
-    type: 'employee',
-    label: 'Empleados',
-    description: 'Números registrados como empleados en el Directorio.',
-    icon: UserCheck,
-    iconColor: 'text-violet-400',
-    agentLabel: 'Asistente Personal (HOS)',
-    agentConnected: true,
-    fallbackMessage: 'Hola {nombre}, ¿en qué te puedo ayudar?',
-    active: true,
-  },
-  {
-    type: 'client',
-    label: 'Clientes',
-    description: 'Números registrados como clientes activos en el Directorio.',
-    icon: Users,
-    iconColor: 'text-emerald-400',
-    agentLabel: null,
-    agentConnected: false,
-    fallbackMessage: 'Recibimos tu mensaje. Un asesor te atenderá en breve.',
-    active: true,
-  },
-  {
-    type: 'unknown',
-    label: 'Desconocidos / Leads',
-    description: 'Cualquier número que no esté registrado en el Directorio.',
-    icon: HelpCircle,
-    iconColor: 'text-amber-400',
-    agentLabel: null,
-    agentConnected: false,
-    fallbackMessage: 'Gracias por escribirnos. En breve te atendemos.',
-    active: true,
-  },
-];
+const SLOT_META: Record<SlotType, { icon: React.ElementType; iconColor: string }> = {
+  employee: { icon: UserCheck,  iconColor: 'text-violet-400' },
+  client:   { icon: Users,      iconColor: 'text-emerald-400' },
+  unknown:  { icon: HelpCircle, iconColor: 'text-amber-400' },
+};
 
 function SlotCard({ slot }: { slot: RoutingSlot }) {
   const [editingMsg, setEditingMsg] = useState(false);
   const [msg, setMsg] = useState(slot.fallbackMessage);
   const [draft, setDraft] = useState(slot.fallbackMessage);
-  const Icon = slot.icon;
+  const meta = SLOT_META[slot.type];
+  const Icon = meta.icon;
 
   return (
     <div className="bg-[#0a0f1e] border border-white/5 rounded-xl p-5 space-y-4">
-      {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center">
-            <Icon className={`w-4 h-4 ${slot.iconColor}`} />
+            <Icon className={`w-4 h-4 ${meta.iconColor}`} />
           </div>
           <div>
             <p className="text-sm font-semibold text-white">{slot.label}</p>
@@ -78,7 +47,6 @@ function SlotCard({ slot }: { slot: RoutingSlot }) {
         </span>
       </div>
 
-      {/* Agent */}
       <div className="flex items-center justify-between rounded-lg border border-white/5 px-3 py-2.5 bg-black/20">
         <div className="flex items-center gap-2">
           <Plug className={`w-3.5 h-3.5 ${slot.agentConnected ? 'text-cyan-400' : 'text-gray-700'}`} />
@@ -93,7 +61,6 @@ function SlotCard({ slot }: { slot: RoutingSlot }) {
         )}
       </div>
 
-      {/* Fallback message */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <p className="text-[10px] text-gray-600 uppercase tracking-wider">Mensaje cuando no hay agente</p>
@@ -122,7 +89,15 @@ function SlotCard({ slot }: { slot: RoutingSlot }) {
 }
 
 export default function RuteoPage() {
-  const [slots] = useState<RoutingSlot[]>(INITIAL_SLOTS);
+  const [slots, setSlots] = useState<RoutingSlot[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get<RoutingSlot[]>('/communications/routing')
+      .then(setSlots)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div className="px-6 py-5 space-y-4">
@@ -130,9 +105,17 @@ export default function RuteoPage() {
         El motor de ruteo identifica quién escribió y envía el mensaje al agente correcto. Hay tres slots fijos — uno por tipo de contacto. Conecta un agente a cada slot cuando esté listo.
       </p>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {slots.map(slot => <SlotCard key={slot.type} slot={slot} />)}
-      </div>
+      {loading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {[0, 1, 2].map(i => (
+            <div key={i} className="bg-[#0a0f1e] border border-white/5 rounded-xl p-5 h-48 animate-pulse" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {slots.map(slot => <SlotCard key={slot.type} slot={slot} />)}
+        </div>
+      )}
 
       <div className="bg-[#0a0f1e] border border-white/5 rounded-xl p-4">
         <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-2">Lógica de ruteo</p>

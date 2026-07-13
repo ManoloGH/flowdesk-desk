@@ -1,8 +1,24 @@
 'use client';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { MessageSquare, Phone, CheckCircle2, XCircle, AlertCircle, ExternalLink } from 'lucide-react';
+import { api } from '@/lib/api';
 
 type ChannelStatus = 'connected' | 'disconnected' | 'unconfigured';
+
+interface Channel {
+  id: string;
+  name: string;
+  detail: string;
+  status: ChannelStatus;
+  number: string | null;
+  configHref: string;
+}
+
+const CHANNEL_META: Record<string, { icon: React.ElementType; description: string }> = {
+  whatsapp: { icon: MessageSquare, description: 'Canal principal para mensajes con prospectos, clientes y equipo.' },
+  phone:    { icon: Phone,         description: 'Llamadas entrantes y salientes con IA de voz (Agente Conmutador).' },
+};
 
 function StatusBadge({ status }: { status: ChannelStatus }) {
   if (status === 'connected') return (
@@ -22,66 +38,65 @@ function StatusBadge({ status }: { status: ChannelStatus }) {
   );
 }
 
-const CHANNELS = [
-  {
-    id: 'whatsapp',
-    icon: MessageSquare,
-    name: 'WhatsApp',
-    description: 'Canal principal para mensajes con prospectos, clientes y equipo.',
-    detail: 'Evolution API',
-    status: 'connected' as ChannelStatus,
-    number: '+52 55 0000 0000',
-    configHref: '/integrations',
-  },
-  {
-    id: 'phone',
-    icon: Phone,
-    name: 'Teléfono',
-    description: 'Llamadas entrantes y salientes con IA de voz (Agente Conmutador).',
-    detail: 'Asterisk ARI',
-    status: 'unconfigured' as ChannelStatus,
-    number: null,
-    configHref: '/settings',
-  },
-];
-
 export default function CanalesPage() {
+  const [channels, setChannels] = useState<Channel[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get<Channel[]>('/communications/channels')
+      .then(setChannels)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <div className="px-6 py-5 space-y-4">
       <p className="text-xs text-gray-500">Los canales son los puntos de entrada de comunicación. Cada mensaje entrante pasa por el canal al motor de ruteo.</p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {CHANNELS.map(({ id, icon: Icon, name, description, detail, status, number, configHref }) => (
-          <div key={id} className="bg-[#0a0f1e] border border-white/5 rounded-xl p-5 space-y-4">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-                  <Icon className="w-4 h-4 text-cyan-400" />
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[0, 1].map(i => (
+            <div key={i} className="bg-[#0a0f1e] border border-white/5 rounded-xl p-5 h-40 animate-pulse" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {channels.map(ch => {
+            const meta = CHANNEL_META[ch.id];
+            const Icon = meta?.icon ?? MessageSquare;
+            return (
+              <div key={ch.id} className="bg-[#0a0f1e] border border-white/5 rounded-xl p-5 space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+                      <Icon className="w-4 h-4 text-cyan-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-white">{ch.name}</p>
+                      <p className="text-[10px] text-gray-600">{ch.detail}</p>
+                    </div>
+                  </div>
+                  <StatusBadge status={ch.status} />
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-white">{name}</p>
-                  <p className="text-[10px] text-gray-600">{detail}</p>
-                </div>
+
+                <p className="text-xs text-gray-500">{meta?.description}</p>
+
+                {ch.number && (
+                  <p className="text-xs font-mono text-cyan-300 bg-cyan-500/10 px-2.5 py-1 rounded-lg w-fit">{ch.number}</p>
+                )}
+
+                <Link
+                  href={ch.configHref}
+                  className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-cyan-300 transition-colors"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  {ch.status === 'unconfigured' ? 'Configurar canal' : 'Ver configuración'}
+                </Link>
               </div>
-              <StatusBadge status={status} />
-            </div>
-
-            <p className="text-xs text-gray-500">{description}</p>
-
-            {number && (
-              <p className="text-xs font-mono text-cyan-300 bg-cyan-500/10 px-2.5 py-1 rounded-lg w-fit">{number}</p>
-            )}
-
-            <Link
-              href={configHref}
-              className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-cyan-300 transition-colors"
-            >
-              <ExternalLink className="w-3 h-3" />
-              {status === 'unconfigured' ? 'Configurar canal' : 'Ver configuración'}
-            </Link>
-          </div>
-        ))}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg px-4 py-3">
         <p className="text-xs text-amber-400/80">
