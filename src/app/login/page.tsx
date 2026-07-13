@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/store/auth';
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1').replace('/api/v1', '');
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 
 function isSuperAdmin(user: { role?: string; platform_admin?: boolean } | null) {
   return user?.role === 'superadmin' || user?.platform_admin === true;
@@ -39,7 +39,7 @@ export default function LoginPage() {
   }
 
   function handleGoogleLogin() {
-    window.location.href = `${API_BASE}/auth/google`;
+    window.location.href = `${API_URL}/auth/google`;
   }
 
   return (
