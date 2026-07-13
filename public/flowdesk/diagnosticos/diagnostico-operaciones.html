@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Diagnóstico — Área de Operaciones | MentorIA</title>
+<title>DiagnÃ³stico â€” Ãrea de Operaciones | MentorIA</title>
 <style>
   :root {
     --brand-dark:#0a0a14;--brand-purple:#6c4de6;--brand-purple-light:#8b6ef5;--brand-purple-dim:rgba(108,77,230,0.15);--brand-cyan:#00d4ff;
@@ -67,9 +67,9 @@
   <div class="header-inner">
     <div style="display:flex;align-items:center;gap:10px;">
       <div class="logo-dot">M</div>
-      <div><div class="logo-text">MentorIA Systems</div><div class="logo-sub">Diagnóstico de Área</div></div>
+      <div><div class="logo-text">MentorIA Systems</div><div class="logo-sub">DiagnÃ³stico de Ãrea</div></div>
     </div>
-    <div class="header-title">Área de Operaciones<br><span style="color:var(--brand-purple-light);font-weight:600;">7 secciones</span></div>
+    <div class="header-title">Ãrea de Operaciones<br><span style="color:var(--brand-purple-light);font-weight:600;">7 secciones</span></div>
   </div>
 </header>
 <div class="progress-bar-wrap">
@@ -80,16 +80,16 @@
 </div>
 <main class="main">
   <div class="hero">
-    <div class="hero-tag">⚙️ Diagnóstico MentorIA</div>
-    <h1>Área de Operaciones</h1>
-    <p>Captura la operación diaria de la empresa: cómo fluye el trabajo, las herramientas que usan, dónde se pierden horas y qué procesos son candidatos a automatización con IA.</p>
+    <div class="hero-tag">âš™ï¸ DiagnÃ³stico MentorIA</div>
+    <h1>Ãrea de Operaciones</h1>
+    <p>Captura la operaciÃ³n diaria de la empresa: cÃ³mo fluye el trabajo, las herramientas que usan, dÃ³nde se pierden horas y quÃ© procesos son candidatos a automatizaciÃ³n con IA.</p>
   </div>
 
   <!-- S1 -->
   <div class="section">
-    <div class="section-header"><div class="section-num">1</div><div><div class="section-title">Datos Generales y Estructura</div><div class="section-desc">Quiénes son y cómo está organizada la operación</div></div></div>
+    <div class="section-header"><div class="section-num">1</div><div><div class="section-title">Datos Generales y Estructura</div><div class="section-desc">QuiÃ©nes son y cÃ³mo estÃ¡ organizada la operaciÃ³n</div></div></div>
     <div class="two-col">
-      <div class="field"><label class="field-label" for="empresa">Empresa</label><input type="text" id="empresa" placeholder="Nombre comercial o razón social"></div>
+      <div class="field"><label class="field-label" for="empresa">Empresa</label><input type="text" id="empresa" placeholder="Nombre comercial o razÃ³n social"></div>
       <div class="field"><label class="field-label" for="contacto">Contacto</label><input type="text" id="contacto" placeholder="Nombre completo"></div>
     </div>
     <div class="field"><label class="field-label">Rol del contacto</label><div class="options-list" id="rol-opts"></div></div>
@@ -97,96 +97,96 @@
       <div class="field"><label class="field-label">Empleados totales</label><div class="options-list" id="tamano-opts"></div></div>
       <div class="field"><label class="field-label">Personas en operaciones</label><div class="options-list" id="tamano-ops-opts"></div></div>
     </div>
-    <div class="field"><label class="field-label" for="estructura">¿Cómo está organizado el equipo de operaciones? Describe áreas, roles y jerarquía</label><textarea id="estructura" placeholder="Ej. Tenemos un Gerente de Ops, 2 coordinadores y 8 operativos. El gerente reporta al CEO…"></textarea></div>
-    <div class="field"><label class="field-label" for="dependencias">¿Qué procesos o conocimiento dependen de UNA SOLA persona?</label><textarea id="dependencias" placeholder="Ej. Solo Roberto sabe cómo configurar el sistema de producción, si no está todo se detiene…"></textarea></div>
+    <div class="field"><label class="field-label" for="estructura">Â¿CÃ³mo estÃ¡ organizado el equipo de operaciones? Describe Ã¡reas, roles y jerarquÃ­a</label><textarea id="estructura" placeholder="Ej. Tenemos un Gerente de Ops, 2 coordinadores y 8 operativos. El gerente reporta al CEOâ€¦"></textarea></div>
+    <div class="field"><label class="field-label" for="dependencias">Â¿QuÃ© procesos o conocimiento dependen de UNA SOLA persona?</label><textarea id="dependencias" placeholder="Ej. Solo Roberto sabe cÃ³mo configurar el sistema de producciÃ³n, si no estÃ¡ todo se detieneâ€¦"></textarea></div>
   </div>
 
   <!-- S2 -->
   <div class="section">
-    <div class="section-header"><div class="section-num">2</div><div><div class="section-title">Herramientas y Sistemas</div><div class="section-desc">Con qué tecnología opera la empresa hoy</div></div></div>
-    <div class="field"><label class="field-label">¿Qué herramientas y sistemas usan en operaciones? <span class="field-hint">(todos los que apliquen)</span></label><div class="options-grid" id="herramientas-opts"></div></div>
-    <div class="field"><label class="field-label" for="otras-herr">Otras herramientas <span class="field-optional">opcional</span></label><input type="text" id="otras-herr" placeholder="Ej. SAP, sistema propio, software de nómina, WMS…"></div>
-    <div class="field"><label class="field-label">¿Pueden darle acceso de lectura a sus sistemas para el diagnóstico?</label><div class="options-list" id="acceso-opts"></div></div>
-    <div class="field"><label class="field-label">¿Tienen una "fuente de verdad" única para la información operativa?</label><div class="options-list" id="fuente-verdad-opts"></div></div>
-    <div class="field"><label class="field-label">¿Qué porcentaje de su información operativa está digitalizada?</label><div class="options-list" id="digitalizacion-opts"></div></div>
+    <div class="section-header"><div class="section-num">2</div><div><div class="section-title">Herramientas y Sistemas</div><div class="section-desc">Con quÃ© tecnologÃ­a opera la empresa hoy</div></div></div>
+    <div class="field"><label class="field-label">Â¿QuÃ© herramientas y sistemas usan en operaciones? <span class="field-hint">(todos los que apliquen)</span></label><div class="options-grid" id="herramientas-opts"></div></div>
+    <div class="field"><label class="field-label" for="otras-herr">Otras herramientas <span class="field-optional">opcional</span></label><input type="text" id="otras-herr" placeholder="Ej. SAP, sistema propio, software de nÃ³mina, WMSâ€¦"></div>
+    <div class="field"><label class="field-label">Â¿Pueden darle acceso de lectura a sus sistemas para el diagnÃ³stico?</label><div class="options-list" id="acceso-opts"></div></div>
+    <div class="field"><label class="field-label">Â¿Tienen una "fuente de verdad" Ãºnica para la informaciÃ³n operativa?</label><div class="options-list" id="fuente-verdad-opts"></div></div>
+    <div class="field"><label class="field-label">Â¿QuÃ© porcentaje de su informaciÃ³n operativa estÃ¡ digitalizada?</label><div class="options-list" id="digitalizacion-opts"></div></div>
   </div>
 
   <!-- S3 -->
   <div class="section">
-    <div class="section-header"><div class="section-num">3</div><div><div class="section-title">Procesos y Flujos de Trabajo</div><div class="section-desc">Cómo fluye el trabajo operativo día a día</div></div></div>
-    <div class="field"><label class="field-label">¿Tienen procesos documentados (SOPs, manuales, checklists) para las operaciones clave?</label><div class="options-list" id="docs-opts"></div></div>
-    <div class="field"><label class="field-label" for="flujos-principales">Describe los principales flujos de trabajo operativos (paso a paso)</label><textarea id="flujos-principales" placeholder="Ej. Recibimos una orden → se crea ticket en el sistema → se asigna al área → el área ejecuta → calidad revisa → se cierra → se notifica al cliente…" style="min-height:130px;"></textarea></div>
-    <div class="field"><label class="field-label">¿Cómo se hacen las aprobaciones y autorizaciones internas?</label><div class="options-list" id="aprobaciones-opts"></div></div>
-    <div class="field"><label class="field-label">¿Hay dependencias críticas de personas clave en la operación?</label><div class="options-list" id="dependencia-persona-opts"></div></div>
-    <div class="field"><label class="field-label" for="conocimiento-critico">¿Qué conocimiento crítico está concentrado en pocas personas?</label><textarea id="conocimiento-critico" placeholder="Ej. El know-how de los procesos de calidad solo lo tiene el gerente de planta, si se va nos quedamos sin proceso…"></textarea></div>
+    <div class="section-header"><div class="section-num">3</div><div><div class="section-title">Procesos y Flujos de Trabajo</div><div class="section-desc">CÃ³mo fluye el trabajo operativo dÃ­a a dÃ­a</div></div></div>
+    <div class="field"><label class="field-label">Â¿Tienen procesos documentados (SOPs, manuales, checklists) para las operaciones clave?</label><div class="options-list" id="docs-opts"></div></div>
+    <div class="field"><label class="field-label" for="flujos-principales">Describe los principales flujos de trabajo operativos (paso a paso)</label><textarea id="flujos-principales" placeholder="Ej. Recibimos una orden â†’ se crea ticket en el sistema â†’ se asigna al Ã¡rea â†’ el Ã¡rea ejecuta â†’ calidad revisa â†’ se cierra â†’ se notifica al clienteâ€¦" style="min-height:130px;"></textarea></div>
+    <div class="field"><label class="field-label">Â¿CÃ³mo se hacen las aprobaciones y autorizaciones internas?</label><div class="options-list" id="aprobaciones-opts"></div></div>
+    <div class="field"><label class="field-label">Â¿Hay dependencias crÃ­ticas de personas clave en la operaciÃ³n?</label><div class="options-list" id="dependencia-persona-opts"></div></div>
+    <div class="field"><label class="field-label" for="conocimiento-critico">Â¿QuÃ© conocimiento crÃ­tico estÃ¡ concentrado en pocas personas?</label><textarea id="conocimiento-critico" placeholder="Ej. El know-how de los procesos de calidad solo lo tiene el gerente de planta, si se va nos quedamos sin procesoâ€¦"></textarea></div>
   </div>
 
   <!-- S4 -->
   <div class="section">
-    <div class="section-header"><div class="section-num">4</div><div><div class="section-title">Tareas, Cuellos de Botella y Dolores</div><div class="section-desc">Dónde se pierde más tiempo y energía</div></div></div>
-    <div class="field"><label class="field-label" for="tareas-mejorar">¿Cuáles son los 3 a 5 procesos operativos que más quieren mejorar? Sé específico</label><textarea id="tareas-mejorar" placeholder="Ej. 1) La gestión de inventario es caótica, 2) El proceso de onboarding de nuevos clientes tarda 2 semanas, 3) Los reportes semanales nos llevan 4 horas y nadie los lee…" style="min-height:120px;"></textarea></div>
-    <div class="field"><label class="field-label" for="tareas-repetitivas">¿Qué tareas se hacen de forma manual y repetitiva todos los días o todas las semanas?</label><textarea id="tareas-repetitivas" placeholder="Ej. Actualizar el Excel de inventario a mano, enviar el reporte de producción del día anterior, checar correos y pasar órdenes al sistema…"></textarea></div>
-    <div class="field"><label class="field-label" for="cuellos-botella">¿Dónde se producen los principales cuellos de botella en la operación?</label><textarea id="cuellos-botella" placeholder="Ej. Todo se atora cuando esperamos aprobación del director, el área de calidad es el cuello de botella de toda la producción…"></textarea></div>
-    <div class="field"><label class="field-label">¿Cuántas horas semanales estimas que el equipo dedica a tareas manuales que podrían automatizarse?</label><div class="options-list" id="horas-manuales-opts"></div></div>
-    <div class="field"><label class="field-label" for="ia-operaciones">¿Qué tareas operativas crees que podría realizar o mejorar la IA?</label><textarea id="ia-operaciones" placeholder="Ej. Clasificar y priorizar solicitudes automáticamente, generar reportes sin intervención humana, detectar anomalías en producción…"></textarea></div>
-    <div class="field"><label class="field-label">¿Cuáles son las principales fricciones operativas? <span class="field-hint">(todas las que apliquen)</span></label><div class="options-list" id="fricciones-opts"></div></div>
+    <div class="section-header"><div class="section-num">4</div><div><div class="section-title">Tareas, Cuellos de Botella y Dolores</div><div class="section-desc">DÃ³nde se pierde mÃ¡s tiempo y energÃ­a</div></div></div>
+    <div class="field"><label class="field-label" for="tareas-mejorar">Â¿CuÃ¡les son los 3 a 5 procesos operativos que mÃ¡s quieren mejorar? SÃ© especÃ­fico</label><textarea id="tareas-mejorar" placeholder="Ej. 1) La gestiÃ³n de inventario es caÃ³tica, 2) El proceso de onboarding de nuevos clientes tarda 2 semanas, 3) Los reportes semanales nos llevan 4 horas y nadie los leeâ€¦" style="min-height:120px;"></textarea></div>
+    <div class="field"><label class="field-label" for="tareas-repetitivas">Â¿QuÃ© tareas se hacen de forma manual y repetitiva todos los dÃ­as o todas las semanas?</label><textarea id="tareas-repetitivas" placeholder="Ej. Actualizar el Excel de inventario a mano, enviar el reporte de producciÃ³n del dÃ­a anterior, checar correos y pasar Ã³rdenes al sistemaâ€¦"></textarea></div>
+    <div class="field"><label class="field-label" for="cuellos-botella">Â¿DÃ³nde se producen los principales cuellos de botella en la operaciÃ³n?</label><textarea id="cuellos-botella" placeholder="Ej. Todo se atora cuando esperamos aprobaciÃ³n del director, el Ã¡rea de calidad es el cuello de botella de toda la producciÃ³nâ€¦"></textarea></div>
+    <div class="field"><label class="field-label">Â¿CuÃ¡ntas horas semanales estimas que el equipo dedica a tareas manuales que podrÃ­an automatizarse?</label><div class="options-list" id="horas-manuales-opts"></div></div>
+    <div class="field"><label class="field-label" for="ia-operaciones">Â¿QuÃ© tareas operativas crees que podrÃ­a realizar o mejorar la IA?</label><textarea id="ia-operaciones" placeholder="Ej. Clasificar y priorizar solicitudes automÃ¡ticamente, generar reportes sin intervenciÃ³n humana, detectar anomalÃ­as en producciÃ³nâ€¦"></textarea></div>
+    <div class="field"><label class="field-label">Â¿CuÃ¡les son las principales fricciones operativas? <span class="field-hint">(todas las que apliquen)</span></label><div class="options-list" id="fricciones-opts"></div></div>
   </div>
 
   <!-- S5 -->
   <div class="section">
-    <div class="section-header"><div class="section-num">5</div><div><div class="section-title">Volumen, Capacidad y KPIs</div><div class="section-desc">Métricas y estado actual de la operación</div></div></div>
+    <div class="section-header"><div class="section-num">5</div><div><div class="section-title">Volumen, Capacidad y KPIs</div><div class="section-desc">MÃ©tricas y estado actual de la operaciÃ³n</div></div></div>
     <div class="three-col">
-      <div class="field"><label class="field-label" for="vol-ordenes">Órdenes / casos / proyectos por mes</label><input type="text" id="vol-ordenes" placeholder="Ej. ~120/mes"></div>
-      <div class="field"><label class="field-label" for="vol-activos">Clientes / proyectos activos simultáneos</label><input type="text" id="vol-activos" placeholder="Ej. ~30 activos"></div>
-      <div class="field"><label class="field-label" for="ciclo-promedio">Tiempo promedio de entrega / ciclo</label><input type="text" id="ciclo-promedio" placeholder="Ej. 5 días hábiles"></div>
+      <div class="field"><label class="field-label" for="vol-ordenes">Ã“rdenes / casos / proyectos por mes</label><input type="text" id="vol-ordenes" placeholder="Ej. ~120/mes"></div>
+      <div class="field"><label class="field-label" for="vol-activos">Clientes / proyectos activos simultÃ¡neos</label><input type="text" id="vol-activos" placeholder="Ej. ~30 activos"></div>
+      <div class="field"><label class="field-label" for="ciclo-promedio">Tiempo promedio de entrega / ciclo</label><input type="text" id="ciclo-promedio" placeholder="Ej. 5 dÃ­as hÃ¡biles"></div>
     </div>
-    <div class="field"><label class="field-label">¿Qué KPIs o métricas controlan actualmente en operaciones? <span class="field-hint">(todos los que apliquen)</span></label><div class="options-grid" id="kpis-opts"></div></div>
-    <div class="field"><label class="field-label" for="kpis-otros">Otros KPIs que miden <span class="field-optional">opcional</span></label><input type="text" id="kpis-otros" placeholder="Ej. Costo por unidad, OEE, tasa de retrabajo…"></div>
-    <div class="field"><label class="field-label">¿Tienen picos de trabajo operativo? ¿Cuándo?</label><div class="options-list" id="picos-opts"></div></div>
-    <div class="field"><label class="field-label" for="cuando-picos">¿Cuándo ocurren los picos? <span class="field-optional">si aplica</span></label><input type="text" id="cuando-picos" placeholder="Ej. Fin de mes, temporada navideña, los lunes al arranque de semana…"></div>
-    <div class="field"><label class="field-label">Califica el desempeño actual de operaciones (1 = muy bajo · 5 = excelente)</label>
+    <div class="field"><label class="field-label">Â¿QuÃ© KPIs o mÃ©tricas controlan actualmente en operaciones? <span class="field-hint">(todos los que apliquen)</span></label><div class="options-grid" id="kpis-opts"></div></div>
+    <div class="field"><label class="field-label" for="kpis-otros">Otros KPIs que miden <span class="field-optional">opcional</span></label><input type="text" id="kpis-otros" placeholder="Ej. Costo por unidad, OEE, tasa de retrabajoâ€¦"></div>
+    <div class="field"><label class="field-label">Â¿Tienen picos de trabajo operativo? Â¿CuÃ¡ndo?</label><div class="options-list" id="picos-opts"></div></div>
+    <div class="field"><label class="field-label" for="cuando-picos">Â¿CuÃ¡ndo ocurren los picos? <span class="field-optional">si aplica</span></label><input type="text" id="cuando-picos" placeholder="Ej. Fin de mes, temporada navideÃ±a, los lunes al arranque de semanaâ€¦"></div>
+    <div class="field"><label class="field-label">Califica el desempeÃ±o actual de operaciones (1 = muy bajo Â· 5 = excelente)</label>
       <div style="display:flex;flex-direction:column;gap:16px;margin-top:4px;">
         <div><div class="field-label" style="font-size:12px;margin-bottom:6px;">Velocidad y eficiencia de los procesos</div><div class="scale-row" id="scale-velocidad"></div></div>
         <div><div class="field-label" style="font-size:12px;margin-bottom:6px;">Calidad de la entrega (errores / retrabajos)</div><div class="scale-row" id="scale-calidad"></div></div>
         <div><div class="field-label" style="font-size:12px;margin-bottom:6px;">Visibilidad y control en tiempo real</div><div class="scale-row" id="scale-visibilidad"></div></div>
-        <div><div class="field-label" style="font-size:12px;margin-bottom:6px;">Documentación y estandarización</div><div class="scale-row" id="scale-docs"></div></div>
-        <div><div class="field-label" style="font-size:12px;margin-bottom:6px;">Comunicación interna del equipo</div><div class="scale-row" id="scale-comunicacion"></div></div>
+        <div><div class="field-label" style="font-size:12px;margin-bottom:6px;">DocumentaciÃ³n y estandarizaciÃ³n</div><div class="scale-row" id="scale-docs"></div></div>
+        <div><div class="field-label" style="font-size:12px;margin-bottom:6px;">ComunicaciÃ³n interna del equipo</div><div class="scale-row" id="scale-comunicacion"></div></div>
       </div>
     </div>
   </div>
 
   <!-- S6 -->
   <div class="section">
-    <div class="section-header"><div class="section-num">6</div><div><div class="section-title">Automatizaciones e IA Actuales</div><div class="section-desc">Qué tienen automatizado en la operación hoy</div></div></div>
-    <div class="field"><label class="field-label">¿Tienen automatizaciones en procesos operativos?</label><div class="options-list" id="tiene-auto-opts"></div></div>
-    <div class="field"><label class="field-label" for="que-auto">¿Qué procesos tienen automatizados actualmente?</label><textarea id="que-auto" placeholder="Ej. Los correos de confirmación de orden se envían solos, la facturación se genera automáticamente al cerrar el ticket…"></textarea></div>
-    <div class="field"><label class="field-label" for="herr-auto">¿Qué herramientas usan para automatizar? <span class="field-optional">opcional</span></label><input type="text" id="herr-auto" placeholder="Ej. Zapier, Make, n8n, Power Automate, scripts propios…"></div>
-    <div class="field"><label class="field-label">¿Hay revisión humana en los procesos automatizados críticos?</label><div class="options-list" id="revision-auto-opts"></div></div>
-    <div class="field"><label class="field-label">¿Cómo funcionan las automatizaciones actuales?</label><div class="options-list" id="calidad-auto-opts"></div></div>
-    <div class="field"><label class="field-label" for="problemas-auto">¿Qué problemas tienen con las automatizaciones actuales? <span class="field-optional">opcional</span></label><textarea id="problemas-auto" placeholder="Ej. Se rompen cuando cambia algo en el sistema, nadie sabe cómo mantenerlas, son muy rígidas…"></textarea></div>
-    <div class="field"><label class="field-label" for="costo-auto">Costo mensual en herramientas de automatización <span class="field-optional">aproximado</span></label><input type="text" id="costo-auto" placeholder="Ej. $2,000 MXN/mes (Make + n8n)"></div>
-    <div class="field"><label class="field-label">¿Por qué no han automatizado más? <span class="field-hint">(si aplica)</span></label><div class="options-grid" id="por-que-no-opts"></div></div>
+    <div class="section-header"><div class="section-num">6</div><div><div class="section-title">Automatizaciones e IA Actuales</div><div class="section-desc">QuÃ© tienen automatizado en la operaciÃ³n hoy</div></div></div>
+    <div class="field"><label class="field-label">Â¿Tienen automatizaciones en procesos operativos?</label><div class="options-list" id="tiene-auto-opts"></div></div>
+    <div class="field"><label class="field-label" for="que-auto">Â¿QuÃ© procesos tienen automatizados actualmente?</label><textarea id="que-auto" placeholder="Ej. Los correos de confirmaciÃ³n de orden se envÃ­an solos, la facturaciÃ³n se genera automÃ¡ticamente al cerrar el ticketâ€¦"></textarea></div>
+    <div class="field"><label class="field-label" for="herr-auto">Â¿QuÃ© herramientas usan para automatizar? <span class="field-optional">opcional</span></label><input type="text" id="herr-auto" placeholder="Ej. Zapier, Make, n8n, Power Automate, scripts propiosâ€¦"></div>
+    <div class="field"><label class="field-label">Â¿Hay revisiÃ³n humana en los procesos automatizados crÃ­ticos?</label><div class="options-list" id="revision-auto-opts"></div></div>
+    <div class="field"><label class="field-label">Â¿CÃ³mo funcionan las automatizaciones actuales?</label><div class="options-list" id="calidad-auto-opts"></div></div>
+    <div class="field"><label class="field-label" for="problemas-auto">Â¿QuÃ© problemas tienen con las automatizaciones actuales? <span class="field-optional">opcional</span></label><textarea id="problemas-auto" placeholder="Ej. Se rompen cuando cambia algo en el sistema, nadie sabe cÃ³mo mantenerlas, son muy rÃ­gidasâ€¦"></textarea></div>
+    <div class="field"><label class="field-label" for="costo-auto">Costo mensual en herramientas de automatizaciÃ³n <span class="field-optional">aproximado</span></label><input type="text" id="costo-auto" placeholder="Ej. $2,000 MXN/mes (Make + n8n)"></div>
+    <div class="field"><label class="field-label">Â¿Por quÃ© no han automatizado mÃ¡s? <span class="field-hint">(si aplica)</span></label><div class="options-grid" id="por-que-no-opts"></div></div>
   </div>
 
   <!-- S7 -->
   <div class="section">
-    <div class="section-header"><div class="section-num">7</div><div><div class="section-title">Criterios de Éxito y Contexto</div><div class="section-desc">Qué espera conseguir con el diagnóstico</div></div></div>
-    <div class="field"><label class="field-label" for="exito">¿Cómo definen el éxito de este diagnóstico?</label><textarea id="exito" placeholder="Ej. Que podamos reducir el tiempo de ciclo de 5 a 2 días sin contratar más gente…"></textarea></div>
-    <div class="field"><label class="field-label" for="restricciones">¿Hay restricciones o requisitos imprescindibles? (legales, técnicos, presupuesto)</label><textarea id="restricciones" placeholder="Ej. No podemos cambiar el ERP este año, cualquier solución debe ser compatible con SAP, presupuesto máximo $20k MXN/mes…"></textarea></div>
-    <div class="field"><label class="field-label">Presupuesto disponible para mejoras tecnológicas en operaciones</label><div class="options-list" id="presupuesto-opts"></div></div>
-    <div class="field"><label class="field-label">¿Hay resistencia al cambio en el equipo operativo?</label><div class="options-list" id="resistencia-opts"></div></div>
-    <div class="field"><label class="field-label" for="dolores">Principales dolores operativos que quieren resolver</label><textarea id="dolores" placeholder="Los problemas más urgentes y costosos, en sus propias palabras…" style="min-height:110px;"></textarea></div>
-    <div class="field"><label class="field-label" for="contexto-extra">Algo más que debamos saber <span class="field-optional">opcional</span></label><textarea id="contexto-extra" placeholder="Proyectos en curso, cambios recientes, contexto específico del negocio…"></textarea></div>
+    <div class="section-header"><div class="section-num">7</div><div><div class="section-title">Criterios de Ã‰xito y Contexto</div><div class="section-desc">QuÃ© espera conseguir con el diagnÃ³stico</div></div></div>
+    <div class="field"><label class="field-label" for="exito">Â¿CÃ³mo definen el Ã©xito de este diagnÃ³stico?</label><textarea id="exito" placeholder="Ej. Que podamos reducir el tiempo de ciclo de 5 a 2 dÃ­as sin contratar mÃ¡s genteâ€¦"></textarea></div>
+    <div class="field"><label class="field-label" for="restricciones">Â¿Hay restricciones o requisitos imprescindibles? (legales, tÃ©cnicos, presupuesto)</label><textarea id="restricciones" placeholder="Ej. No podemos cambiar el ERP este aÃ±o, cualquier soluciÃ³n debe ser compatible con SAP, presupuesto mÃ¡ximo $20k MXN/mesâ€¦"></textarea></div>
+    <div class="field"><label class="field-label">Presupuesto disponible para mejoras tecnolÃ³gicas en operaciones</label><div class="options-list" id="presupuesto-opts"></div></div>
+    <div class="field"><label class="field-label">Â¿Hay resistencia al cambio en el equipo operativo?</label><div class="options-list" id="resistencia-opts"></div></div>
+    <div class="field"><label class="field-label" for="dolores">Principales dolores operativos que quieren resolver</label><textarea id="dolores" placeholder="Los problemas mÃ¡s urgentes y costosos, en sus propias palabrasâ€¦" style="min-height:110px;"></textarea></div>
+    <div class="field"><label class="field-label" for="contexto-extra">Algo mÃ¡s que debamos saber <span class="field-optional">opcional</span></label><textarea id="contexto-extra" placeholder="Proyectos en curso, cambios recientes, contexto especÃ­fico del negocioâ€¦"></textarea></div>
   </div>
 </main>
 
 <div class="footer-bar">
   <div class="footer-inner">
-    <div class="save-status"><div class="save-dot"></div><span id="save-text">Guardado automáticamente</span></div>
+    <div class="save-status"><div class="save-dot"></div><span id="save-text">Guardado automÃ¡ticamente</span></div>
     <div style="display:flex;gap:10px;">
       <button class="btn btn-outline" onclick="clearForm()">Limpiar</button>
-      <button class="btn btn-outline" onclick="exportJSON()">⬇ Exportar JSON</button>
-      <button class="btn btn-primary" id="btn-api" onclick="enviarAlAPI()">💾 Guardar ahora</button>
+      <button class="btn btn-outline" onclick="exportJSON()">â¬‡ Exportar JSON</button>
+      <button class="btn btn-primary" id="btn-api" onclick="enviarAlAPI()">ðŸ’¾ Guardar ahora</button>
     </div>
   </div>
 </div>
@@ -194,30 +194,30 @@
 <script>
 const DATA = {
   rol:[{v:'ceo',l:'CEO / Fundador'},{v:'coo',l:'COO / Director de Operaciones'},{v:'gerente-ops',l:'Gerente de Operaciones'},{v:'coordinador',l:'Coordinador / Supervisor'},{v:'otro',l:'Otro'}],
-  tamano:[{v:'1-5',l:'1–5'},{v:'6-15',l:'6–15'},{v:'16-50',l:'16–50'},{v:'51-100',l:'51–100'},{v:'100+',l:'Más de 100'}],
-  tamano_ops:[{v:'1-2',l:'1–2 personas'},{v:'3-5',l:'3–5 personas'},{v:'6-15',l:'6–15 personas'},{v:'16-30',l:'16–30 personas'},{v:'30+',l:'Más de 30'}],
-  herramientas:['Google Drive / OneDrive','Excel / Google Sheets','ERP (SAP, Odoo, SIIAF…)','CRM (HubSpot, Salesforce…)','Sistema de tickets (Zendesk, Freshdesk…)','Trello / Asana / Monday / ClickUp','WhatsApp Business','Email (Gmail, Outlook)','Sistema propio','Papel / archivos físicos','Software específico del sector'],
-  acceso:[{v:'si',l:'Sí, sin problema'},{v:'parcial',l:'Algunos sistemas sí, otros no'},{v:'consultar',l:'Hay que consultarlo con el equipo'}],
-  fuente_verdad:[{v:'centralizada',l:'Sí, hay un sistema central y todos lo usan'},{v:'parcial',l:'Parcialmente — algunos datos sí, otros están dispersos'},{v:'dispersa',l:'No, la información está en varios lados y no siempre coincide'}],
-  digitalizacion:[{v:'0-25',l:'0–25% digitalizado — mayormente en papel'},{v:'26-50',l:'26–50% digitalizado'},{v:'51-75',l:'51–75% digitalizado'},{v:'76-100',l:'76–100% digitalizado'}],
-  docs:[{v:'completo',l:'Sí, documentación completa y actualizada'},{v:'parcial',l:'Parcialmente — algunos procesos documentados'},{v:'informal',l:'Solo informal — en la cabeza del equipo'},{v:'no',l:'No existe documentación formal'}],
-  aprobaciones:[{v:'digital-auto',l:'Digital y automático — el sistema maneja los flujos de aprobación'},{v:'digital-manual',l:'Digital pero manual — por email o Slack'},{v:'mixto',l:'Mixto — parte digital, parte presencial'},{v:'papel',l:'Principalmente en papel o de forma verbal'}],
-  dependencia_persona:[{v:'paralisis',l:'Parálisis total — sin esa persona no podemos operar'},{v:'alto',l:'Impacto alto — afecta significativamente la operación'},{v:'moderado',l:'Impacto moderado — se puede cubrir con esfuerzo'},{v:'minimo',l:'Mínimo — tenemos redundancia'}],
-  horas_manuales:[{v:'0-5',l:'Menos de 5 horas por semana'},{v:'5-15',l:'5 a 15 horas por semana'},{v:'15-30',l:'15 a 30 horas por semana'},{v:'30-50',l:'30 a 50 horas por semana'},{v:'50+',l:'Más de 50 horas por semana'}],
-  fricciones:['⏳ Procesos lentos que retrasan la entrega','🔁 Retrabajos frecuentes por errores o información incompleta','📋 Falta de visibilidad del estado de cada trabajo','👥 Comunicación caótica entre áreas (todo por WhatsApp)','🔗 Sistemas que no se hablan entre sí','📄 Procesos que dependen de personas clave','⚠️ Sin alertas cuando algo sale mal o se retrasa','📊 No saber cómo está la operación en tiempo real','🔄 Tareas que se duplican entre áreas'],
-  kpis:['Tiempo de ciclo / entrega','Tasa de cumplimiento a tiempo (OTD)','Costo por operación / unidad','Capacidad utilizada','Número de retrabajos / errores','Satisfacción del cliente (NPS/CSAT)','Productividad por persona','Volumen de casos / órdenes','Ninguno / no medimos formalmente'],
-  picos:[{v:'si',l:'Sí, hay picos claros'},{v:'no',l:'No, la carga es estable'},{v:'variable',l:'Muy variable e impredecible'}],
-  tiene_auto:[{v:'si',l:'Sí, varios procesos automatizados'},{v:'poco',l:'Algo — una o dos cosas básicas'},{v:'no',l:'No, todo es manual'},{v:'intent',l:'Lo intentamos pero no funcionó'}],
-  revision_auto:[{v:'siempre',l:'Siempre hay revisión humana antes de ejecutar'},{v:'criticos',l:'Solo en los críticos — el resto corre automático'},{v:'no',l:'No — corre 100% automático'}],
-  calidad_auto:[{v:'bien',l:'Funcionan bien — ahorran tiempo real'},{v:'regular',l:'Regular — hay errores frecuentes o necesitan mantenimiento'},{v:'mal',l:'Mal — dan más problemas que soluciones'}],
-  por_que_no:['Falta de tiempo para implementar','No sabemos cómo hacerlo','Presupuesto limitado','Intentamos y no funcionó','No era prioridad hasta ahora'],
-  presupuesto:[{v:'menos2k',l:'Menos de $2,000 MXN/mes'},{v:'2k-5k',l:'$2,000 a $5,000 MXN/mes'},{v:'5k-15k',l:'$5,000 a $15,000 MXN/mes'},{v:'15k-30k',l:'$15,000 a $30,000 MXN/mes'},{v:'30k+',l:'Más de $30,000 MXN/mes'},{v:'roi',l:'Depende del ROI demostrado'}],
-  resistencia:[{v:'muy-abiertos',l:'Muy abiertos — quieren mejorar ya'},{v:'se-adaptan',l:'Se adaptan con apoyo y tiempo'},{v:'resistencia',l:'Hay resistencia — necesitan convencimiento'},{v:'no-se',l:'No lo sé aún'}],
+  tamano:[{v:'1-5',l:'1â€“5'},{v:'6-15',l:'6â€“15'},{v:'16-50',l:'16â€“50'},{v:'51-100',l:'51â€“100'},{v:'100+',l:'MÃ¡s de 100'}],
+  tamano_ops:[{v:'1-2',l:'1â€“2 personas'},{v:'3-5',l:'3â€“5 personas'},{v:'6-15',l:'6â€“15 personas'},{v:'16-30',l:'16â€“30 personas'},{v:'30+',l:'MÃ¡s de 30'}],
+  herramientas:['Google Drive / OneDrive','Excel / Google Sheets','ERP (SAP, Odoo, SIIAFâ€¦)','CRM (HubSpot, Salesforceâ€¦)','Sistema de tickets (Zendesk, Freshdeskâ€¦)','Trello / Asana / Monday / ClickUp','WhatsApp Business','Email (Gmail, Outlook)','Sistema propio','Papel / archivos fÃ­sicos','Software especÃ­fico del sector'],
+  acceso:[{v:'si',l:'SÃ­, sin problema'},{v:'parcial',l:'Algunos sistemas sÃ­, otros no'},{v:'consultar',l:'Hay que consultarlo con el equipo'}],
+  fuente_verdad:[{v:'centralizada',l:'SÃ­, hay un sistema central y todos lo usan'},{v:'parcial',l:'Parcialmente â€” algunos datos sÃ­, otros estÃ¡n dispersos'},{v:'dispersa',l:'No, la informaciÃ³n estÃ¡ en varios lados y no siempre coincide'}],
+  digitalizacion:[{v:'0-25',l:'0â€“25% digitalizado â€” mayormente en papel'},{v:'26-50',l:'26â€“50% digitalizado'},{v:'51-75',l:'51â€“75% digitalizado'},{v:'76-100',l:'76â€“100% digitalizado'}],
+  docs:[{v:'completo',l:'SÃ­, documentaciÃ³n completa y actualizada'},{v:'parcial',l:'Parcialmente â€” algunos procesos documentados'},{v:'informal',l:'Solo informal â€” en la cabeza del equipo'},{v:'no',l:'No existe documentaciÃ³n formal'}],
+  aprobaciones:[{v:'digital-auto',l:'Digital y automÃ¡tico â€” el sistema maneja los flujos de aprobaciÃ³n'},{v:'digital-manual',l:'Digital pero manual â€” por email o Slack'},{v:'mixto',l:'Mixto â€” parte digital, parte presencial'},{v:'papel',l:'Principalmente en papel o de forma verbal'}],
+  dependencia_persona:[{v:'paralisis',l:'ParÃ¡lisis total â€” sin esa persona no podemos operar'},{v:'alto',l:'Impacto alto â€” afecta significativamente la operaciÃ³n'},{v:'moderado',l:'Impacto moderado â€” se puede cubrir con esfuerzo'},{v:'minimo',l:'MÃ­nimo â€” tenemos redundancia'}],
+  horas_manuales:[{v:'0-5',l:'Menos de 5 horas por semana'},{v:'5-15',l:'5 a 15 horas por semana'},{v:'15-30',l:'15 a 30 horas por semana'},{v:'30-50',l:'30 a 50 horas por semana'},{v:'50+',l:'MÃ¡s de 50 horas por semana'}],
+  fricciones:['â³ Procesos lentos que retrasan la entrega','ðŸ” Retrabajos frecuentes por errores o informaciÃ³n incompleta','ðŸ“‹ Falta de visibilidad del estado de cada trabajo','ðŸ‘¥ ComunicaciÃ³n caÃ³tica entre Ã¡reas (todo por WhatsApp)','ðŸ”— Sistemas que no se hablan entre sÃ­','ðŸ“„ Procesos que dependen de personas clave','âš ï¸ Sin alertas cuando algo sale mal o se retrasa','ðŸ“Š No saber cÃ³mo estÃ¡ la operaciÃ³n en tiempo real','ðŸ”„ Tareas que se duplican entre Ã¡reas'],
+  kpis:['Tiempo de ciclo / entrega','Tasa de cumplimiento a tiempo (OTD)','Costo por operaciÃ³n / unidad','Capacidad utilizada','NÃºmero de retrabajos / errores','SatisfacciÃ³n del cliente (NPS/CSAT)','Productividad por persona','Volumen de casos / Ã³rdenes','Ninguno / no medimos formalmente'],
+  picos:[{v:'si',l:'SÃ­, hay picos claros'},{v:'no',l:'No, la carga es estable'},{v:'variable',l:'Muy variable e impredecible'}],
+  tiene_auto:[{v:'si',l:'SÃ­, varios procesos automatizados'},{v:'poco',l:'Algo â€” una o dos cosas bÃ¡sicas'},{v:'no',l:'No, todo es manual'},{v:'intent',l:'Lo intentamos pero no funcionÃ³'}],
+  revision_auto:[{v:'siempre',l:'Siempre hay revisiÃ³n humana antes de ejecutar'},{v:'criticos',l:'Solo en los crÃ­ticos â€” el resto corre automÃ¡tico'},{v:'no',l:'No â€” corre 100% automÃ¡tico'}],
+  calidad_auto:[{v:'bien',l:'Funcionan bien â€” ahorran tiempo real'},{v:'regular',l:'Regular â€” hay errores frecuentes o necesitan mantenimiento'},{v:'mal',l:'Mal â€” dan mÃ¡s problemas que soluciones'}],
+  por_que_no:['Falta de tiempo para implementar','No sabemos cÃ³mo hacerlo','Presupuesto limitado','Intentamos y no funcionÃ³','No era prioridad hasta ahora'],
+  presupuesto:[{v:'menos2k',l:'Menos de $2,000 MXN/mes'},{v:'2k-5k',l:'$2,000 a $5,000 MXN/mes'},{v:'5k-15k',l:'$5,000 a $15,000 MXN/mes'},{v:'15k-30k',l:'$15,000 a $30,000 MXN/mes'},{v:'30k+',l:'MÃ¡s de $30,000 MXN/mes'},{v:'roi',l:'Depende del ROI demostrado'}],
+  resistencia:[{v:'muy-abiertos',l:'Muy abiertos â€” quieren mejorar ya'},{v:'se-adaptan',l:'Se adaptan con apoyo y tiempo'},{v:'resistencia',l:'Hay resistencia â€” necesitan convencimiento'},{v:'no-se',l:'No lo sÃ© aÃºn'}],
 };
 
 const STORAGE_KEY='mentoria_diag_operaciones_v1';
 const AREA='operaciones';
-const API_BASE='http://localhost:3001/api/v1';
+const API_BASE='https://api.flowdesk.mx/api/v1';
 const CLIENTE_ID=new URLSearchParams(window.location.search).get('clienteId')||'';
 let state={};
 let _syncTimer=null;
@@ -226,8 +226,8 @@ function buildCheckboxGroup(id,items,key){const el=document.getElementById(id);i
 function buildRadioGroup(id,items,key){const el=document.getElementById(id);if(!el)return;el.innerHTML='';items.forEach(item=>{const v=typeof item==='string'?item:item.v,l=typeof item==='string'?item:item.l,s=item.s||null;const ch=state[key]===v;const d=document.createElement('label');d.className='opt-item'+(ch?' selected':'');d.innerHTML=`<input type="radio" name="${key}" value="${v}" ${ch?'checked':''}><div><div class="opt-label">${l}</div>${s?`<div class="opt-sub">${s}</div>`:''}</div>`;d.querySelector('input').addEventListener('change',()=>{el.querySelectorAll('.opt-item').forEach(i=>i.classList.remove('selected'));d.classList.add('selected');state[key]=v;autoSave();});el.appendChild(d);});}
 function buildScale(id,key){const el=document.getElementById(id);if(!el)return;el.innerHTML='';for(let i=1;i<=5;i++){const b=document.createElement('button');b.type='button';b.className='scale-btn'+(state[key]===i?' active':'');b.textContent=i;b.addEventListener('click',()=>{el.querySelectorAll('.scale-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');state[key]=i;autoSave();});el.appendChild(b);}}
 function bindText(id,key){const el=document.getElementById(id);if(!el)return;el.value=state[key]||'';el.addEventListener('input',()=>{state[key]=el.value;autoSave();});}
-function autoSave(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));document.getElementById('save-text').textContent='Guardado localmente — '+new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});updateProgress();clearTimeout(_syncTimer);_syncTimer=setTimeout(syncToAPI,2000);}
-async function syncToAPI(){if(!CLIENTE_ID)return;const token=localStorage.getItem('fd_access');if(!token)return;document.getElementById('save-text').textContent='☁️ Sincronizando con FlowDesk…';try{const res=await fetch(`${API_BASE}/mentoria/clientes/${CLIENTE_ID}/diagnosticos`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({area:AREA,datos:state})});if(res.ok)document.getElementById('save-text').textContent='✅ Guardado en FlowDesk — '+new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});else document.getElementById('save-text').textContent='⚠️ No se pudo sincronizar (guardado local)';}catch{document.getElementById('save-text').textContent='⚠️ Sin conexión — guardado localmente';}}
+function autoSave(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));document.getElementById('save-text').textContent='Guardado localmente â€” '+new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});updateProgress();clearTimeout(_syncTimer);_syncTimer=setTimeout(syncToAPI,2000);}
+async function syncToAPI(){if(!CLIENTE_ID)return;const token=localStorage.getItem('fd_access');if(!token)return;document.getElementById('save-text').textContent='â˜ï¸ Sincronizando con FlowDeskâ€¦';try{const res=await fetch(`${API_BASE}/mentoria/clientes/${CLIENTE_ID}/diagnosticos`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({area:AREA,datos:state})});if(res.ok)document.getElementById('save-text').textContent='âœ… Guardado en FlowDesk â€” '+new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});else document.getElementById('save-text').textContent='âš ï¸ No se pudo sincronizar (guardado local)';}catch{document.getElementById('save-text').textContent='âš ï¸ Sin conexiÃ³n â€” guardado localmente';}}
 function updateProgress(){
   const radios=['rol','tamano','tamano_ops','acceso','fuente_verdad','digitalizacion','docs','aprobaciones','dependencia_persona','horas_manuales','picos','tiene_auto','revision_auto','calidad_auto','presupuesto','resistencia'];
   const checks=['herramientas','fricciones','kpis','por_que_no'];
@@ -250,7 +250,7 @@ function init(){
 }
 function exportJSON(){
   const out={
-    meta:{area:'Operaciones',version:'1.0',fecha_exportacion:new Date().toISOString(),herramienta:'MentorIA Diagnóstico'},
+    meta:{area:'Operaciones',version:'1.0',fecha_exportacion:new Date().toISOString(),herramienta:'MentorIA DiagnÃ³stico'},
     datos_generales:{empresa:state.empresa||'',contacto:state.contacto||'',rol:state.rol||'',tamano_empresa:state.tamano||'',tamano_equipo_ops:state.tamano_ops||'',estructura:state.estructura||'',dependencias_criticas:state.dependencias||''},
     herramientas:{stack:state.herramientas||[],otras:state.otras_herr||'',acceso_sistemas:state.acceso||'',fuente_de_verdad:state.fuente_verdad||'',nivel_digitalizacion:state.digitalizacion||''},
     procesos:{tiene_documentacion:state.docs||'',flujos_principales:state.flujos_principales||'',como_aprobaciones:state.aprobaciones||'',dependencia_personas:state.dependencia_persona||'',conocimiento_critico:state.conocimiento_critico||''},
@@ -263,15 +263,16 @@ function exportJSON(){
   const emp=(state.empresa||'cliente').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
   a.href=url;a.download=`diagnostico-operaciones-${emp}-${new Date().toISOString().split('T')[0]}.json`;a.click();URL.revokeObjectURL(url);
 }
-function clearForm(){if(!confirm('¿Limpiar todos los datos?'))return;state={};localStorage.removeItem(STORAGE_KEY);init();}
+function clearForm(){if(!confirm('Â¿Limpiar todos los datos?'))return;state={};localStorage.removeItem(STORAGE_KEY);init();}
 async function enviarAlAPI(){
   if(!CLIENTE_ID){alert('Abre este formulario desde el workspace del cliente en FlowDesk.');return;}
-  if(!localStorage.getItem('fd_access')){alert('Debes iniciar sesión en FlowDesk primero.');return;}
-  const btn=document.getElementById('btn-api');btn.textContent='⏳ Guardando…';btn.disabled=true;
+  if(!localStorage.getItem('fd_access')){alert('Debes iniciar sesiÃ³n en FlowDesk primero.');return;}
+  const btn=document.getElementById('btn-api');btn.textContent='â³ Guardandoâ€¦';btn.disabled=true;
   clearTimeout(_syncTimer);await syncToAPI();
-  btn.textContent='💾 Guardar ahora';btn.disabled=false;
+  btn.textContent='ðŸ’¾ Guardar ahora';btn.disabled=false;
 }
 document.addEventListener('DOMContentLoaded',init);
 </script>
 </body>
 </html>
+

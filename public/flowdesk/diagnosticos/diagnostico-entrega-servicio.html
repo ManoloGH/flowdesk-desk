@@ -1023,6 +1023,9 @@ const _params = new URLSearchParams(window.location.search);
 const _areaParam = _params.get('area') || '';
 const _empresaParam = _params.get('empresa') || '';
 const _areaSlug = _areaParam ? _areaParam.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') : 'entrega';
+const API_BASE   = 'https://api.flowdesk.mx/api/v1';
+const CLIENTE_ID = _params.get('clienteId') || '';
+let _syncTimer   = null;
 
 // Personalizar UI con el área
 if (_areaParam) {
@@ -1170,19 +1173,35 @@ function updateProgress() {
   document.getElementById('progress-label').textContent = `Sección ${current} de 7`;
 }
 
-// ── Auto save ─────────────────────────────────────────────
+// ── Auto save + sync ──────────────────────────────────────
 let saveTimer;
 function autoSave() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    state._meta = {
-      saved_at: new Date().toISOString(),
-      version: 1,
-    };
+    state._meta = { saved_at: new Date().toISOString(), version: 1 };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     document.getElementById('save-label').textContent = 'Guardado ' + new Date().toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit'});
     updateProgress();
+    clearTimeout(_syncTimer);
+    _syncTimer = setTimeout(syncToAPI, 2000);
   }, 600);
+}
+
+async function syncToAPI() {
+  if (!CLIENTE_ID) return;
+  const token = localStorage.getItem('fd_access');
+  if (!token) return;
+  document.getElementById('save-label').textContent = '☁️ Sincronizando…';
+  try {
+    const res = await fetch(`${API_BASE}/mentoria/clientes/${CLIENTE_ID}/diagnosticos`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ area: _areaSlug, datos: state }),
+    });
+    document.getElementById('save-label').textContent = res.ok
+      ? '✅ Guardado en FlowDesk — ' + new Date().toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit'})
+      : '⚠️ Error al sincronizar (guardado local)';
+  } catch { document.getElementById('save-label').textContent = '⚠️ Sin conexión — guardado local'; }
 }
 
 // ── Load state ────────────────────────────────────────────
@@ -1311,6 +1330,7 @@ function buildExportData() {
 
 function guardarYExportar() {
   autoSave();
+  syncToAPI();
   const data = buildExportData();
   const panel = document.getElementById('summary-panel');
   document.getElementById('summary-content').textContent = JSON.stringify(data, null, 2);

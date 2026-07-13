@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Diagnóstico — Área de Administración | MentorIA</title>
+<title>DiagnÃ³stico â€” Ãrea de AdministraciÃ³n | MentorIA</title>
 <style>
   :root{--brand-dark:#0a0a14;--brand-purple:#6c4de6;--brand-purple-light:#8b6ef5;--brand-purple-dim:rgba(108,77,230,0.15);--brand-cyan:#00d4ff;--surface:#13131f;--surface-2:#1a1a2e;--surface-3:#1f1f35;--border:rgba(255,255,255,0.08);--border-active:rgba(108,77,230,0.5);--text-primary:#f0f0f8;--text-secondary:#8888aa;--text-muted:#55556a;--success:#22c55e;--radius:12px;--radius-sm:8px;}
   *{box-sizing:border-box;margin:0;padding:0;}html{scroll-behavior:smooth;}
@@ -63,9 +63,9 @@
   <div class="header-inner">
     <div style="display:flex;align-items:center;gap:10px;">
       <div class="logo-dot">M</div>
-      <div><div class="logo-text">MentorIA Systems</div><div class="logo-sub">Diagnóstico de Área</div></div>
+      <div><div class="logo-text">MentorIA Systems</div><div class="logo-sub">DiagnÃ³stico de Ãrea</div></div>
     </div>
-    <div class="header-title">Área de Administración<br><span style="color:var(--brand-purple-light);font-weight:600;">7 secciones</span></div>
+    <div class="header-title">Ãrea de AdministraciÃ³n<br><span style="color:var(--brand-purple-light);font-weight:600;">7 secciones</span></div>
   </div>
 </header>
 <div class="progress-bar-wrap">
@@ -76,114 +76,114 @@
 </div>
 <main class="main">
   <div class="hero">
-    <div class="hero-tag">📊 Diagnóstico MentorIA</div>
-    <h1>Área de Administración</h1>
-    <p>Captura los procesos administrativos: facturación, cobranza, contratos, documentación, nómina, reportes financieros y gestión documental. Identifica dónde la IA puede liberar tiempo y reducir errores.</p>
+    <div class="hero-tag">ðŸ“Š DiagnÃ³stico MentorIA</div>
+    <h1>Ãrea de AdministraciÃ³n</h1>
+    <p>Captura los procesos administrativos: facturaciÃ³n, cobranza, contratos, documentaciÃ³n, nÃ³mina, reportes financieros y gestiÃ³n documental. Identifica dÃ³nde la IA puede liberar tiempo y reducir errores.</p>
   </div>
 
   <!-- S1 -->
   <div class="section">
-    <div class="section-header"><div class="section-num">1</div><div><div class="section-title">Datos Generales y Estructura Administrativa</div><div class="section-desc">Quiénes son y cómo está organizada el área</div></div></div>
+    <div class="section-header"><div class="section-num">1</div><div><div class="section-title">Datos Generales y Estructura Administrativa</div><div class="section-desc">QuiÃ©nes son y cÃ³mo estÃ¡ organizada el Ã¡rea</div></div></div>
     <div class="two-col">
-      <div class="field"><label class="field-label" for="empresa">Empresa</label><input type="text" id="empresa" placeholder="Nombre comercial o razón social"></div>
+      <div class="field"><label class="field-label" for="empresa">Empresa</label><input type="text" id="empresa" placeholder="Nombre comercial o razÃ³n social"></div>
       <div class="field"><label class="field-label" for="contacto">Contacto</label><input type="text" id="contacto" placeholder="Nombre completo"></div>
     </div>
     <div class="field"><label class="field-label">Rol del contacto</label><div class="options-list" id="rol-opts"></div></div>
     <div class="two-col">
       <div class="field"><label class="field-label">Empleados totales</label><div class="options-list" id="tamano-opts"></div></div>
-      <div class="field"><label class="field-label">Personas en administración</label><div class="options-list" id="tamano-admin-opts"></div></div>
+      <div class="field"><label class="field-label">Personas en administraciÃ³n</label><div class="options-list" id="tamano-admin-opts"></div></div>
     </div>
-    <div class="field"><label class="field-label" for="estructura">¿Cómo está organizado el equipo administrativo? Roles y responsabilidades</label><textarea id="estructura" placeholder="Ej. Tenemos un contador externo, una asistente administrativa interna y el CEO aprueba pagos mayores a $10k…"></textarea></div>
-    <div class="field"><label class="field-label" for="dependencias">¿Qué procesos administrativos dependen de UNA SOLA persona?</label><textarea id="dependencias" placeholder="Ej. Solo la contadora sabe cómo hacer la conciliación bancaria, si no está se acumula todo…"></textarea></div>
+    <div class="field"><label class="field-label" for="estructura">Â¿CÃ³mo estÃ¡ organizado el equipo administrativo? Roles y responsabilidades</label><textarea id="estructura" placeholder="Ej. Tenemos un contador externo, una asistente administrativa interna y el CEO aprueba pagos mayores a $10kâ€¦"></textarea></div>
+    <div class="field"><label class="field-label" for="dependencias">Â¿QuÃ© procesos administrativos dependen de UNA SOLA persona?</label><textarea id="dependencias" placeholder="Ej. Solo la contadora sabe cÃ³mo hacer la conciliaciÃ³n bancaria, si no estÃ¡ se acumula todoâ€¦"></textarea></div>
   </div>
 
   <!-- S2 -->
   <div class="section">
-    <div class="section-header"><div class="section-num">2</div><div><div class="section-title">Herramientas y Gestión Documental</div><div class="section-desc">Qué software y sistemas usan para administrar</div></div></div>
-    <div class="field"><label class="field-label">¿Qué herramientas usan en administración? <span class="field-hint">(todas las que apliquen)</span></label><div class="options-grid" id="herramientas-opts"></div></div>
-    <div class="field"><label class="field-label" for="otras-herr">Otras herramientas <span class="field-optional">opcional</span></label><input type="text" id="otras-herr" placeholder="Ej. Aspel NOI, CONTPAQi, sistema propio, Facturapi…"></div>
-    <div class="field"><label class="field-label">¿Tienen una fuente de verdad única para la información financiera y documental?</label><div class="options-list" id="fuente-verdad-opts"></div></div>
-    <div class="field"><label class="field-label">¿Qué porcentaje de la documentación administrativa está digitalizada?</label><div class="options-list" id="digitalizacion-opts"></div></div>
-    <div class="field"><label class="field-label">¿Cómo archivan y organizan la documentación (contratos, facturas, comprobantes)?</label><div class="options-list" id="archivo-opts"></div></div>
+    <div class="section-header"><div class="section-num">2</div><div><div class="section-title">Herramientas y GestiÃ³n Documental</div><div class="section-desc">QuÃ© software y sistemas usan para administrar</div></div></div>
+    <div class="field"><label class="field-label">Â¿QuÃ© herramientas usan en administraciÃ³n? <span class="field-hint">(todas las que apliquen)</span></label><div class="options-grid" id="herramientas-opts"></div></div>
+    <div class="field"><label class="field-label" for="otras-herr">Otras herramientas <span class="field-optional">opcional</span></label><input type="text" id="otras-herr" placeholder="Ej. Aspel NOI, CONTPAQi, sistema propio, Facturapiâ€¦"></div>
+    <div class="field"><label class="field-label">Â¿Tienen una fuente de verdad Ãºnica para la informaciÃ³n financiera y documental?</label><div class="options-list" id="fuente-verdad-opts"></div></div>
+    <div class="field"><label class="field-label">Â¿QuÃ© porcentaje de la documentaciÃ³n administrativa estÃ¡ digitalizada?</label><div class="options-list" id="digitalizacion-opts"></div></div>
+    <div class="field"><label class="field-label">Â¿CÃ³mo archivan y organizan la documentaciÃ³n (contratos, facturas, comprobantes)?</label><div class="options-list" id="archivo-opts"></div></div>
   </div>
 
   <!-- S3 -->
   <div class="section">
-    <div class="section-header"><div class="section-num">3</div><div><div class="section-title">Flujos Documentales y Procesos Clave</div><div class="section-desc">Cómo fluye la información y los documentos en administración</div></div></div>
-    <div class="field"><label class="field-label">¿Tienen procesos documentados para las tareas administrativas clave?</label><div class="options-list" id="docs-opts"></div></div>
-    <div class="field"><label class="field-label" for="proceso-facturacion">Describe el proceso de facturación: desde que se aprueba una venta hasta que el cliente tiene su factura</label><textarea id="proceso-facturacion" placeholder="Ej. Ejecutivo avisa por WhatsApp → admin abre el portal del SAT → captura los datos → timbra → descarga PDF y XML → envía por email al cliente…" style="min-height:120px;"></textarea></div>
-    <div class="field"><label class="field-label" for="proceso-cobranza">Describe el proceso de cobranza: cómo dan seguimiento a facturas pendientes de pago</label><textarea id="proceso-cobranza" placeholder="Ej. Al día 30 mandamos recordatorio por email, al 45 llamamos, al 60 escalamos al director. Todo es manual y se nos olvida…"></textarea></div>
-    <div class="field"><label class="field-label">¿Cómo se manejan las aprobaciones y autorizaciones de pagos o gastos?</label><div class="options-list" id="aprobaciones-opts"></div></div>
-    <div class="field"><label class="field-label" for="proceso-nomina">Describe cómo manejan la nómina <span class="field-optional">si aplica</span></label><textarea id="proceso-nomina" placeholder="Ej. Contadora externa la hace cada quincena con el listado que le enviamos por WhatsApp, tardamos 2 días…"></textarea></div>
-    <div class="field"><label class="field-label" for="proceso-contratos">¿Cómo crean, firman y almacenan contratos con clientes y proveedores?</label><textarea id="proceso-contratos" placeholder="Ej. El abogado hace el contrato en Word, lo imprimimos, firmamos físicamente, escaneamos y lo guardamos en Google Drive…"></textarea></div>
+    <div class="section-header"><div class="section-num">3</div><div><div class="section-title">Flujos Documentales y Procesos Clave</div><div class="section-desc">CÃ³mo fluye la informaciÃ³n y los documentos en administraciÃ³n</div></div></div>
+    <div class="field"><label class="field-label">Â¿Tienen procesos documentados para las tareas administrativas clave?</label><div class="options-list" id="docs-opts"></div></div>
+    <div class="field"><label class="field-label" for="proceso-facturacion">Describe el proceso de facturaciÃ³n: desde que se aprueba una venta hasta que el cliente tiene su factura</label><textarea id="proceso-facturacion" placeholder="Ej. Ejecutivo avisa por WhatsApp â†’ admin abre el portal del SAT â†’ captura los datos â†’ timbra â†’ descarga PDF y XML â†’ envÃ­a por email al clienteâ€¦" style="min-height:120px;"></textarea></div>
+    <div class="field"><label class="field-label" for="proceso-cobranza">Describe el proceso de cobranza: cÃ³mo dan seguimiento a facturas pendientes de pago</label><textarea id="proceso-cobranza" placeholder="Ej. Al dÃ­a 30 mandamos recordatorio por email, al 45 llamamos, al 60 escalamos al director. Todo es manual y se nos olvidaâ€¦"></textarea></div>
+    <div class="field"><label class="field-label">Â¿CÃ³mo se manejan las aprobaciones y autorizaciones de pagos o gastos?</label><div class="options-list" id="aprobaciones-opts"></div></div>
+    <div class="field"><label class="field-label" for="proceso-nomina">Describe cÃ³mo manejan la nÃ³mina <span class="field-optional">si aplica</span></label><textarea id="proceso-nomina" placeholder="Ej. Contadora externa la hace cada quincena con el listado que le enviamos por WhatsApp, tardamos 2 dÃ­asâ€¦"></textarea></div>
+    <div class="field"><label class="field-label" for="proceso-contratos">Â¿CÃ³mo crean, firman y almacenan contratos con clientes y proveedores?</label><textarea id="proceso-contratos" placeholder="Ej. El abogado hace el contrato en Word, lo imprimimos, firmamos fÃ­sicamente, escaneamos y lo guardamos en Google Driveâ€¦"></textarea></div>
   </div>
 
   <!-- S4 -->
   <div class="section">
-    <div class="section-header"><div class="section-num">4</div><div><div class="section-title">Tareas, Cuellos de Botella y Dolores</div><div class="section-desc">Dónde se pierde más tiempo en administración</div></div></div>
-    <div class="field"><label class="field-label" for="tareas-mejorar">¿Cuáles son las 3 a 5 tareas administrativas que más quieren mejorar o automatizar?</label><textarea id="tareas-mejorar" placeholder="Ej. 1) Facturación — tardamos 20 min por factura, 2) Conciliación bancaria — 3 días al mes, 3) Reportes financieros — los hacemos a mano en Excel…" style="min-height:120px;"></textarea></div>
-    <div class="field"><label class="field-label" for="tareas-repetitivas">¿Qué tareas se hacen de forma manual y repetitiva? ¿Con qué frecuencia?</label><textarea id="tareas-repetitivas" placeholder="Ej. Descargar CFDI del portal SAT todos los días, actualizar el flujo de caja en Excel, enviar recordatorios de pago a mano…"></textarea></div>
-    <div class="field"><label class="field-label" for="cuellos-botella">¿Dónde están los principales cuellos de botella en administración?</label><textarea id="cuellos-botella" placeholder="Ej. La aprobación del director tarda semanas, el contador externo no responde rápido, no tenemos sistema para rastrear pagos pendientes…"></textarea></div>
-    <div class="field"><label class="field-label">¿Cuántas horas semanales estimas que el equipo dedica a tareas administrativas manuales que podrían automatizarse?</label><div class="options-list" id="horas-manuales-opts"></div></div>
-    <div class="field"><label class="field-label">¿Cuáles son las principales fricciones en administración? <span class="field-hint">(todas las que apliquen)</span></label><div class="options-list" id="fricciones-opts"></div></div>
-    <div class="field"><label class="field-label" for="errores-frecuentes">¿Qué errores o problemas se repiten con más frecuencia en el área?</label><textarea id="errores-frecuentes" placeholder="Ej. Se nos olvidan vencimientos de contratos, datos mal capturados en facturas, pagos duplicados, clientes que pagan tarde sin seguimiento…"></textarea></div>
+    <div class="section-header"><div class="section-num">4</div><div><div class="section-title">Tareas, Cuellos de Botella y Dolores</div><div class="section-desc">DÃ³nde se pierde mÃ¡s tiempo en administraciÃ³n</div></div></div>
+    <div class="field"><label class="field-label" for="tareas-mejorar">Â¿CuÃ¡les son las 3 a 5 tareas administrativas que mÃ¡s quieren mejorar o automatizar?</label><textarea id="tareas-mejorar" placeholder="Ej. 1) FacturaciÃ³n â€” tardamos 20 min por factura, 2) ConciliaciÃ³n bancaria â€” 3 dÃ­as al mes, 3) Reportes financieros â€” los hacemos a mano en Excelâ€¦" style="min-height:120px;"></textarea></div>
+    <div class="field"><label class="field-label" for="tareas-repetitivas">Â¿QuÃ© tareas se hacen de forma manual y repetitiva? Â¿Con quÃ© frecuencia?</label><textarea id="tareas-repetitivas" placeholder="Ej. Descargar CFDI del portal SAT todos los dÃ­as, actualizar el flujo de caja en Excel, enviar recordatorios de pago a manoâ€¦"></textarea></div>
+    <div class="field"><label class="field-label" for="cuellos-botella">Â¿DÃ³nde estÃ¡n los principales cuellos de botella en administraciÃ³n?</label><textarea id="cuellos-botella" placeholder="Ej. La aprobaciÃ³n del director tarda semanas, el contador externo no responde rÃ¡pido, no tenemos sistema para rastrear pagos pendientesâ€¦"></textarea></div>
+    <div class="field"><label class="field-label">Â¿CuÃ¡ntas horas semanales estimas que el equipo dedica a tareas administrativas manuales que podrÃ­an automatizarse?</label><div class="options-list" id="horas-manuales-opts"></div></div>
+    <div class="field"><label class="field-label">Â¿CuÃ¡les son las principales fricciones en administraciÃ³n? <span class="field-hint">(todas las que apliquen)</span></label><div class="options-list" id="fricciones-opts"></div></div>
+    <div class="field"><label class="field-label" for="errores-frecuentes">Â¿QuÃ© errores o problemas se repiten con mÃ¡s frecuencia en el Ã¡rea?</label><textarea id="errores-frecuentes" placeholder="Ej. Se nos olvidan vencimientos de contratos, datos mal capturados en facturas, pagos duplicados, clientes que pagan tarde sin seguimientoâ€¦"></textarea></div>
   </div>
 
   <!-- S5 -->
   <div class="section">
-    <div class="section-header"><div class="section-num">5</div><div><div class="section-title">Volumen Documental y KPIs</div><div class="section-desc">Cuánto procesan y qué miden en administración</div></div></div>
+    <div class="section-header"><div class="section-num">5</div><div><div class="section-title">Volumen Documental y KPIs</div><div class="section-desc">CuÃ¡nto procesan y quÃ© miden en administraciÃ³n</div></div></div>
     <div class="three-col">
       <div class="field"><label class="field-label" for="facturas-emitidas">Facturas emitidas / mes</label><input type="text" id="facturas-emitidas" placeholder="Ej. ~80/mes"></div>
       <div class="field"><label class="field-label" for="facturas-recibidas">Facturas de proveedores / mes</label><input type="text" id="facturas-recibidas" placeholder="Ej. ~40/mes"></div>
       <div class="field"><label class="field-label" for="contratos-activos">Contratos activos</label><input type="text" id="contratos-activos" placeholder="Ej. ~25 clientes"></div>
     </div>
-    <div class="field"><label class="field-label">¿Cuánto tarda el proceso de una factura desde que se aprueba hasta que llega al cliente?</label><div class="options-list" id="tiempo-factura-opts"></div></div>
-    <div class="field"><label class="field-label">¿Qué KPIs o métricas controlan actualmente en administración? <span class="field-hint">(todos los que apliquen)</span></label><div class="options-grid" id="kpis-opts"></div></div>
-    <div class="field"><label class="field-label" for="kpis-otros">Otros KPIs que miden <span class="field-optional">opcional</span></label><input type="text" id="kpis-otros" placeholder="Ej. DSO (días de cobro), ratio de gastos vs ingresos…"></div>
-    <div class="field"><label class="field-label">Califica el desempeño actual de administración (1 = muy bajo · 5 = excelente)</label>
+    <div class="field"><label class="field-label">Â¿CuÃ¡nto tarda el proceso de una factura desde que se aprueba hasta que llega al cliente?</label><div class="options-list" id="tiempo-factura-opts"></div></div>
+    <div class="field"><label class="field-label">Â¿QuÃ© KPIs o mÃ©tricas controlan actualmente en administraciÃ³n? <span class="field-hint">(todos los que apliquen)</span></label><div class="options-grid" id="kpis-opts"></div></div>
+    <div class="field"><label class="field-label" for="kpis-otros">Otros KPIs que miden <span class="field-optional">opcional</span></label><input type="text" id="kpis-otros" placeholder="Ej. DSO (dÃ­as de cobro), ratio de gastos vs ingresosâ€¦"></div>
+    <div class="field"><label class="field-label">Califica el desempeÃ±o actual de administraciÃ³n (1 = muy bajo Â· 5 = excelente)</label>
       <div style="display:flex;flex-direction:column;gap:16px;margin-top:4px;">
-        <div><div class="field-label" style="font-size:12px;margin-bottom:6px;">Velocidad de facturación y cobranza</div><div class="scale-row" id="scale-facturacion"></div></div>
+        <div><div class="field-label" style="font-size:12px;margin-bottom:6px;">Velocidad de facturaciÃ³n y cobranza</div><div class="scale-row" id="scale-facturacion"></div></div>
         <div><div class="field-label" style="font-size:12px;margin-bottom:6px;">Control y visibilidad financiera</div><div class="scale-row" id="scale-financiero"></div></div>
-        <div><div class="field-label" style="font-size:12px;margin-bottom:6px;">Organización y gestión documental</div><div class="scale-row" id="scale-documental"></div></div>
+        <div><div class="field-label" style="font-size:12px;margin-bottom:6px;">OrganizaciÃ³n y gestiÃ³n documental</div><div class="scale-row" id="scale-documental"></div></div>
         <div><div class="field-label" style="font-size:12px;margin-bottom:6px;">Cumplimiento fiscal y normativo</div><div class="scale-row" id="scale-fiscal"></div></div>
-        <div><div class="field-label" style="font-size:12px;margin-bottom:6px;">Uso de tecnología en el área</div><div class="scale-row" id="scale-tecnologia"></div></div>
+        <div><div class="field-label" style="font-size:12px;margin-bottom:6px;">Uso de tecnologÃ­a en el Ã¡rea</div><div class="scale-row" id="scale-tecnologia"></div></div>
       </div>
     </div>
   </div>
 
   <!-- S6 -->
   <div class="section">
-    <div class="section-header"><div class="section-num">6</div><div><div class="section-title">Automatizaciones e IA Actuales</div><div class="section-desc">Qué tienen automatizado en administración hoy</div></div></div>
-    <div class="field"><label class="field-label">¿Tienen automatizaciones en procesos administrativos?</label><div class="options-list" id="tiene-auto-opts"></div></div>
-    <div class="field"><label class="field-label">¿Qué tienen automatizado actualmente? <span class="field-hint">(todas las que apliquen)</span></label><div class="options-grid" id="que-auto-opts"></div></div>
-    <div class="field"><label class="field-label" for="herr-auto">¿Qué herramientas usan para automatizar? <span class="field-optional">opcional</span></label><input type="text" id="herr-auto" placeholder="Ej. Zapier, Make, macros en Excel, Facturapi, robot de SAT…"></div>
-    <div class="field"><label class="field-label">¿Cómo funcionan las automatizaciones actuales?</label><div class="options-list" id="calidad-auto-opts"></div></div>
-    <div class="field"><label class="field-label" for="costo-auto">Costo mensual en herramientas de administración / automatización <span class="field-optional">aproximado</span></label><input type="text" id="costo-auto" placeholder="Ej. $4,500 MXN/mes (CONTPAQi + Facturapi + contador externo)"></div>
-    <div class="field"><label class="field-label">¿Por qué no han automatizado más? <span class="field-hint">(si aplica)</span></label><div class="options-grid" id="por-que-no-opts"></div></div>
+    <div class="section-header"><div class="section-num">6</div><div><div class="section-title">Automatizaciones e IA Actuales</div><div class="section-desc">QuÃ© tienen automatizado en administraciÃ³n hoy</div></div></div>
+    <div class="field"><label class="field-label">Â¿Tienen automatizaciones en procesos administrativos?</label><div class="options-list" id="tiene-auto-opts"></div></div>
+    <div class="field"><label class="field-label">Â¿QuÃ© tienen automatizado actualmente? <span class="field-hint">(todas las que apliquen)</span></label><div class="options-grid" id="que-auto-opts"></div></div>
+    <div class="field"><label class="field-label" for="herr-auto">Â¿QuÃ© herramientas usan para automatizar? <span class="field-optional">opcional</span></label><input type="text" id="herr-auto" placeholder="Ej. Zapier, Make, macros en Excel, Facturapi, robot de SATâ€¦"></div>
+    <div class="field"><label class="field-label">Â¿CÃ³mo funcionan las automatizaciones actuales?</label><div class="options-list" id="calidad-auto-opts"></div></div>
+    <div class="field"><label class="field-label" for="costo-auto">Costo mensual en herramientas de administraciÃ³n / automatizaciÃ³n <span class="field-optional">aproximado</span></label><input type="text" id="costo-auto" placeholder="Ej. $4,500 MXN/mes (CONTPAQi + Facturapi + contador externo)"></div>
+    <div class="field"><label class="field-label">Â¿Por quÃ© no han automatizado mÃ¡s? <span class="field-hint">(si aplica)</span></label><div class="options-grid" id="por-que-no-opts"></div></div>
   </div>
 
   <!-- S7 -->
   <div class="section">
-    <div class="section-header"><div class="section-num">7</div><div><div class="section-title">Cumplimiento, Seguridad y Expectativas</div><div class="section-desc">Restricciones, normativas y qué espera conseguir</div></div></div>
-    <div class="field"><label class="field-label">¿Qué normativas fiscales o legales les aplican? <span class="field-hint">(todas las que apliquen)</span></label><div class="options-grid" id="normativas-opts"></div></div>
-    <div class="field"><label class="field-label">¿Tienen políticas de seguridad para el acceso a información financiera o documentos sensibles?</label><div class="options-list" id="seguridad-opts"></div></div>
-    <div class="field"><label class="field-label" for="quien-autoriza">¿Quién autoriza el acceso a información financiera sensible? ¿Cómo controlan el acceso?</label><textarea id="quien-autoriza" placeholder="Ej. Solo el CEO y la contadora tienen acceso al sistema bancario, el sistema de facturación lo usan 3 personas…"></textarea></div>
-    <div class="field"><label class="field-label" for="exito">¿Cómo definen el éxito de este diagnóstico?</label><textarea id="exito" placeholder="Ej. Reducir el tiempo de facturación de 20 min a 2 min, que la cobranza funcione sola y no perdamos clientes por falta de seguimiento…"></textarea></div>
-    <div class="field"><label class="field-label" for="restricciones">¿Hay restricciones importantes? (sistema que no pueden cambiar, requisitos legales, presupuesto máximo)</label><textarea id="restricciones" placeholder="Ej. No podemos cambiar de sistema de facturación este año, el contador externo tiene el CIEC y no lo comparte, presupuesto máximo $5k MXN/mes…"></textarea></div>
-    <div class="field"><label class="field-label">Presupuesto disponible para mejoras tecnológicas en administración</label><div class="options-list" id="presupuesto-opts"></div></div>
-    <div class="field"><label class="field-label">¿Hay resistencia al cambio en el equipo administrativo?</label><div class="options-list" id="resistencia-opts"></div></div>
-    <div class="field"><label class="field-label" for="dolores">Principales dolores administrativos que quieren resolver — en sus propias palabras</label><textarea id="dolores" placeholder="Los problemas más urgentes y costosos…" style="min-height:110px;"></textarea></div>
-    <div class="field"><label class="field-label" for="contexto-extra">Algo más relevante para el diagnóstico <span class="field-optional">opcional</span></label><textarea id="contexto-extra" placeholder="Cambios recientes, auditorías pendientes, proyectos en curso…"></textarea></div>
+    <div class="section-header"><div class="section-num">7</div><div><div class="section-title">Cumplimiento, Seguridad y Expectativas</div><div class="section-desc">Restricciones, normativas y quÃ© espera conseguir</div></div></div>
+    <div class="field"><label class="field-label">Â¿QuÃ© normativas fiscales o legales les aplican? <span class="field-hint">(todas las que apliquen)</span></label><div class="options-grid" id="normativas-opts"></div></div>
+    <div class="field"><label class="field-label">Â¿Tienen polÃ­ticas de seguridad para el acceso a informaciÃ³n financiera o documentos sensibles?</label><div class="options-list" id="seguridad-opts"></div></div>
+    <div class="field"><label class="field-label" for="quien-autoriza">Â¿QuiÃ©n autoriza el acceso a informaciÃ³n financiera sensible? Â¿CÃ³mo controlan el acceso?</label><textarea id="quien-autoriza" placeholder="Ej. Solo el CEO y la contadora tienen acceso al sistema bancario, el sistema de facturaciÃ³n lo usan 3 personasâ€¦"></textarea></div>
+    <div class="field"><label class="field-label" for="exito">Â¿CÃ³mo definen el Ã©xito de este diagnÃ³stico?</label><textarea id="exito" placeholder="Ej. Reducir el tiempo de facturaciÃ³n de 20 min a 2 min, que la cobranza funcione sola y no perdamos clientes por falta de seguimientoâ€¦"></textarea></div>
+    <div class="field"><label class="field-label" for="restricciones">Â¿Hay restricciones importantes? (sistema que no pueden cambiar, requisitos legales, presupuesto mÃ¡ximo)</label><textarea id="restricciones" placeholder="Ej. No podemos cambiar de sistema de facturaciÃ³n este aÃ±o, el contador externo tiene el CIEC y no lo comparte, presupuesto mÃ¡ximo $5k MXN/mesâ€¦"></textarea></div>
+    <div class="field"><label class="field-label">Presupuesto disponible para mejoras tecnolÃ³gicas en administraciÃ³n</label><div class="options-list" id="presupuesto-opts"></div></div>
+    <div class="field"><label class="field-label">Â¿Hay resistencia al cambio en el equipo administrativo?</label><div class="options-list" id="resistencia-opts"></div></div>
+    <div class="field"><label class="field-label" for="dolores">Principales dolores administrativos que quieren resolver â€” en sus propias palabras</label><textarea id="dolores" placeholder="Los problemas mÃ¡s urgentes y costososâ€¦" style="min-height:110px;"></textarea></div>
+    <div class="field"><label class="field-label" for="contexto-extra">Algo mÃ¡s relevante para el diagnÃ³stico <span class="field-optional">opcional</span></label><textarea id="contexto-extra" placeholder="Cambios recientes, auditorÃ­as pendientes, proyectos en cursoâ€¦"></textarea></div>
   </div>
 </main>
 
 <div class="footer-bar">
   <div class="footer-inner">
-    <div class="save-status"><div class="save-dot"></div><span id="save-text">Guardado automáticamente</span></div>
+    <div class="save-status"><div class="save-dot"></div><span id="save-text">Guardado automÃ¡ticamente</span></div>
     <div style="display:flex;gap:10px;">
       <button class="btn btn-outline" onclick="clearForm()">Limpiar</button>
-      <button class="btn btn-outline" onclick="exportJSON()">⬇ Exportar JSON</button>
-      <button class="btn btn-primary" id="btn-api" onclick="enviarAlAPI()">💾 Guardar ahora</button>
+      <button class="btn btn-outline" onclick="exportJSON()">â¬‡ Exportar JSON</button>
+      <button class="btn btn-primary" id="btn-api" onclick="enviarAlAPI()">ðŸ’¾ Guardar ahora</button>
     </div>
   </div>
 </div>
@@ -191,31 +191,31 @@
 <script>
 const DATA={
   rol:[{v:'ceo',l:'CEO / Fundador'},{v:'cfo',l:'CFO / Director Financiero'},{v:'director-admin',l:'Director Administrativo'},{v:'contador',l:'Contador / Controller'},{v:'asistente',l:'Asistente Administrativa'},{v:'otro',l:'Otro'}],
-  tamano:[{v:'1-5',l:'1–5'},{v:'6-15',l:'6–15'},{v:'16-50',l:'16–50'},{v:'51-100',l:'51–100'},{v:'100+',l:'Más de 100'}],
-  tamano_admin:[{v:'solo',l:'Solo yo (1 persona)'},{v:'2-3',l:'2–3 personas'},{v:'4-6',l:'4–6 personas'},{v:'7+',l:'7 o más personas'},{v:'externo',l:'Principalmente externo (contador/despacho)'}],
-  herramientas:['Excel / Google Sheets','CONTPAQi','Aspel (COI, NOI, SAE…)','SAP B1 / ERP','Facturapi / FacturaMas','Portal SAT (facturación directa)','QuickBooks','Google Drive / OneDrive','Software de nómina','Sistema bancario (SPEI, banca en línea)','DocuSign / firma electrónica','Notion / ClickUp (tareas)','Sin sistema formal'],
-  fuente_verdad:[{v:'si',l:'Sí, un sistema central donde todos los datos están'},{v:'parcial',l:'Parcialmente — finanzas sí, contratos no (o viceversa)'},{v:'no',l:'No, está disperso entre Excel, email y carpetas'}],
-  digitalizacion:[{v:'0-25',l:'0–25% — mayormente en papel'},{v:'26-50',l:'26–50%'},{v:'51-75',l:'51–75%'},{v:'76-100',l:'76–100% — casi todo digitalizado'}],
-  archivo:[{v:'fisico',l:'Físico — archiveros y carpetas en papel'},{v:'drive',l:'Google Drive / OneDrive en carpetas'},{v:'dms',l:'Sistema de gestión documental (DMS)'},{v:'erp',l:'Dentro del ERP / sistema contable'},{v:'mixto',l:'Mixto — parte digital, parte físico'}],
-  docs:[{v:'si-completo',l:'Sí, documentados y actualizados'},{v:'si-parcial',l:'Parcialmente — los principales sí'},{v:'informal',l:'Solo informal — en la cabeza del contador'},{v:'no',l:'No existe documentación formal'}],
-  aprobaciones:[{v:'digital-auto',l:'Digital y automatizado — el sistema envía las aprobaciones'},{v:'digital-manual',l:'Digital pero manual — por email o WhatsApp'},{v:'verbal',l:'Verbal o presencial'},{v:'mixto',l:'Mixto según el monto o tipo de gasto'}],
-  horas_manuales:[{v:'0-5',l:'Menos de 5 horas por semana'},{v:'5-15',l:'5 a 15 horas por semana'},{v:'15-30',l:'15 a 30 horas por semana'},{v:'30-50',l:'30 a 50 horas por semana'},{v:'50+',l:'Más de 50 horas por semana'}],
-  fricciones:['🧾 Facturación manual lenta y propensa a errores','💸 Sin seguimiento automático de cobranza','📋 Reportes financieros que toman días hacer','🔁 Datos que se capturan en múltiples sistemas','📄 Contratos en papel difíciles de rastrear','⚠️ Vencimientos de contratos o pagos que se nos olvidan','👤 Dependencia del contador externo para decisiones urgentes','🏦 Conciliación bancaria manual y tardada','📊 Sin visibilidad financiera en tiempo real'],
-  tiempo_factura:[{v:'mismo-dia',l:'El mismo día (menos de 2 horas)'},{v:'1-2-dias',l:'1 a 2 días hábiles'},{v:'3-5-dias',l:'3 a 5 días hábiles'},{v:'mas-semana',l:'Más de una semana'},{v:'variable',l:'Muy variable — depende de quién esté disponible'}],
-  kpis:['Facturación mensual / ingresos','Cuentas por cobrar (cartera vencida)','Cuentas por pagar','Flujo de caja / cash flow','Días de cobro (DSO)','% de facturas pagadas a tiempo','Gastos vs presupuesto','Rentabilidad por cliente / proyecto','Ninguno / no medimos formalmente'],
-  tiene_auto:[{v:'si',l:'Sí, varios procesos automatizados'},{v:'poco',l:'Algo básico (ej. facturación automática al sistema)'},{v:'no',l:'No, todo es manual'},{v:'intent',l:'Lo intentamos pero no funcionó'}],
-  que_auto:['Timbrado / emisión automática de facturas','Recordatorios de pago a clientes','Conciliación bancaria automatizada','Reportes financieros automáticos','Alertas de vencimientos de contratos','Nómina automática','Validación de XML del SAT','Descarga automática de CFDI'],
-  calidad_auto:[{v:'bien',l:'Funcionan bien — ahorran tiempo real'},{v:'regular',l:'Regular — hay errores o necesitan mantenimiento constante'},{v:'mal',l:'Mal — dan más problemas que soluciones'}],
-  por_que_no:['Falta de tiempo para implementar','No sabemos cómo','Presupuesto limitado','El contador externo no usa tecnología','No era prioridad'],
-  normativas:['SAT — Régimen Simplificado de Confianza (RESICO)','SAT — Régimen General de Personas Morales','IMSS / INFONAVIT — obligaciones laborales','Ley Federal de Protección de Datos Personales (LFPDPPP)','NOM-151 (conservación de mensajes de datos)','Normas contables NIIF / NIF','Auditoría externa o contralor','Sector específico (financiero, salud, alimentos…)'],
-  seguridad:[{v:'formalizada',l:'Sí, con políticas escritas y control de accesos formales'},{v:'informal',l:'Básica e informal — sabemos quién puede ver qué pero sin documentar'},{v:'no',l:'No, cualquiera puede acceder a la información financiera'}],
-  presupuesto:[{v:'menos2k',l:'Menos de $2,000 MXN/mes'},{v:'2k-5k',l:'$2,000 a $5,000 MXN/mes'},{v:'5k-15k',l:'$5,000 a $15,000 MXN/mes'},{v:'15k-30k',l:'$15,000 a $30,000 MXN/mes'},{v:'30k+',l:'Más de $30,000 MXN/mes'},{v:'roi',l:'Depende del ROI demostrado'}],
-  resistencia:[{v:'muy-abiertos',l:'Muy abiertos — quieren modernizarse ya'},{v:'se-adaptan',l:'Se adaptan con capacitación y tiempo'},{v:'resistencia',l:'Hay resistencia — necesitan convencimiento'},{v:'no-se',l:'No lo sé aún'}],
+  tamano:[{v:'1-5',l:'1â€“5'},{v:'6-15',l:'6â€“15'},{v:'16-50',l:'16â€“50'},{v:'51-100',l:'51â€“100'},{v:'100+',l:'MÃ¡s de 100'}],
+  tamano_admin:[{v:'solo',l:'Solo yo (1 persona)'},{v:'2-3',l:'2â€“3 personas'},{v:'4-6',l:'4â€“6 personas'},{v:'7+',l:'7 o mÃ¡s personas'},{v:'externo',l:'Principalmente externo (contador/despacho)'}],
+  herramientas:['Excel / Google Sheets','CONTPAQi','Aspel (COI, NOI, SAEâ€¦)','SAP B1 / ERP','Facturapi / FacturaMas','Portal SAT (facturaciÃ³n directa)','QuickBooks','Google Drive / OneDrive','Software de nÃ³mina','Sistema bancario (SPEI, banca en lÃ­nea)','DocuSign / firma electrÃ³nica','Notion / ClickUp (tareas)','Sin sistema formal'],
+  fuente_verdad:[{v:'si',l:'SÃ­, un sistema central donde todos los datos estÃ¡n'},{v:'parcial',l:'Parcialmente â€” finanzas sÃ­, contratos no (o viceversa)'},{v:'no',l:'No, estÃ¡ disperso entre Excel, email y carpetas'}],
+  digitalizacion:[{v:'0-25',l:'0â€“25% â€” mayormente en papel'},{v:'26-50',l:'26â€“50%'},{v:'51-75',l:'51â€“75%'},{v:'76-100',l:'76â€“100% â€” casi todo digitalizado'}],
+  archivo:[{v:'fisico',l:'FÃ­sico â€” archiveros y carpetas en papel'},{v:'drive',l:'Google Drive / OneDrive en carpetas'},{v:'dms',l:'Sistema de gestiÃ³n documental (DMS)'},{v:'erp',l:'Dentro del ERP / sistema contable'},{v:'mixto',l:'Mixto â€” parte digital, parte fÃ­sico'}],
+  docs:[{v:'si-completo',l:'SÃ­, documentados y actualizados'},{v:'si-parcial',l:'Parcialmente â€” los principales sÃ­'},{v:'informal',l:'Solo informal â€” en la cabeza del contador'},{v:'no',l:'No existe documentaciÃ³n formal'}],
+  aprobaciones:[{v:'digital-auto',l:'Digital y automatizado â€” el sistema envÃ­a las aprobaciones'},{v:'digital-manual',l:'Digital pero manual â€” por email o WhatsApp'},{v:'verbal',l:'Verbal o presencial'},{v:'mixto',l:'Mixto segÃºn el monto o tipo de gasto'}],
+  horas_manuales:[{v:'0-5',l:'Menos de 5 horas por semana'},{v:'5-15',l:'5 a 15 horas por semana'},{v:'15-30',l:'15 a 30 horas por semana'},{v:'30-50',l:'30 a 50 horas por semana'},{v:'50+',l:'MÃ¡s de 50 horas por semana'}],
+  fricciones:['ðŸ§¾ FacturaciÃ³n manual lenta y propensa a errores','ðŸ’¸ Sin seguimiento automÃ¡tico de cobranza','ðŸ“‹ Reportes financieros que toman dÃ­as hacer','ðŸ” Datos que se capturan en mÃºltiples sistemas','ðŸ“„ Contratos en papel difÃ­ciles de rastrear','âš ï¸ Vencimientos de contratos o pagos que se nos olvidan','ðŸ‘¤ Dependencia del contador externo para decisiones urgentes','ðŸ¦ ConciliaciÃ³n bancaria manual y tardada','ðŸ“Š Sin visibilidad financiera en tiempo real'],
+  tiempo_factura:[{v:'mismo-dia',l:'El mismo dÃ­a (menos de 2 horas)'},{v:'1-2-dias',l:'1 a 2 dÃ­as hÃ¡biles'},{v:'3-5-dias',l:'3 a 5 dÃ­as hÃ¡biles'},{v:'mas-semana',l:'MÃ¡s de una semana'},{v:'variable',l:'Muy variable â€” depende de quiÃ©n estÃ© disponible'}],
+  kpis:['FacturaciÃ³n mensual / ingresos','Cuentas por cobrar (cartera vencida)','Cuentas por pagar','Flujo de caja / cash flow','DÃ­as de cobro (DSO)','% de facturas pagadas a tiempo','Gastos vs presupuesto','Rentabilidad por cliente / proyecto','Ninguno / no medimos formalmente'],
+  tiene_auto:[{v:'si',l:'SÃ­, varios procesos automatizados'},{v:'poco',l:'Algo bÃ¡sico (ej. facturaciÃ³n automÃ¡tica al sistema)'},{v:'no',l:'No, todo es manual'},{v:'intent',l:'Lo intentamos pero no funcionÃ³'}],
+  que_auto:['Timbrado / emisiÃ³n automÃ¡tica de facturas','Recordatorios de pago a clientes','ConciliaciÃ³n bancaria automatizada','Reportes financieros automÃ¡ticos','Alertas de vencimientos de contratos','NÃ³mina automÃ¡tica','ValidaciÃ³n de XML del SAT','Descarga automÃ¡tica de CFDI'],
+  calidad_auto:[{v:'bien',l:'Funcionan bien â€” ahorran tiempo real'},{v:'regular',l:'Regular â€” hay errores o necesitan mantenimiento constante'},{v:'mal',l:'Mal â€” dan mÃ¡s problemas que soluciones'}],
+  por_que_no:['Falta de tiempo para implementar','No sabemos cÃ³mo','Presupuesto limitado','El contador externo no usa tecnologÃ­a','No era prioridad'],
+  normativas:['SAT â€” RÃ©gimen Simplificado de Confianza (RESICO)','SAT â€” RÃ©gimen General de Personas Morales','IMSS / INFONAVIT â€” obligaciones laborales','Ley Federal de ProtecciÃ³n de Datos Personales (LFPDPPP)','NOM-151 (conservaciÃ³n de mensajes de datos)','Normas contables NIIF / NIF','AuditorÃ­a externa o contralor','Sector especÃ­fico (financiero, salud, alimentosâ€¦)'],
+  seguridad:[{v:'formalizada',l:'SÃ­, con polÃ­ticas escritas y control de accesos formales'},{v:'informal',l:'BÃ¡sica e informal â€” sabemos quiÃ©n puede ver quÃ© pero sin documentar'},{v:'no',l:'No, cualquiera puede acceder a la informaciÃ³n financiera'}],
+  presupuesto:[{v:'menos2k',l:'Menos de $2,000 MXN/mes'},{v:'2k-5k',l:'$2,000 a $5,000 MXN/mes'},{v:'5k-15k',l:'$5,000 a $15,000 MXN/mes'},{v:'15k-30k',l:'$15,000 a $30,000 MXN/mes'},{v:'30k+',l:'MÃ¡s de $30,000 MXN/mes'},{v:'roi',l:'Depende del ROI demostrado'}],
+  resistencia:[{v:'muy-abiertos',l:'Muy abiertos â€” quieren modernizarse ya'},{v:'se-adaptan',l:'Se adaptan con capacitaciÃ³n y tiempo'},{v:'resistencia',l:'Hay resistencia â€” necesitan convencimiento'},{v:'no-se',l:'No lo sÃ© aÃºn'}],
 };
 
 const STORAGE_KEY='mentoria_diag_administracion_v1';
 const AREA='administracion';
-const API_BASE='http://localhost:3001/api/v1';
+const API_BASE='https://api.flowdesk.mx/api/v1';
 const CLIENTE_ID=new URLSearchParams(window.location.search).get('clienteId')||'';
 let state={};
 let _syncTimer=null;
@@ -224,8 +224,8 @@ function buildCheckboxGroup(id,items,key){const el=document.getElementById(id);i
 function buildRadioGroup(id,items,key){const el=document.getElementById(id);if(!el)return;el.innerHTML='';items.forEach(item=>{const v=typeof item==='string'?item:item.v,l=typeof item==='string'?item:item.l,s=item.s||null;const ch=state[key]===v;const d=document.createElement('label');d.className='opt-item'+(ch?' selected':'');d.innerHTML=`<input type="radio" name="${key}" value="${v}" ${ch?'checked':''}><div><div class="opt-label">${l}</div>${s?`<div class="opt-sub">${s}</div>`:''}</div>`;d.querySelector('input').addEventListener('change',()=>{el.querySelectorAll('.opt-item').forEach(i=>i.classList.remove('selected'));d.classList.add('selected');state[key]=v;autoSave();});el.appendChild(d);});}
 function buildScale(id,key){const el=document.getElementById(id);if(!el)return;el.innerHTML='';for(let i=1;i<=5;i++){const b=document.createElement('button');b.type='button';b.className='scale-btn'+(state[key]===i?' active':'');b.textContent=i;b.addEventListener('click',()=>{el.querySelectorAll('.scale-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');state[key]=i;autoSave();});el.appendChild(b);}}
 function bindText(id,key){const el=document.getElementById(id);if(!el)return;el.value=state[key]||'';el.addEventListener('input',()=>{state[key]=el.value;autoSave();});}
-function autoSave(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));document.getElementById('save-text').textContent='Guardado localmente — '+new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});updateProgress();clearTimeout(_syncTimer);_syncTimer=setTimeout(syncToAPI,2000);}
-async function syncToAPI(){if(!CLIENTE_ID)return;const token=localStorage.getItem('fd_access');if(!token)return;document.getElementById('save-text').textContent='☁️ Sincronizando con FlowDesk…';try{const res=await fetch(`${API_BASE}/mentoria/clientes/${CLIENTE_ID}/diagnosticos`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({area:AREA,datos:state})});if(res.ok)document.getElementById('save-text').textContent='✅ Guardado en FlowDesk — '+new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});else document.getElementById('save-text').textContent='⚠️ No se pudo sincronizar (guardado local)';}catch{document.getElementById('save-text').textContent='⚠️ Sin conexión — guardado localmente';}}
+function autoSave(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));document.getElementById('save-text').textContent='Guardado localmente â€” '+new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});updateProgress();clearTimeout(_syncTimer);_syncTimer=setTimeout(syncToAPI,2000);}
+async function syncToAPI(){if(!CLIENTE_ID)return;const token=localStorage.getItem('fd_access');if(!token)return;document.getElementById('save-text').textContent='â˜ï¸ Sincronizando con FlowDeskâ€¦';try{const res=await fetch(`${API_BASE}/mentoria/clientes/${CLIENTE_ID}/diagnosticos`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({area:AREA,datos:state})});if(res.ok)document.getElementById('save-text').textContent='âœ… Guardado en FlowDesk â€” '+new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});else document.getElementById('save-text').textContent='âš ï¸ No se pudo sincronizar (guardado local)';}catch{document.getElementById('save-text').textContent='âš ï¸ Sin conexiÃ³n â€” guardado localmente';}}
 function updateProgress(){
   const radios=['rol','tamano','tamano_admin','fuente_verdad','digitalizacion','archivo','docs','aprobaciones','horas_manuales','tiempo_factura','tiene_auto','calidad_auto','seguridad','presupuesto','resistencia'];
   const checks=['herramientas','fricciones','kpis','que_auto','por_que_no','normativas'];
@@ -248,7 +248,7 @@ function init(){
 }
 function exportJSON(){
   const out={
-    meta:{area:'Administración',version:'1.0',fecha_exportacion:new Date().toISOString(),herramienta:'MentorIA Diagnóstico'},
+    meta:{area:'AdministraciÃ³n',version:'1.0',fecha_exportacion:new Date().toISOString(),herramienta:'MentorIA DiagnÃ³stico'},
     datos_generales:{empresa:state.empresa||'',contacto:state.contacto||'',rol:state.rol||'',tamano_empresa:state.tamano||'',tamano_equipo_admin:state.tamano_admin||'',estructura:state.estructura||'',dependencias_criticas:state.dependencias||''},
     herramientas:{stack:state.herramientas||[],otras:state.otras_herr||'',fuente_de_verdad:state.fuente_verdad||'',nivel_digitalizacion:state.digitalizacion||'',metodo_archivo:state.archivo||''},
     procesos:{tiene_documentacion:state.docs||'',proceso_facturacion:state.proceso_facturacion||'',proceso_cobranza:state.proceso_cobranza||'',como_aprobaciones:state.aprobaciones||'',proceso_nomina:state.proceso_nomina||'',proceso_contratos:state.proceso_contratos||''},
@@ -262,15 +262,16 @@ function exportJSON(){
   const emp=(state.empresa||'cliente').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
   a.href=url;a.download=`diagnostico-administracion-${emp}-${new Date().toISOString().split('T')[0]}.json`;a.click();URL.revokeObjectURL(url);
 }
-function clearForm(){if(!confirm('¿Limpiar todos los datos?'))return;state={};localStorage.removeItem(STORAGE_KEY);init();}
+function clearForm(){if(!confirm('Â¿Limpiar todos los datos?'))return;state={};localStorage.removeItem(STORAGE_KEY);init();}
 async function enviarAlAPI(){
   if(!CLIENTE_ID){alert('Abre este formulario desde el workspace del cliente en FlowDesk.');return;}
-  if(!localStorage.getItem('fd_access')){alert('Debes iniciar sesión en FlowDesk primero.');return;}
-  const btn=document.getElementById('btn-api');btn.textContent='⏳ Guardando…';btn.disabled=true;
+  if(!localStorage.getItem('fd_access')){alert('Debes iniciar sesiÃ³n en FlowDesk primero.');return;}
+  const btn=document.getElementById('btn-api');btn.textContent='â³ Guardandoâ€¦';btn.disabled=true;
   clearTimeout(_syncTimer);await syncToAPI();
-  btn.textContent='💾 Guardar ahora';btn.disabled=false;
+  btn.textContent='ðŸ’¾ Guardar ahora';btn.disabled=false;
 }
 document.addEventListener('DOMContentLoaded',init);
 </script>
 </body>
 </html>
+
