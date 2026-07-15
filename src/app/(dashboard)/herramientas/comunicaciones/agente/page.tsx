@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Bot, Save, Plus, X, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Bot, Save, Plus, X, AlertCircle, CheckCircle2, Plug } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? '';
 
@@ -13,6 +13,7 @@ interface AgentConfig {
   criterios_buen_lead: string | null;
   criterios_mal_lead: string | null;
   cal_booking_url: string | null;
+  evolution_instance: string | null;
 }
 
 const DEFAULTS: AgentConfig = {
@@ -24,6 +25,7 @@ const DEFAULTS: AgentConfig = {
   criterios_buen_lead: '',
   criterios_mal_lead: '',
   cal_booking_url: '',
+  evolution_instance: '',
 };
 
 export default function AgentePage() {
@@ -217,6 +219,27 @@ export default function AgentePage() {
             </button>
           )}
         </div>
+      </Section>
+
+      {/* Sección 0: Conexión WhatsApp */}
+      <Section title="0. Conexión WhatsApp">
+        <Field
+          label="Nombre de instancia Evolution API"
+          hint="El nombre que pusiste al crear la instancia para este número en Evolution API. El bot sólo recibirá mensajes de esa instancia."
+        >
+          <div className="flex gap-2 items-center">
+            <Plug className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" />
+            <input
+              value={cfg.evolution_instance ?? ''}
+              onChange={e => set('evolution_instance', e.target.value)}
+              placeholder="Ej: agente-ventas-mentoria"
+              className={`${INPUT} flex-1`}
+            />
+          </div>
+          <p className="text-[10px] text-gray-700 mt-1">
+            Sin este campo el bot no recibirá mensajes aunque Evolution API esté configurado.
+          </p>
+        </Field>
       </Section>
 
       {/* Sección 4: Criterios + Cal.com */}
