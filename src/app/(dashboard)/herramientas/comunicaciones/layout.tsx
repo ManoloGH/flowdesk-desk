@@ -1,13 +1,14 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Inbox, Radio, BookUser, GitFork } from 'lucide-react';
+import { Inbox, Radio, BookUser, GitFork, Bot } from 'lucide-react';
 
 const TABS = [
   { href: '/herramientas/comunicaciones/bandeja',    label: 'Bandeja',    icon: Inbox },
   { href: '/herramientas/comunicaciones/canales',    label: 'Canales',    icon: Radio },
   { href: '/herramientas/comunicaciones/directorio', label: 'Directorio', icon: BookUser },
   { href: '/herramientas/comunicaciones/ruteo',      label: 'Ruteo',      icon: GitFork },
+  { href: '/herramientas/comunicaciones/agente',     label: 'Agente',     icon: Bot },
 ];
 
 export default function ComunicacionesLayout({ children }: { children: React.ReactNode }) {
