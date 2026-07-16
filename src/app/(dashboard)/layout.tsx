@@ -22,6 +22,7 @@ import {
   Users, Map, Plug, BookUser, LogOut, ShieldCheck,
   Building2, CreditCard, ShieldAlert, Settings, Bell, X, CheckCheck,
   ExternalLink, ChevronLeft, Cctv, Zap, ChevronDown, Brain, Globe, ListChecks, Radio, GitBranch,
+  Workflow, GraduationCap, Layers,
 } from 'lucide-react';
 
 /* ── Navigation ── */
@@ -34,7 +35,10 @@ const CORE_NAV: NavItem[] = [
 ];
 
 const RECURSOS_BASE: NavItem[] = [
-  { href: '/contacts',     label: 'CRM',               icon: BookUser },
+  { href: '/mentoria',     label: 'CRM',               icon: Workflow },
+  { href: '/contacts',     label: 'Contactos',         icon: BookUser },
+  { href: '/erp',          label: 'ERP',               icon: GraduationCap },
+  { href: '/recursos',     label: 'Recursos',          icon: Layers },
   { href: '/erp-areas',    label: 'ERP por Área',      icon: GitBranch },
   { href: '/campus',       label: 'Campus / Espacios', icon: Map },
   { href: '/mi-web',       label: 'Mi Web',            icon: Globe },
