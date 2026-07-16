@@ -117,12 +117,13 @@ body{font-family:'Sora',system-ui,sans-serif;background:var(--body-bg);color:var
 .btn-print-sticky:hover{background:var(--blue-mid);transform:translateY(-1px)}
 
 /* physical signature block — screen hidden, print visible */
-.print-sig-block{display:none}
+.print-sig-block{display:none}.pb{display:none}
 
 @page{margin:18mm 18mm 15mm 18mm;@bottom-center{content:counter(page);font-size:9px;font-family:sans-serif;color:#666}}@media print{
   .btn-print-sticky{display:none!important}body{padding-top:0!important;padding-bottom:0!important}
   .sign-section{display:none!important}
   .print-sig-block{display:block;margin-top:40px;padding-top:28px;border-top:2px solid #000}
+  .pb{display:block!important;break-before:page;page-break-before:always;height:0!important;margin:0!important;padding:0!important}
   .print-sig-title{font-size:13px;font-weight:600;color:#111;text-align:center;margin-bottom:28px}
   .print-sig-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;margin-bottom:24px}
   .print-sig-party{text-align:center}
@@ -243,6 +244,7 @@ body{font-family:'Sora',system-ui,sans-serif;background:var(--body-bg);color:var
   </div>
 </div>
 
+<div class="pb"></div>
 <p style="font-size:13.5px;color:var(--slate);margin-bottom:30px;line-height:1.8">Ambas partes, conjuntamente denominadas <strong>&#8220;las Partes&#8221;</strong>, declaran tener capacidad legal suficiente para celebrar el presente contrato y convienen en sujetarse a las siguientes:</p>
 
 <!-- DECLARACIONES -->
@@ -273,6 +275,7 @@ body{font-family:'Sora',system-ui,sans-serif;background:var(--body-bg);color:var
 <div class="clause">
   <div class="clause-title">Primera &middot; Objeto del Contrato</div>
   <p>El Prestador se obliga a prestar al Cliente los siguientes servicios de consultor&#237;a e implementaci&#243;n tecnol&#243;gica con inteligencia artificial:</p>
+  <div class="pb"></div>
   <div class="service-card">
     <div class="service-card-head">
       <span class="service-tag">Servicio A</span>
@@ -318,7 +321,7 @@ body{font-family:'Sora',system-ui,sans-serif;background:var(--body-bg);color:var
 <div class="clause">
   <div class="clause-title">Segunda &middot; Precio y Forma de Pago</div>
   <p>Los precios acordados no incluyen el Impuesto al Valor Agregado (IVA), que se aplicar&#225; conforme a la legislaci&#243;n fiscal vigente.</p>
-
+  <div class="pb"></div>
   <span class="section-label">Servicio A &#8212; Diagn&#243;stico de Automatizaci&#243;n con IA</span>
   <table class="pay-table">
     <thead><tr><th>Concepto</th><th>Monto (MXN + IVA)</th><th>Momento de Pago</th></tr></thead>
@@ -380,6 +383,7 @@ body{font-family:'Sora',system-ui,sans-serif;background:var(--body-bg);color:var
   <p>El Prestador conserva titularidad de sus metodolog&#237;as propias, herramientas de base y conocimiento t&#233;cnico gen&#233;rico preexistente.</p>
 </div>
 
+<div class="pb"></div>
 <div class="section-divider"></div>
 
 <!-- CLÁUSULA 6 -->
@@ -425,6 +429,7 @@ body{font-family:'Sora',system-ui,sans-serif;background:var(--body-bg);color:var
   <p>Cualquier modificaci&#243;n deber&#225; constar en adendum escrito y firmado por representantes autorizados de ambas Partes.</p>
 </div>
 
+<div class="pb"></div>
 <div class="section-divider"></div>
 
 <!-- CLÁUSULA 10 -->
@@ -454,6 +459,7 @@ body{font-family:'Sora',system-ui,sans-serif;background:var(--body-bg);color:var
   <p>El presente contrato constituye el acuerdo completo entre las Partes y deja sin efecto cualquier entendimiento previo. Las propuestas comerciales previas tienen car&#225;cter referencial; en caso de conflicto, prevalece este contrato.</p>
 </div>
 
+<div class="pb"></div>
 <!-- PHYSICAL SIGNATURE BLOCK (print only) -->
 <div class="print-sig-block">
   <p class="print-sig-title">En testimonio de lo anterior, las Partes firman de conformidad el presente contrato.</p>
@@ -463,6 +469,8 @@ body{font-family:'Sora',system-ui,sans-serif;background:var(--body-bg);color:var
       <p class="print-sig-lbl"><strong>Por el Prestador</strong></p>
       <p class="print-sig-lbl">CORDVAL SA DE CV &mdash; MentorIA Systems</p>
       <p class="print-sig-lbl">RFC: COR2008248E7</p>
+      <p class="print-sig-lbl">Nombre: ____________________________</p>
+      <p class="print-sig-lbl">Cargo: ______________________________</p>
     </div>
     <div class="print-sig-party">
       <div class="print-sig-line"></div>
