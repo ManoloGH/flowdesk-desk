@@ -45,7 +45,6 @@ const BOTTOM_NAV: NavItem[] = [
   { href: '/settings',     label: 'Configuración',     icon: Settings },
 ];
 
-const NETWORK_NAV_EXTRA: NavItem[] = [{ href: '/branches', label: 'Sucursales', icon: Building2 }];
 const ADMIN_NAV: NavItem[] = [
   { href: '/admin',              label: 'Overview',         icon: ShieldCheck },
   { href: '/admin/clients',      label: 'Clientes',         icon: Building2 },
@@ -175,10 +174,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   type NavGroups = { core: NavItem[]; recursos: NavItem[]; bottom: NavItem[] };
 
   const buildNav = (): NavGroups => {
-    const core: NavItem[] = [
-      ...CORE_NAV,
-      ...(isNetPlatform ? NETWORK_NAV_EXTRA : []),
-    ];
+    const core: NavItem[] = [...CORE_NAV];
     const recursosFull: NavItem[] = [
       ...RECURSOS_BASE,
       ...HERRAMIENTAS_NAV,

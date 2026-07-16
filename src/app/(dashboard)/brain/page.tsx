@@ -69,10 +69,10 @@ export default function BrainPage() {
   const load = useCallback(async () => {
     setLoading(true);
     const [d, s] = await Promise.all([
-      api.get('/brain/documents').then(r => r.data).catch(() => []),
-      api.get('/brain/stats').then(r => r.data).catch(() => null),
+      api.get('/brain/documents').catch(() => []),
+      api.get('/brain/stats').catch(() => null),
     ]);
-    setDocs(d);
+    setDocs(Array.isArray(d) ? d : []);
     setStats(s);
     setLoading(false);
   }, []);

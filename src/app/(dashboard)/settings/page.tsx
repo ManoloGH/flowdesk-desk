@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/store/auth';
-import { Building2, Palette, Loader2, Check, Lock, User, Cpu, Phone } from 'lucide-react';
+import { Building2, Palette, Loader2, Check, Lock, User, Cpu, Phone, MapPin, Plus, Trash2 } from 'lucide-react';
 
 interface CompanyData {
   name: string;
@@ -64,6 +64,14 @@ export default function SettingsPage() {
   const [aiSaved, setAiSaved] = useState(false);
   const [aiLoaded, setAiLoaded] = useState(false);
 
+  // Sucursales
+  const [branchesEnabled, setBranchesEnabled] = useState(false);
+  const [officeBranches, setOfficeBranches] = useState<Array<{ id: string; name: string; address?: string; color: string; is_main: boolean; _count?: { team_slots: number } }>>([]);
+  const [newBranchName, setNewBranchName] = useState('');
+  const [newBranchAddress, setNewBranchAddress] = useState('');
+  const [addingBranch, setAddingBranch] = useState(false);
+  const [togglingBranches, setTogglingBranches] = useState(false);
+
   // Agente de Comunicación
   const [pbx, setPbx] = useState({
     enabled: false, main_number: '', greeting_text: '', stt_provider: 'whisper',
@@ -78,6 +86,13 @@ export default function SettingsPage() {
 
   useEffect(() => {
     api.get<CompanyData>('/tenants/mine').then(setCompany).finally(() => setLoading(false));
+
+    api.get<any>('/tenants/mine/features').then(f => {
+      setBranchesEnabled(f?.branches_enabled ?? false);
+    }).catch(() => {});
+    api.get<any>('/tenants/mine/office-branches').then(r => {
+      setOfficeBranches(Array.isArray(r) ? r : []);
+    }).catch(() => {});
 
     api.get<any>('/integrations/ai-config').then(data => {
       if (data?.configured) {
@@ -172,6 +187,32 @@ export default function SettingsPage() {
       setTimeout(() => setAiSaved(false), 2500);
     } catch {}
     setAiLoading(false);
+  };
+
+  const handleToggleBranches = async (val: boolean) => {
+    setTogglingBranches(true);
+    try {
+      await api.patch('/tenants/mine/branches-toggle', { enabled: val });
+      setBranchesEnabled(val);
+    } catch {}
+    setTogglingBranches(false);
+  };
+
+  const handleAddBranch = async () => {
+    if (!newBranchName.trim()) return;
+    setAddingBranch(true);
+    try {
+      const b = await api.post('/tenants/mine/office-branches', { name: newBranchName.trim(), address: newBranchAddress.trim() || undefined });
+      setOfficeBranches(prev => [...prev, b]);
+      setNewBranchName('');
+      setNewBranchAddress('');
+    } catch {}
+    setAddingBranch(false);
+  };
+
+  const handleDeleteBranch = async (id: string) => {
+    await api.delete(`/tenants/mine/office-branches/${id}`).catch(() => {});
+    setOfficeBranches(prev => prev.filter(b => b.id !== id));
   };
 
   const handleSavePbx = async () => {
@@ -594,6 +635,91 @@ export default function SettingsPage() {
                   {pbxLoading ? 'Guardando...' : pbxSaved ? 'Guardado' : 'Guardar configuración'}
                 </button>
               </div>
+            </div>
+          </Section>
+        )}
+
+        {/* Sucursales */}
+        {canEdit && (
+          <Section title="Sucursales" icon={MapPin}>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-white font-medium">Activar módulo de sucursales</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Registra tus ubicaciones físicas y asigna empleados a cada una</p>
+                </div>
+                <button
+                  onClick={() => handleToggleBranches(!branchesEnabled)}
+                  disabled={togglingBranches}
+                  className={`relative w-11 h-6 rounded-full transition-colors disabled:opacity-50 ${branchesEnabled ? 'bg-indigo-600' : 'bg-gray-700'}`}
+                >
+                  <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${branchesEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+              </div>
+
+              {branchesEnabled && (
+                <>
+                  {/* Lista de sucursales */}
+                  {officeBranches.length > 0 && (
+                    <div className="space-y-2">
+                      {officeBranches.map(b => (
+                        <div key={b.id} className="flex items-center justify-between p-3 bg-gray-800 border border-gray-700 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: b.color }} />
+                            <div>
+                              <span className="text-sm text-white font-medium">{b.name}</span>
+                              {b.is_main && <span className="ml-2 text-xs bg-indigo-900/60 text-indigo-300 px-1.5 py-0.5 rounded">Principal</span>}
+                              {b.address && <p className="text-xs text-gray-400 mt-0.5">{b.address}</p>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            {b._count && <span className="text-xs text-gray-500">{b._count.team_slots} persona{b._count.team_slots !== 1 ? 's' : ''}</span>}
+                            {!b.is_main && (
+                              <button
+                                onClick={() => handleDeleteBranch(b.id)}
+                                className="text-gray-600 hover:text-red-400 transition-colors"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Agregar sucursal */}
+                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-800">
+                    <Field label="Nombre de la sucursal">
+                      <input
+                        value={newBranchName}
+                        onChange={e => setNewBranchName(e.target.value)}
+                        placeholder="Ej. Sucursal Centro"
+                        className={INPUT}
+                        onKeyDown={e => e.key === 'Enter' && handleAddBranch()}
+                      />
+                    </Field>
+                    <Field label="Dirección (opcional)">
+                      <input
+                        value={newBranchAddress}
+                        onChange={e => setNewBranchAddress(e.target.value)}
+                        placeholder="Av. Principal 123, Col. Centro"
+                        className={INPUT}
+                      />
+                    </Field>
+                    <div className="col-span-2">
+                      <button
+                        onClick={handleAddBranch}
+                        disabled={addingBranch || !newBranchName.trim()}
+                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                      >
+                        {addingBranch ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+                        {addingBranch ? 'Agregando...' : 'Agregar sucursal'}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </Section>
         )}
