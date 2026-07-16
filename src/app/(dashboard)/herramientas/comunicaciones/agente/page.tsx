@@ -1,17 +1,25 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Bot, Save, Plus, X, AlertCircle, CheckCircle2, Plug } from 'lucide-react';
+import { Bot, Save, AlertCircle, CheckCircle2, Plug, Info } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 
 interface AgentConfig {
   configured: boolean;
+  // Stage 1-2: Identity
   nombre: string | null;
   actividad: string | null;
   propuesta_valor: string | null;
-  preguntas_calificacion: string[];
+  // Stage 3: Gancho
+  gancho: string | null;
+  // Stage 4: 5 preguntas
+  preguntas_microdiagnostico: string[];
+  // Stage 6: Cierre
+  cierre_calificado: string | null;
+  cierre_no_calificado: string | null;
   criterios_buen_lead: string | null;
   criterios_mal_lead: string | null;
   cal_booking_url: string | null;
+  // Connection
   evolution_instance: string | null;
 }
 
@@ -20,12 +28,23 @@ const DEFAULTS: AgentConfig = {
   nombre: '',
   actividad: '',
   propuesta_valor: '',
-  preguntas_calificacion: [''],
+  gancho: '',
+  preguntas_microdiagnostico: ['', '', '', '', ''],
+  cierre_calificado: '',
+  cierre_no_calificado: '',
   criterios_buen_lead: '',
   criterios_mal_lead: '',
   cal_booking_url: '',
   evolution_instance: '',
 };
+
+const PREGUNTA_PLACEHOLDERS = [
+  '¿A qué se dedica la empresa y cuántos años lleva operando?',
+  '¿Cuántos empleados tiene?',
+  '¿Qué software o herramientas digitales usan hoy en día?',
+  '¿Tienen área de programación?',
+  '¿Qué tarea o proceso les genera cuello de botella?',
+];
 
 export default function AgentePage() {
   const [cfg, setCfg] = useState<AgentConfig>(DEFAULTS);
@@ -34,41 +53,32 @@ export default function AgentePage() {
   const [toast, setToast] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null);
 
   useEffect(() => {
-    apiFetch<AgentConfig>('/communications/sales-agent')
+    apiFetch<AgentConfig & { preguntas_calificacion?: string[] }>('/communications/sales-agent')
       .then((data) => {
+        const rawNew = data.preguntas_microdiagnostico ?? [];
+        const rawLegacy = data.preguntas_calificacion ?? [];
+        const raw = rawNew.length ? rawNew : rawLegacy;
+        const preguntas_microdiagnostico = Array.from({ length: 5 }, (_, i) => raw[i] ?? '');
         setCfg({
           ...DEFAULTS,
           ...data,
-          preguntas_calificacion: data.preguntas_calificacion?.length
-            ? data.preguntas_calificacion
-            : [''],
+          preguntas_microdiagnostico,
         });
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  function set(field: keyof AgentConfig, value: any) {
+  function set(field: keyof AgentConfig, value: string) {
     setCfg(prev => ({ ...prev, [field]: value }));
   }
 
   function setPregunta(index: number, value: string) {
     setCfg(prev => {
-      const arr = [...prev.preguntas_calificacion];
+      const arr = [...prev.preguntas_microdiagnostico];
       arr[index] = value;
-      return { ...prev, preguntas_calificacion: arr };
+      return { ...prev, preguntas_microdiagnostico: arr };
     });
-  }
-
-  function addPregunta() {
-    setCfg(prev => ({ ...prev, preguntas_calificacion: [...prev.preguntas_calificacion, ''] }));
-  }
-
-  function removePregunta(index: number) {
-    setCfg(prev => ({
-      ...prev,
-      preguntas_calificacion: prev.preguntas_calificacion.filter((_, i) => i !== index),
-    }));
   }
 
   async function handleSave() {
@@ -79,7 +89,7 @@ export default function AgentePage() {
         method: 'PUT',
         body: JSON.stringify({
           ...cfg,
-          preguntas_calificacion: cfg.preguntas_calificacion.filter(p => p.trim()),
+          preguntas_microdiagnostico: cfg.preguntas_microdiagnostico.filter(p => p.trim()),
         }),
       });
       setToast({ type: 'ok', msg: 'Configuración guardada correctamente.' });
@@ -109,10 +119,10 @@ export default function AgentePage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Bot className="w-4 h-4 text-cyan-400" />
-            <h2 className="text-sm font-bold text-white">Agente de Ventas</h2>
+            <h2 className="text-sm font-bold text-white">Journey Builder</h2>
           </div>
           <p className="text-[11px] text-gray-500">
-            Configura cómo presenta tu negocio, califica prospectos y agenda reuniones por WhatsApp.
+            Define las 6 etapas del journey de WhatsApp: presentación, gancho, micro-diagnóstico y cierre.
           </p>
         </div>
         <button
@@ -139,119 +149,161 @@ export default function AgentePage() {
         </div>
       )}
 
-      {/* Sección 1: Negocio */}
-      <Section title="1. Tu negocio">
-        <Field label="Nombre del negocio">
+      {/* Conexión WhatsApp — TOP */}
+      <div className="bg-white/[0.03] border border-white/8 rounded-xl p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <Plug className="w-3.5 h-3.5 text-gray-400" />
+          <h3 className="text-[11px] font-semibold text-white">Conexión WhatsApp</h3>
+        </div>
+        <p className="text-[10px] text-amber-400/80 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+          Configura primero la conexión antes de activar el agente.
+        </p>
+        <Field
+          label="Nombre de instancia Evolution API"
+          hint="El nombre que pusiste al crear la instancia para este número. El bot solo recibirá mensajes de esa instancia."
+        >
           <input
-            value={cfg.nombre ?? ''}
-            onChange={e => set('nombre', e.target.value)}
-            placeholder="Ej: MentorIA Systems"
+            value={cfg.evolution_instance ?? ''}
+            onChange={e => set('evolution_instance', e.target.value)}
+            placeholder="Ej: agente-ventas-mentoria"
             className={INPUT}
           />
         </Field>
-        <Field label="¿A qué se dedica?" hint="Una frase directa: qué haces y para quién.">
+      </div>
+
+      {/* Etapas 1-2: Presentación e Identidad */}
+      <StageSection
+        badge="1·2"
+        title="Presentación e Identidad"
+        subtitle="El agente usa esto para presentarse y entender el negocio del prospecto."
+      >
+        <Field label="Nombre del agente">
+          <input
+            value={cfg.nombre ?? ''}
+            onChange={e => set('nombre', e.target.value)}
+            placeholder="Leo"
+            className={INPUT}
+          />
+        </Field>
+        <Field label="¿A qué se dedica tu empresa?">
           <textarea
             rows={2}
             value={cfg.actividad ?? ''}
             onChange={e => set('actividad', e.target.value)}
-            placeholder="Ej: Implementamos FlowDesk en empresas medianas que quieren operar con IA."
+            placeholder="MentorIA Systems — Implementamos la metodología IA First…"
             className={INPUT}
           />
         </Field>
-      </Section>
-
-      {/* Sección 2: Propuesta de valor */}
-      <Section title="2. Propuesta de valor">
-        <Field label="¿Por qué tu empresa?" hint="2-3 oraciones. Qué transforma, para quién, por qué ahora.">
+        <Field label="Propuesta de valor">
           <textarea
-            rows={4}
+            rows={3}
             value={cfg.propuesta_valor ?? ''}
             onChange={e => set('propuesta_valor', e.target.value)}
-            placeholder="Ej: Tu empresa lleva décadas construyendo algo sólido. FlowDesk conecta tus operaciones…"
+            placeholder="Somos expertos en simplificar procesos…"
             className={INPUT}
           />
         </Field>
-      </Section>
+      </StageSection>
 
-      {/* Sección 3: Preguntas de calificación */}
-      <Section title="3. Preguntas de calificación">
-        <p className="text-[11px] text-gray-500 mb-3">
-          El agente las hace una a una para calificar al prospecto. Máximo 5.
+      {/* Etapa 3: Gancho */}
+      <StageSection
+        badge="3"
+        title="Oferta del Micro-Diagnóstico"
+        subtitle="Texto que el agente usa para ofrecer el diagnóstico gratuito. Se envía cuando ya tiene contexto del negocio."
+      >
+        <textarea
+          rows={4}
+          value={cfg.gancho ?? ''}
+          onChange={e => set('gancho', e.target.value)}
+          placeholder="Me gustaría ofrecerte algo: podemos hacerte un micro-diagnóstico gratuito…"
+          className={INPUT}
+        />
+        <p className="text-[10px] text-gray-600">
+          El prospecto debe aceptar antes de que el agente haga las preguntas.
         </p>
+      </StageSection>
+
+      {/* Etapa 4: 5 Preguntas del Micro-Diagnóstico */}
+      <StageSection
+        badge="4"
+        title="Preguntas del Diagnóstico"
+        subtitle="El agente las hace una por una, esperando respuesta entre cada una. Deben ser siempre exactamente 5."
+      >
         <div className="space-y-2">
-          {cfg.preguntas_calificacion.map((p, i) => (
-            <div key={i} className="flex gap-2 items-start">
-              <span className="text-[10px] text-gray-600 pt-2.5 w-4 flex-shrink-0">{i + 1}.</span>
+          {cfg.preguntas_microdiagnostico.map((p, i) => (
+            <div key={i} className="flex gap-2 items-center">
+              <span className="text-[10px] text-gray-600 w-4 flex-shrink-0">{i + 1}.</span>
               <input
                 value={p}
                 onChange={e => setPregunta(i, e.target.value)}
-                placeholder={`Pregunta ${i + 1}`}
+                placeholder={PREGUNTA_PLACEHOLDERS[i]}
                 className={`${INPUT} flex-1`}
               />
-              {cfg.preguntas_calificacion.length > 1 && (
-                <button
-                  onClick={() => removePregunta(i)}
-                  className="mt-2 text-gray-600 hover:text-red-400 transition-colors"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
             </div>
           ))}
-          {cfg.preguntas_calificacion.length < 5 && (
-            <button
-              onClick={addPregunta}
-              className="flex items-center gap-1.5 text-[11px] text-cyan-500 hover:text-cyan-300 transition-colors mt-1"
-            >
-              <Plus className="w-3 h-3" />
-              Agregar pregunta
-            </button>
-          )}
         </div>
-      </Section>
+      </StageSection>
 
-      {/* Sección 0: Conexión WhatsApp */}
-      <Section title="0. Conexión WhatsApp">
-        <Field
-          label="Nombre de instancia Evolution API"
-          hint="El nombre que pusiste al crear la instancia para este número en Evolution API. El bot sólo recibirá mensajes de esa instancia."
-        >
-          <div className="flex gap-2 items-center">
-            <Plug className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" />
-            <input
-              value={cfg.evolution_instance ?? ''}
-              onChange={e => set('evolution_instance', e.target.value)}
-              placeholder="Ej: agente-ventas-mentoria"
-              className={`${INPUT} flex-1`}
-            />
-          </div>
-          <p className="text-[10px] text-gray-700 mt-1">
-            Sin este campo el bot no recibirá mensajes aunque Evolution API esté configurado.
+      {/* Etapa 5: Entrega Automática (info only) */}
+      <StageSection
+        badge="5"
+        title="Entrega Automática"
+        subtitle="Esta etapa es automática — el agente genera el diagnóstico con IA y envía el enlace al prospecto."
+        info
+      >
+        <div className="flex items-start gap-2.5 bg-white/[0.03] border border-white/5 rounded-lg px-4 py-3">
+          <Info className="w-3.5 h-3.5 text-gray-500 flex-shrink-0 mt-0.5" />
+          <p className="text-[11px] text-gray-500 leading-relaxed">
+            El diagnóstico se genera con IA usando las 5 respuestas y se publica en{' '}
+            <span className="text-gray-400 font-mono">app.flowdesk.mx/micro/[token]</span>.
+            El CRM se actualiza automáticamente.
           </p>
-        </Field>
-      </Section>
+        </div>
+      </StageSection>
 
-      {/* Sección 4: Criterios + Cal.com */}
-      <Section title="4. Criterios y acción">
-        <Field label="Lead bueno — procede a agendar" hint="Lista los criterios: empresa con X años, N empleados, dolor real…">
+      {/* Etapa 6: Cierre y Calificación */}
+      <StageSection
+        badge="6"
+        title="Cierre y Calificación"
+        subtitle="Qué dice el agente según el resultado de la calificación."
+      >
+        <Field label="Lead califica (score ≥ 7)">
           <textarea
-            rows={4}
+            rows={3}
+            value={cfg.cierre_calificado ?? ''}
+            onChange={e => set('cierre_calificado', e.target.value)}
+            placeholder="Creo que hay una oportunidad real…"
+            className={`${INPUT} border-l-2 border-l-emerald-500/50 rounded-l-none pl-3`}
+          />
+        </Field>
+        <Field label="Lead no califica">
+          <textarea
+            rows={2}
+            value={cfg.cierre_no_calificado ?? ''}
+            onChange={e => set('cierre_no_calificado', e.target.value)}
+            placeholder="Gracias por compartirme esto…"
+            className={`${INPUT} border-l-2 border-l-amber-500/50 rounded-l-none pl-3`}
+          />
+        </Field>
+        <Field label="Criterios de lead bueno" hint="Lista los atributos que hacen que el prospecto califique.">
+          <textarea
+            rows={3}
             value={cfg.criterios_buen_lead ?? ''}
             onChange={e => set('criterios_buen_lead', e.target.value)}
             placeholder={"- Empresa con 10+ años\n- 200-1000 empleados\n- Dolor operativo concreto\n- Decisor en la conversación"}
             className={INPUT}
           />
         </Field>
-        <Field label="Lead no califica — responde con calidez" hint="Cuándo NO agendar.">
+        <Field label="Criterios de lead malo" hint="Cuándo NO agendar.">
           <textarea
-            rows={3}
+            rows={2}
             value={cfg.criterios_mal_lead ?? ''}
             onChange={e => set('criterios_mal_lead', e.target.value)}
             placeholder={"- Startup o empresa < 3 años\n- Menos de 50 empleados\n- Solo curiosidad sin dolor"}
             className={INPUT}
           />
         </Field>
-        <Field label="Link de Cal.com para agendar" hint="El agente lo envía cuando el prospecto califica.">
+        <Field label="Link de Cal.com" hint="El agente lo envía cuando el prospecto califica.">
           <input
             value={cfg.cal_booking_url ?? ''}
             onChange={e => set('cal_booking_url', e.target.value)}
@@ -260,23 +312,60 @@ export default function AgentePage() {
             type="url"
           />
         </Field>
-      </Section>
+      </StageSection>
     </div>
   );
 }
 
-const INPUT = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 focus:bg-white/8 transition-colors resize-none';
+const INPUT =
+  'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 focus:bg-white/8 transition-colors resize-none';
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function StageSection({
+  badge,
+  title,
+  subtitle,
+  children,
+  info,
+}: {
+  badge: string;
+  title: string;
+  subtitle?: string;
+  children?: React.ReactNode;
+  info?: boolean;
+}) {
   return (
-    <div className="bg-white/[0.03] border border-white/8 rounded-xl p-5 space-y-4">
-      <h3 className="text-[11px] font-semibold text-cyan-400 uppercase tracking-wider">{title}</h3>
+    <div
+      className={`bg-white/[0.03] border rounded-xl p-5 space-y-4 ${
+        info ? 'border-white/5' : 'border-white/8'
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        <span
+          className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
+            info ? 'bg-white/5 text-gray-500' : 'bg-cyan-500/15 text-cyan-400'
+          }`}
+        >
+          {badge}
+        </span>
+        <div>
+          <h3 className="text-[11px] font-semibold text-white">{title}</h3>
+          {subtitle && <p className="text-[10px] text-gray-500 mt-0.5">{subtitle}</p>}
+        </div>
+      </div>
       {children}
     </div>
   );
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-1.5">
       <label className="block text-xs font-medium text-gray-300">{label}</label>
