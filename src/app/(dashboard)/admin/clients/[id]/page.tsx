@@ -616,9 +616,8 @@ export default function TenantDetailPage() {
           </div>
         )}
       </div>
-    </div>
 
-    {/* ── MODAL CREAR USUARIO ────────────────────────────────────────────── */}
+      {/* ── MODAL CREAR USUARIO ────────────────────────────────────────────── */}
     {showCreateUser && (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
         <div className="bg-[#0a0f1e] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
@@ -697,5 +696,6 @@ export default function TenantDetailPage() {
         </div>
       </div>
     )}
+    </div>
   );
 }
