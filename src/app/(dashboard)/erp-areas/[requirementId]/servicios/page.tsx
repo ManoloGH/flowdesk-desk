@@ -53,6 +53,7 @@ export default function ServiciosPage() {
   const load = () => {
     api.get(`/erp-areas/requirements/${requirementId}/services`)
       .then((r) => setServices(Array.isArray(r) ? r : []))
+      .catch(() => setServices([]))
       .finally(() => setLoading(false));
   };
 

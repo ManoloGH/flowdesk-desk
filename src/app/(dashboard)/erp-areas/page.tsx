@@ -35,6 +35,7 @@ export default function ErpAreasPage() {
   useEffect(() => {
     api.get('/erp-areas/requirements')
       .then((r) => setRequirements(Array.isArray(r) ? r : []))
+      .catch(() => setRequirements([]))
       .finally(() => setLoading(false));
   }, []);
 

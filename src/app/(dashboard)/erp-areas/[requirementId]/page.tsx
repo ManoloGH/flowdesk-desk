@@ -51,6 +51,7 @@ export default function RequirementDetailPage() {
   const load = () => {
     api.get(`/erp-areas/requirements/${requirementId}`)
       .then((r) => setReq(r))
+      .catch(() => {})
       .finally(() => setLoading(false));
   };
 

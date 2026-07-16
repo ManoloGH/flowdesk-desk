@@ -19,7 +19,7 @@ export default function NuevoRequerimientoPage() {
   });
 
   useEffect(() => {
-    api.get('/departments').then((r) => setDepartments(Array.isArray(r) ? r : []));
+    api.get('/departments').then((r) => setDepartments(Array.isArray(r) ? r : [])).catch(() => {});
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,7 +31,7 @@ export default function NuevoRequerimientoPage() {
         ...form,
         monthly_volume: form.monthly_volume ? parseInt(form.monthly_volume) : undefined,
       });
-      router.push(`/erp-areas/${res.data.id}`);
+      router.push(`/erp-areas/${res.id}`);
     } finally {
       setLoading(false);
     }
