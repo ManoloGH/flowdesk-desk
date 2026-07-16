@@ -79,8 +79,8 @@ function slug(s: string) { return s.replace(/_/g, ' '); }
 // ── Empty form ────────────────────────────────────────────────────────────────
 
 const EMPTY_FORM = {
-  nombre: '', area: 'ventas', descripcion: '', tipo: 'whatsapp_bot',
-  trigger: '', accion: '', canal: 'whatsapp', webhook_url: '', cliente_id: '',
+  nombre: '', area: 'otro', descripcion: '', tipo: 'otro',
+  trigger: '', accion: '', canal: '', webhook_url: '', cliente_id: '',
 };
 
 // ── Main page ─────────────────────────────────────────────────────────────────
@@ -128,12 +128,13 @@ export default function ErpPage() {
   // ── Acciones Automatizaciones ────────────────────────────────────────────────
 
   async function handleCreateAuto() {
-    if (!form.nombre.trim()) return;
+    if (!form.descripcion.trim()) return;
     setSavingA(true);
     try {
+      const nombre = form.nombre.trim() || form.descripcion.trim().slice(0, 80);
       const payload: any = {
-        nombre: form.nombre, area: form.area, tipo: form.tipo,
-        descripcion: form.descripcion || undefined,
+        nombre, area: form.area, tipo: form.tipo,
+        descripcion: form.descripcion.trim(),
         trigger: form.trigger || undefined, accion: form.accion || undefined,
         canal: form.canal || undefined, webhook_url: form.webhook_url || undefined,
         cliente_id: form.cliente_id || undefined,
@@ -321,75 +322,61 @@ function AutomatizacionesTab({
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '16px 28px 28px' }}>
 
-      {/* Toolbar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div style={{ fontSize: 13, color: 'var(--text-2)' }}>
-          {autos.length} automatización{autos.length !== 1 ? 'es' : ''} · {autos.filter(a => a.status === 'activa').length} activas
-        </div>
-        <button onClick={() => setShowForm(!showForm)} style={btnPrimary}>
-          <Plus size={13} /> Nueva automatización
-        </button>
+      {/* Compose box */}
+      <div style={{ background: 'var(--surface)', border: showForm ? '1px solid #6c4de660' : '1px solid var(--line)', borderRadius: 14, marginBottom: 20, overflow: 'hidden', transition: 'border-color 0.2s' }}>
+        {!showForm ? (
+          <button
+            onClick={() => setShowForm(true)}
+            style={{ width: '100%', padding: '16px 20px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: '#6c4de618', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Plus size={15} color="#6c4de6" />
+            </div>
+            <span style={{ fontSize: 13, color: 'var(--text-3)' }}>Describe la automatización que quieres crear…</span>
+          </button>
+        ) : (
+          <div style={{ padding: '16px 20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Nueva automatización</span>
+              <button onClick={() => { setShowForm(false); setForm({ ...EMPTY_FORM }); }} style={{ background: 'none', border: 'none', color: 'var(--text-3)', cursor: 'pointer', padding: 2 }}><X size={14} /></button>
+            </div>
+            <textarea
+              autoFocus
+              value={form.descripcion}
+              onChange={e => setForm({ ...form, descripcion: e.target.value, nombre: e.target.value.split('\n')[0].slice(0, 80) })}
+              placeholder={'Ej: Al finalizar el diagnóstico, enviar los resultados al email del cliente y actualizar su estado en el CRM.\n\nDescríbela con tus palabras — el trigger, qué hace y en qué canal.'}
+              rows={5}
+              style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.55, fontSize: 13 }}
+            />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <label style={{ fontSize: 11, color: 'var(--text-3)' }}>Cliente:</label>
+                <select value={form.cliente_id} onChange={e => setForm({ ...form, cliente_id: e.target.value })} style={{ ...inputStyle, width: 'auto', padding: '5px 8px', fontSize: 12 }}>
+                  <option value="">— general —</option>
+                  {clientes.map(c => <option key={c.id} value={c.id}>{c.empresa}</option>)}
+                </select>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => { setShowForm(false); setForm({ ...EMPTY_FORM }); }} style={btnGhost}>Cancelar</button>
+                <button
+                  onClick={onSave}
+                  disabled={savingA || !form.descripcion.trim()}
+                  style={{ ...btnPrimary, opacity: savingA || !form.descripcion.trim() ? 0.5 : 1 }}>
+                  {savingA ? '…' : <><Check size={12} /> Guardar</>}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-
-      {/* Create form */}
-      {showForm && (
-        <div style={{ background: 'var(--surface)', border: '1px solid #6c4de640', borderRadius: 14, padding: '20px 22px', marginBottom: 18 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Nueva Automatización</span>
-            <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', color: 'var(--text-3)', cursor: 'pointer', padding: 4 }}><X size={14} /></button>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <Field label="Nombre *">
-              <input value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} placeholder="Ej: Bot de seguimiento WhatsApp" style={inputStyle} />
-            </Field>
-            <Field label="Cliente (opcional)">
-              <select value={form.cliente_id} onChange={e => setForm({ ...form, cliente_id: e.target.value })} style={inputStyle}>
-                <option value="">— Todos / sin cliente —</option>
-                {clientes.map(c => <option key={c.id} value={c.id}>{c.empresa}</option>)}
-              </select>
-            </Field>
-            <Field label="Área">
-              <select value={form.area} onChange={e => setForm({ ...form, area: e.target.value })} style={inputStyle}>
-                {AREAS.map(a => <option key={a} value={a}>{slug(a)}</option>)}
-              </select>
-            </Field>
-            <Field label="Tipo">
-              <select value={form.tipo} onChange={e => setForm({ ...form, tipo: e.target.value })} style={inputStyle}>
-                {TIPOS.map(t => <option key={t} value={t}>{TIPO_ICON[t]} {slug(t)}</option>)}
-              </select>
-            </Field>
-            <Field label="Trigger (qué lo activa)">
-              <input value={form.trigger} onChange={e => setForm({ ...form, trigger: e.target.value })} placeholder="Ej: Nuevo lead en CRM" style={inputStyle} />
-            </Field>
-            <Field label="Acción (qué hace)">
-              <input value={form.accion} onChange={e => setForm({ ...form, accion: e.target.value })} placeholder="Ej: Enviar mensaje de bienvenida" style={inputStyle} />
-            </Field>
-            <Field label="Canal">
-              <select value={form.canal} onChange={e => setForm({ ...form, canal: e.target.value })} style={inputStyle}>
-                {CANALES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </Field>
-            <Field label="Webhook URL (n8n / Evolution API)">
-              <input value={form.webhook_url} onChange={e => setForm({ ...form, webhook_url: e.target.value })} placeholder="https://n8n.xxx.com/webhook/..." style={inputStyle} />
-            </Field>
-            <Field label="Descripción" style={{ gridColumn: '1 / -1' }}>
-              <input value={form.descripcion} onChange={e => setForm({ ...form, descripcion: e.target.value })} placeholder="Notas adicionales..." style={inputStyle} />
-            </Field>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
-            <button onClick={() => setShowForm(false)} style={btnGhost}>Cancelar</button>
-            <button onClick={onSave} disabled={savingA || !form.nombre.trim()} style={{ ...btnPrimary, opacity: savingA || !form.nombre.trim() ? 0.5 : 1 }}>
-              {savingA ? '…' : <><Check size={12} /> Guardar</>}
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* List */}
       {loading ? <Spinner /> : !autos.length ? (
         <div style={{ textAlign: 'center', padding: '48px 0' }}>
-          <span style={{ fontSize: 32 }}>⚡</span>
-          <p style={{ fontSize: 14, color: 'var(--text-3)', marginTop: 12 }}>Sin automatizaciones. Crea la primera.</p>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>⚡</div>
+          <p style={{ fontSize: 14, color: 'var(--text-2)', fontWeight: 600, marginBottom: 6 }}>Sin automatizaciones</p>
+          <p style={{ fontSize: 12, color: 'var(--text-3)', maxWidth: 340, margin: '0 auto', lineHeight: 1.6 }}>
+            Describe lo que quieres automatizar en el campo de arriba. Por ejemplo: <em>"Al finalizar el diagnóstico, enviar resultados al cliente y actualizar el CRM."</em>
+          </p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -398,48 +385,34 @@ function AutomatizacionesTab({
             const busy = actionId === a.id;
             return (
               <div key={a.id} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '14px 18px', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                {/* Icon */}
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: `${sc.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
                   {TIPO_ICON[a.tipo] ?? '⚙️'}
                 </div>
-
-                {/* Info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{a.nombre}</span>
                     <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: sc.bg, color: sc.color, fontWeight: 700, border: `1px solid ${sc.color}40` }}>{sc.label}</span>
-                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: 'var(--surface-2)', color: 'var(--text-3)', border: '1px solid var(--line)', textTransform: 'capitalize' }}>{slug(a.tipo)}</span>
-                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: 'var(--surface-2)', color: 'var(--text-3)', border: '1px solid var(--line)', textTransform: 'capitalize' }}>{slug(a.area)}</span>
+                    {a.tipo !== 'otro' && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: 'var(--surface-2)', color: 'var(--text-3)', border: '1px solid var(--line)', textTransform: 'capitalize' }}>{slug(a.tipo)}</span>}
                   </div>
-                  {a.cliente && (
-                    <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 3 }}>📌 {a.cliente.empresa}</div>
+                  {a.descripcion && (
+                    <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55, margin: '0 0 6px' }}>{a.descripcion}</p>
                   )}
-                  <div style={{ fontSize: 11, color: 'var(--text-2)', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                  {a.cliente && (
+                    <div style={{ fontSize: 11, color: 'var(--text-3)' }}>📌 {a.cliente.empresa}</div>
+                  )}
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 4 }}>
                     {a.trigger && <span>▶ {a.trigger}</span>}
                     {a.accion && <span>→ {a.accion}</span>}
-                    {a.canal && <span>📡 {a.canal}</span>}
+                    {a.webhook_url && <span style={{ fontFamily: 'monospace', fontSize: 10, overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 300 }}>🪝 {a.webhook_url}</span>}
                   </div>
-                  {a.webhook_url && (
-                    <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 4, fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 400 }}>
-                      🪝 {a.webhook_url}
-                    </div>
-                  )}
                 </div>
-
-                {/* Actions */}
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
                   {a.status !== 'activa' ? (
-                    <button onClick={() => onActivar(a.id)} disabled={busy} title="Activar" style={{ ...btnIconGreen, opacity: busy ? 0.5 : 1 }}>
-                      <Play size={12} />
-                    </button>
+                    <button onClick={() => onActivar(a.id)} disabled={busy} title="Activar" style={{ ...btnIconGreen, opacity: busy ? 0.5 : 1 }}><Play size={12} /></button>
                   ) : (
-                    <button onClick={() => onPausar(a.id)} disabled={busy} title="Pausar" style={{ ...btnIconGray, opacity: busy ? 0.5 : 1 }}>
-                      <Pause size={12} />
-                    </button>
+                    <button onClick={() => onPausar(a.id)} disabled={busy} title="Pausar" style={{ ...btnIconGray, opacity: busy ? 0.5 : 1 }}><Pause size={12} /></button>
                   )}
-                  <button onClick={() => onDelete(a.id)} disabled={busy} title="Eliminar" style={{ ...btnIconRed, opacity: busy ? 0.5 : 1 }}>
-                    <Trash2 size={12} />
-                  </button>
+                  <button onClick={() => onDelete(a.id)} disabled={busy} title="Eliminar" style={{ ...btnIconRed, opacity: busy ? 0.5 : 1 }}><Trash2 size={12} /></button>
                 </div>
               </div>
             );
