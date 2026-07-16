@@ -11,7 +11,7 @@ import {
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ProspectoStage =
   | 'agente_ia' | 'micro_diagnostico' | 'discovery'
-  | 'propuesta' | 'contrato';
+  | 'propuesta' | 'contrato' | 'kickoff' | 'implementacion';
 
 interface Prospecto {
   id: string; empresa: string; contacto: string;
@@ -45,6 +45,8 @@ const PROSPECTO_STAGES = [
   { key: 'discovery',         label: 'Discovery',         color: '#3b82f6', icon: '🔍' },
   { key: 'propuesta',         label: 'Propuesta',         color: '#f59e0b', icon: '📄' },
   { key: 'contrato',          label: 'Contrato',          color: '#10b981', icon: '✍️' },
+  { key: 'kickoff',           label: 'Kickoff',           color: '#f97316', icon: '🚀' },
+  { key: 'implementacion',    label: 'Implementación',    color: '#22c55e', icon: '⚡' },
 ] as const;
 
 const STAGE_MAP = Object.fromEntries(PROSPECTO_STAGES.map(s => [s.key, s]));
@@ -258,8 +260,8 @@ export default function MentoriaPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg,#6c4de6,#00d4ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: 'white' }}>M</div>
             <div>
-              <h1 style={{ fontSize: 19, fontWeight: 700, letterSpacing: '-0.025em', color: 'var(--text)' }}>Consultoría MentorIA</h1>
-              <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 1 }}>CRM interno de consultoría</p>
+              <h1 style={{ fontSize: 19, fontWeight: 700, letterSpacing: '-0.025em', color: 'var(--text)' }}>CRM · MentorIA Systems</h1>
+              <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 1 }}>Pipeline completo: prospectos → clientes activos</p>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
@@ -297,7 +299,7 @@ export default function MentoriaPage() {
         {/* Tabs + search */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--line)', paddingBottom: 0 }}>
           {([
-            { key: 'prospectos',  label: 'Prospectos',           count: prospectos.length },
+            { key: 'prospectos',  label: 'Pipeline CRM',         count: prospectos.length + activos.length },
             { key: 'activos',     label: 'Clientes activos',     count: activos.length },
             { key: 'desactivados',label: 'Clientes desactivados',count: desactivados.length },
             { key: 'descartados', label: 'Descartados',          count: descartados.length },
@@ -333,7 +335,7 @@ export default function MentoriaPage() {
         </div>
       ) : tab === 'prospectos' ? (
         pView === 'pipeline'
-          ? <ProspectosPipeline prospectos={filteredP} onSelect={setSelected} />
+          ? <ProspectosPipeline prospectos={filteredP} clientes={activos} onSelect={setSelected} />
           : <ProspectosLista prospectos={filteredP} onSelect={setSelected} />
       ) : tab === 'activos' ? (
         <ClientesGrid clientes={activos} onSelect={id => router.push(`/mentoria/${id}`)} />
@@ -363,23 +365,38 @@ export default function MentoriaPage() {
 }
 
 // ── Prospectos Pipeline ────────────────────────────────────────────────────────
-function ProspectosPipeline({ prospectos, onSelect }: { prospectos: Prospecto[]; onSelect: (p: Prospecto) => void }) {
-  const groups = Object.fromEntries(PROSPECTO_STAGES.map(s => [s.key, prospectos.filter(p => p.etapa === s.key)]));
+function ProspectosPipeline({ prospectos, clientes, onSelect }: {
+  prospectos: Prospecto[];
+  clientes: Cliente[];
+  onSelect: (p: Prospecto) => void;
+}) {
+  // Exclude converted prospects (etapa=implementacion) — they appear as cliente cards
+  const kanbanProspectos = prospectos.filter(p => p.etapa !== 'implementacion');
+  const pGroups = Object.fromEntries(PROSPECTO_STAGES.map(s => [s.key, kanbanProspectos.filter(p => p.etapa === s.key)]));
+
   return (
     <div style={{ flex: 1, overflowX: 'auto', overflowY: 'hidden' }}>
       <div style={{ display: 'flex', gap: 12, padding: '18px 28px', minWidth: 'max-content', alignItems: 'flex-start' }}>
         {PROSPECTO_STAGES.map(stage => {
-          const items = groups[stage.key] ?? [];
+          const prospects = pGroups[stage.key] ?? [];
+          // Active clients appear in the implementacion column
+          const clients = stage.key === 'implementacion' ? clientes : [];
+          const total = prospects.length + clients.length;
+
           return (
             <div key={stage.key} style={{ width: 210, flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 9, padding: '0 2px' }}>
                 <div style={{ width: 7, height: 7, borderRadius: '50%', background: stage.color, boxShadow: `0 0 6px ${stage.color}` }} />
                 <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-2)' }}>{stage.icon} {stage.label}</span>
-                <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--text-3)', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 99, padding: '1px 6px', fontWeight: 600 }}>{items.length}</span>
+                {stage.key === 'implementacion' && (
+                  <span style={{ fontSize: 9, color: stage.color, background: `${stage.color}20`, padding: '1px 5px', borderRadius: 99, fontWeight: 700 }}>ACTIVOS</span>
+                )}
+                <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--text-3)', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 99, padding: '1px 6px', fontWeight: 600 }}>{total}</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                {items.map(p => <ProspectoCard key={p.id} p={p} color={stage.color} onClick={() => onSelect(p)} />)}
-                {!items.length && (
+                {prospects.map(p => <ProspectoCard key={p.id} p={p} color={stage.color} onClick={() => onSelect(p)} />)}
+                {clients.map(c => <ClientePipelineCard key={c.id} c={c} color={stage.color} />)}
+                {!total && (
                   <div style={{ height: 56, border: '1px dashed var(--line)', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <span style={{ fontSize: 10, color: 'var(--text-3)' }}>vacío</span>
                   </div>
