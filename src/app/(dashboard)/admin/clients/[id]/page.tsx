@@ -7,7 +7,7 @@ import {
   ArrowLeft, Building2, Users, Brain, MessageSquare, CheckCircle, XCircle,
   Phone, DollarSign, Bot, User, Loader2, RefreshCw, Activity,
   Server, Download, PackageOpen, AlertTriangle, ShieldCheck, ClipboardList,
-  Wifi, WifiOff, ChevronDown, ChevronUp, Globe,
+  Wifi, WifiOff, ChevronDown, ChevronUp, Globe, Plus, Copy, Check,
 } from 'lucide-react';
 
 interface TeamSlotRow {
@@ -110,6 +110,11 @@ export default function TenantDetailPage() {
   const [selfHostedUrl, setSelfHostedUrl] = useState('');
   const [migrationTab, setMigrationTab] = useState<'bundle' | 'audit' | 'verify'>('bundle');
   const [expandedChecks, setExpandedChecks] = useState<Set<string>>(new Set());
+  const [showCreateUser, setShowCreateUser] = useState(false);
+  const [newUser, setNewUser] = useState({ name: '', email: '', role: 'employee', password: '' });
+  const [creatingUser, setCreatingUser] = useState(false);
+  const [createdUser, setCreatedUser] = useState<{ name: string; email: string; temp_password: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -157,6 +162,31 @@ export default function TenantDetailPage() {
   function toggleCheck(cid: string) {
     setExpandedChecks(prev => { const n = new Set(prev); n.has(cid) ? n.delete(cid) : n.add(cid); return n; });
   }
+  async function createUser() {
+    if (!newUser.name || !newUser.email) return;
+    setCreatingUser(true);
+    try {
+      const res: any = await api.post(`/platform/network/${id}/team-slots`, {
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+        ...(newUser.password ? { password: newUser.password } : {}),
+      });
+      setCreatedUser({ name: res.name, email: res.email, temp_password: res.temp_password });
+      setNewUser({ name: '', email: '', role: 'employee', password: '' });
+      await load();
+    } catch (e: any) {
+      alert(e?.message ?? 'Error al crear usuario');
+    }
+    setCreatingUser(false);
+  }
+
+  function copyPassword(pw: string) {
+    navigator.clipboard.writeText(pw);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   async function enterAsCompany() {
     setUpdating(true);
     try {
@@ -336,7 +366,13 @@ export default function TenantDetailPage() {
         {tab === 'equipo' && (
           <div className="h-full grid grid-cols-2 gap-4">
             <div className="bg-[#0a0f1e] border border-white/5 rounded-xl p-5 flex flex-col overflow-hidden">
-              <p className="text-[10px] font-bold tracking-widest text-gray-600 uppercase mb-4 flex-shrink-0">Equipo humano · {humans.length}</p>
+              <div className="flex items-center justify-between mb-4 flex-shrink-0">
+                <p className="text-[10px] font-bold tracking-widest text-gray-600 uppercase">Equipo humano · {humans.length}</p>
+                <button onClick={() => { setShowCreateUser(true); setCreatedUser(null); }}
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-[10px] font-medium border border-indigo-500/30 transition-colors">
+                  <Plus className="w-3 h-3" /> Crear usuario
+                </button>
+              </div>
               <div className="flex-1 overflow-y-auto space-y-2">
                 {humans.length === 0
                   ? <p className="text-xs text-gray-600">Sin usuarios humanos</p>
@@ -581,5 +617,85 @@ export default function TenantDetailPage() {
         )}
       </div>
     </div>
+
+    {/* ── MODAL CREAR USUARIO ────────────────────────────────────────────── */}
+    {showCreateUser && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="bg-[#0a0f1e] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-sm font-bold text-white">Crear usuario — {tenant.name}</h3>
+            <button onClick={() => { setShowCreateUser(false); setCreatedUser(null); }} className="text-gray-600 hover:text-white transition-colors">
+              <XCircle className="w-4 h-4" />
+            </button>
+          </div>
+
+          {createdUser ? (
+            <div className="space-y-4">
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                <p className="text-xs font-medium text-emerald-300 mb-1">✅ Usuario creado correctamente</p>
+                <p className="text-[11px] text-gray-400">{createdUser.name} · {createdUser.email}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-600 uppercase tracking-widest mb-2">Contraseña temporal</p>
+                <div className="flex items-center gap-2 p-3 bg-white/5 border border-white/10 rounded-lg">
+                  <code className="flex-1 text-sm font-mono text-amber-300">{createdUser.temp_password}</code>
+                  <button onClick={() => copyPassword(createdUser.temp_password)}
+                    className="text-gray-500 hover:text-white transition-colors flex-shrink-0">
+                    {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-[10px] text-gray-600 mt-2">Comparte esta contraseña con el empleado. Solo se muestra una vez.</p>
+              </div>
+              <button onClick={() => setCreatedUser(null)}
+                className="w-full px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-xs font-medium border border-indigo-500/30 rounded-lg transition-colors">
+                Crear otro usuario
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1.5">Nombre completo *</label>
+                <input value={newUser.name} onChange={e => setNewUser({ ...newUser, name: e.target.value })}
+                  placeholder="Ej: María González"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500/50" />
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1.5">Email *</label>
+                <input type="email" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })}
+                  placeholder="empleado@empresa.com"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500/50" />
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1.5">Rol</label>
+                <select value={newUser.role} onChange={e => setNewUser({ ...newUser, role: e.target.value })}
+                  className="w-full bg-[#050a14] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500/50">
+                  <option value="employee">Empleado</option>
+                  <option value="manager">Manager</option>
+                  <option value="admin">Admin</option>
+                  <option value="owner">Owner</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1.5">Contraseña (opcional — se auto-genera si se deja vacío)</label>
+                <input type="text" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                  placeholder="Dejar vacío para auto-generar"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500/50" />
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button onClick={() => setShowCreateUser(false)}
+                  className="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-400 text-xs rounded-lg transition-colors">
+                  Cancelar
+                </button>
+                <button onClick={createUser} disabled={creatingUser || !newUser.name || !newUser.email}
+                  className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-2">
+                  {creatingUser ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                  {creatingUser ? 'Creando...' : 'Crear usuario'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )}
   );
 }

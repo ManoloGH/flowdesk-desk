@@ -177,13 +177,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     ];
     const mods = brand.modules_config;
     if (!mods) return base;
-    return mods
+
+    const CORE_HREFS = ['/team', '/settings'];
+    const filtered = mods
       .filter((m) => m.enabled)
       .map((m) => {
         const item = base.find((n) => n.href === `/${m.key}`);
         return item ? { ...item, label: m.label } : null;
       })
       .filter(Boolean) as typeof base;
+
+    const filteredHrefs = new Set(filtered.map((n) => n.href));
+    const coreItems = base.filter((n) => CORE_HREFS.includes(n.href) && !filteredHrefs.has(n.href));
+    return [...filtered, ...coreItems];
   };
 
   const NAV = buildNav();
