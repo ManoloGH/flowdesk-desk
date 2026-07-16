@@ -31,8 +31,15 @@ export default function ErpAreasPage() {
   const [requirements, setRequirements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('');
+  const [moduleLabel, setModuleLabel] = useState('ERP por Área');
 
   useEffect(() => {
+    api.get('/tenants/mine/brand')
+      .then((b: any) => {
+        const mod = (b?.modules_config ?? []).find((m: any) => m.key === 'erp-areas');
+        if (mod?.label) setModuleLabel(mod.label);
+      })
+      .catch(() => {});
     api.get('/erp-areas/requirements')
       .then((r) => setRequirements(Array.isArray(r) ? r : []))
       .catch(() => setRequirements([]))
@@ -50,7 +57,7 @@ export default function ErpAreasPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">ERP por Área</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{moduleLabel}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Requerimientos de software interno por departamento
           </p>
