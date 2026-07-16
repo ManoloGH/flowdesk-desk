@@ -114,6 +114,7 @@ export default function TenantDetailPage() {
   const [newUser, setNewUser] = useState({ name: '', email: '', role: 'employee', password: '' });
   const [creatingUser, setCreatingUser] = useState(false);
   const [createdUser, setCreatedUser] = useState<{ name: string; email: string; temp_password: string } | null>(null);
+  const [createError, setCreateError] = useState('');
   const [copied, setCopied] = useState(false);
 
   async function load() {
@@ -165,6 +166,7 @@ export default function TenantDetailPage() {
   async function createUser() {
     if (!newUser.name || !newUser.email) return;
     setCreatingUser(true);
+    setCreateError('');
     try {
       const res: any = await api.post(`/platform/network/${id}/team-slots`, {
         name: newUser.name,
@@ -176,7 +178,8 @@ export default function TenantDetailPage() {
       setNewUser({ name: '', email: '', role: 'employee', password: '' });
       await load();
     } catch (e: any) {
-      alert(e?.message ?? 'Error al crear usuario');
+      const msg = typeof e?.message === 'string' ? e.message : JSON.stringify(e?.message ?? 'Error al crear usuario');
+      setCreateError(msg);
     }
     setCreatingUser(false);
   }
@@ -680,8 +683,13 @@ export default function TenantDetailPage() {
                   placeholder="Dejar vacío para auto-generar"
                   className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500/50" />
               </div>
+              {createError && (
+                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                  <p className="text-xs text-red-400">{createError}</p>
+                </div>
+              )}
               <div className="flex gap-3 pt-1">
-                <button onClick={() => setShowCreateUser(false)}
+                <button onClick={() => { setShowCreateUser(false); setCreateError(''); }}
                   className="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-400 text-xs rounded-lg transition-colors">
                   Cancelar
                 </button>
