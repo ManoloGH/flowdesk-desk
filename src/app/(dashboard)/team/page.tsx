@@ -4,7 +4,7 @@ import { api } from '@/lib/api';
 import {
   Users, Bot, Plus, Search, X, ChevronRight, ChevronLeft,
   Monitor, Smartphone, Crown, UserCog, User, Truck, CheckCircle2,
-  Loader2, Copy, Check,
+  Loader2, Copy, Check, Trash2, Ban, CheckCircle,
 } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -16,6 +16,7 @@ interface Slot {
   role: string;
   type: 'HUMAN' | 'AI_AGENT';
   status: string;
+  desk_access?: string | null;
   agent_config?: Record<string, any>;
   department?: { name: string; color: string } | null;
   whatsapp_phone?: string | null;
@@ -75,6 +76,19 @@ export default function TeamPage() {
   const [saving,     setSaving]       = useState(false);
   const [result,     setResult]       = useState<{ temp_password: string; name: string; worker_type: string } | null>(null);
   const [copied,     setCopied]       = useState(false);
+  const [actionId,   setActionId]     = useState<string | null>(null);
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('¿Eliminar este colaborador permanentemente?')) return;
+    await api.delete(`/team-slots/${id}`).catch(() => {});
+    setSlots(prev => prev.filter(s => s.id !== id));
+  };
+
+  const handleToggleAccess = async (slot: Slot) => {
+    const newAccess = slot.desk_access === 'NONE' ? 'FULL' : 'NONE';
+    await api.patch(`/team-slots/${slot.id}/desk-access`, { access: newAccess }).catch(() => {});
+    setSlots(prev => prev.map(s => s.id === slot.id ? { ...s, desk_access: newAccess } : s));
+  };
 
   const loadSlots = () => {
     api.get<Slot[]>('/team-slots').then(data => {
@@ -214,7 +228,7 @@ export default function TeamPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--line)' }}>
-                {['Nombre', 'Tipo', 'Nivel', 'Canal', 'Workspace', 'Estado'].map(h => (
+                {['Nombre', 'Tipo', 'Nivel', 'Canal', 'Departamento', 'Estado', ''].map(h => (
                   <th key={h} style={{ textAlign: 'left', fontSize: 10, fontWeight: 500, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '10px 16px', fontFamily: "'JetBrains Mono', monospace" }}>{h}</th>
                 ))}
               </tr>
@@ -262,17 +276,46 @@ export default function TeamPage() {
                       ) : <span style={{ fontSize: 11, color: 'var(--text-3)' }}>—</span>}
                     </td>
                     <td style={{ padding: '12px 16px' }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, padding: '3px 8px', borderRadius: 20, background: slot.status === 'ONLINE' ? 'rgba(16,185,129,0.15)' : 'var(--surface-2)', color: slot.status === 'ONLINE' ? '#10b981' : 'var(--text-3)' }}>
-                        <span style={{ width: 5, height: 5, borderRadius: '50%', background: slot.status === 'ONLINE' ? '#10b981' : 'var(--text-3)' }} />
-                        {slot.status === 'ONLINE' ? 'Online' : 'Offline'}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, padding: '3px 8px', borderRadius: 20, background: slot.status === 'ONLINE' ? 'rgba(16,185,129,0.15)' : 'var(--surface-2)', color: slot.status === 'ONLINE' ? '#10b981' : 'var(--text-3)' }}>
+                          <span style={{ width: 5, height: 5, borderRadius: '50%', background: slot.status === 'ONLINE' ? '#10b981' : 'var(--text-3)' }} />
+                          {slot.status === 'ONLINE' ? 'Online' : 'Offline'}
+                        </span>
+                        {slot.desk_access === 'NONE' && (
+                          <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 20, background: 'rgba(239,68,68,0.12)', color: '#f87171' }}>Deshabilitado</span>
+                        )}
+                      </div>
                     </td>
+                    {slot.type === 'HUMAN' ? (
+                      <td style={{ padding: '12px 16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <button
+                            title={slot.desk_access === 'NONE' ? 'Habilitar acceso' : 'Deshabilitar acceso'}
+                            onClick={() => handleToggleAccess(slot)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5, borderRadius: 6, color: slot.desk_access === 'NONE' ? '#10b981' : 'var(--text-3)', transition: 'color 0.15s, background 0.15s' }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface-2)'; (e.currentTarget as HTMLButtonElement).style.color = slot.desk_access === 'NONE' ? '#10b981' : '#f97316'; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'none'; (e.currentTarget as HTMLButtonElement).style.color = slot.desk_access === 'NONE' ? '#10b981' : 'var(--text-3)'; }}
+                          >
+                            {slot.desk_access === 'NONE' ? <CheckCircle size={14} /> : <Ban size={14} />}
+                          </button>
+                          <button
+                            title="Eliminar colaborador"
+                            onClick={() => handleDelete(slot.id)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5, borderRadius: 6, color: 'var(--text-3)', transition: 'color 0.15s, background 0.15s' }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.1)'; (e.currentTarget as HTMLButtonElement).style.color = '#ef4444'; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'none'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-3)'; }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    ) : <td />}
                   </tr>
                 );
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
+                  <td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
                     No hay resultados
                   </td>
                 </tr>
@@ -355,13 +398,13 @@ export default function TeamPage() {
                         </div>
                       ))}
                       <div>
-                        <label style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 5 }}>Workspace (opcional)</label>
+                        <label style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 5 }}>Departamento (opcional)</label>
                         <select
                           value={wizard.department_id}
                           onChange={e => set({ department_id: e.target.value })}
                           style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: '9px 12px', fontSize: 13, color: 'var(--text)', outline: 'none', fontFamily: "'Inter Tight', sans-serif" }}
                         >
-                          <option value="">Sin workspace</option>
+                          <option value="">Sin departamento</option>
                           {depts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                         </select>
                       </div>
