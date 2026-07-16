@@ -11,7 +11,7 @@ import {
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ProspectoStage =
   | 'agente_ia' | 'micro_diagnostico' | 'discovery'
-  | 'propuesta' | 'contrato' | 'kickoff' | 'implementacion';
+  | 'propuesta' | 'contrato' | 'implementacion';
 
 interface Prospecto {
   id: string; empresa: string; contacto: string;
@@ -45,7 +45,6 @@ const PROSPECTO_STAGES = [
   { key: 'discovery',         label: 'Discovery',         color: '#3b82f6', icon: '🔍' },
   { key: 'propuesta',         label: 'Propuesta',         color: '#f59e0b', icon: '📄' },
   { key: 'contrato',          label: 'Contrato',          color: '#10b981', icon: '✍️' },
-  { key: 'kickoff',           label: 'Kickoff',           color: '#f97316', icon: '🚀' },
   { key: 'implementacion',    label: 'Implementación',    color: '#22c55e', icon: '⚡' },
 ] as const;
 
@@ -281,7 +280,7 @@ export default function MentoriaPage() {
         {/* Stats */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
           {[
-            { icon: <Users size={13} />, label: 'Prospectos', value: prospectos.length, color: '#6c4de6' },
+            { icon: <Users size={13} />, label: 'En pipeline', value: prospectos.length, color: '#6c4de6' },
             { icon: <TrendingUp size={13} />, label: 'Clientes activos', value: activos.length, color: '#22c55e' },
             { icon: <DollarSign size={13} />, label: 'MRR', value: fmt$(mrr), color: '#f59e0b' },
             { icon: <Zap size={13} />, label: 'Descartados', value: descartados.length, color: '#ef4444' },
@@ -301,7 +300,7 @@ export default function MentoriaPage() {
           {([
             { key: 'prospectos',  label: 'Pipeline CRM',         count: prospectos.length + activos.length },
             { key: 'activos',     label: 'Clientes activos',     count: activos.length },
-            { key: 'desactivados',label: 'Clientes desactivados',count: desactivados.length },
+            { key: 'desactivados',label: 'Clientes anteriores',  count: desactivados.length },
             { key: 'descartados', label: 'Descartados',          count: descartados.length },
           ] as const).map(t => (
             <button
@@ -335,8 +334,8 @@ export default function MentoriaPage() {
         </div>
       ) : tab === 'prospectos' ? (
         pView === 'pipeline'
-          ? <ProspectosPipeline prospectos={filteredP} clientes={activos} onSelect={setSelected} />
-          : <ProspectosLista prospectos={filteredP} onSelect={setSelected} />
+          ? <ProspectosPipeline prospectos={filteredP} clientes={activos} onSelect={setSelected} onDescartar={doDescartar} />
+          : <ProspectosLista prospectos={filteredP} onSelect={setSelected} onDescartar={doDescartar} />
       ) : tab === 'activos' ? (
         <ClientesGrid clientes={activos} onSelect={id => router.push(`/mentoria/${id}`)} />
       ) : tab === 'desactivados' ? (
@@ -365,14 +364,13 @@ export default function MentoriaPage() {
 }
 
 // ── Prospectos Pipeline ────────────────────────────────────────────────────────
-function ProspectosPipeline({ prospectos, clientes, onSelect }: {
+function ProspectosPipeline({ prospectos, clientes, onSelect, onDescartar }: {
   prospectos: Prospecto[];
   clientes: Cliente[];
   onSelect: (p: Prospecto) => void;
+  onDescartar: (p: Prospecto) => void;
 }) {
-  // Exclude converted prospects (etapa=implementacion) — they appear as cliente cards
-  const kanbanProspectos = prospectos.filter(p => p.etapa !== 'implementacion');
-  const pGroups = Object.fromEntries(PROSPECTO_STAGES.map(s => [s.key, kanbanProspectos.filter(p => p.etapa === s.key)]));
+  const pGroups = Object.fromEntries(PROSPECTO_STAGES.map(s => [s.key, prospectos.filter(p => p.etapa === s.key)]));
 
   return (
     <div style={{ flex: 1, overflowX: 'auto', overflowY: 'hidden' }}>
@@ -394,7 +392,7 @@ function ProspectosPipeline({ prospectos, clientes, onSelect }: {
                 <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--text-3)', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 99, padding: '1px 6px', fontWeight: 600 }}>{total}</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                {prospects.map(p => <ProspectoCard key={p.id} p={p} color={stage.color} onClick={() => onSelect(p)} />)}
+                {prospects.map(p => <ProspectoCard key={p.id} p={p} color={stage.color} onClick={() => onSelect(p)} onDescartar={onDescartar} />)}
                 {clients.map(c => <ClientePipelineCard key={c.id} c={c} color={stage.color} />)}
                 {!total && (
                   <div style={{ height: 56, border: '1px dashed var(--line)', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -410,22 +408,29 @@ function ProspectosPipeline({ prospectos, clientes, onSelect }: {
   );
 }
 
-function ProspectoCard({ p, color, onClick }: { p: Prospecto; color: string; onClick: () => void }) {
+function ProspectoCard({ p, color, onClick, onDescartar }: { p: Prospecto; color: string; onClick: () => void; onDescartar: (p: Prospecto) => void }) {
   return (
-    <button onClick={onClick} style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 9, padding: '11px 13px', cursor: 'pointer', textAlign: 'left', transition: 'border-color 0.15s' }}
-      onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.borderColor = color + '80'}
-      onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--line)'}
+    <div onClick={onClick} style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 9, padding: '11px 13px', cursor: 'pointer', textAlign: 'left', transition: 'border-color 0.15s', boxSizing: 'border-box' }}
+      onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = color + '80'}
+      onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = 'var(--line)'}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, marginBottom: 4 }}>
-        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', lineHeight: 1.3 }}>{p.empresa}</span>
-        {p.puntuacion && <span style={{ fontSize: 10, fontWeight: 700, color: scoreColor(p.puntuacion), flexShrink: 0 }}>{p.puntuacion}</span>}
+        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', lineHeight: 1.3, flex: 1 }}>{p.empresa}</span>
+        <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexShrink: 0 }}>
+          {p.puntuacion && <span style={{ fontSize: 10, fontWeight: 700, color: scoreColor(p.puntuacion) }}>{p.puntuacion}</span>}
+          <button
+            onClick={e => { e.stopPropagation(); if (confirm(`¿Descartar a ${p.empresa}? Podrás reactivarlo después.`)) onDescartar(p); }}
+            title="Descartar lead"
+            style={{ width: 18, height: 18, borderRadius: 4, border: '1px solid rgba(239,68,68,0.35)', background: 'rgba(239,68,68,0.08)', color: '#ef4444', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, padding: 0 }}
+          >✕</button>
+        </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         {p.canal && <span style={{ fontSize: 10 }}>{p.canal === 'whatsapp' ? '💬' : '📧'}</span>}
         {p.industria && <span style={{ fontSize: 10, color: 'var(--text-3)', background: 'var(--surface-2)', padding: '1px 6px', borderRadius: 99 }}>{p.industria}</span>}
         <span style={{ fontSize: 10, color: 'var(--text-3)', marginLeft: 'auto' }}>{timeAgo(p.fecha_ultima_accion ?? p.fecha_creacion)}</span>
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -447,7 +452,7 @@ function ClientePipelineCard({ c, color }: { c: Cliente; color: string }) {
   );
 }
 
-function ProspectosLista({ prospectos, onSelect }: { prospectos: Prospecto[]; onSelect: (p: Prospecto) => void }) {
+function ProspectosLista({ prospectos, onSelect, onDescartar }: { prospectos: Prospecto[]; onSelect: (p: Prospecto) => void; onDescartar: (p: Prospecto) => void }) {
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '16px 28px' }}>
       <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 5px' }}>
@@ -470,7 +475,16 @@ function ProspectosLista({ prospectos, onSelect }: { prospectos: Prospecto[]; on
                 <td style={tdMid}>{p.puntuacion ? <span style={{ fontWeight: 700, color: scoreColor(p.puntuacion), fontSize: 13 }}>{p.puntuacion}</span> : <span style={{ color: 'var(--text-3)', fontSize: 13 }}>—</span>}</td>
                 <td style={tdMid}><span style={{ fontSize: 12 }}>{p.canal === 'whatsapp' ? '💬 WA' : p.canal === 'email' ? '📧 Email' : '—'}</span></td>
                 <td style={tdMid}><span style={{ fontSize: 11, color: 'var(--text-3)' }}>{timeAgo(p.fecha_ultima_accion ?? p.fecha_creacion)}</span></td>
-                <td style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderLeft: 'none', borderRadius: '0 9px 9px 0', padding: '11px 12px' }}><ChevronRight size={13} style={{ color: 'var(--text-3)' }} /></td>
+                <td style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderLeft: 'none', borderRadius: '0 9px 9px 0', padding: '8px 12px' }}>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <ChevronRight size={13} style={{ color: 'var(--text-3)' }} />
+                    <button
+                      onClick={e => { e.stopPropagation(); if (confirm(`¿Descartar a ${p.empresa}?`)) onDescartar(p); }}
+                      title="Descartar"
+                      style={{ fontSize: 10, fontWeight: 700, color: '#ef4444', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 5, padding: '4px 8px', cursor: 'pointer' }}
+                    >✕</button>
+                  </div>
+                </td>
               </tr>
             );
           })}
