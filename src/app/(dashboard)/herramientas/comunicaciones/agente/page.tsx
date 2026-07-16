@@ -1,8 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { Bot, Save, Plus, X, AlertCircle, CheckCircle2, Plug } from 'lucide-react';
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? '';
+import { apiFetch } from '@/lib/api';
 
 interface AgentConfig {
   configured: boolean;
@@ -35,12 +34,8 @@ export default function AgentePage() {
   const [toast, setToast] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('fd_access');
-    fetch(`${API}/communications/sales-agent`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
-      .then(r => r.json())
-      .then((data: AgentConfig) => {
+    apiFetch<AgentConfig>('/communications/sales-agent')
+      .then((data) => {
         setCfg({
           ...DEFAULTS,
           ...data,
@@ -80,19 +75,13 @@ export default function AgentePage() {
     setSaving(true);
     setToast(null);
     try {
-      const token = localStorage.getItem('fd_access');
-      const res = await fetch(`${API}/communications/sales-agent`, {
+      await apiFetch('/communications/sales-agent', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
         body: JSON.stringify({
           ...cfg,
           preguntas_calificacion: cfg.preguntas_calificacion.filter(p => p.trim()),
         }),
       });
-      if (!res.ok) throw new Error(`Error ${res.status}`);
       setToast({ type: 'ok', msg: 'Configuración guardada correctamente.' });
       setCfg(prev => ({ ...prev, configured: true }));
     } catch (err: any) {

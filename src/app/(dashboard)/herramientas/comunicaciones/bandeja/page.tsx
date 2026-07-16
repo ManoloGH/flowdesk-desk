@@ -1,8 +1,8 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Bot, User, MessageSquare, Trash2, RefreshCw } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? '';
 const POLL_MS = 2000;
 
 // ─── tipos ────────────────────────────────────────────────────────────────────
@@ -31,19 +31,6 @@ interface ConvDetail {
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-function authHeader(): Record<string, string> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('fd_access') : null;
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
-async function apiFetch(path: string, init?: RequestInit) {
-  const res = await fetch(`${API}${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...authHeader(), ...(init?.headers ?? {}) },
-  });
-  if (!res.ok) throw new Error(`${res.status}`);
-  return res.json();
-}
 
 // ─── página ───────────────────────────────────────────────────────────────────
 
