@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef, type ReactNode } from 'react';
+import React, { useState, useEffect, useRef, useId, type ReactNode } from 'react';
 import { Bot, Save, AlertCircle, CheckCircle2, Plug, Info, Plus, X } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 
@@ -346,7 +346,7 @@ export default function AgentePage() {
                   onClick={() => removePregunta(i)}
                   disabled={cfg.preguntas_microdiagnostico.length <= 1}
                   className="text-gray-600 hover:text-red-400 transition-colors disabled:opacity-30"
-                  aria-label="Eliminar pregunta"
+                  aria-label={`Eliminar pregunta ${i + 1}`}
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -356,6 +356,7 @@ export default function AgentePage() {
               <div className="flex items-center gap-2 pl-7">
                 <span className="text-[10px] text-gray-600">Tipo:</span>
                 <button
+                  aria-pressed={pregunta.type === 'open'}
                   onClick={() => updatePregunta(i, 'type', 'open')}
                   className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors ${
                     pregunta.type === 'open'
@@ -366,6 +367,7 @@ export default function AgentePage() {
                   Texto libre
                 </button>
                 <button
+                  aria-pressed={pregunta.type === 'multiple'}
                   onClick={() => updatePregunta(i, 'type', 'multiple')}
                   className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors ${
                     pregunta.type === 'multiple'
@@ -394,7 +396,7 @@ export default function AgentePage() {
                         <button
                           onClick={() => removeOption(i, j)}
                           className="text-gray-600 hover:text-red-400 transition-colors"
-                          aria-label="Eliminar opción"
+                          aria-label={`Eliminar opción ${j + 1} de pregunta ${i + 1}`}
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -546,11 +548,17 @@ function Field({
   hint?: string;
   children: ReactNode;
 }) {
+  const id = useId();
+  const childWithId = React.Children.map(children, (child, index) =>
+    index === 0 && React.isValidElement(child)
+      ? React.cloneElement(child as React.ReactElement<any>, { id })
+      : child
+  );
   return (
     <div className="space-y-1.5">
-      <label className="block text-xs font-medium text-gray-300">{label}</label>
+      <label htmlFor={id} className="block text-xs font-medium text-gray-300">{label}</label>
       {hint && <p className="text-[10px] text-gray-600">{hint}</p>}
-      {children}
+      {childWithId}
     </div>
   );
 }
