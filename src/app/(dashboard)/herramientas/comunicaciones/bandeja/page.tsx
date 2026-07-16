@@ -32,9 +32,7 @@ interface ConvDetail {
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 function authHeader(): Record<string, string> {
-  const token = typeof document !== 'undefined'
-    ? document.cookie.match(/token=([^;]+)/)?.[1]
-    : null;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('fd_access') : null;
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 

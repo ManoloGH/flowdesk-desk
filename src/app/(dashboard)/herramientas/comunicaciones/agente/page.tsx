@@ -35,7 +35,7 @@ export default function AgentePage() {
   const [toast, setToast] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null);
 
   useEffect(() => {
-    const token = document.cookie.match(/token=([^;]+)/)?.[1];
+    const token = localStorage.getItem('fd_access');
     fetch(`${API}/communications/sales-agent`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
@@ -80,7 +80,7 @@ export default function AgentePage() {
     setSaving(true);
     setToast(null);
     try {
-      const token = document.cookie.match(/token=([^;]+)/)?.[1];
+      const token = localStorage.getItem('fd_access');
       const res = await fetch(`${API}/communications/sales-agent`, {
         method: 'PUT',
         headers: {
