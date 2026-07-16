@@ -19,7 +19,7 @@ export default function NuevoRequerimientoPage() {
   });
 
   useEffect(() => {
-    api.get('/departments').then((r) => setDepartments(r.data));
+    api.get('/departments').then((r) => setDepartments(Array.isArray(r) ? r : []));
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

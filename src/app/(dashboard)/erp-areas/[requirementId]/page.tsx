@@ -50,7 +50,7 @@ export default function RequirementDetailPage() {
 
   const load = () => {
     api.get(`/erp-areas/requirements/${requirementId}`)
-      .then((r) => setReq(r.data))
+      .then((r) => setReq(r))
       .finally(() => setLoading(false));
   };
 
