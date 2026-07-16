@@ -19,31 +19,34 @@ const DEFAULT_BRAND: BrandConfig = {
   modules_config: null,
 };
 import {
-  LayoutDashboard, Users, Map, Plug, BookUser, LogOut, ShieldCheck,
+  Users, Map, Plug, BookUser, LogOut, ShieldCheck,
   Building2, CreditCard, ShieldAlert, Settings, Bell, X, CheckCheck,
-  ExternalLink, ChevronLeft, Target, Cctv, Zap, Sparkles, ChevronDown, Brain, Globe, GraduationCap, BotMessageSquare, ListChecks, Radio, Layers, GitBranch, Workflow,
+  ExternalLink, ChevronLeft, Cctv, Zap, ChevronDown, Brain, Globe, ListChecks, Radio, GitBranch,
 } from 'lucide-react';
 
 /* ── Navigation ── */
-const BASE_NAV = [
-  { href: '/metrics',        label: 'Dashboard',     icon: LayoutDashboard },
-  { href: '/dashboard',      label: 'Focus Mode',    icon: Zap },
-  { href: '/mi-asistente',   label: 'Mi Asistente',  icon: BotMessageSquare },
-  { href: '/agents',         label: 'Agentes',       icon: Sparkles },
-  { href: '/brain',        label: 'Brain',          icon: Brain },
-  { href: '/team',         label: 'Equipo',         icon: Users },
-  { href: '/goals',        label: 'Objetivos',      icon: Target },
-  { href: '/erp-areas',   label: 'ERP por Área',   icon: GitBranch },
-  { href: '/contacts',     label: 'Contactos',      icon: BookUser },
-  { href: '/mentoria',     label: 'CRM',            icon: Workflow },
-  { href: '/campus',       label: 'Campus',         icon: Map },
-  { href: '/spaces',       label: 'Espacios',       icon: Cctv },
-  { href: '/integrations', label: 'Integraciones',  icon: Plug },
-  { href: '/mi-web',       label: 'Mi Web',         icon: Globe },
-  { href: '/settings',     label: 'Configuración',  icon: Settings },
+type NavItem = { href: string; label: string; icon: React.ElementType };
+
+const CORE_NAV: NavItem[] = [
+  { href: '/dashboard',    label: 'Focus Mode',        icon: Zap },
+  { href: '/brain',        label: 'Brain',             icon: Brain },
+  { href: '/team',         label: 'Equipo',            icon: Users },
 ];
-const NETWORK_NAV_EXTRA = [{ href: '/branches', label: 'Sucursales', icon: Building2 }];
-const ADMIN_NAV = [
+
+const RECURSOS_BASE: NavItem[] = [
+  { href: '/contacts',     label: 'CRM',               icon: BookUser },
+  { href: '/erp-areas',    label: 'ERP por Área',      icon: GitBranch },
+  { href: '/campus',       label: 'Campus / Espacios', icon: Map },
+  { href: '/mi-web',       label: 'Mi Web',            icon: Globe },
+  { href: '/integrations', label: 'Integraciones',     icon: Plug },
+];
+
+const BOTTOM_NAV: NavItem[] = [
+  { href: '/settings',     label: 'Configuración',     icon: Settings },
+];
+
+const NETWORK_NAV_EXTRA: NavItem[] = [{ href: '/branches', label: 'Sucursales', icon: Building2 }];
+const ADMIN_NAV: NavItem[] = [
   { href: '/admin',              label: 'Overview',         icon: ShieldCheck },
   { href: '/admin/clients',      label: 'Clientes',         icon: Building2 },
   { href: '/admin/billing',      label: 'Facturación',      icon: CreditCard },
@@ -169,26 +172,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     ? [{ href: '/herramientas/comunicaciones', label: 'Comunicaciones', icon: Radio }]
     : [];
 
-  const buildNav = () => {
-    const base = [
-      ...(isNetPlatform ? [...BASE_NAV, ...NETWORK_NAV_EXTRA] : BASE_NAV),
+  type NavGroups = { core: NavItem[]; recursos: NavItem[]; bottom: NavItem[] };
+
+  const buildNav = (): NavGroups => {
+    const core: NavItem[] = [
+      ...CORE_NAV,
+      ...(isNetPlatform ? NETWORK_NAV_EXTRA : []),
+    ];
+    const recursosFull: NavItem[] = [
+      ...RECURSOS_BASE,
       ...HERRAMIENTAS_NAV,
     ];
     const mods = brand.modules_config;
-    if (!mods) return base;
+    if (!mods) return { core, recursos: recursosFull, bottom: BOTTOM_NAV };
 
-    const CORE_HREFS = ['/team', '/settings'];
-    const filtered = mods
+    const filteredRecursos = mods
       .filter((m) => m.enabled)
       .map((m) => {
-        const item = base.find((n) => n.href === `/${m.key}`);
+        const item = recursosFull.find((n) => n.href === `/${m.key}`);
         return item ? { ...item, label: m.label } : null;
       })
-      .filter(Boolean) as typeof base;
+      .filter(Boolean) as NavItem[];
 
-    const filteredHrefs = new Set(filtered.map((n) => n.href));
-    const coreItems = base.filter((n) => CORE_HREFS.includes(n.href) && !filteredHrefs.has(n.href));
-    return [...filtered, ...coreItems];
+    return { core, recursos: filteredRecursos, bottom: BOTTOM_NAV };
   };
 
   const NAV = buildNav();
@@ -488,7 +494,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Nav */}
         <nav style={{ flex: 1, padding: '10px', overflowY: 'auto' }}>
-          {NAV.map(({ href, label, icon }) => {
+          {NAV.core.map(({ href, label, icon }) => {
+            const active = pathname === href || (href !== '/' && pathname.startsWith(href));
+            return (
+              <NavItem key={href} href={href} label={label} icon={icon} active={active} onClick={() => setDrawerOpen(false)} />
+            );
+          })}
+
+          {NAV.recursos.length > 0 && (
+            <>
+              <div style={{
+                padding: '16px 12px 6px',
+                fontFamily: "'JetBrains Mono', monospace", fontSize: 9,
+                letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--text-3)',
+              }}>
+                Recursos
+              </div>
+              {NAV.recursos.map(({ href, label, icon }) => {
+                const active = pathname === href || (href !== '/' && pathname.startsWith(href));
+                return (
+                  <NavItem key={href} href={href} label={label} icon={icon} active={active} onClick={() => setDrawerOpen(false)} />
+                );
+              })}
+            </>
+          )}
+
+          {NAV.bottom.map(({ href, label, icon }) => {
             const active = pathname === href || (href !== '/' && pathname.startsWith(href));
             return (
               <NavItem key={href} href={href} label={label} icon={icon} active={active} onClick={() => setDrawerOpen(false)} />
