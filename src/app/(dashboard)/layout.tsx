@@ -31,7 +31,6 @@ const BASE_NAV = [
   { href: '/brain',        label: 'Brain',          icon: Brain },
   { href: '/team',         label: 'Equipo',         icon: Users },
   { href: '/goals',        label: 'Objetivos',      icon: Target },
-  { href: '/servicios',    label: 'Servicios',      icon: Layers },
   { href: '/erp-areas',   label: 'ERP por Área',   icon: GitBranch },
   { href: '/contacts',     label: 'Contactos',      icon: BookUser },
   { href: '/mentoria',     label: 'Consultoría',    icon: GraduationCap },
