@@ -132,6 +132,19 @@ body{font-family:'Sora',system-ui,sans-serif;background:var(--body-bg);color:var
   .print-date{font-size:12px;color:#333;text-align:center;margin-top:20px;border-top:1px solid #ccc;padding-top:16px}
   body{background:#fff}
   .page-wrap{box-shadow:none;border-radius:0;margin:0;max-width:100%}
+  .doc-header{padding:12px 32px 10px}
+  .section-divider{margin:6px 0}
+  .clause{margin-bottom:6px}
+  .decl-block{margin-bottom:6px}
+  .hl-box{margin:6px 0;padding:8px 12px}
+  .service-card{margin-bottom:8px}
+  .service-card-head{padding:10px 14px}
+  .service-card-body{padding:8px 14px}
+  p{margin-bottom:3px}
+  ul,ol{margin:3px 0;padding-left:16px}
+  li{margin-bottom:2px}
+  .pay-table{margin:6px 0}
+  .section-label{margin-top:10px;display:block}
   .cli-input{border-bottom:1px solid #999}
 }
 
@@ -463,6 +476,8 @@ body{font-family:'Sora',system-ui,sans-serif;background:var(--body-bg);color:var
       <p class="print-sig-lbl"><strong>Por el Prestador</strong></p>
       <p class="print-sig-lbl">CORDVAL SA DE CV &mdash; MentorIA Systems</p>
       <p class="print-sig-lbl">RFC: COR2008248E7</p>
+      <p class="print-sig-lbl">Manuel G&oacute;mez Haro S&aacute;nchez</p>
+      <p class="print-sig-lbl">CEO</p>
     </div>
     <div class="print-sig-party">
       <div class="print-sig-line"></div>
@@ -472,7 +487,7 @@ body{font-family:'Sora',system-ui,sans-serif;background:var(--body-bg);color:var
       <p class="print-sig-lbl">Cargo: _____________________________</p>
     </div>
   </div>
-  <p class="print-date">Lugar y fecha: ___________________________________________________</p>
+  <p class="print-date">Lugar y fecha: <span id="firma-lugar-fecha"></span></p>
 </div>
 
 <!-- DIGITAL SIGN SECTION -->
@@ -628,6 +643,14 @@ async function firmarContrato(){
     });
   }
 }
+
+// Fecha automática en bloque de firma
+(function(){
+  var meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  var h=new Date();
+  var el=document.getElementById('firma-lugar-fecha');
+  if(el) el.textContent='Puebla, Pue., '+h.getDate()+' de '+meses[h.getMonth()]+' de '+h.getFullYear();
+})();
 </script>
 </body>
 </html>
