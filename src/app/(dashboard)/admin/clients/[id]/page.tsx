@@ -111,7 +111,7 @@ export default function TenantDetailPage() {
   const [migrationTab, setMigrationTab] = useState<'bundle' | 'audit' | 'verify'>('bundle');
   const [expandedChecks, setExpandedChecks] = useState<Set<string>>(new Set());
   const [showCreateUser, setShowCreateUser] = useState(false);
-  const [newUser, setNewUser] = useState({ name: '', email: '', role: 'employee', password: '' });
+  const [newUser, setNewUser] = useState({ name: '', email: '', role: 'employee', worker_type: 'desk', password: '' });
   const [creatingUser, setCreatingUser] = useState(false);
   const [createdUser, setCreatedUser] = useState<{ name: string; email: string; temp_password: string } | null>(null);
   const [createError, setCreateError] = useState('');
@@ -172,10 +172,11 @@ export default function TenantDetailPage() {
         name: newUser.name,
         email: newUser.email,
         role: newUser.role,
+        worker_type: newUser.worker_type,
         ...(newUser.password ? { password: newUser.password } : {}),
       });
       setCreatedUser({ name: res.name, email: res.email, temp_password: res.temp_password });
-      setNewUser({ name: '', email: '', role: 'employee', password: '' });
+      setNewUser({ name: '', email: '', role: 'employee', worker_type: 'desk', password: '' });
       await load();
     } catch (e: any) {
       const msg = typeof e?.message === 'string' ? e.message : JSON.stringify(e?.message ?? 'Error al crear usuario');
@@ -676,6 +677,22 @@ export default function TenantDetailPage() {
                   <option value="admin">Admin</option>
                   <option value="owner">Owner</option>
                 </select>
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-2">¿Cómo accede este usuario? *</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: 'desk',      label: 'Computadora',  desc: 'Acceso completo al desk web' },
+                    { value: 'operative', label: 'Teléfono',     desc: 'Solo cédula de resultados por WhatsApp' },
+                  ].map(opt => (
+                    <button key={opt.value} type="button"
+                      onClick={() => setNewUser({ ...newUser, worker_type: opt.value })}
+                      className={`p-3 rounded-lg border text-left transition-colors ${newUser.worker_type === opt.value ? 'border-indigo-500/60 bg-indigo-500/10' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}>
+                      <p className={`text-xs font-medium ${newUser.worker_type === opt.value ? 'text-indigo-300' : 'text-white'}`}>{opt.label}</p>
+                      <p className="text-[10px] text-gray-600 mt-0.5">{opt.desc}</p>
+                    </button>
+                  ))}
+                </div>
               </div>
               <div>
                 <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1.5">Contraseña (opcional — se auto-genera si se deja vacío)</label>
