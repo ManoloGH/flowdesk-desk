@@ -511,6 +511,25 @@ const CSS = `
   }
 `;
 
+// ── Metadata ────────────────────────────────────────────────────────────────
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}): Promise<import('next').Metadata> {
+  const { token } = await params;
+  const data = await getMicroDiagnostico(token);
+  const title = data?.lead_company
+    ? `Diagnóstico de Automatización — ${data.lead_company}`
+    : 'Tu Diagnóstico de Automatización — MentorIA Systems';
+  return {
+    title,
+    description: 'Análisis personalizado de oportunidades de automatización generado por MentorIA Systems.',
+    robots: { index: false, follow: false },
+  };
+}
+
 // ── Page component ──────────────────────────────────────────────────────────
 
 export default async function MicroDiagnosticoPage({
@@ -607,6 +626,7 @@ export default async function MicroDiagnosticoPage({
             </div>
 
             {/* 2 — Hallazgos Clave */}
+            {Array.isArray(d.hallazgos) && d.hallazgos.length > 0 && (
             <div className="micro-card">
               <div className="micro-card-head">
                 <div className="micro-icon-wrap">
@@ -618,7 +638,7 @@ export default async function MicroDiagnosticoPage({
                 </div>
               </div>
               <ul className="micro-hallazgos">
-                {d.hallazgos.map((hallazgo, index) => (
+                {(d.hallazgos ?? []).map((hallazgo, index) => (
                   <li key={index} className="micro-hallazgo">
                     <span className="micro-check" aria-hidden="true">
                       <svg
@@ -642,6 +662,7 @@ export default async function MicroDiagnosticoPage({
                 ))}
               </ul>
             </div>
+            )}
 
             {/* 3 — Impacto Estimado */}
             <div className="micro-card">
