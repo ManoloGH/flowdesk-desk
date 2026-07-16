@@ -7,6 +7,8 @@ import { ChevronLeft, Plus, Trash2, ChevronDown, ChevronUp, Save, Check } from '
 
 const FIELD_TYPES = ['text','textarea','number','select','multiselect','date','file','checkbox'];
 
+const ROLES = ['owner','admin','manager','staff','viewer'];
+
 const emptyService = () => ({
   name: '',
   description: '',
@@ -22,6 +24,11 @@ const emptyService = () => ({
   requires_approval: false,
   approval_flow: [] as any[],
   form_schema: [] as any[],
+  visible_to: 'all',
+  visible_roles: [] as string[],
+  visible_dept_id: '',
+  assigned_to_type: 'department',
+  assigned_slot_id: '',
   auto_respond: false,
   status: 'BORRADOR',
 });
@@ -205,6 +212,81 @@ export default function ServiciosPage() {
                     </button>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+
+          {/* Acceso y atención */}
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-4">
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Acceso y atención</p>
+
+            {/* ¿Quién puede solicitar? */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">¿Quién puede solicitar este servicio?</label>
+              <select value={data.visible_to ?? 'all'} onChange={(e) => onChange({ ...data, visible_to: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="all">Todos los usuarios del tenant</option>
+                <option value="roles">Solo ciertos roles</option>
+                <option value="department">Solo un departamento específico</option>
+              </select>
+            </div>
+
+            {data.visible_to === 'roles' && (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Roles habilitados</label>
+                <div className="flex flex-wrap gap-2">
+                  {ROLES.map((r) => {
+                    const selected = (data.visible_roles ?? []).includes(r);
+                    return (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => {
+                          const current: string[] = data.visible_roles ?? [];
+                          onChange({
+                            ...data,
+                            visible_roles: selected ? current.filter((x: string) => x !== r) : [...current, r],
+                          });
+                        }}
+                        className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                          selected
+                            ? 'bg-indigo-600 border-indigo-600 text-white'
+                            : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-indigo-400'
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {data.visible_to === 'department' && (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">ID del departamento habilitado</label>
+                <input value={data.visible_dept_id ?? ''} onChange={(e) => onChange({ ...data, visible_dept_id: e.target.value })}
+                  placeholder="ID del departamento"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
+            )}
+
+            {/* ¿Quién atiende? */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">¿Quién atiende las solicitudes?</label>
+              <select value={data.assigned_to_type ?? 'department'} onChange={(e) => onChange({ ...data, assigned_to_type: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="department">Todo el área responsable</option>
+                <option value="person">Una persona específica</option>
+              </select>
+            </div>
+
+            {data.assigned_to_type === 'person' && (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">ID de la persona responsable</label>
+                <input value={data.assigned_slot_id ?? ''} onChange={(e) => onChange({ ...data, assigned_slot_id: e.target.value })}
+                  placeholder="Slot ID del responsable"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
               </div>
             )}
           </div>
