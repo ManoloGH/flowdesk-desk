@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { RefreshCw, ExternalLink, ChevronRight, DollarSign, Users, CheckCircle, Clock } from 'lucide-react';
+import { RefreshCw, ChevronRight, DollarSign, Users, TrendingUp } from 'lucide-react';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface Cliente {
@@ -22,28 +22,12 @@ interface Cliente {
   _count?: { hallazgos: number; plan: number; sesiones: number };
 }
 
-// ── Methodology phases ────────────────────────────────────────────────────────
-const PHASES = [
-  {
-    num: 0, label: 'Mapeo técnico', duracion: '2 semanas', color: '#6c4de6', icon: '🗺️',
-    descripcion: 'Entendimiento profundo del negocio: herramientas, procesos AS-IS y hallazgos clave.',
-    entregables: ['Accesos recibidos', 'Inventario de herramientas', 'Sesión de discovery', 'BPMNs AS-IS', 'Hallazgos documentados'],
-  },
-  {
-    num: 1, label: 'Quick Wins', duracion: '4 semanas', color: '#f59e0b', icon: '⚡',
-    descripcion: 'Primeras automatizaciones de alto impacto y entrega del diagnóstico completo.',
-    entregables: ['Cuestionarios de diagnóstico', 'Matriz de impacto', '3 automatizaciones implementadas', 'Informe de diagnóstico'],
-  },
-  {
-    num: 2, label: 'Expansión', duracion: '8 semanas', color: '#3b82f6', icon: '📈',
-    descripcion: 'Implementación del ecosistema completo: CRM, agente IA, dashboards y capacitación.',
-    entregables: ['BPMNs TO-BE', 'CRM configurado', 'Agente IA activo', 'Dashboard de métricas', 'Capacitación al equipo'],
-  },
-  {
-    num: 3, label: 'Optimización', duracion: 'Ongoing', color: '#22c55e', icon: '🔧',
-    descripcion: 'Revisión mensual, ajustes continuos y búsqueda de nuevas oportunidades de mejora.',
-    entregables: ['Revisión mensual de métricas', 'Ajustes y mejoras', 'Nuevas oportunidades', 'Evaluación de renovación'],
-  },
+// ── Config ────────────────────────────────────────────────────────────────────
+const FASES = [
+  { num: 0, label: 'Mapeo técnico',  color: '#6c4de6', pct: 0 },
+  { num: 1, label: 'Quick Wins',     color: '#f59e0b', pct: 33 },
+  { num: 2, label: 'Expansión',      color: '#3b82f6', pct: 66 },
+  { num: 3, label: 'Optimización',   color: '#22c55e', pct: 100 },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -53,7 +37,7 @@ function fmtFecha(iso: string) {
   return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-const MOCK_CLIENTES: Cliente[] = [
+const MOCK: Cliente[] = [
   {
     id: 'c-primer', empresa: 'LogiMex SA de CV', contacto_nombre: 'Carlos Torres',
     contacto_cargo: 'Director de Operaciones', industria: 'Logística', tamano: '10-100',
@@ -67,7 +51,6 @@ export default function ConsultoriaPage() {
   const router = useRouter();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedPhase, setExpandedPhase] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -75,17 +58,13 @@ export default function ConsultoriaPage() {
       const data = await api.get<Cliente[]>('/mentoria/clientes?status=activo');
       setClientes(Array.isArray(data) ? data : []);
     } catch {
-      setClientes(MOCK_CLIENTES);
+      setClientes(MOCK);
     } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
-  const byPhase = (num: number) => clientes.filter(c => c.fase_actual === num);
   const mrr = clientes.reduce((a, c) => a + c.precio, 0);
-  const avgPhase = clientes.length
-    ? (clientes.reduce((a, c) => a + c.fase_actual, 0) / clientes.length).toFixed(1)
-    : '—';
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -97,24 +76,18 @@ export default function ConsultoriaPage() {
             <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg,#6c4de6,#22c55e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>🎓</div>
             <div>
               <h1 style={{ fontSize: 19, fontWeight: 700, letterSpacing: '-0.025em', color: 'var(--text)' }}>Consultoría · MentorIA Systems</h1>
-              <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 1 }}>Metodología de implementación — 4 fases</p>
+              <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 1 }}>Clientes en implementación activa</p>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={load} style={btnGhost}><RefreshCw size={13} /></button>
-            <button onClick={() => router.push('/mentoria')} style={{ ...btnGhost, fontSize: 12, gap: 6, display: 'flex', alignItems: 'center' }}>
-              <ExternalLink size={12} /> Ver CRM
-            </button>
-          </div>
+          <button onClick={load} style={btnGhost}><RefreshCw size={13} /></button>
         </div>
 
         {/* Stats */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
           {[
             { icon: <Users size={13} />, label: 'Clientes activos', value: clientes.length, color: '#6c4de6' },
             { icon: <DollarSign size={13} />, label: 'MRR total', value: fmt$(mrr), color: '#f59e0b' },
-            { icon: <Clock size={13} />, label: 'Fase promedio', value: avgPhase === '—' ? '—' : `Fase ${avgPhase}`, color: '#3b82f6' },
-            { icon: <CheckCircle size={13} />, label: 'En Optimización', value: byPhase(3).length, color: '#22c55e' },
+            { icon: <TrendingUp size={13} />, label: 'Fase promedio', value: clientes.length ? `Fase ${(clientes.reduce((a,c) => a + c.fase_actual, 0) / clientes.length).toFixed(1)}` : '—', color: '#3b82f6' },
           ].map(s => (
             <div key={s.label} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, padding: '11px 16px', flex: 1, display: 'flex', gap: 10, alignItems: 'center' }}>
               <div style={{ color: s.color }}>{s.icon}</div>
@@ -125,72 +98,80 @@ export default function ConsultoriaPage() {
             </div>
           ))}
         </div>
-
-        {/* Journey bar */}
-        <div style={{ display: 'flex', gap: 0, marginBottom: 20, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
-          {PHASES.map((p, i) => (
-            <div key={p.num} style={{ flex: 1, padding: '10px 14px', borderRight: i < 3 ? '1px solid var(--line)' : 'none', borderLeft: `3px solid ${p.color}`, cursor: 'pointer', transition: 'background 0.15s', background: expandedPhase === p.num ? `${p.color}10` : 'transparent' }}
-              onClick={() => setExpandedPhase(expandedPhase === p.num ? null : p.num)}
-            >
-              <div style={{ fontSize: 12, fontWeight: 700, color: p.color, marginBottom: 2 }}>{p.icon} Fase {p.num} · {p.label}</div>
-              <div style={{ fontSize: 10, color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span>{p.duracion}</span>
-                <span style={{ background: `${p.color}20`, color: p.color, padding: '0 6px', borderRadius: 99, fontWeight: 700 }}>{byPhase(p.num).length} clientes</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Expanded phase detail */}
-        {expandedPhase !== null && (() => {
-          const p = PHASES[expandedPhase];
-          return (
-            <div style={{ background: `${p.color}08`, border: `1px solid ${p.color}30`, borderRadius: 10, padding: '14px 18px', marginBottom: 18, animation: 'fadeIn 0.15s ease' }}>
-              <div style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 10, lineHeight: 1.6 }}>{p.descripcion}</div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {p.entregables.map(e => (
-                  <span key={e} style={{ fontSize: 11, background: 'var(--surface)', border: `1px solid ${p.color}40`, color: 'var(--text-2)', padding: '3px 10px', borderRadius: 99 }}>✓ {e}</span>
-                ))}
-              </div>
-            </div>
-          );
-        })()}
       </div>
 
-      {/* Kanban por fase */}
+      {/* Client grid */}
       {loading ? (
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ width: 22, height: 22, borderRadius: '50%', border: '2px solid #6c4de6', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
         </div>
+      ) : !clientes.length ? (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
+          <span style={{ fontSize: 32 }}>🎓</span>
+          <p style={{ fontSize: 14, color: 'var(--text-3)', textAlign: 'center' }}>Sin clientes en implementación.<br />Convierte un prospecto desde el CRM.</p>
+          <button onClick={() => router.push('/mentoria')} style={btnPrimary}>Ir al CRM →</button>
+        </div>
       ) : (
-        <div style={{ flex: 1, overflowX: 'auto', overflowY: 'hidden' }}>
-          <div style={{ display: 'flex', gap: 14, padding: '4px 28px 20px', minWidth: 'max-content', alignItems: 'flex-start', height: '100%' }}>
-            {PHASES.map(phase => {
-              const items = byPhase(phase.num);
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 28px 28px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 }}>
+            {clientes.map(c => {
+              const fase = FASES[c.fase_actual];
               return (
-                <div key={phase.num} style={{ width: 240, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
-                  {/* Column header */}
-                  <div style={{ borderRadius: 10, border: `1px solid ${phase.color}40`, borderTop: `3px solid ${phase.color}`, background: `${phase.color}08`, padding: '12px 14px', marginBottom: 10 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: phase.color }}>{phase.icon} {phase.label}</span>
-                      <span style={{ fontSize: 11, fontWeight: 700, background: `${phase.color}20`, color: phase.color, padding: '2px 8px', borderRadius: 99 }}>{items.length}</span>
-                    </div>
-                    <div style={{ fontSize: 10, color: 'var(--text-3)' }}>{phase.duracion}</div>
+                <button key={c.id} onClick={() => router.push(`/mentoria/${c.id}`)}
+                  style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 13, padding: 0, cursor: 'pointer', textAlign: 'left', overflow: 'hidden', transition: 'border-color 0.15s, transform 0.15s' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = fase.color + '80'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--line)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
+                >
+                  {/* Phase progress bar */}
+                  <div style={{ height: 4, background: 'var(--line)' }}>
+                    <div style={{ height: '100%', width: fase.pct + '%', background: fase.color, transition: 'width 0.4s' }} />
                   </div>
 
-                  {/* Client cards */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
-                    {items.map(c => (
-                      <ClienteCard key={c.id} c={c} color={phase.color} onClick={() => router.push(`/mentoria/${c.id}`)} />
-                    ))}
-                    {!items.length && (
-                      <div style={{ height: 72, border: '1px dashed var(--line)', borderRadius: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                        <span style={{ fontSize: 18 }}>{phase.icon}</span>
-                        <span style={{ fontSize: 10, color: 'var(--text-3)' }}>Sin clientes en esta fase</span>
+                  <div style={{ padding: '16px 18px' }}>
+                    {/* Top row */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                      <div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>{c.empresa}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{c.industria}</div>
+                      </div>
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 99, background: `${fase.color}20`, color: fase.color, border: `1px solid ${fase.color}40`, whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 8 }}>
+                        Fase {c.fase_actual} · {fase.label}
+                      </span>
+                    </div>
+
+                    {/* Contact */}
+                    <div style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 12 }}>
+                      {c.contacto_nombre}{c.contacto_cargo ? ` · ${c.contacto_cargo}` : ''}
+                    </div>
+
+                    {/* Areas diagnosticadas */}
+                    {c.areas_diagnosticadas?.length > 0 && (
+                      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 12 }}>
+                        {c.areas_diagnosticadas.map(a => (
+                          <span key={a} style={{ fontSize: 10, background: `${fase.color}15`, color: fase.color, padding: '2px 8px', borderRadius: 99, fontWeight: 600, textTransform: 'capitalize' }}>✓ {a}</span>
+                        ))}
                       </div>
                     )}
+
+                    {/* Workspace tabs hint */}
+                    <div style={{ display: 'flex', gap: 4, marginBottom: 12, flexWrap: 'wrap' }}>
+                      {['Proyecto', 'Diagnósticos', 'Hallazgos', 'Plan de Acción', 'Sesiones', 'Facturación'].map(tab => (
+                        <span key={tab} style={{ fontSize: 9, color: 'var(--text-3)', background: 'var(--surface-2)', border: '1px solid var(--line)', padding: '2px 7px', borderRadius: 5 }}>{tab}</span>
+                      ))}
+                    </div>
+
+                    {/* Bottom row */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#f59e0b' }}>{fmt$(c.precio)}</span>
+                        <span style={{ fontSize: 10, color: 'var(--text-3)', marginLeft: 8 }}>desde {fmtFecha(c.fecha_inicio)}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: fase.color, fontWeight: 600 }}>
+                        Abrir workspace <ChevronRight size={12} />
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -200,37 +181,6 @@ export default function ConsultoriaPage() {
   );
 }
 
-// ── Client card ───────────────────────────────────────────────────────────────
-function ClienteCard({ c, color, onClick }: { c: Cliente; color: string; onClick: () => void }) {
-  return (
-    <button onClick={onClick}
-      style={{ width: '100%', background: 'var(--surface)', border: `1px solid ${color}30`, borderLeft: `3px solid ${color}`, borderRadius: 10, padding: '13px 14px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s' }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${color}80`; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = `${color}30`; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', lineHeight: 1.3 }}>{c.empresa}</div>
-        <ChevronRight size={12} style={{ color: 'var(--text-3)', flexShrink: 0, marginTop: 2 }} />
-      </div>
-      {c.contacto_nombre && (
-        <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 8 }}>
-          {c.contacto_nombre}{c.contacto_cargo ? ` · ${c.contacto_cargo}` : ''}
-        </div>
-      )}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b' }}>${c.precio.toLocaleString('es-MX')}</span>
-        <span style={{ fontSize: 10, color: 'var(--text-3)' }}>Desde {fmtFecha(c.fecha_inicio)}</span>
-      </div>
-      {c.areas_diagnosticadas?.length > 0 && (
-        <div style={{ marginTop: 8, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-          {c.areas_diagnosticadas.map(a => (
-            <span key={a} style={{ fontSize: 9, background: `${color}15`, color: color, padding: '2px 7px', borderRadius: 99, fontWeight: 600, textTransform: 'capitalize' }}>{a}</span>
-          ))}
-        </div>
-      )}
-    </button>
-  );
-}
-
 // ── Styles ────────────────────────────────────────────────────────────────────
 const btnGhost: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--line)', background: 'transparent', color: 'var(--text-2)', cursor: 'pointer' };
+const btnPrimary: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 6, padding: '10px 20px', borderRadius: 8, border: 'none', background: '#6c4de6', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' };
