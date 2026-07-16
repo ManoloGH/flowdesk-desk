@@ -36,7 +36,6 @@ const BASE_NAV = [
   { href: '/erp-areas',   label: 'ERP por Área',   icon: GitBranch },
   { href: '/contacts',     label: 'Contactos',      icon: BookUser },
   { href: '/mentoria',     label: 'CRM',            icon: Workflow },
-  { href: '/consultoria',  label: 'Consultoría',    icon: GraduationCap },
   { href: '/campus',       label: 'Campus',         icon: Map },
   { href: '/spaces',       label: 'Espacios',       icon: Cctv },
   { href: '/integrations', label: 'Integraciones',  icon: Plug },
