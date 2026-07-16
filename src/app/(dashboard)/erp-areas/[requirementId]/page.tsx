@@ -63,7 +63,7 @@ export default function RequirementDetailPage() {
     try {
       if (next === 'PRODUCCION') {
         setDeploying(true);
-        await api.post(`/erp-areas/requirements/${requirementId}/deploy`);
+        await api.post(`/erp-areas/requirements/${requirementId}/deploy`, {});
       } else {
         await api.patch(`/erp-areas/requirements/${requirementId}`, { status: next });
       }
