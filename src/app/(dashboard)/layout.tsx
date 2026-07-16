@@ -8,13 +8,15 @@ import { api } from '@/lib/api';
 
 /* ── Brand types ── */
 interface BrandColors { primary: string; secondary: string; tertiary: string; }
-interface BrandConfig { logo_url: string | null; tenant_name: string | null; colors: BrandColors; configured: boolean; }
+interface ModuleCfg { key: string; label: string; enabled: boolean; }
+interface BrandConfig { logo_url: string | null; tenant_name: string | null; colors: BrandColors; configured: boolean; modules_config: ModuleCfg[] | null; }
 
 const DEFAULT_BRAND: BrandConfig = {
   logo_url: null,
   tenant_name: null,
   colors: { primary: '#1DBDF0', secondary: '#2566E8', tertiary: '#E91E7A' },
   configured: false,
+  modules_config: null,
 };
 import {
   LayoutDashboard, Users, Map, Plug, BookUser, LogOut, ShieldCheck,
@@ -167,10 +169,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     ? [{ href: '/herramientas/comunicaciones', label: 'Comunicaciones', icon: Radio }]
     : [];
 
-  const NAV = [
-    ...(isNetPlatform ? [...BASE_NAV, ...NETWORK_NAV_EXTRA] : BASE_NAV),
-    ...HERRAMIENTAS_NAV,
-  ];
+  const buildNav = () => {
+    const base = [
+      ...(isNetPlatform ? [...BASE_NAV, ...NETWORK_NAV_EXTRA] : BASE_NAV),
+      ...HERRAMIENTAS_NAV,
+    ];
+    const mods = brand.modules_config;
+    if (!mods) return base;
+    return mods
+      .filter((m) => m.enabled)
+      .map((m) => {
+        const item = base.find((n) => n.href === `/${m.key}`);
+        return item ? { ...item, label: m.label } : null;
+      })
+      .filter(Boolean) as typeof base;
+  };
+
+  const NAV = buildNav();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [bellOpen,   setBellOpen]   = useState(false);
