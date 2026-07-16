@@ -17,6 +17,7 @@ interface AgentConfig {
   propuesta_valor: string | null;
   // Stage 3: Gancho
   gancho: string | null;
+  oferta_llamada_sin_diagnostico: string | null;
   // Stage 4: Preguntas dinámicas
   preguntas_microdiagnostico: Pregunta[];
   // Stage 6: Cierre
@@ -35,6 +36,7 @@ const DEFAULTS: AgentConfig = {
   actividad: '',
   propuesta_valor: '',
   gancho: '',
+  oferta_llamada_sin_diagnostico: '',
   preguntas_microdiagnostico: [
     { text: '', type: 'open', options: [] },
   ],
@@ -321,6 +323,15 @@ export default function AgentePage() {
         <p className="text-[10px] text-gray-600">
           El prospecto debe aceptar antes de que el agente haga las preguntas.
         </p>
+        <Field label="Si no acepta el diagnóstico — ofrecer llamada" hint="Leo usa este texto cuando el prospecto rechaza el micro-diagnóstico. Si lo acepta, se queda callado.">
+          <textarea
+            rows={3}
+            value={cfg.oferta_llamada_sin_diagnostico ?? ''}
+            onChange={e => set('oferta_llamada_sin_diagnostico', e.target.value)}
+            placeholder="Entiendo, no hay problema. Si prefieres, podemos agendar una llamada de 15 minutos con uno de nuestros asesores para platicar sobre cómo funcionan nuestros servicios. ¿Te gustaría?"
+            className={INPUT}
+          />
+        </Field>
       </StageSection>
 
       {/* Etapa 4: Preguntas dinámicas del Micro-Diagnóstico */}
