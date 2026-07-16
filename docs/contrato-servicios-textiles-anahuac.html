@@ -119,7 +119,7 @@ body{font-family:'Sora',system-ui,sans-serif;background:var(--body-bg);color:var
 /* physical signature block — screen hidden, print visible */
 .print-sig-block{display:none}
 
-@page{margin:0;padding:0}@media print{
+@page{margin:0 0 11mm 0}@page{@bottom-center{content:"Pag. " counter(page) " de " counter(pages) "   |   Contrato TAC-2026-SVC-001   |   Confidencial";font-size:8.5px;font-family:sans-serif;color:#999}}@media print{
   .btn-print-sticky{display:none!important}body{padding:16mm 20mm!important}
   .sign-section{display:none!important}
   .print-sig-block{display:block;margin-top:40px;padding-top:28px;border-top:2px solid #000}
@@ -159,7 +159,7 @@ body{font-family:'Sora',system-ui,sans-serif;background:var(--body-bg);color:var
 <!-- HEADER -->
 <div class="doc-header">
   <div class="logo-block">
-    <img src="" alt="MentorIA Systems">
+    <img id="logo-hdr" src="" alt="MentorIA Systems">
   </div>
   <div class="header-text">
     <div class="doc-type">Documento Legal &middot; Contrato</div>
