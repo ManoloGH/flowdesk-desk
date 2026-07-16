@@ -19,7 +19,7 @@ const DEFAULT_BRAND: BrandConfig = {
 import {
   LayoutDashboard, Users, Map, Plug, BookUser, LogOut, ShieldCheck,
   Building2, CreditCard, ShieldAlert, Settings, Bell, X, CheckCheck,
-  ExternalLink, ChevronLeft, Target, Cctv, Zap, Sparkles, ChevronDown, Brain, Globe, GraduationCap, BotMessageSquare, ListChecks, Radio,
+  ExternalLink, ChevronLeft, Target, Cctv, Zap, Sparkles, ChevronDown, Brain, Globe, GraduationCap, BotMessageSquare, ListChecks, Radio, Layers, GitBranch,
 } from 'lucide-react';
 
 /* ── Navigation ── */
@@ -31,6 +31,8 @@ const BASE_NAV = [
   { href: '/brain',        label: 'Brain',          icon: Brain },
   { href: '/team',         label: 'Equipo',         icon: Users },
   { href: '/goals',        label: 'Objetivos',      icon: Target },
+  { href: '/servicios',    label: 'Servicios',      icon: Layers },
+  { href: '/erp-areas',   label: 'ERP por Área',   icon: GitBranch },
   { href: '/contacts',     label: 'Contactos',      icon: BookUser },
   { href: '/mentoria',     label: 'Consultoría',    icon: GraduationCap },
   { href: '/campus',       label: 'Campus',         icon: Map },
