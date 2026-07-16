@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { Bot, Save, AlertCircle, CheckCircle2, Plug, Info } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 
@@ -51,6 +51,8 @@ export default function AgentePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     apiFetch<AgentConfig & { preguntas_calificacion?: string[] }>('/communications/sales-agent')
@@ -65,8 +67,17 @@ export default function AgentePage() {
           preguntas_microdiagnostico,
         });
       })
-      .catch(() => {})
+      .catch((err) => {
+        // 404 = first time configuring (not an error), anything else is a real error
+        if (!(err instanceof Error && /not found/i.test(err.message))) {
+          setLoadError(true);
+        }
+      })
       .finally(() => setLoading(false));
+
+    return () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    };
   }, []);
 
   function set(field: keyof AgentConfig, value: string) {
@@ -82,23 +93,33 @@ export default function AgentePage() {
   }
 
   async function handleSave() {
+    if (cfg.preguntas_microdiagnostico.some(p => !p.trim())) {
+      setToast({ type: 'err', msg: 'Completa las 5 preguntas del diagnóstico.' });
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => setToast(null), 4000);
+      return;
+    }
+
     setSaving(true);
     setToast(null);
+    const { configured: _configured, ...payload } = cfg;
     try {
       await apiFetch('/communications/sales-agent', {
         method: 'PUT',
         body: JSON.stringify({
-          ...cfg,
-          preguntas_microdiagnostico: cfg.preguntas_microdiagnostico.filter(p => p.trim()),
+          ...payload,
+          preguntas_microdiagnostico: cfg.preguntas_microdiagnostico,
         }),
       });
       setToast({ type: 'ok', msg: 'Configuración guardada correctamente.' });
       setCfg(prev => ({ ...prev, configured: true }));
-    } catch (err: any) {
-      setToast({ type: 'err', msg: err.message ?? 'Error al guardar.' });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error al guardar.';
+      setToast({ type: 'err', msg });
     } finally {
       setSaving(false);
-      setTimeout(() => setToast(null), 4000);
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => setToast(null), 4000);
     }
   }
 
@@ -146,6 +167,13 @@ export default function AgentePage() {
             ? <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
             : <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />}
           {toast.msg}
+        </div>
+      )}
+
+      {loadError && (
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-medium bg-red-500/15 text-red-300 border border-red-500/30">
+          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+          No se pudo cargar la configuración actual. Los campos muestran valores por defecto.
         </div>
       )}
 
@@ -330,7 +358,7 @@ function StageSection({
   badge: string;
   title: string;
   subtitle?: string;
-  children?: React.ReactNode;
+  children?: ReactNode;
   info?: boolean;
 }) {
   return (
@@ -364,7 +392,7 @@ function Field({
 }: {
   label: string;
   hint?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div className="space-y-1.5">
