@@ -11,7 +11,7 @@ import {
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ProspectoStage =
   | 'agente_ia' | 'micro_diagnostico' | 'discovery'
-  | 'propuesta' | 'contrato' | 'kickoff' | 'diagnostico' | 'implementacion';
+  | 'propuesta' | 'contrato';
 
 interface Prospecto {
   id: string; empresa: string; contacto: string;
@@ -45,9 +45,6 @@ const PROSPECTO_STAGES = [
   { key: 'discovery',         label: 'Discovery',         color: '#3b82f6', icon: '🔍' },
   { key: 'propuesta',         label: 'Propuesta',         color: '#f59e0b', icon: '📄' },
   { key: 'contrato',          label: 'Contrato',          color: '#10b981', icon: '✍️' },
-  { key: 'kickoff',           label: 'Kickoff',           color: '#06b6d4', icon: '🚀' },
-  { key: 'diagnostico',       label: 'Diagnóstico',       color: '#8b6ef5', icon: '🔬' },
-  { key: 'implementacion',    label: 'Implementación',    color: '#22c55e', icon: '⚡' },
 ] as const;
 
 const STAGE_MAP = Object.fromEntries(PROSPECTO_STAGES.map(s => [s.key, s]));
@@ -156,9 +153,10 @@ function loadLocalLeads(): Prospecto[] {
 // ── Main ───────────────────────────────────────────────────────────────────────
 export default function MentoriaPage() {
   const router = useRouter();
-  const [tab, setTab] = useState<'prospectos' | 'activos' | 'inactivos'>('prospectos');
-  const [prospectos, setProspectos] = useState<Prospecto[]>([]);
-  const [clientes, setClientes]     = useState<Cliente[]>([]);
+  const [tab, setTab] = useState<'prospectos' | 'activos' | 'desactivados' | 'descartados'>('prospectos');
+  const [prospectos, setProspectos]   = useState<Prospecto[]>([]);
+  const [clientes, setClientes]       = useState<Cliente[]>([]);
+  const [descartados, setDescartados] = useState<Prospecto[]>([]);
   const [loading, setLoading]       = useState(true);
   const [search, setSearch]         = useState('');
   const [pView, setPView]           = useState<'pipeline' | 'lista'>('pipeline');
@@ -171,16 +169,19 @@ export default function MentoriaPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [ps, cs] = await Promise.all([
+      const [ps, cs, ds] = await Promise.all([
         api.get<Prospecto[]>('/mentoria/prospectos'),
         api.get<Cliente[]>('/mentoria/clientes'),
+        api.get<Prospecto[]>('/mentoria/prospectos/descartados'),
       ]);
       setProspectos(Array.isArray(ps) ? ps : []);
       setClientes(Array.isArray(cs) ? cs : []);
+      setDescartados(Array.isArray(ds) ? ds : []);
     } catch {
       const local = loadLocalLeads();
       setProspectos(local.length ? local : MOCK_PROSPECTOS);
       setClientes(MOCK_CLIENTES);
+      setDescartados([]);
     } finally { setLoading(false); }
   }, []);
 
@@ -198,6 +199,19 @@ export default function MentoriaPage() {
     try { await api.patch(`/mentoria/prospectos/${selected.id}/notas`, { notas: notes }); } catch {}
     setProspectos(prev => prev.map(p => p.id === selected.id ? { ...p, notas: notes } : p));
     setSelected(prev => prev ? { ...prev, notas: notes } : prev);
+  }
+
+  async function doDescartar(p: Prospecto) {
+    try { await api.patch(`/mentoria/prospectos/${p.id}/descartar`, {}); } catch {}
+    setProspectos(prev => prev.filter(x => x.id !== p.id));
+    setDescartados(prev => [{ ...p }, ...prev]);
+    setSelected(null);
+  }
+
+  async function doReactivar(p: Prospecto) {
+    try { await api.patch(`/mentoria/prospectos/${p.id}/reactivar`, {}); } catch {}
+    setDescartados(prev => prev.filter(x => x.id !== p.id));
+    setProspectos(prev => [{ ...p, etapa: 'agente_ia' as ProspectoStage }, ...prev]);
   }
 
   async function doConvertir(p: Prospecto, datos: { empresa: string; contacto_nombre: string; contacto_cargo: string; precio: number; fecha_inicio: string }) {
@@ -228,12 +242,10 @@ export default function MentoriaPage() {
     router.push(`/mentoria/${nuevo.id}`);
   }
 
-  const filteredP = prospectos.filter(p => {
-    const q = search.toLowerCase();
-    return !q || p.empresa.toLowerCase().includes(q) || (p.contacto || '').toLowerCase().includes(q);
-  });
-  const activos   = clientes.filter(c => c.status === 'activo').filter(c => !search || c.empresa.toLowerCase().includes(search.toLowerCase()));
-  const inactivos = clientes.filter(c => c.status === 'inactivo').filter(c => !search || c.empresa.toLowerCase().includes(search.toLowerCase()));
+  const filteredP     = prospectos.filter(p => { const q = search.toLowerCase(); return !q || p.empresa.toLowerCase().includes(q) || (p.contacto || '').toLowerCase().includes(q); });
+  const activos       = clientes.filter(c => c.status === 'activo').filter(c => !search || c.empresa.toLowerCase().includes(search.toLowerCase()));
+  const desactivados  = clientes.filter(c => c.status === 'inactivo').filter(c => !search || c.empresa.toLowerCase().includes(search.toLowerCase()));
+  const filteredDesc  = descartados.filter(p => { const q = search.toLowerCase(); return !q || p.empresa.toLowerCase().includes(q) || (p.contacto || '').toLowerCase().includes(q); });
 
   const mrr = clientes.filter(c => c.status === 'activo').reduce((a, c) => a + c.precio, 0);
 
@@ -257,7 +269,9 @@ export default function MentoriaPage() {
             </a>
             {tab === 'prospectos'
               ? <button onClick={() => setShowAddP(true)} style={btnPrimary}><Plus size={13} /> Prospecto</button>
-              : <button onClick={() => setShowAddC(true)} style={btnPrimary}><Plus size={13} /> Cliente</button>
+              : tab === 'activos'
+              ? <button onClick={() => setShowAddC(true)} style={btnPrimary}><Plus size={13} /> Cliente</button>
+              : null
             }
           </div>
         </div>
@@ -268,7 +282,7 @@ export default function MentoriaPage() {
             { icon: <Users size={13} />, label: 'Prospectos', value: prospectos.length, color: '#6c4de6' },
             { icon: <TrendingUp size={13} />, label: 'Clientes activos', value: activos.length, color: '#22c55e' },
             { icon: <DollarSign size={13} />, label: 'MRR', value: fmt$(mrr), color: '#f59e0b' },
-            { icon: <Zap size={13} />, label: 'En implementación', value: clientes.filter(c => c.status === 'activo' && c.fase_actual >= 2).length, color: '#00d4ff' },
+            { icon: <Zap size={13} />, label: 'Descartados', value: descartados.length, color: '#ef4444' },
           ].map(s => (
             <div key={s.label} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, padding: '11px 16px', flex: 1, display: 'flex', gap: 10, alignItems: 'center' }}>
               <div style={{ color: s.color }}>{s.icon}</div>
@@ -283,9 +297,10 @@ export default function MentoriaPage() {
         {/* Tabs + search */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--line)', paddingBottom: 0 }}>
           {([
-            { key: 'prospectos', label: 'Prospectos', count: prospectos.length },
-            { key: 'activos',    label: 'Clientes activos', count: activos.length },
-            { key: 'inactivos',  label: 'Inactivos', count: inactivos.length },
+            { key: 'prospectos',  label: 'Prospectos',           count: prospectos.length },
+            { key: 'activos',     label: 'Clientes activos',     count: activos.length },
+            { key: 'desactivados',label: 'Clientes desactivados',count: desactivados.length },
+            { key: 'descartados', label: 'Descartados',          count: descartados.length },
           ] as const).map(t => (
             <button
               key={t.key} onClick={() => setTab(t.key)}
@@ -318,12 +333,14 @@ export default function MentoriaPage() {
         </div>
       ) : tab === 'prospectos' ? (
         pView === 'pipeline'
-          ? <ProspectosPipeline prospectos={filteredP} clientes={clientes} onSelect={setSelected} />
+          ? <ProspectosPipeline prospectos={filteredP} onSelect={setSelected} />
           : <ProspectosLista prospectos={filteredP} onSelect={setSelected} />
       ) : tab === 'activos' ? (
         <ClientesGrid clientes={activos} onSelect={id => router.push(`/mentoria/${id}`)} />
+      ) : tab === 'desactivados' ? (
+        <ClientesGrid clientes={desactivados} onSelect={id => router.push(`/mentoria/${id}`)} inactive />
       ) : (
-        <ClientesGrid clientes={inactivos} onSelect={id => router.push(`/mentoria/${id}`)} inactive />
+        <DescartadosLista prospectos={filteredDesc} onReactivar={doReactivar} />
       )}
 
       {/* Prospect drawer */}
@@ -333,6 +350,7 @@ export default function MentoriaPage() {
           onSave={saveNotes}
           onAdvance={s => advanceStage(selected.id, s)}
           onConvert={() => setShowConverting(selected)}
+          onDescartar={() => doDescartar(selected)}
           onClose={() => setSelected(null)}
         />
       )}
@@ -345,29 +363,23 @@ export default function MentoriaPage() {
 }
 
 // ── Prospectos Pipeline ────────────────────────────────────────────────────────
-const FASE_TO_STAGE: Record<number, string> = { 0: 'contrato', 1: 'kickoff', 2: 'diagnostico', 3: 'implementacion' };
-
-function ProspectosPipeline({ prospectos, clientes, onSelect }: { prospectos: Prospecto[]; clientes: Cliente[]; onSelect: (p: Prospecto) => void }) {
+function ProspectosPipeline({ prospectos, onSelect }: { prospectos: Prospecto[]; onSelect: (p: Prospecto) => void }) {
   const groups = Object.fromEntries(PROSPECTO_STAGES.map(s => [s.key, prospectos.filter(p => p.etapa === s.key)]));
-  const clientesByStage = Object.fromEntries(PROSPECTO_STAGES.map(s => [s.key, clientes.filter(c => FASE_TO_STAGE[c.fase_actual] === s.key)]));
   return (
     <div style={{ flex: 1, overflowX: 'auto', overflowY: 'hidden' }}>
       <div style={{ display: 'flex', gap: 12, padding: '18px 28px', minWidth: 'max-content', alignItems: 'flex-start' }}>
         {PROSPECTO_STAGES.map(stage => {
           const items = groups[stage.key] ?? [];
-          const clientItems = clientesByStage[stage.key] ?? [];
-          const total = items.length + clientItems.length;
           return (
             <div key={stage.key} style={{ width: 210, flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 9, padding: '0 2px' }}>
                 <div style={{ width: 7, height: 7, borderRadius: '50%', background: stage.color, boxShadow: `0 0 6px ${stage.color}` }} />
                 <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-2)' }}>{stage.icon} {stage.label}</span>
-                <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--text-3)', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 99, padding: '1px 6px', fontWeight: 600 }}>{total}</span>
+                <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--text-3)', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 99, padding: '1px 6px', fontWeight: 600 }}>{items.length}</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                 {items.map(p => <ProspectoCard key={p.id} p={p} color={stage.color} onClick={() => onSelect(p)} />)}
-                {clientItems.map(c => <ClientePipelineCard key={c.id} c={c} color={stage.color} />)}
-                {!total && (
+                {!items.length && (
                   <div style={{ height: 56, border: '1px dashed var(--line)', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <span style={{ fontSize: 10, color: 'var(--text-3)' }}>vacío</span>
                   </div>
@@ -499,11 +511,51 @@ function ClientesGrid({ clientes, onSelect, inactive }: { clientes: Cliente[]; o
   );
 }
 
+// ── Descartados Lista ──────────────────────────────────────────────────────────
+function DescartadosLista({ prospectos, onReactivar }: { prospectos: Prospecto[]; onReactivar: (p: Prospecto) => void }) {
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', padding: '16px 28px' }}>
+      {!prospectos.length ? (
+        <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-3)', fontSize: 13 }}>Sin prospectos descartados</div>
+      ) : (
+        <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 5px' }}>
+          <thead>
+            <tr>{['Empresa', 'Contacto', 'Última etapa', 'Canal', ''].map(h => (
+              <th key={h} style={{ textAlign: 'left', fontSize: 10, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '2px 12px 8px' }}>{h}</th>
+            ))}</tr>
+          </thead>
+          <tbody>
+            {prospectos.map(p => {
+              const s = STAGE_MAP[p.etapa as keyof typeof STAGE_MAP];
+              return (
+                <tr key={p.id}>
+                  <td style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRight: 'none', borderRadius: '9px 0 0 9px', padding: '11px 14px', opacity: 0.7 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{p.empresa}</div>
+                    {p.industria && <div style={{ fontSize: 10, color: 'var(--text-3)' }}>{p.industria}</div>}
+                  </td>
+                  <td style={tdMid}>{p.contacto || '—'}</td>
+                  <td style={tdMid}><span style={{ fontSize: 11, color: 'var(--text-3)' }}>{s?.icon} {s?.label ?? p.etapa}</span></td>
+                  <td style={tdMid}><span style={{ fontSize: 12 }}>{p.canal === 'whatsapp' ? '💬' : p.canal === 'email' ? '📧' : '—'}</span></td>
+                  <td style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderLeft: 'none', borderRadius: '0 9px 9px 0', padding: '8px 12px' }}>
+                    <button onClick={() => onReactivar(p)} style={{ fontSize: 11, fontWeight: 600, color: '#6c4de6', background: 'rgba(108,77,230,0.08)', border: '1px solid rgba(108,77,230,0.25)', borderRadius: 6, padding: '5px 10px', cursor: 'pointer' }}>
+                      Reactivar
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
 // ── Prospect Drawer ────────────────────────────────────────────────────────────
-function ProspectoDrawer({ p, notes, setNotes, onSave, onAdvance, onConvert, onClose }: {
+function ProspectoDrawer({ p, notes, setNotes, onSave, onAdvance, onConvert, onDescartar, onClose }: {
   p: Prospecto; notes: string; setNotes: (v: string) => void;
   onSave: () => void; onAdvance: (s: ProspectoStage) => void;
-  onConvert: () => void; onClose: () => void;
+  onConvert: () => void; onDescartar: () => void; onClose: () => void;
 }) {
   const stage = STAGE_MAP[p.etapa];
   const stageIdx = PROSPECTO_STAGES.findIndex(s => s.key === p.etapa);
@@ -536,6 +588,9 @@ function ProspectoDrawer({ p, notes, setNotes, onSave, onAdvance, onConvert, onC
             <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Acción principal</div>
             <button onClick={onConvert} style={{ width: '100%', padding: '11px', borderRadius: 8, border: 'none', background: '#6c4de6', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               ✅ Convertir a cliente activo →
+            </button>
+            <button onClick={() => { if (confirm(`¿Descartar a ${p.empresa}? Podrás reactivarlo después.`)) onDescartar(); }} style={{ width: '100%', marginTop: 8, padding: '8px', borderRadius: 8, border: '1px solid rgba(239,68,68,0.4)', background: 'transparent', color: '#ef4444', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+              ✕ Descartar prospecto
             </button>
             <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6, textAlign: 'center' }}>Abre el workspace completo del cliente en Fase 0</p>
           </div>
