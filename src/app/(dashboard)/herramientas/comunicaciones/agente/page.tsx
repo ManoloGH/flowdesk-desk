@@ -1,7 +1,13 @@
 'use client';
 import { useState, useEffect, useRef, type ReactNode } from 'react';
-import { Bot, Save, AlertCircle, CheckCircle2, Plug, Info } from 'lucide-react';
+import { Bot, Save, AlertCircle, CheckCircle2, Plug, Info, Plus, X } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
+
+interface Pregunta {
+  text: string;
+  type: 'open' | 'multiple';
+  options: string[];
+}
 
 interface AgentConfig {
   configured: boolean;
@@ -11,8 +17,8 @@ interface AgentConfig {
   propuesta_valor: string | null;
   // Stage 3: Gancho
   gancho: string | null;
-  // Stage 4: 5 preguntas
-  preguntas_microdiagnostico: string[];
+  // Stage 4: Preguntas dinámicas
+  preguntas_microdiagnostico: Pregunta[];
   // Stage 6: Cierre
   cierre_calificado: string | null;
   cierre_no_calificado: string | null;
@@ -29,7 +35,9 @@ const DEFAULTS: AgentConfig = {
   actividad: '',
   propuesta_valor: '',
   gancho: '',
-  preguntas_microdiagnostico: ['', '', '', '', ''],
+  preguntas_microdiagnostico: [
+    { text: '', type: 'open', options: [] },
+  ],
   cierre_calificado: '',
   cierre_no_calificado: '',
   criterios_buen_lead: '',
@@ -37,14 +45,6 @@ const DEFAULTS: AgentConfig = {
   cal_booking_url: '',
   evolution_instance: '',
 };
-
-const PREGUNTA_PLACEHOLDERS = [
-  '¿A qué se dedica la empresa y cuántos años lleva operando?',
-  '¿Cuántos empleados tiene?',
-  '¿Qué software o herramientas digitales usan hoy en día?',
-  '¿Tienen área de programación?',
-  '¿Qué tarea o proceso les genera cuello de botella?',
-];
 
 export default function AgentePage() {
   const [cfg, setCfg] = useState<AgentConfig>(DEFAULTS);
@@ -55,12 +55,16 @@ export default function AgentePage() {
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    apiFetch<AgentConfig & { preguntas_calificacion?: string[] }>('/communications/sales-agent')
+    apiFetch<AgentConfig & { preguntas_calificacion?: any[] }>('/communications/sales-agent')
       .then((data) => {
-        const rawNew = data.preguntas_microdiagnostico ?? [];
-        const rawLegacy = data.preguntas_calificacion ?? [];
-        const raw = rawNew.length ? rawNew : rawLegacy;
-        const preguntas_microdiagnostico = Array.from({ length: 5 }, (_, i) => raw[i] ?? '');
+        const rawPreguntas = data.preguntas_microdiagnostico ?? data.preguntas_calificacion ?? [];
+        const preguntas_microdiagnostico: Pregunta[] = rawPreguntas.length
+          ? rawPreguntas.map((q: any) =>
+              typeof q === 'string'
+                ? { text: q, type: 'open' as const, options: [] }
+                : { text: q.text ?? '', type: q.type ?? 'open', options: q.options ?? [] }
+            )
+          : [{ text: '', type: 'open', options: [] }];
         setCfg({
           ...DEFAULTS,
           ...data,
@@ -84,17 +88,85 @@ export default function AgentePage() {
     setCfg(prev => ({ ...prev, [field]: value }));
   }
 
-  function setPregunta(index: number, value: string) {
+  function addPregunta() {
+    setCfg(prev => ({
+      ...prev,
+      preguntas_microdiagnostico: [
+        ...prev.preguntas_microdiagnostico,
+        { text: '', type: 'open', options: [] },
+      ],
+    }));
+  }
+
+  function removePregunta(index: number) {
+    setCfg(prev => ({
+      ...prev,
+      preguntas_microdiagnostico: prev.preguntas_microdiagnostico.filter((_, i) => i !== index),
+    }));
+  }
+
+  function updatePregunta(index: number, field: keyof Pregunta, value: any) {
     setCfg(prev => {
       const arr = [...prev.preguntas_microdiagnostico];
-      arr[index] = value;
+      arr[index] = { ...arr[index], [field]: value };
+      // If switching to 'open', clear options
+      if (field === 'type' && value === 'open') {
+        arr[index] = { ...arr[index], options: [] };
+      }
+      // If switching to 'multiple', add one empty option
+      if (field === 'type' && value === 'multiple' && arr[index].options.length === 0) {
+        arr[index] = { ...arr[index], options: [''] };
+      }
+      return { ...prev, preguntas_microdiagnostico: arr };
+    });
+  }
+
+  function addOption(preguntaIndex: number) {
+    setCfg(prev => {
+      const arr = [...prev.preguntas_microdiagnostico];
+      arr[preguntaIndex] = {
+        ...arr[preguntaIndex],
+        options: [...arr[preguntaIndex].options, ''],
+      };
+      return { ...prev, preguntas_microdiagnostico: arr };
+    });
+  }
+
+  function updateOption(preguntaIndex: number, optionIndex: number, value: string) {
+    setCfg(prev => {
+      const arr = [...prev.preguntas_microdiagnostico];
+      const opts = [...arr[preguntaIndex].options];
+      opts[optionIndex] = value;
+      arr[preguntaIndex] = { ...arr[preguntaIndex], options: opts };
+      return { ...prev, preguntas_microdiagnostico: arr };
+    });
+  }
+
+  function removeOption(preguntaIndex: number, optionIndex: number) {
+    setCfg(prev => {
+      const arr = [...prev.preguntas_microdiagnostico];
+      arr[preguntaIndex] = {
+        ...arr[preguntaIndex],
+        options: arr[preguntaIndex].options.filter((_, i) => i !== optionIndex),
+      };
       return { ...prev, preguntas_microdiagnostico: arr };
     });
   }
 
   async function handleSave() {
-    if (cfg.preguntas_microdiagnostico.some(p => !p.trim())) {
-      setToast({ type: 'err', msg: 'Completa las 5 preguntas del diagnóstico.' });
+    const emptyQuestion = cfg.preguntas_microdiagnostico.findIndex(q => !q.text.trim());
+    if (emptyQuestion !== -1) {
+      setToast({ type: 'err', msg: `La pregunta ${emptyQuestion + 1} no tiene texto.` });
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => setToast(null), 4000);
+      return;
+    }
+
+    const emptyOption = cfg.preguntas_microdiagnostico.findIndex(
+      q => q.type === 'multiple' && q.options.some(o => !o.trim())
+    );
+    if (emptyOption !== -1) {
+      setToast({ type: 'err', msg: `La pregunta ${emptyOption + 1} tiene opciones vacías.` });
       if (toastTimer.current) clearTimeout(toastTimer.current);
       toastTimer.current = setTimeout(() => setToast(null), 4000);
       return;
@@ -251,24 +323,104 @@ export default function AgentePage() {
         </p>
       </StageSection>
 
-      {/* Etapa 4: 5 Preguntas del Micro-Diagnóstico */}
+      {/* Etapa 4: Preguntas dinámicas del Micro-Diagnóstico */}
       <StageSection
         badge="4"
         title="Preguntas del Diagnóstico"
-        subtitle="El agente las hace una por una, esperando respuesta entre cada una. Deben ser siempre exactamente 5."
+        subtitle="El agente las hace una por una. Puedes usar texto libre u opciones para que el prospecto conteste apretando un botón."
       >
-        <div className="space-y-2">
-          {cfg.preguntas_microdiagnostico.map((p, i) => (
-            <div key={i} className="flex gap-2 items-center">
-              <span className="text-[10px] text-gray-600 w-4 flex-shrink-0">{i + 1}.</span>
-              <input
-                value={p}
-                onChange={e => setPregunta(i, e.target.value)}
-                placeholder={PREGUNTA_PLACEHOLDERS[i]}
-                className={`${INPUT} flex-1`}
-              />
+        <div className="space-y-4">
+          {cfg.preguntas_microdiagnostico.map((pregunta, i) => (
+            <div key={i} className="bg-white/[0.03] border border-white/8 rounded-lg p-4 space-y-3">
+              {/* Question header */}
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-gray-500 flex-shrink-0 w-5">{i + 1}.</span>
+                <input
+                  value={pregunta.text}
+                  onChange={e => updatePregunta(i, 'text', e.target.value)}
+                  placeholder={`Pregunta ${i + 1}`}
+                  className={`${INPUT} flex-1`}
+                  aria-label={`Pregunta ${i + 1}`}
+                />
+                <button
+                  onClick={() => removePregunta(i)}
+                  disabled={cfg.preguntas_microdiagnostico.length <= 1}
+                  className="text-gray-600 hover:text-red-400 transition-colors disabled:opacity-30"
+                  aria-label="Eliminar pregunta"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Type toggle */}
+              <div className="flex items-center gap-2 pl-7">
+                <span className="text-[10px] text-gray-600">Tipo:</span>
+                <button
+                  onClick={() => updatePregunta(i, 'type', 'open')}
+                  className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors ${
+                    pregunta.type === 'open'
+                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                      : 'bg-white/5 text-gray-500 border border-white/8 hover:text-gray-300'
+                  }`}
+                >
+                  Texto libre
+                </button>
+                <button
+                  onClick={() => updatePregunta(i, 'type', 'multiple')}
+                  className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors ${
+                    pregunta.type === 'multiple'
+                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                      : 'bg-white/5 text-gray-500 border border-white/8 hover:text-gray-300'
+                  }`}
+                >
+                  Opción múltiple
+                </button>
+              </div>
+
+              {/* Options (only for multiple choice) */}
+              {pregunta.type === 'multiple' && (
+                <div className="pl-7 space-y-2">
+                  {pregunta.options.map((option, j) => (
+                    <div key={j} className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-600 w-4 flex-shrink-0">{j + 1}.</span>
+                      <input
+                        value={option}
+                        onChange={e => updateOption(i, j, e.target.value)}
+                        placeholder={`Opción ${j + 1}`}
+                        className={`${INPUT} flex-1`}
+                        aria-label={`Opción ${j + 1} de pregunta ${i + 1}`}
+                      />
+                      {pregunta.options.length > 1 && (
+                        <button
+                          onClick={() => removeOption(i, j)}
+                          className="text-gray-600 hover:text-red-400 transition-colors"
+                          aria-label="Eliminar opción"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => addOption(i)}
+                    className="flex items-center gap-1.5 text-[10px] text-cyan-500 hover:text-cyan-300 transition-colors mt-1"
+                  >
+                    <Plus className="w-3 h-3" />
+                    Agregar opción
+                  </button>
+                </div>
+              )}
             </div>
           ))}
+
+          {/* Add question button */}
+          <button
+            onClick={addPregunta}
+            className="flex items-center gap-1.5 text-[10px] text-cyan-500 hover:text-cyan-300 transition-colors"
+          >
+            <Plus className="w-3 h-3" />
+            Agregar pregunta
+          </button>
         </div>
       </StageSection>
 
@@ -282,7 +434,7 @@ export default function AgentePage() {
         <div className="flex items-start gap-2.5 bg-white/[0.03] border border-white/5 rounded-lg px-4 py-3">
           <Info className="w-3.5 h-3.5 text-gray-500 flex-shrink-0 mt-0.5" />
           <p className="text-[11px] text-gray-500 leading-relaxed">
-            El diagnóstico se genera con IA usando las 5 respuestas y se publica en{' '}
+            El diagnóstico se genera con IA usando las respuestas y se publica en{' '}
             <span className="text-gray-400 font-mono">app.flowdesk.mx/micro/[token]</span>.
             El CRM se actualiza automáticamente.
           </p>
