@@ -22,7 +22,7 @@ import {
   Users, Map, Plug, BookUser, LogOut, ShieldCheck,
   Building2, CreditCard, ShieldAlert, Settings, Bell, X, CheckCheck,
   ExternalLink, ChevronLeft, Cctv, Zap, ChevronDown, Brain, Globe, ListChecks, Radio, GitBranch,
-  Workflow, GraduationCap, Layers,
+  Workflow,
 } from 'lucide-react';
 
 /* ── Navigation ── */
@@ -35,11 +35,9 @@ const CORE_NAV: NavItem[] = [
 ];
 
 const RECURSOS_BASE: NavItem[] = [
-  { href: '/mentoria',     label: 'CRM',               icon: Workflow },
-  { href: '/contacts',     label: 'Contactos',         icon: BookUser },
-  { href: '/erp',          label: 'ERP',               icon: GraduationCap },
-  { href: '/recursos',     label: 'Recursos',          icon: Layers },
-  { href: '/erp-areas',    label: 'ERP por Área',      icon: GitBranch },
+  { href: '/contactos',    label: 'Contactos',         icon: BookUser },
+  { href: '/pipeline',     label: 'CRM',               icon: Workflow },
+  { href: '/erp-areas',    label: 'ERP',               icon: GitBranch },
   { href: '/campus',       label: 'Campus / Espacios', icon: Map },
   { href: '/mi-web',       label: 'Mi Web',            icon: Globe },
   { href: '/integrations', label: 'Integraciones',     icon: Plug },
@@ -194,7 +192,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       })
       .filter(Boolean) as NavItem[];
 
-    return { core, recursos: filteredRecursos, bottom: BOTTOM_NAV };
+    // Si ninguna clave coincide (config desactualizada), mostrar todo
+    return { core, recursos: filteredRecursos.length > 0 ? filteredRecursos : recursosFull, bottom: BOTTOM_NAV };
   };
 
   const NAV = buildNav();
