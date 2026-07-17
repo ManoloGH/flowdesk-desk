@@ -8,6 +8,18 @@ function getTokens() {
   };
 }
 
+// Tenant activo para superadmin — envía X-Tenant-Id en todas las peticiones
+export function setActiveTenantId(id: string | null) {
+  if (typeof window === 'undefined') return;
+  if (id) localStorage.setItem('fd_active_tenant', id);
+  else localStorage.removeItem('fd_active_tenant');
+}
+
+export function getActiveTenantId(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('fd_active_tenant');
+}
+
 function setTokens(access: string, refresh: string) {
   localStorage.setItem('fd_access', access);
   localStorage.setItem('fd_refresh', refresh);
@@ -60,12 +72,14 @@ export async function apiFetch<T = any>(
 ): Promise<T> {
   let { access } = getTokens();
 
+  const activeTenant = getActiveTenantId();
   const makeRequest = async (token: string | null) =>
     fetch(`${BASE}${path}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(activeTenant ? { 'X-Tenant-Id': activeTenant } : {}),
         ...(options.headers ?? {}),
       },
     });

@@ -4,7 +4,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/store/auth';
-import { api } from '@/lib/api';
+import { api, setActiveTenantId, getActiveTenantId } from '@/lib/api';
 
 /* ── Brand types ── */
 interface BrandColors { primary: string; secondary: string; tertiary: string; }
@@ -205,6 +205,43 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [now,        setNow]        = useState(new Date());
   const bellRef = useRef<HTMLDivElement>(null);
 
+  // Tenant switcher para superadmin/platform_admin
+  interface TenantOption { id: string; name: string; plan: string; slug: string; }
+  const [tenants,           setTenants]           = useState<TenantOption[]>([]);
+  const [activeTenantId,    setActiveTenantIdState] = useState<string | null>(null);
+  const [tenantSwitcherOpen, setTenantSwitcherOpen] = useState(false);
+  const tenantSwitcherRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setActiveTenantIdState(getActiveTenantId());
+  }, []);
+
+  useEffect(() => {
+    if (!effectiveUser?.platform_admin) return;
+    api.get<any>('/platform/network').then(data => {
+      const list = Array.isArray(data) ? data : (data?.tenants ?? []);
+      setTenants(list.filter((t: any) => t.id !== effectiveUser.tenant_id).map((t: any) => ({
+        id: t.id, name: t.name, plan: t.plan ?? '', slug: t.slug ?? '',
+      })));
+    }).catch(() => {});
+  }, [effectiveUser?.platform_admin, effectiveUser?.tenant_id]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (tenantSwitcherRef.current && !tenantSwitcherRef.current.contains(e.target as Node))
+        setTenantSwitcherOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  function handleSelectTenant(id: string | null) {
+    setActiveTenantId(id);
+    setActiveTenantIdState(id);
+    setTenantSwitcherOpen(false);
+    window.location.reload();
+  }
+
   useEffect(() => { loadUser(); }, [loadUser]);
   useEffect(() => {
     if (!loading && !user) router.replace('/login');
@@ -356,6 +393,69 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Right */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+
+          {/* Tenant Switcher — solo para platform_admin */}
+          {effectiveUser?.platform_admin && (
+            <div ref={tenantSwitcherRef} style={{ position: 'relative' }}>
+              <button
+                onClick={() => setTenantSwitcherOpen(v => !v)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '5px 10px', borderRadius: 8, border: '1px solid var(--line)',
+                  background: activeTenantId ? '#6c4de618' : 'var(--surface)',
+                  color: activeTenantId ? '#6c4de6' : 'var(--text-2)',
+                  cursor: 'pointer', fontSize: 12, fontWeight: activeTenantId ? 700 : 400,
+                }}
+              >
+                <Building2 size={12} />
+                {activeTenantId
+                  ? (tenants.find(t => t.id === activeTenantId)?.name ?? 'Cliente')
+                  : 'Propio'}
+                <ChevronDown size={11} />
+              </button>
+              {tenantSwitcherOpen && (
+                <div style={{
+                  position: 'absolute', top: '100%', right: 0, marginTop: 6,
+                  minWidth: 200, background: 'var(--surface)', border: '1px solid var(--line)',
+                  borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                  zIndex: 200, overflow: 'hidden',
+                }}>
+                  <div style={{ padding: '6px 4px' }}>
+                    <button
+                      onClick={() => handleSelectTenant(null)}
+                      style={{
+                        display: 'block', width: '100%', textAlign: 'left',
+                        padding: '8px 12px', borderRadius: 7, border: 'none',
+                        background: !activeTenantId ? 'var(--surface-2)' : 'transparent',
+                        color: !activeTenantId ? '#6c4de6' : 'var(--text-2)',
+                        cursor: 'pointer', fontSize: 12, fontWeight: !activeTenantId ? 700 : 400,
+                      }}
+                    >
+                      ⚡ Mi cuenta (FlowDesk)
+                    </button>
+                    {tenants.map(t => (
+                      <button
+                        key={t.id}
+                        onClick={() => handleSelectTenant(t.id)}
+                        style={{
+                          display: 'block', width: '100%', textAlign: 'left',
+                          padding: '8px 12px', borderRadius: 7, border: 'none',
+                          background: activeTenantId === t.id ? 'var(--surface-2)' : 'transparent',
+                          color: activeTenantId === t.id ? '#6c4de6' : 'var(--text)',
+                          cursor: 'pointer', fontSize: 12, fontWeight: activeTenantId === t.id ? 700 : 400,
+                        }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface-2)'; }}
+                        onMouseLeave={e => { if (activeTenantId !== t.id) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+                      >
+                        🏢 {t.name}
+                        <span style={{ marginLeft: 6, fontSize: 10, color: 'var(--text-3)' }}>{t.plan}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Campus link */}
           <CampusLink active={pathname === '/campus' || pathname.startsWith('/campus')} />
