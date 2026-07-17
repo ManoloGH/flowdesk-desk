@@ -4,7 +4,7 @@ import { api } from '@/lib/api';
 import {
   Users, Bot, Plus, Search, X, ChevronRight, ChevronLeft,
   Monitor, Smartphone, Crown, UserCog, User, Truck, CheckCircle2,
-  Loader2, Copy, Check, Trash2, Ban, CheckCircle,
+  Loader2, Copy, Check, Trash2, Ban, CheckCircle, Pencil,
 } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -78,16 +78,31 @@ export default function TeamPage() {
   const [copied,     setCopied]       = useState(false);
   const [actionId,   setActionId]     = useState<string | null>(null);
 
+  const [editingName, setEditingName] = useState<{ id: string; value: string } | null>(null);
+
   const handleDelete = async (id: string) => {
-    if (!confirm('¿Eliminar este colaborador permanentemente?')) return;
-    await api.delete(`/team-slots/${id}`).catch(() => {});
-    setSlots(prev => prev.filter(s => s.id !== id));
+    if (!window.confirm('¿Eliminar este colaborador permanentemente?')) return;
+    try {
+      await api.delete(`/team-slots/${id}`);
+      setSlots(prev => prev.filter(s => s.id !== id));
+    } catch {}
   };
 
   const handleToggleAccess = async (slot: Slot) => {
     const newAccess = slot.desk_access === 'NONE' ? 'FULL' : 'NONE';
-    await api.patch(`/team-slots/${slot.id}/desk-access`, { access: newAccess }).catch(() => {});
-    setSlots(prev => prev.map(s => s.id === slot.id ? { ...s, desk_access: newAccess } : s));
+    try {
+      await api.patch(`/team-slots/${slot.id}`, { desk_access: newAccess });
+      setSlots(prev => prev.map(s => s.id === slot.id ? { ...s, desk_access: newAccess } : s));
+    } catch {}
+  };
+
+  const handleSaveName = async (id: string, name: string) => {
+    if (!name.trim()) { setEditingName(null); return; }
+    try {
+      await api.patch(`/team-slots/${id}`, { name: name.trim() });
+      setSlots(prev => prev.map(s => s.id === id ? { ...s, name: name.trim() } : s));
+    } catch {}
+    setEditingName(null);
   };
 
   const loadSlots = () => {
@@ -240,11 +255,30 @@ export default function TeamPage() {
                   <tr key={slot.id} style={{ borderBottom: '1px solid var(--line)' }}>
                     <td style={{ padding: '12px 16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, background: slot.type === 'HUMAN' ? 'var(--fd-blue)' : 'rgba(139,92,246,0.2)', color: slot.type === 'HUMAN' ? 'white' : '#a78bfa' }}>
+                        <div style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, background: slot.type === 'HUMAN' ? 'var(--fd-blue)' : 'rgba(139,92,246,0.2)', color: slot.type === 'HUMAN' ? 'white' : '#a78bfa' }}>
                           {slot.name.charAt(0).toUpperCase()}
                         </div>
-                        <div>
-                          <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{slot.name}</p>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          {editingName?.id === slot.id ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <input
+                                autoFocus
+                                value={editingName.value}
+                                onChange={e => setEditingName({ id: slot.id, value: e.target.value })}
+                                onKeyDown={e => { if (e.key === 'Enter') handleSaveName(slot.id, editingName.value); if (e.key === 'Escape') setEditingName(null); }}
+                                style={{ fontSize: 12, padding: '3px 8px', borderRadius: 6, border: '1px solid var(--fd-cyan)', background: 'var(--surface-2)', color: 'var(--text)', width: 140 }}
+                              />
+                              <button onClick={() => handleSaveName(slot.id, editingName.value)} style={{ background: 'var(--fd-cyan)', border: 'none', borderRadius: 5, padding: '3px 8px', color: 'white', fontSize: 11, cursor: 'pointer' }}>✓</button>
+                              <button onClick={() => setEditingName(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', fontSize: 11 }}>✕</button>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                              <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{slot.name}</p>
+                              <button onClick={() => setEditingName({ id: slot.id, value: slot.name })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', padding: 2, opacity: 0, transition: 'opacity 0.15s' }} className="edit-name-btn">
+                                <Pencil size={11} />
+                              </button>
+                            </div>
+                          )}
                           {slot.email && <p style={{ margin: 0, fontSize: 11, color: 'var(--text-3)' }}>{slot.email}</p>}
                         </div>
                       </div>

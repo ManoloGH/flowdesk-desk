@@ -19,10 +19,10 @@ const DEFAULT_BRAND: BrandConfig = {
   modules_config: null,
 };
 import {
-  Users, Map, Plug, BookUser, LogOut, ShieldCheck,
+  Users, LogOut, ShieldCheck, Layers,
   Building2, CreditCard, ShieldAlert, Settings, Bell, X, CheckCheck,
-  ExternalLink, ChevronLeft, Cctv, Zap, ChevronDown, Brain, Globe, ListChecks, Radio, GitBranch,
-  Workflow,
+  ExternalLink, ChevronLeft, Zap, ChevronDown, Brain, ListChecks, GitBranch,
+  Workflow, BarChart2,
 } from 'lucide-react';
 
 /* ── Navigation ── */
@@ -30,22 +30,18 @@ type NavItem = { href: string; label: string; icon: React.ElementType };
 
 const CORE_NAV: NavItem[] = [
   { href: '/dashboard', label: 'Focus Mode', icon: Zap },
-  { href: '/brain',     label: 'Dashboard',  icon: Brain },
+  { href: '/metrics',   label: 'Dashboard',  icon: BarChart2 },
   { href: '/team',      label: 'Equipo',     icon: Users },
 ];
 
 const MAIN_NAV: NavItem[] = [
-  { href: '/pipeline',  label: 'CRM', icon: Workflow },
-  { href: '/erp-areas', label: 'ERP', icon: GitBranch },
+  { href: '/mentoria',  label: 'CRM',                 icon: Workflow },
+  { href: '/erp',       label: 'ERP',                  icon: GitBranch },
+  { href: '/brain',     label: 'Base de conocimiento', icon: Brain },
+  { href: '/recursos',  label: 'Recursos',             icon: Layers },
 ];
 
-const RECURSOS_BASE: NavItem[] = [
-  { href: '/contactos',    label: 'Contactos',      icon: BookUser },
-  { href: '/campus',       label: 'Campus digital', icon: Map },
-  { href: '/espacios',     label: 'Espacios',       icon: Cctv },
-  { href: '/mi-web',       label: 'Mi Web',         icon: Globe },
-  { href: '/integrations', label: 'Integraciones',  icon: Plug },
-];
+const RECURSOS_BASE: NavItem[] = [];
 
 const BOTTOM_NAV: NavItem[] = [
   { href: '/settings',     label: 'Configuración',     icon: Settings },
@@ -177,12 +173,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const buildNav = (): NavGroups => {
     const core: NavItem[] = [...CORE_NAV];
-    const recursosFull: NavItem[] = [
-      ...RECURSOS_BASE,
-      ...(tenantFeatures.communications_enabled
-        ? [{ href: '/herramientas/comunicaciones', label: 'Comunicaciones', icon: Radio }]
-        : []),
-    ];
+    const recursosFull: NavItem[] = [...RECURSOS_BASE];
 
     const mods = brand.modules_config;
     if (!mods || mods.length === 0) {
