@@ -189,47 +189,11 @@ const CSS = `
     margin-bottom: 24px;
   }
 
-  .micro-brand-mark {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    background: #6366f1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .micro-logo {
+    height: 40px;
+    width: auto;
+    display: block;
     flex-shrink: 0;
-  }
-
-  .micro-brand-letter {
-    font-family: 'Inter Tight', 'Inter', sans-serif;
-    font-size: 17px;
-    font-weight: 800;
-    color: #ffffff;
-    line-height: 1;
-  }
-
-  .micro-brand-text {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-  }
-
-  .micro-brand-name {
-    font-family: 'Inter Tight', 'Inter', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    color: #0f172a;
-    letter-spacing: -0.01em;
-    line-height: 1.2;
-  }
-
-  .micro-brand-tagline {
-    font-size: 11px;
-    font-weight: 500;
-    color: #94a3b8;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    line-height: 1.2;
   }
 
   .micro-report-eyebrow {
@@ -584,13 +548,12 @@ export default async function MicroDiagnosticoPage({
           {/* Header */}
           <header className="micro-header">
             <div className="micro-brand-row">
-              <div className="micro-brand-mark">
-                <span className="micro-brand-letter">M</span>
-              </div>
-              <div className="micro-brand-text">
-                <span className="micro-brand-name">MentorIA Systems</span>
-                <span className="micro-brand-tagline">IA First para empresas</span>
-              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                className="micro-logo"
+                src="/logo-mentoria.png"
+                alt="MentorIA Systems"
+              />
             </div>
 
             <p className="micro-report-eyebrow">Micro-Diagnóstico de Automatización</p>
