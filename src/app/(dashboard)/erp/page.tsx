@@ -218,7 +218,7 @@ export default function ErpPage() {
             { key: 'automatizaciones', label: 'Automatizaciones' },
           ].map(t => (
             <button key={t.key} onClick={() => setTab(t.key as any)}
-              style={{ padding: '8px 16px', fontSize: 13, fontWeight: tab === t.key ? 700 : 400, color: tab === t.key ? '#6c4de6' : 'var(--text-3)', borderBottom: tab === t.key ? '2px solid #6c4de6' : '2px solid transparent', background: 'none', border: 'none', borderBottom: tab === t.key ? '2px solid #6c4de6' : '2px solid transparent', cursor: 'pointer', marginBottom: -1 }}>
+              style={{ padding: '8px 16px', fontSize: 13, fontWeight: tab === t.key ? 700 : 400, color: tab === t.key ? '#6c4de6' : 'var(--text-3)', borderBottom: tab === t.key ? '2px solid #6c4de6' : '2px solid transparent', background: 'none', border: 'none', cursor: 'pointer', marginBottom: -1 }}>
               {t.label}
             </button>
           ))}
