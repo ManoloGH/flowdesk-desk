@@ -307,6 +307,31 @@ export default function AgentePage() {
         </Field>
       </StageSection>
 
+      {/* Etapa 2.5: Datos del Prospecto (automático) */}
+      <StageSection
+        badge="2.5"
+        title="Datos del Prospecto"
+        subtitle="El agente recoge esta información antes de hacer el gancho. Siempre se pregunta una a la vez, en este orden."
+        info
+      >
+        <div className="space-y-2">
+          {[
+            { n: 1, q: '¿Cuál es tu nombre?' },
+            { n: 2, q: '¿Cuál es el nombre de tu empresa?' },
+            { n: 3, q: '¿A qué se dedica tu empresa?' },
+          ].map(({ n, q }) => (
+            <div key={n} className="flex items-center gap-3 bg-white/[0.03] border border-white/5 rounded-lg px-4 py-2.5">
+              <span className="flex-shrink-0 w-5 h-5 rounded-full bg-white/5 flex items-center justify-center text-[10px] text-gray-500 font-bold">{n}</span>
+              <span className="text-[11px] text-gray-400">{q}</span>
+              <span className="ml-auto text-[10px] text-gray-600 font-mono">automático</span>
+            </div>
+          ))}
+        </div>
+        <p className="text-[10px] text-gray-600">
+          Estas preguntas son fijas y no se pueden modificar. Las respuestas se usan para personalizar el diagnóstico.
+        </p>
+      </StageSection>
+
       {/* Etapa 3: Gancho */}
       <StageSection
         badge="3"
