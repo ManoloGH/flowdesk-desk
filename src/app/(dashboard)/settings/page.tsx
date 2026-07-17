@@ -2,7 +2,18 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/store/auth';
-import { Building2, Palette, Loader2, Check, Lock, User, Cpu, Phone, MapPin, Plus, Trash2 } from 'lucide-react';
+import { Building2, Palette, Loader2, Check, Lock, User, Cpu, Phone, MapPin, Plus, Trash2, LayoutGrid } from 'lucide-react';
+
+const SIDEBAR_MODULES = [
+  { key: 'pipeline',    label: 'CRM',            section: 'main',     desc: 'Pipeline comercial' },
+  { key: 'erp-areas',  label: 'ERP',             section: 'main',     desc: 'Sistema operativo por área' },
+  { key: 'contactos',  label: 'Contactos',       section: 'recursos', desc: 'Directorio de contactos' },
+  { key: 'campus',     label: 'Campus digital',  section: 'recursos', desc: 'Mapa de oficina y sucursales' },
+  { key: 'espacios',   label: 'Espacios',        section: 'recursos', desc: 'Monitoreo con cámaras' },
+  { key: 'mi-web',     label: 'Mi Web',          section: 'recursos', desc: 'Constructor de sitio web' },
+  { key: 'integrations', label: 'Integraciones', section: 'recursos', desc: 'Conectores externos' },
+  { key: 'herramientas/comunicaciones', label: 'Comunicaciones', section: 'recursos', desc: 'WhatsApp y canales' },
+] as const;
 
 interface CompanyData {
   name: string;
@@ -72,6 +83,11 @@ export default function SettingsPage() {
   const [addingBranch, setAddingBranch] = useState(false);
   const [togglingBranches, setTogglingBranches] = useState(false);
 
+  // Módulos del sidebar
+  const [modules, setModules] = useState<Array<{ key: string; label: string; section: string; desc: string; enabled: boolean }>>([]);
+  const [modulesSaving, setModulesSaving] = useState(false);
+  const [modulesSaved, setModulesSaved] = useState(false);
+
   // Agente de Comunicación
   const [pbx, setPbx] = useState({
     enabled: false, main_number: '', greeting_text: '', stt_provider: 'whisper',
@@ -90,6 +106,14 @@ export default function SettingsPage() {
     api.get<any>('/tenants/mine/features').then(f => {
       setBranchesEnabled(f?.branches_enabled ?? false);
     }).catch(() => {});
+
+    api.get<any>('/tenants/mine/brand').then(data => {
+      const saved: any[] = data?.modules_config ?? [];
+      setModules(SIDEBAR_MODULES.map(m => ({
+        ...m,
+        enabled: saved.length === 0 ? true : (saved.find((s: any) => s.key === m.key)?.enabled ?? true),
+      })));
+    }).catch(() => setModules(SIDEBAR_MODULES.map(m => ({ ...m, enabled: true }))));
     api.get<any>('/tenants/mine/office-branches').then(r => {
       setOfficeBranches(Array.isArray(r) ? r : []);
     }).catch(() => {});
@@ -125,6 +149,16 @@ export default function SettingsPage() {
       setPbxLoaded(true);
     }).catch(() => setPbxLoaded(true));
   }, []);
+
+  const handleSaveModules = async () => {
+    setModulesSaving(true);
+    try {
+      await api.patch('/tenants/mine/modules', { modules });
+      setModulesSaved(true);
+      setTimeout(() => setModulesSaved(false), 2500);
+    } catch {}
+    setModulesSaving(false);
+  };
 
   const handleSave = async () => {
     if (!company) return;
@@ -720,6 +754,49 @@ export default function SettingsPage() {
                   </div>
                 </>
               )}
+            </div>
+          </Section>
+        )}
+
+        {/* Módulos del sidebar */}
+        {canEdit && modules.length > 0 && (
+          <Section title="Módulos del sidebar" icon={LayoutGrid}>
+            {(['main', 'recursos'] as const).map(section => {
+              const items = modules.filter(m => m.section === section);
+              return (
+                <div key={section} className="mb-5 last:mb-0">
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-gray-600 mb-3">
+                    {section === 'main' ? 'Módulos principales' : 'Recursos'}
+                  </p>
+                  <div className="space-y-2">
+                    {items.map(m => (
+                      <label key={m.key} className="flex items-center justify-between gap-3 cursor-pointer group">
+                        <div>
+                          <p className="text-sm text-white font-medium">{m.label}</p>
+                          <p className="text-xs text-gray-500">{m.desc}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setModules(prev => prev.map(x => x.key === m.key ? { ...x, enabled: !x.enabled } : x))}
+                          className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${m.enabled ? 'bg-indigo-600' : 'bg-gray-700'}`}
+                        >
+                          <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${m.enabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                        </button>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+            <div className="mt-5 pt-4 border-t border-gray-800">
+              <button
+                onClick={handleSaveModules}
+                disabled={modulesSaving}
+                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold px-5 py-2 rounded-xl text-sm transition-colors"
+              >
+                {modulesSaving ? <Loader2 size={14} className="animate-spin" /> : modulesSaved ? <Check size={14} /> : null}
+                {modulesSaving ? 'Guardando...' : modulesSaved ? 'Guardado' : 'Guardar módulos'}
+              </button>
             </div>
           </Section>
         )}

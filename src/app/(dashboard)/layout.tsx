@@ -177,25 +177,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const buildNav = (): NavGroups => {
     const core: NavItem[] = [...CORE_NAV];
-    const main: NavItem[] = [...MAIN_NAV];
     const recursosFull: NavItem[] = [
       ...RECURSOS_BASE,
       ...(tenantFeatures.communications_enabled
         ? [{ href: '/herramientas/comunicaciones', label: 'Comunicaciones', icon: Radio }]
         : []),
     ];
+
     const mods = brand.modules_config;
-    if (!mods) return { core, main, recursos: recursosFull, bottom: BOTTOM_NAV };
+    if (!mods || mods.length === 0) {
+      return { core, main: [...MAIN_NAV], recursos: recursosFull, bottom: BOTTOM_NAV };
+    }
 
-    const filteredRecursos = mods
-      .filter((m) => m.enabled)
-      .map((m) => {
-        const item = recursosFull.find((n) => n.href === `/${m.key}`);
-        return item ? { ...item, label: m.label } : null;
-      })
-      .filter(Boolean) as NavItem[];
+    const enabledKeys = new Set(mods.filter((m) => m.enabled).map((m) => m.key));
+    const filterByKey = (items: NavItem[]) =>
+      items.filter((n) => enabledKeys.has(n.href.replace(/^\//, '')));
 
-    return { core, main, recursos: filteredRecursos.length > 0 ? filteredRecursos : recursosFull, bottom: BOTTOM_NAV };
+    const main = filterByKey(MAIN_NAV);
+    const recursos = filterByKey(recursosFull);
+
+    return {
+      core,
+      main:     main.length > 0     ? main     : [...MAIN_NAV],
+      recursos: recursos.length > 0 ? recursos : recursosFull,
+      bottom: BOTTOM_NAV,
+    };
   };
 
   const NAV = buildNav();

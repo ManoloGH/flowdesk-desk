@@ -2,7 +2,18 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { Search, Building2, Loader2, ChevronRight, Zap, Handshake, Briefcase, ShieldCheck, Brain, Users, MessageSquare } from 'lucide-react';
+import { Search, Building2, Loader2, ChevronRight, Zap, Handshake, Briefcase, ShieldCheck, Brain, Users, MessageSquare, Plus, X, Check } from 'lucide-react';
+
+const CREATE_MODULES = [
+  { key: 'pipeline',    label: 'CRM',            section: 'main',     desc: 'Pipeline comercial' },
+  { key: 'erp-areas',  label: 'ERP',             section: 'main',     desc: 'Sistema operativo por área' },
+  { key: 'contactos',  label: 'Contactos',       section: 'recursos', desc: 'Directorio de contactos' },
+  { key: 'campus',     label: 'Campus digital',  section: 'recursos', desc: 'Mapa de oficina' },
+  { key: 'espacios',   label: 'Espacios',        section: 'recursos', desc: 'Cámaras de seguridad' },
+  { key: 'mi-web',     label: 'Mi Web',          section: 'recursos', desc: 'Constructor web' },
+  { key: 'integrations', label: 'Integraciones', section: 'recursos', desc: 'Conectores externos' },
+  { key: 'herramientas/comunicaciones', label: 'Comunicaciones', section: 'recursos', desc: 'WhatsApp y canales' },
+];
 
 interface TenantRow {
   id: string; name: string; slug: string; plan: string; status: string;
@@ -82,6 +93,37 @@ export default function ClientsPage() {
   };
 
   const [search, setSearch] = useState('');
+
+  // ── Wizard crear cliente ──
+  const [showCreate, setShowCreate] = useState(false);
+  const [createStep, setCreateStep] = useState(1);
+  const [creating, setCreating] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    name: '', slug: '', plan: 'starter', account_type: 'DIRECT',
+    owner_name: '', owner_email: '',
+  });
+  const [createModules, setCreateModules] = useState(
+    CREATE_MODULES.map(m => ({ ...m, enabled: true }))
+  );
+
+  const slugify = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+  const handleCreate = async () => {
+    setCreating(true);
+    try {
+      const result = await api.post('/platform/network', {
+        ...createForm,
+        tenant_type: 'NETWORK',
+        modules_config: createModules,
+      });
+      setTenants(prev => [...prev, result.tenant ?? result]);
+      setShowCreate(false);
+      setCreateStep(1);
+      setCreateForm({ name: '', slug: '', plan: 'starter', account_type: 'DIRECT', owner_name: '', owner_email: '' });
+      setCreateModules(CREATE_MODULES.map(m => ({ ...m, enabled: true })));
+    } catch {}
+    setCreating(false);
+  };
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -109,6 +151,12 @@ export default function ClientsPage() {
             <h1 className="text-base font-bold text-white">Clientes</h1>
             <p className="text-[11px] text-gray-600 mt-0.5">{tenants.length} empresa{tenants.length !== 1 ? 's' : ''} en la red</p>
           </div>
+          <button
+            onClick={() => { setShowCreate(true); setCreateStep(1); }}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" /> Nuevo cliente
+          </button>
         </div>
       </div>
 
@@ -210,5 +258,145 @@ export default function ClientsPage() {
       )}
       </div>
     </div>
+
+    {/* ── Modal: Nuevo cliente ── */}
+    {showCreate && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+        <div className="bg-[#0a0f1e] border border-white/10 rounded-2xl w-full max-w-lg p-6 relative">
+          <button onClick={() => setShowCreate(false)} className="absolute top-4 right-4 text-gray-500 hover:text-white">
+            <X className="w-4 h-4" />
+          </button>
+
+          {/* Progress */}
+          <div className="flex gap-2 mb-6">
+            {[1, 2].map(s => (
+              <div key={s} className={`flex-1 h-0.5 rounded-full transition-colors ${createStep >= s ? 'bg-indigo-500' : 'bg-white/10'}`} />
+            ))}
+          </div>
+
+          {createStep === 1 && (
+            <div>
+              <h2 className="text-white font-bold text-base mb-1">Datos del negocio</h2>
+              <p className="text-gray-500 text-xs mb-5">Paso 1 de 2</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1.5">Nombre de la empresa</label>
+                  <input
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    placeholder="Ej. Aceros del Norte S.A."
+                    value={createForm.name}
+                    onChange={e => setCreateForm(p => ({ ...p, name: e.target.value, slug: slugify(e.target.value) }))}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1.5">Slug</label>
+                    <input
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      value={createForm.slug}
+                      onChange={e => setCreateForm(p => ({ ...p, slug: slugify(e.target.value) }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1.5">Plan</label>
+                    <select
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      value={createForm.plan}
+                      onChange={e => setCreateForm(p => ({ ...p, plan: e.target.value }))}
+                    >
+                      {['starter', 'professional', 'enterprise', 'internal'].map(pl => (
+                        <option key={pl} value={pl}>{pl}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1.5">Tipo de cuenta</label>
+                  <select
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    value={createForm.account_type}
+                    onChange={e => setCreateForm(p => ({ ...p, account_type: e.target.value }))}
+                  >
+                    <option value="HOLDING">Cliente MentorIA</option>
+                    <option value="PARTNERSHIP">Partner MentorIA</option>
+                    <option value="DIRECT">Cliente FlowDesk</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1.5">Nombre del owner</label>
+                  <input
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    placeholder="Juan Pérez"
+                    value={createForm.owner_name}
+                    onChange={e => setCreateForm(p => ({ ...p, owner_name: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1.5">Email del owner</label>
+                  <input
+                    type="email"
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    placeholder="juan@empresa.com"
+                    value={createForm.owner_email}
+                    onChange={e => setCreateForm(p => ({ ...p, owner_email: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <button
+                onClick={() => setCreateStep(2)}
+                disabled={!createForm.name || !createForm.owner_email || !createForm.owner_name}
+                className="mt-6 w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
+              >
+                Siguiente → Módulos
+              </button>
+            </div>
+          )}
+
+          {createStep === 2 && (
+            <div>
+              <h2 className="text-white font-bold text-base mb-1">Módulos del sidebar</h2>
+              <p className="text-gray-500 text-xs mb-5">Configura qué verá {createForm.name} en su menú</p>
+              {(['main', 'recursos'] as const).map(section => (
+                <div key={section} className="mb-5">
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-gray-600 mb-3">
+                    {section === 'main' ? 'Módulos principales' : 'Recursos'}
+                  </p>
+                  <div className="space-y-2.5">
+                    {createModules.filter(m => m.section === section).map(m => (
+                      <label key={m.key} className="flex items-center justify-between gap-3 cursor-pointer">
+                        <div>
+                          <p className="text-sm text-white font-medium">{m.label}</p>
+                          <p className="text-xs text-gray-500">{m.desc}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setCreateModules(prev => prev.map(x => x.key === m.key ? { ...x, enabled: !x.enabled } : x))}
+                          className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${m.enabled ? 'bg-indigo-600' : 'bg-gray-700'}`}
+                        >
+                          <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${m.enabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                        </button>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              <div className="flex gap-3 mt-6">
+                <button onClick={() => setCreateStep(1)} className="flex-1 border border-white/10 text-gray-400 hover:text-white py-2.5 rounded-xl text-sm transition-colors">
+                  ← Atrás
+                </button>
+                <button
+                  onClick={handleCreate}
+                  disabled={creating}
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors"
+                >
+                  {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                  {creating ? 'Creando...' : 'Crear cuenta'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )}
   );
 }
