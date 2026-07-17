@@ -104,7 +104,7 @@ export default function SettingsPage() {
   const [pbxSaved, setPbxSaved] = useState(false);
   const [pbxLoaded, setPbxLoaded] = useState(false);
 
-  const canEdit = user?.role === 'owner' || user?.role === 'admin';
+  const canEdit = user?.role === 'owner' || user?.role === 'admin' || user?.role === 'superadmin';
 
   useEffect(() => {
     api.get<CompanyData>('/tenants/mine').then(setCompany).finally(() => setLoading(false));
