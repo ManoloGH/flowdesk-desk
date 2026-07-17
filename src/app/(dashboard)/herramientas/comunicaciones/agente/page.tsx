@@ -43,6 +43,9 @@ interface AgentConfig {
   nombre: string;
   actividad: string;
   propuesta_valor: string;
+  mision: string;
+  enfoque: string;
+  tarea_seguimiento: string;
   evolution_instance: string;
   criterios_buen_lead: string;
   criterios_mal_lead: string;
@@ -102,6 +105,9 @@ const DEFAULTS: AgentConfig = {
   nombre: '',
   actividad: '',
   propuesta_valor: '',
+  mision: '',
+  enfoque: '',
+  tarea_seguimiento: '',
   evolution_instance: '',
   criterios_buen_lead: '',
   criterios_mal_lead: '',
@@ -133,6 +139,9 @@ export default function AgentePage() {
           nombre: data.nombre ?? '',
           actividad: data.actividad ?? '',
           propuesta_valor: data.propuesta_valor ?? '',
+          mision: data.mision ?? '',
+          enfoque: data.enfoque ?? '',
+          tarea_seguimiento: data.tarea_seguimiento ?? '',
           evolution_instance: data.evolution_instance ?? '',
           criterios_buen_lead: data.criterios_buen_lead ?? '',
           criterios_mal_lead: data.criterios_mal_lead ?? '',
@@ -164,6 +173,9 @@ export default function AgentePage() {
           nombre: cfg.nombre,
           actividad: cfg.actividad,
           propuesta_valor: cfg.propuesta_valor,
+          mision: cfg.mision,
+          enfoque: cfg.enfoque,
+          tarea_seguimiento: cfg.tarea_seguimiento,
           evolution_instance: cfg.evolution_instance,
           criterios_buen_lead: cfg.criterios_buen_lead,
           criterios_mal_lead: cfg.criterios_mal_lead,
@@ -256,6 +268,19 @@ export default function AgentePage() {
             </Field>
             <Field label="Propuesta de valor">
               <textarea rows={3} value={cfg.propuesta_valor} onChange={e => setField('propuesta_valor', e.target.value)} placeholder="Somos expertos en simplificar procesos…" className={INPUT} />
+            </Field>
+          </ConfigCard>
+
+          {/* Misión y Enfoque */}
+          <ConfigCard icon={<Info className="w-3.5 h-3.5 text-gray-400" />} title="Misión y Enfoque">
+            <Field label="Misión del agente" hint="¿Cuál es el objetivo principal? El agente lo tiene presente en toda la conversación.">
+              <textarea rows={2} value={cfg.mision} onChange={e => setField('mision', e.target.value)} placeholder="Convertir leads de WhatsApp en llamadas de diagnóstico con prospectos calificados." className={INPUT} />
+            </Field>
+            <Field label="En qué se debe enfocar" hint="Restricciones y prioridades. El agente evitará temas fuera de esta lista.">
+              <textarea rows={3} value={cfg.enfoque} onChange={e => setField('enfoque', e.target.value)} placeholder={"- Calificar si la empresa tiene +10 años y +200 empleados\n- No hablar de precios ni tecnologías específicas\n- No salirse del guión del journey"} className={INPUT} />
+            </Field>
+            <Field label="Tarea para próximos días (sin reunión agendada)" hint="Si el prospecto no agendó, ¿qué debe hacer el agente los días siguientes para revivir la conversación?">
+              <textarea rows={4} value={cfg.tarea_seguimiento} onChange={e => setField('tarea_seguimiento', e.target.value)} placeholder={"Día 3: Enviar mensaje recordando el diagnóstico gratuito.\nDía 7: Compartir un caso de éxito relevante a su industria.\nDía 14: Preguntar si hubo algún cambio en sus prioridades."} className={INPUT} />
             </Field>
           </ConfigCard>
 
