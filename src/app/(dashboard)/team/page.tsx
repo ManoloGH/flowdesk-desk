@@ -106,7 +106,9 @@ export default function TeamPage() {
     try {
       await api.patch(`/team-slots/${id}`, { name: name.trim() });
       setSlots(prev => prev.map(s => s.id === id ? { ...s, name: name.trim() } : s));
-    } catch {}
+    } catch (e: any) {
+      alert('Error al guardar nombre: ' + (e?.message ?? 'Error desconocido'));
+    }
     setEditingName(null);
   };
 

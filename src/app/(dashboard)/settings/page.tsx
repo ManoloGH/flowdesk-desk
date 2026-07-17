@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/store/auth';
-import { Building2, Palette, Loader2, Check, Lock, User, Cpu, Phone, MapPin, Plus, Trash2, LayoutGrid } from 'lucide-react';
+import { Building2, Palette, Loader2, Check, Lock, User, Cpu, Phone, MapPin, Plus, Trash2, LayoutGrid, Map } from 'lucide-react';
 
 const SIDEBAR_MODULES = [
   { key: 'pipeline',    label: 'CRM',            section: 'main',     desc: 'Pipeline comercial' },
@@ -75,6 +75,12 @@ export default function SettingsPage() {
   const [aiSaved, setAiSaved] = useState(false);
   const [aiLoaded, setAiLoaded] = useState(false);
 
+  // Campus
+  const [campusConfig, setCampusConfig] = useState<{ map_source?: string; map_template?: string; background_color?: string } | null>(null);
+  const [campusTemplates, setCampusTemplates] = useState<Array<{ key: string; background_color: string; rooms_count: number }>>([]);
+  const [campusSaving, setCampusSaving] = useState(false);
+  const [campusSaved,  setCampusSaved]  = useState(false);
+
   // Sucursales
   const [branchesEnabled, setBranchesEnabled] = useState(false);
   const [officeBranches, setOfficeBranches] = useState<Array<{ id: string; name: string; address?: string; color: string; is_main: boolean; _count?: { team_slots: number } }>>([]);
@@ -106,6 +112,9 @@ export default function SettingsPage() {
     api.get<any>('/tenants/mine/features').then(f => {
       setBranchesEnabled(f?.branches_enabled ?? false);
     }).catch(() => {});
+
+    api.get<any>('/campus/config').then(cfg => setCampusConfig(cfg)).catch(() => {});
+    api.get<any>('/campus/templates').then(t => setCampusTemplates(Array.isArray(t) ? t : [])).catch(() => {});
 
     api.get<any>('/tenants/mine/brand').then(data => {
       const saved: any[] = data?.modules_config ?? [];
@@ -221,6 +230,17 @@ export default function SettingsPage() {
       setTimeout(() => setAiSaved(false), 2500);
     } catch {}
     setAiLoading(false);
+  };
+
+  const handleSaveCampus = async () => {
+    if (!campusConfig) return;
+    setCampusSaving(true);
+    try {
+      await api.patch('/campus/config', campusConfig);
+      setCampusSaved(true);
+      setTimeout(() => setCampusSaved(false), 2500);
+    } catch {}
+    setCampusSaving(false);
   };
 
   const handleToggleBranches = async (val: boolean) => {
@@ -667,6 +687,82 @@ export default function SettingsPage() {
                 >
                   {pbxLoading ? <Loader2 size={13} className="animate-spin" /> : pbxSaved ? <Check size={13} /> : <Phone size={13} />}
                   {pbxLoading ? 'Guardando...' : pbxSaved ? 'Guardado' : 'Guardar configuración'}
+                </button>
+              </div>
+            </div>
+          </Section>
+        )}
+
+        {/* Campus */}
+        {canEdit && (
+          <Section title="Campus digital" icon={Map}>
+            <div className="space-y-5">
+              {/* Tipo de mapa */}
+              <div>
+                <p className="text-xs text-gray-400 mb-3">Tipo de mapa</p>
+                <div className="space-y-2">
+                  {[
+                    { value: 'template', label: 'Template predefinido', desc: 'Salas generadas automáticamente' },
+                    { value: 'custom',   label: 'Mapa personalizado',   desc: 'Sube tu propio imagen o JSON' },
+                  ].map(opt => (
+                    <label key={opt.value} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${campusConfig?.map_source === opt.value ? 'border-indigo-500 bg-indigo-600/10' : 'border-gray-700 hover:border-gray-600'}`}>
+                      <input
+                        type="radio" name="map_source" value={opt.value}
+                        checked={campusConfig?.map_source === opt.value}
+                        onChange={() => setCampusConfig(c => ({ ...c, map_source: opt.value }))}
+                        className="mt-0.5 accent-indigo-500"
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-white">{opt.label}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{opt.desc}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Color de fondo */}
+              <Field label="Color de fondo">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={campusConfig?.background_color ?? '#1a1a2e'}
+                    onChange={e => setCampusConfig(c => ({ ...c, background_color: e.target.value }))}
+                    className="w-10 h-10 rounded-lg border border-gray-700 cursor-pointer bg-transparent"
+                  />
+                  <span className="text-sm text-gray-400 font-mono">{campusConfig?.background_color ?? '#1a1a2e'}</span>
+                </div>
+              </Field>
+
+              {/* Templates */}
+              {campusConfig?.map_source === 'template' && campusTemplates.length > 0 && (
+                <div>
+                  <p className="text-xs text-gray-400 mb-3">Template de campus</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {campusTemplates.map(t => (
+                      <label key={t.key} className={`p-4 rounded-lg border cursor-pointer transition-colors ${campusConfig?.map_template === t.key ? 'border-indigo-500 bg-indigo-600/10' : 'border-gray-700 hover:border-gray-600'}`}>
+                        <input type="radio" name="map_template" value={t.key}
+                          checked={campusConfig?.map_template === t.key}
+                          onChange={() => setCampusConfig(c => ({ ...c, map_template: t.key, map_source: 'template' }))}
+                          className="hidden"
+                        />
+                        <div className="w-full h-12 rounded-md mb-2" style={{ backgroundColor: t.background_color }} />
+                        <p className="text-sm font-medium text-white capitalize">{t.key.replace('_', ' ')}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{t.rooms_count} salas</p>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <button
+                  onClick={handleSaveCampus}
+                  disabled={campusSaving}
+                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+                >
+                  {campusSaving ? <Loader2 size={13} className="animate-spin" /> : campusSaved ? <Check size={13} /> : <Map size={13} />}
+                  {campusSaving ? 'Guardando...' : campusSaved ? 'Guardado' : 'Guardar campus'}
                 </button>
               </div>
             </div>

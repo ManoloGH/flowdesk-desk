@@ -29,7 +29,7 @@ import {
 type NavItem = { href: string; label: string; icon: React.ElementType };
 
 const CORE_NAV: NavItem[] = [
-  { href: '/dashboard', label: 'Focus Mode', icon: Zap },
+  { href: '/focusmode', label: 'Focus Mode', icon: Zap },
   { href: '/metrics',   label: 'Dashboard',  icon: BarChart2 },
   { href: '/team',      label: 'Equipo',     icon: Users },
 ];
