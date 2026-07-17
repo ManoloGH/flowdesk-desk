@@ -499,8 +499,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             );
           })}
 
-          <div style={{ margin: '6px 0', borderTop: '1px solid var(--line)' }} />
-
           {NAV.main.map(({ href, label, icon }) => {
             const active = pathname === href || (href !== '/' && pathname.startsWith(href));
             return (

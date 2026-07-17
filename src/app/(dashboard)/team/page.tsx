@@ -79,13 +79,16 @@ export default function TeamPage() {
   const [actionId,   setActionId]     = useState<string | null>(null);
 
   const [editingName, setEditingName] = useState<{ id: string; value: string } | null>(null);
+  const [hoveredRow, setHoveredRow] = useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('¿Eliminar este colaborador permanentemente?')) return;
     try {
       await api.delete(`/team-slots/${id}`);
       setSlots(prev => prev.filter(s => s.id !== id));
-    } catch {}
+    } catch (e: any) {
+      alert('Error al eliminar: ' + (e?.message ?? 'Error desconocido'));
+    }
   };
 
   const handleToggleAccess = async (slot: Slot) => {
@@ -93,7 +96,9 @@ export default function TeamPage() {
     try {
       await api.patch(`/team-slots/${slot.id}`, { desk_access: newAccess });
       setSlots(prev => prev.map(s => s.id === slot.id ? { ...s, desk_access: newAccess } : s));
-    } catch {}
+    } catch (e: any) {
+      alert('Error al cambiar acceso: ' + (e?.message ?? 'Error desconocido'));
+    }
   };
 
   const handleSaveName = async (id: string, name: string) => {
@@ -252,7 +257,12 @@ export default function TeamPage() {
               {filtered.map(slot => {
                 const workerType = slot.agent_config?.worker_type as string | undefined;
                 return (
-                  <tr key={slot.id} style={{ borderBottom: '1px solid var(--line)' }}>
+                  <tr
+                    key={slot.id}
+                    style={{ borderBottom: '1px solid var(--line)' }}
+                    onMouseEnter={() => setHoveredRow(slot.id)}
+                    onMouseLeave={() => setHoveredRow(null)}
+                  >
                     <td style={{ padding: '12px 16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, background: slot.type === 'HUMAN' ? 'var(--fd-blue)' : 'rgba(139,92,246,0.2)', color: slot.type === 'HUMAN' ? 'white' : '#a78bfa' }}>
@@ -274,7 +284,7 @@ export default function TeamPage() {
                           ) : (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                               <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{slot.name}</p>
-                              <button onClick={() => setEditingName({ id: slot.id, value: slot.name })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', padding: 2, opacity: 0, transition: 'opacity 0.15s' }} className="edit-name-btn">
+                              <button onClick={() => setEditingName({ id: slot.id, value: slot.name })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', padding: 2, opacity: hoveredRow === slot.id ? 1 : 0, transition: 'opacity 0.15s' }} className="edit-name-btn">
                                 <Pencil size={11} />
                               </button>
                             </div>
