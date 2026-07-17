@@ -143,6 +143,7 @@ export default function ClientsPage() {
   });
 
   return (
+    <>
     <div className="h-screen bg-[#050a14] flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex-shrink-0 px-6 pt-5 pb-4 border-b border-white/5">
@@ -398,5 +399,6 @@ export default function ClientsPage() {
         </div>
       </div>
     )}
+    </>
   );
 }
