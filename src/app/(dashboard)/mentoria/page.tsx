@@ -40,13 +40,14 @@ interface Cliente {
 
 // ── Config ─────────────────────────────────────────────────────────────────────
 const PROSPECTO_STAGES = [
-  { key: 'agente_ia',         label: 'Agente IA',        color: '#6c4de6', icon: '🤖' },
-  { key: 'micro_diagnostico', label: 'Micro Diagnóstico', color: '#8b5cf6', icon: '📊' },
-  { key: 'discovery',         label: 'Discovery',         color: '#3b82f6', icon: '🔍' },
-  { key: 'propuesta',         label: 'Propuesta',         color: '#f59e0b', icon: '📄' },
-  { key: 'contrato',          label: 'Contrato',          color: '#10b981', icon: '✍️' },
-  { key: 'implementacion',    label: 'Implementación',    color: '#22c55e', icon: '⚡' },
+  { key: 'agente_ia',         label: 'Agente IA',        color: '#6c4de6', icon: '🤖', isConversion: false },
+  { key: 'micro_diagnostico', label: 'Micro Diagnóstico', color: '#8b5cf6', icon: '📊', isConversion: false },
+  { key: 'discovery',         label: 'Discovery',         color: '#3b82f6', icon: '🔍', isConversion: false },
+  { key: 'propuesta',         label: 'Propuesta',         color: '#f59e0b', icon: '📄', isConversion: false },
+  { key: 'contrato',          label: 'Contrato',          color: '#10b981', icon: '✍️', isConversion: true },
+  { key: 'implementacion',    label: 'Implementación',    color: '#22c55e', icon: '⚡', isConversion: true },
 ] as const;
+const CONVERSION_STAGES = new Set(['contrato', 'implementacion']);
 
 const STAGE_MAP = Object.fromEntries(PROSPECTO_STAGES.map(s => [s.key, s]));
 
@@ -186,6 +187,12 @@ export default function MentoriaPage() {
   useEffect(() => { if (selected) setNotes(selected.notas ?? ''); }, [selected]);
 
   async function advanceStage(id: string, etapa: ProspectoStage) {
+    if (CONVERSION_STAGES.has(etapa)) {
+      // Mover a contrato/implementacion = convertir a cliente activo
+      const p = prospectos.find(x => x.id === id);
+      if (p) setShowConverting(p);
+      return;
+    }
     try { await api.patch(`/mentoria/prospectos/${id}/etapa`, { etapa }); } catch {}
     setProspectos(prev => prev.map(p => p.id === id ? { ...p, etapa } : p));
     setSelected(prev => prev?.id === id ? { ...prev, etapa } : prev);
@@ -265,7 +272,7 @@ export default function MentoriaPage() {
               <ExternalLink size={12} /> Ver Aria
             </a>
             {tab === 'prospectos'
-              ? <button onClick={() => setShowAddP(true)} style={btnPrimary}><Plus size={13} /> Prospecto</button>
+              ? <button onClick={() => setShowAddP(true)} style={btnPrimary}><Plus size={13} /> Nuevo registro</button>
               : tab === 'activos'
               ? <button onClick={() => setShowAddC(true)} style={btnPrimary}><Plus size={13} /> Cliente</button>
               : null
@@ -294,10 +301,10 @@ export default function MentoriaPage() {
         {/* Tabs + search */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--line)', paddingBottom: 0 }}>
           {([
-            { key: 'prospectos',  label: 'Pipeline CRM',         count: prospectos.length + activos.length },
-            { key: 'activos',     label: 'Clientes activos',     count: activos.length },
-            { key: 'desactivados',label: 'Clientes anteriores',  count: desactivados.length },
-            { key: 'descartados', label: 'Descartados',          count: descartados.length },
+            { key: 'prospectos',  label: 'Prospectos',          count: prospectos.filter(p => !CONVERSION_STAGES.has(p.etapa)).length },
+            { key: 'activos',     label: 'Clientes activos',    count: activos.length },
+            { key: 'desactivados',label: 'Clientes anteriores', count: desactivados.length },
+            { key: 'descartados', label: 'Descartados',         count: descartados.length },
           ] as const).map(t => (
             <button
               key={t.key} onClick={() => setTab(t.key)}
@@ -373,7 +380,7 @@ function ProspectosPipeline({ prospectos, clientes, onSelect, onDescartar, onAdv
   const handleDrop = (e: React.DragEvent, stageKey: string) => {
     e.preventDefault();
     const id = e.dataTransfer.getData('prospectoId');
-    if (id && stageKey !== 'implementacion') onAdvance(id, stageKey as ProspectoStage);
+    if (id) onAdvance(id, stageKey as ProspectoStage);
     setDragOver(null);
   };
 
@@ -385,30 +392,36 @@ function ProspectosPipeline({ prospectos, clientes, onSelect, onDescartar, onAdv
           const clients = stage.key === 'implementacion' ? clientes : [];
           const total = prospects.length + clients.length;
           const isOver = dragOver === stage.key;
-          const isImpl = stage.key === 'implementacion';
+          const isConv = stage.isConversion;
 
           return (
             <div key={stage.key} style={{ width: 210, flexShrink: 0 }}
-              onDragOver={e => { if (!isImpl) { e.preventDefault(); if (dragOver !== stage.key) setDragOver(stage.key); } }}
-              onDragEnter={e => { if (!isImpl) { e.preventDefault(); setDragOver(stage.key); } }}
+              onDragOver={e => { e.preventDefault(); if (dragOver !== stage.key) setDragOver(stage.key); }}
+              onDragEnter={e => { e.preventDefault(); setDragOver(stage.key); }}
               onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(null); }}
               onDrop={e => handleDrop(e, stage.key)}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 9, padding: '0 2px' }}>
                 <div style={{ width: 7, height: 7, borderRadius: '50%', background: stage.color, boxShadow: `0 0 6px ${stage.color}` }} />
                 <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-2)' }}>{stage.icon} {stage.label}</span>
-                {stage.key === 'implementacion' && (
-                  <span style={{ fontSize: 9, color: stage.color, background: `${stage.color}20`, padding: '1px 5px', borderRadius: 99, fontWeight: 700 }}>ACTIVOS</span>
+                {isConv && (
+                  <span style={{ fontSize: 9, color: stage.color, background: `${stage.color}20`, padding: '1px 5px', borderRadius: 99, fontWeight: 700 }}>→ CLIENTE</span>
                 )}
                 <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--text-3)', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 99, padding: '1px 6px', fontWeight: 600 }}>{total}</span>
               </div>
               <div style={{
-                display: 'flex', flexDirection: 'column', gap: 7, minHeight: 60,
-                borderRadius: 10, padding: isOver ? '6px' : '0',
-                background: isOver ? `${stage.color}10` : 'transparent',
-                border: isOver ? `2px dashed ${stage.color}70` : '2px solid transparent',
+                display: 'flex', flexDirection: 'column', gap: 7, minHeight: isConv ? 100 : 60,
+                borderRadius: 10, padding: isOver ? '6px' : isConv ? '0' : '0',
+                background: isOver ? `${stage.color}18` : isConv ? `${stage.color}06` : 'transparent',
+                border: isOver ? `2px dashed ${stage.color}70` : isConv ? `1px dashed ${stage.color}30` : '2px solid transparent',
                 transition: 'background 0.15s, border 0.15s',
               }}>
+                {isConv && !total && !isOver && (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 80, gap: 4 }}>
+                    <span style={{ fontSize: 16 }}>{stage.icon}</span>
+                    <span style={{ fontSize: 10, color: stage.color, fontWeight: 600 }}>Arrastra aquí para convertir</span>
+                  </div>
+                )}
                 {prospects.map(p => <ProspectoCard key={p.id} p={p} color={stage.color} onClick={() => onSelect(p)} onDescartar={onDescartar} />)}
                 {clients.map(c => <ClientePipelineCard key={c.id} c={c} color={stage.color} />)}
                 {!total && !isOver && (
@@ -665,13 +678,19 @@ function ProspectoDrawer({ p, notes, setNotes, onSave, onAdvance, onConvert, onD
           <DrawerSection title="Etapa">
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {nextStage && (
-                <button onClick={() => onAdvance(nextStage.key as ProspectoStage)} style={{ ...btnPrimary, fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <ArrowRight size={12} /> Mover a {nextStage.icon} {nextStage.label}
-                </button>
+                CONVERSION_STAGES.has(nextStage.key)
+                  ? <button onClick={onConvert} style={{ ...btnPrimary, fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, background: '#10b981' }}>
+                      <ArrowRight size={12} /> Convertir a cliente activo
+                    </button>
+                  : <button onClick={() => onAdvance(nextStage.key as ProspectoStage)} style={{ ...btnPrimary, fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <ArrowRight size={12} /> Mover a {nextStage.icon} {nextStage.label}
+                    </button>
               )}
-              <select onChange={e => e.target.value && onAdvance(e.target.value as ProspectoStage)} defaultValue="" style={{ padding: '7px 10px', borderRadius: 7, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--text-2)', fontSize: 12, cursor: 'pointer' }}>
+              <select onChange={e => { if (!e.target.value) return; CONVERSION_STAGES.has(e.target.value) ? onConvert() : onAdvance(e.target.value as ProspectoStage); e.target.value = ''; }} defaultValue="" style={{ padding: '7px 10px', borderRadius: 7, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--text-2)', fontSize: 12, cursor: 'pointer' }}>
                 <option value="">Mover a…</option>
-                {PROSPECTO_STAGES.map(s => <option key={s.key} value={s.key}>{s.icon} {s.label}</option>)}
+                {PROSPECTO_STAGES.filter(s => !s.isConversion).map(s => <option key={s.key} value={s.key}>{s.icon} {s.label}</option>)}
+                <option value="contrato">✍️ Contrato (→ cliente activo)</option>
+                <option value="implementacion">⚡ Implementación (→ cliente activo)</option>
               </select>
             </div>
           </DrawerSection>
