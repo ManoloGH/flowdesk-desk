@@ -169,21 +169,17 @@ export default function MentoriaPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    try {
-      const [ps, cs, ds] = await Promise.all([
-        api.get<Prospecto[]>('/mentoria/prospectos'),
-        api.get<Cliente[]>('/mentoria/clientes'),
-        api.get<Prospecto[]>('/mentoria/prospectos/descartados'),
-      ]);
-      setProspectos(Array.isArray(ps) ? ps : []);
-      setClientes(Array.isArray(cs) ? cs : []);
-      setDescartados(Array.isArray(ds) ? ds : []);
-    } catch {
-      const local = loadLocalLeads();
-      setProspectos(local.length ? local : MOCK_PROSPECTOS);
-      setClientes(MOCK_CLIENTES);
-      setDescartados([]);
-    } finally { setLoading(false); }
+    const [psR, csR, dsR] = await Promise.allSettled([
+      api.get<Prospecto[]>('/mentoria/prospectos'),
+      api.get<Cliente[]>('/mentoria/clientes'),
+      api.get<Prospecto[]>('/mentoria/prospectos/descartados'),
+    ]);
+    // Cada llamada falla de forma independiente — nunca pisamos datos reales con mocks
+    if (psR.status === 'fulfilled') setProspectos(Array.isArray(psR.value) ? psR.value : []);
+    else { const local = loadLocalLeads(); setProspectos(local); }
+    if (csR.status === 'fulfilled') setClientes(Array.isArray(csR.value) ? csR.value : []);
+    if (dsR.status === 'fulfilled') setDescartados(Array.isArray(dsR.value) ? dsR.value : []);
+    setLoading(false);
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -334,7 +330,7 @@ export default function MentoriaPage() {
         </div>
       ) : tab === 'prospectos' ? (
         pView === 'pipeline'
-          ? <ProspectosPipeline prospectos={filteredP} clientes={activos} onSelect={setSelected} onDescartar={doDescartar} />
+          ? <ProspectosPipeline prospectos={filteredP} clientes={activos} onSelect={setSelected} onDescartar={doDescartar} onAdvance={advanceStage} />
           : <ProspectosLista prospectos={filteredP} onSelect={setSelected} onDescartar={doDescartar} />
       ) : tab === 'activos' ? (
         <ClientesGrid clientes={activos} onSelect={id => router.push(`/mentoria/${id}`)} />
@@ -364,25 +360,40 @@ export default function MentoriaPage() {
 }
 
 // ── Prospectos Pipeline ────────────────────────────────────────────────────────
-function ProspectosPipeline({ prospectos, clientes, onSelect, onDescartar }: {
+function ProspectosPipeline({ prospectos, clientes, onSelect, onDescartar, onAdvance }: {
   prospectos: Prospecto[];
   clientes: Cliente[];
   onSelect: (p: Prospecto) => void;
   onDescartar: (p: Prospecto) => void;
+  onAdvance: (id: string, etapa: ProspectoStage) => void;
 }) {
   const pGroups = Object.fromEntries(PROSPECTO_STAGES.map(s => [s.key, prospectos.filter(p => p.etapa === s.key)]));
+  const [dragOver, setDragOver] = useState<string | null>(null);
+
+  const handleDrop = (e: React.DragEvent, stageKey: string) => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData('prospectoId');
+    if (id && stageKey !== 'implementacion') onAdvance(id, stageKey as ProspectoStage);
+    setDragOver(null);
+  };
 
   return (
     <div style={{ flex: 1, overflowX: 'auto', overflowY: 'hidden' }}>
       <div style={{ display: 'flex', gap: 12, padding: '18px 28px', minWidth: 'max-content', alignItems: 'flex-start' }}>
         {PROSPECTO_STAGES.map(stage => {
           const prospects = pGroups[stage.key] ?? [];
-          // Active clients appear in the implementacion column
           const clients = stage.key === 'implementacion' ? clientes : [];
           const total = prospects.length + clients.length;
+          const isOver = dragOver === stage.key;
+          const isImpl = stage.key === 'implementacion';
 
           return (
-            <div key={stage.key} style={{ width: 210, flexShrink: 0 }}>
+            <div key={stage.key} style={{ width: 210, flexShrink: 0 }}
+              onDragOver={e => { if (!isImpl) { e.preventDefault(); if (dragOver !== stage.key) setDragOver(stage.key); } }}
+              onDragEnter={e => { if (!isImpl) { e.preventDefault(); setDragOver(stage.key); } }}
+              onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(null); }}
+              onDrop={e => handleDrop(e, stage.key)}
+            >
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 9, padding: '0 2px' }}>
                 <div style={{ width: 7, height: 7, borderRadius: '50%', background: stage.color, boxShadow: `0 0 6px ${stage.color}` }} />
                 <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-2)' }}>{stage.icon} {stage.label}</span>
@@ -391,10 +402,16 @@ function ProspectosPipeline({ prospectos, clientes, onSelect, onDescartar }: {
                 )}
                 <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--text-3)', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 99, padding: '1px 6px', fontWeight: 600 }}>{total}</span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+              <div style={{
+                display: 'flex', flexDirection: 'column', gap: 7, minHeight: 60,
+                borderRadius: 10, padding: isOver ? '6px' : '0',
+                background: isOver ? `${stage.color}10` : 'transparent',
+                border: isOver ? `2px dashed ${stage.color}70` : '2px solid transparent',
+                transition: 'background 0.15s, border 0.15s',
+              }}>
                 {prospects.map(p => <ProspectoCard key={p.id} p={p} color={stage.color} onClick={() => onSelect(p)} onDescartar={onDescartar} />)}
                 {clients.map(c => <ClientePipelineCard key={c.id} c={c} color={stage.color} />)}
-                {!total && (
+                {!total && !isOver && (
                   <div style={{ height: 56, border: '1px dashed var(--line)', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <span style={{ fontSize: 10, color: 'var(--text-3)' }}>vacío</span>
                   </div>
@@ -410,7 +427,11 @@ function ProspectosPipeline({ prospectos, clientes, onSelect, onDescartar }: {
 
 function ProspectoCard({ p, color, onClick, onDescartar }: { p: Prospecto; color: string; onClick: () => void; onDescartar: (p: Prospecto) => void }) {
   return (
-    <div onClick={onClick} style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 9, padding: '11px 13px', cursor: 'pointer', textAlign: 'left', transition: 'border-color 0.15s', boxSizing: 'border-box' }}
+    <div
+      draggable
+      onDragStart={e => { e.dataTransfer.setData('prospectoId', p.id); e.dataTransfer.effectAllowed = 'move'; }}
+      onClick={onClick}
+      style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 9, padding: '11px 13px', cursor: 'grab', textAlign: 'left', transition: 'border-color 0.15s, opacity 0.15s', boxSizing: 'border-box' }}
       onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = color + '80'}
       onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = 'var(--line)'}
     >
