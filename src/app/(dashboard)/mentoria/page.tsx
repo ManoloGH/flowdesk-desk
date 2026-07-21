@@ -357,8 +357,8 @@ export default function MentoriaPage() {
       )}
 
       {showConverting && <ConvertirModal prospecto={showConverting} onClose={() => setShowConverting(null)} onSave={datos => doConvertir(showConverting, datos)} />}
-      {showAddP && <AddProspectoModal onClose={() => setShowAddP(false)} onSave={p => { setProspectos(prev => [p, ...prev]); setShowAddP(false); }} />}
-      {showAddC && <AddClienteModal onClose={() => setShowAddC(false)} onSave={c => { setClientes(prev => [c, ...prev]); setShowAddC(false); router.push(`/mentoria/${c.id}`); }} />}
+      {showAddP && <AddProspectoModal onClose={() => setShowAddP(false)} onSave={p => { load(); setShowAddP(false); }} />}
+      {showAddC && <AddClienteModal onClose={() => setShowAddC(false)} onSave={c => { load(); setShowAddC(false); if (c.id) router.push(`/mentoria/${c.id}`); }} />}
     </div>
   );
 }
@@ -697,8 +697,20 @@ function AddProspectoModal({ onClose, onSave }: { onClose: () => void; onSave: (
   const upd = (k: keyof typeof f, v: string) => setF(p => ({ ...p, [k]: v }));
   async function save() {
     if (!f.empresa.trim()) return;
-    const p: Prospecto = { id: `p-${Date.now()}`, ...f, email: f.email || null, whatsapp: f.whatsapp || null, industria: f.industria || null, tamano: f.tamano || null, puntuacion: null, ejecutivo_asignado: null, conversacion: null, micro_diagnostico: null, notas: null, fecha_creacion: new Date().toISOString(), fecha_ultima_accion: new Date().toISOString() };
-    try { const saved = await api.post<Prospecto>('/mentoria/prospectos', p); onSave(saved); } catch { onSave(p); }
+    try {
+      const saved = await api.post<Prospecto>('/mentoria/prospectos', {
+        empresa: f.empresa,
+        contacto: f.contacto || undefined,
+        email: f.email || undefined,
+        whatsapp: f.whatsapp || undefined,
+        industria: f.industria || undefined,
+        tamano: f.tamano || undefined,
+        etapa: f.etapa,
+      });
+      onSave(saved);
+    } catch (e: any) {
+      alert('Error al guardar prospecto: ' + (e?.message ?? 'Error desconocido'));
+    }
   }
   return <SimpleModal title="Nuevo prospecto" onClose={onClose} onSave={save}>
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -723,8 +735,21 @@ function AddClienteModal({ onClose, onSave }: { onClose: () => void; onSave: (c:
   const upd = (k: keyof typeof f, v: string) => setF(p => ({ ...p, [k]: v }));
   async function save() {
     if (!f.empresa.trim()) return;
-    const c: Cliente = { id: `c-${Date.now()}`, ...f, email: f.email || null, whatsapp: f.whatsapp || null, status: 'activo', fecha_inicio: new Date().toISOString().split('T')[0], fecha_fin: null, precio: parseInt(f.precio) || 30000, fase_actual: 0, areas_diagnosticadas: [], notas: '', prospecto_id: null };
-    try { const saved = await api.post<Cliente>('/mentoria/clientes', c); onSave(saved); } catch { onSave(c); }
+    try {
+      const saved = await api.post<Cliente>('/mentoria/clientes', {
+        empresa: f.empresa,
+        contacto_nombre: f.contacto_nombre || undefined,
+        contacto_cargo: f.contacto_cargo || undefined,
+        email: f.email || undefined,
+        whatsapp: f.whatsapp || undefined,
+        industria: f.industria || undefined,
+        ejecutivo_asignado: f.ejecutivo_asignado || undefined,
+        precio: parseInt(f.precio) || 30000,
+      });
+      onSave(saved);
+    } catch (e: any) {
+      alert('Error al crear cliente: ' + (e?.message ?? 'Error desconocido'));
+    }
   }
   return <SimpleModal title="Nuevo cliente" onClose={onClose} onSave={save}>
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>

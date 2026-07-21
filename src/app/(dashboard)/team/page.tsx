@@ -1,10 +1,11 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { api } from '@/lib/api';
 import {
   Users, Bot, Plus, Search, X, ChevronRight, ChevronLeft,
   Monitor, Smartphone, Crown, UserCog, User, Truck, CheckCircle2,
   Loader2, Copy, Check, Trash2, Ban, CheckCircle, Pencil,
+  MessageSquare, Send, Sparkles,
 } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -81,6 +82,20 @@ export default function TeamPage() {
   const [editingName, setEditingName] = useState<{ id: string; value: string } | null>(null);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
 
+  // Agent creation modal
+  const [showAgentModal, setShowAgentModal] = useState(false);
+  const [agentForm, setAgentForm] = useState({ name: '', instructions: '', department_id: '' });
+  const [savingAgent, setSavingAgent] = useState(false);
+
+  // Chat panel
+  interface ChatMsg { role: 'user' | 'assistant'; content: string; }
+  const [chatSlot, setChatSlot]     = useState<Slot | null>(null);
+  const [chatMsgs, setChatMsgs]     = useState<ChatMsg[]>([]);
+  const [chatInput, setChatInput]   = useState('');
+  const [chatConvId, setChatConvId] = useState<string | null>(null);
+  const [chatSending, setChatSending] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
   const handleDelete = async (id: string) => {
     if (!window.confirm('¿Eliminar este colaborador permanentemente?')) return;
     try {
@@ -134,6 +149,69 @@ export default function TeamPage() {
   const humans  = slots.filter(s => s.type === 'HUMAN').length;
   const agents  = slots.filter(s => s.type === 'AI_AGENT').length;
   const managers = slots.filter(s => s.type === 'HUMAN' && ['manager', 'admin', 'owner'].includes(s.role));
+
+  // ── Agent helpers ─────────────────────────────────────────────────────────
+
+  const handleCreateAgent = async () => {
+    if (!agentForm.name.trim()) return;
+    setSavingAgent(true);
+    try {
+      const payload: Record<string, any> = {
+        name: agentForm.name,
+        department_id: agentForm.department_id || undefined,
+        agent_config: {
+          model: 'claude-sonnet-4-6',
+          instructions: agentForm.instructions || `Eres ${agentForm.name}, un agente IA especializado en ayudar al equipo de trabajo.`,
+          tools: [],
+        },
+      };
+      await api.post('/team-slots/agent', payload);
+      setAgentForm({ name: '', instructions: '', department_id: '' });
+      setShowAgentModal(false);
+      loadSlots();
+    } catch (e: any) {
+      alert('Error al crear agente: ' + (e?.message ?? 'Error desconocido'));
+    }
+    setSavingAgent(false);
+  };
+
+  const openChat = (slot: Slot) => {
+    setChatSlot(slot);
+    setChatMsgs([]);
+    setChatConvId(null);
+    setChatInput('');
+  };
+
+  const sendChat = async () => {
+    if (!chatInput.trim() || !chatSlot || chatSending) return;
+    const msg = chatInput.trim();
+    setChatInput('');
+    setChatMsgs(prev => [...prev, { role: 'user', content: msg }]);
+    setChatSending(true);
+    try {
+      const res = await api.post<{ conversation_id: string; response: string; message?: string }>(
+        `/agents/${chatSlot.id}/conversations/chat`,
+        { message: msg, conversation_id: chatConvId ?? undefined }
+      );
+      if (res.conversation_id) setChatConvId(res.conversation_id);
+      const reply = res.response ?? res.message ?? '…';
+      setChatMsgs(prev => [...prev, { role: 'assistant', content: reply }]);
+      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+    } catch (e: any) {
+      setChatMsgs(prev => [...prev, { role: 'assistant', content: '⚠️ ' + (e?.message ?? 'Error al responder') }]);
+    }
+    setChatSending(false);
+  };
+
+  const handleDeleteAgent = async (id: string) => {
+    if (!window.confirm('¿Eliminar este agente IA permanentemente?')) return;
+    try {
+      await api.delete(`/team-slots/${id}`);
+      setSlots(prev => prev.filter(s => s.id !== id));
+    } catch (e: any) {
+      alert('Error al eliminar: ' + (e?.message ?? 'Error desconocido'));
+    }
+  };
 
   // ── Wizard helpers ────────────────────────────────────────────────────────
 
@@ -213,12 +291,24 @@ export default function TeamPage() {
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.03em' }}>Equipo</h1>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-3)' }}>{humans} personas · {agents} agentes IA</p>
         </div>
-        <button
-          onClick={() => setShowWizard(true)}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--fd-cyan)', color: 'white', border: 'none', borderRadius: 10, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Inter Tight', sans-serif" }}
-        >
-          <Plus size={14} /> Añadir persona
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {filter !== 'AI_AGENT' && (
+            <button
+              onClick={() => setShowWizard(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--fd-cyan)', color: 'white', border: 'none', borderRadius: 10, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Inter Tight', sans-serif" }}
+            >
+              <Plus size={14} /> Añadir persona
+            </button>
+          )}
+          {filter !== 'HUMAN' && (
+            <button
+              onClick={() => setShowAgentModal(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#7c3aed', color: 'white', border: 'none', borderRadius: 10, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Inter Tight', sans-serif" }}
+            >
+              <Sparkles size={14} /> Añadir agente IA
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Search + filters */}
@@ -332,30 +422,51 @@ export default function TeamPage() {
                         )}
                       </div>
                     </td>
-                    {slot.type === 'HUMAN' ? (
-                      <td style={{ padding: '12px 16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <button
-                            title={slot.desk_access === 'NONE' ? 'Habilitar acceso' : 'Deshabilitar acceso'}
-                            onClick={() => handleToggleAccess(slot)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5, borderRadius: 6, color: slot.desk_access === 'NONE' ? '#10b981' : 'var(--text-3)', transition: 'color 0.15s, background 0.15s' }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface-2)'; (e.currentTarget as HTMLButtonElement).style.color = slot.desk_access === 'NONE' ? '#10b981' : '#f97316'; }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'none'; (e.currentTarget as HTMLButtonElement).style.color = slot.desk_access === 'NONE' ? '#10b981' : 'var(--text-3)'; }}
-                          >
-                            {slot.desk_access === 'NONE' ? <CheckCircle size={14} /> : <Ban size={14} />}
-                          </button>
-                          <button
-                            title="Eliminar colaborador"
-                            onClick={() => handleDelete(slot.id)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5, borderRadius: 6, color: 'var(--text-3)', transition: 'color 0.15s, background 0.15s' }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.1)'; (e.currentTarget as HTMLButtonElement).style.color = '#ef4444'; }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'none'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-3)'; }}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    ) : <td />}
+                    <td style={{ padding: '12px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {slot.type === 'HUMAN' ? (
+                          <>
+                            <button
+                              title={slot.desk_access === 'NONE' ? 'Habilitar acceso' : 'Deshabilitar acceso'}
+                              onClick={() => handleToggleAccess(slot)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5, borderRadius: 6, color: slot.desk_access === 'NONE' ? '#10b981' : 'var(--text-3)', transition: 'color 0.15s, background 0.15s' }}
+                              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface-2)'; (e.currentTarget as HTMLButtonElement).style.color = slot.desk_access === 'NONE' ? '#10b981' : '#f97316'; }}
+                              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'none'; (e.currentTarget as HTMLButtonElement).style.color = slot.desk_access === 'NONE' ? '#10b981' : 'var(--text-3)'; }}
+                            >
+                              {slot.desk_access === 'NONE' ? <CheckCircle size={14} /> : <Ban size={14} />}
+                            </button>
+                            <button
+                              title="Eliminar colaborador"
+                              onClick={() => handleDelete(slot.id)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5, borderRadius: 6, color: 'var(--text-3)', transition: 'color 0.15s, background 0.15s' }}
+                              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.1)'; (e.currentTarget as HTMLButtonElement).style.color = '#ef4444'; }}
+                              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'none'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-3)'; }}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              title="Hablar con este agente"
+                              onClick={() => openChat(slot)}
+                              style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#7c3aed18', border: '1px solid #7c3aed40', borderRadius: 7, padding: '4px 10px', cursor: 'pointer', color: '#a78bfa', fontSize: 11, fontWeight: 600, fontFamily: "'Inter Tight', sans-serif" }}
+                            >
+                              <MessageSquare size={12} /> Chat
+                            </button>
+                            <button
+                              title="Eliminar agente"
+                              onClick={() => handleDeleteAgent(slot.id)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5, borderRadius: 6, color: 'var(--text-3)', transition: 'color 0.15s, background 0.15s' }}
+                              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.1)'; (e.currentTarget as HTMLButtonElement).style.color = '#ef4444'; }}
+                              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'none'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-3)'; }}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
@@ -369,6 +480,140 @@ export default function TeamPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* ══ AGENT MODAL ══ */}
+      {showAgentModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ background: 'var(--bg)', border: '1px solid #7c3aed40', borderRadius: 16, width: '100%', maxWidth: 480, padding: 28, position: 'relative' }}>
+            <button onClick={() => { setShowAgentModal(false); setAgentForm({ name: '', instructions: '', department_id: '' }); }} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)' }}>
+              <X size={18} />
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: '#7c3aed18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Sparkles size={18} style={{ color: '#a78bfa' }} />
+              </div>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.02em' }}>Nuevo agente IA</h2>
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-3)' }}>Powered by Claude</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 10, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5, fontFamily: "'JetBrains Mono', monospace" }}>Nombre del agente *</label>
+                <input
+                  autoFocus
+                  value={agentForm.name}
+                  onChange={e => setAgentForm(p => ({ ...p, name: e.target.value }))}
+                  placeholder="Ej: Asistente de Ventas"
+                  style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: '9px 12px', fontSize: 13, color: 'var(--text)', outline: 'none', boxSizing: 'border-box', fontFamily: "'Inter Tight', sans-serif" }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 10, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5, fontFamily: "'JetBrains Mono', monospace" }}>Instrucciones / rol</label>
+                <textarea
+                  value={agentForm.instructions}
+                  onChange={e => setAgentForm(p => ({ ...p, instructions: e.target.value }))}
+                  placeholder="Ej: Eres un asistente especializado en ventas. Ayudas al equipo a redactar propuestas, calcular precios y hacer seguimiento a prospectos."
+                  rows={5}
+                  style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: '9px 12px', fontSize: 13, color: 'var(--text)', outline: 'none', boxSizing: 'border-box', fontFamily: "'Inter Tight', sans-serif", resize: 'vertical', lineHeight: 1.55 }}
+                />
+                <p style={{ margin: '4px 0 0', fontSize: 11, color: 'var(--text-3)' }}>Deja vacío para usar un prompt genérico.</p>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 10, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5, fontFamily: "'JetBrains Mono', monospace" }}>Departamento (opcional)</label>
+                <select
+                  value={agentForm.department_id}
+                  onChange={e => setAgentForm(p => ({ ...p, department_id: e.target.value }))}
+                  style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: '9px 12px', fontSize: 13, color: 'var(--text)', outline: 'none', fontFamily: "'Inter Tight', sans-serif" }}
+                >
+                  <option value="">Sin departamento</option>
+                  {depts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                </select>
+              </div>
+            </div>
+            <button
+              onClick={handleCreateAgent}
+              disabled={savingAgent || !agentForm.name.trim()}
+              style={{ marginTop: 20, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px', background: agentForm.name.trim() ? '#7c3aed' : 'var(--surface)', border: 'none', borderRadius: 10, color: agentForm.name.trim() ? 'white' : 'var(--text-3)', fontSize: 13, fontWeight: 600, cursor: agentForm.name.trim() ? 'pointer' : 'not-allowed', fontFamily: "'Inter Tight', sans-serif", transition: 'all 0.15s' }}
+            >
+              {savingAgent ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Creando…</> : <><Sparkles size={14} /> Crear agente</>}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ══ CHAT PANEL ══ */}
+      {chatSlot && (
+        <>
+          <div onClick={() => setChatSlot(null)} style={{ position: 'fixed', inset: 0, zIndex: 998 }} />
+          <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 380, background: 'var(--bg)', border: '1px solid var(--line)', borderLeft: '1px solid #7c3aed40', zIndex: 999, display: 'flex', flexDirection: 'column', boxShadow: '-20px 0 60px rgba(0,0,0,0.4)' }}>
+            {/* Chat header */}
+            <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: '#7c3aed18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Bot size={16} style={{ color: '#a78bfa' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{chatSlot.name}</p>
+                <p style={{ margin: 0, fontSize: 11, color: '#a78bfa' }}>Agente IA · Claude</p>
+              </div>
+              <button onClick={() => setChatSlot(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', padding: 4 }}>
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Messages */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {chatMsgs.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                  <Sparkles size={24} style={{ color: '#7c3aed', marginBottom: 10 }} />
+                  <p style={{ fontSize: 13, color: 'var(--text-3)', margin: 0 }}>Empieza a chatear con {chatSlot.name}</p>
+                </div>
+              )}
+              {chatMsgs.map((m, i) => (
+                <div key={i} style={{ display: 'flex', flexDirection: m.role === 'user' ? 'row-reverse' : 'row', gap: 8, alignItems: 'flex-end' }}>
+                  {m.role === 'assistant' && (
+                    <div style={{ width: 24, height: 24, borderRadius: 6, background: '#7c3aed18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Bot size={12} style={{ color: '#a78bfa' }} />
+                    </div>
+                  )}
+                  <div style={{ maxWidth: '80%', padding: '9px 12px', borderRadius: m.role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px', background: m.role === 'user' ? 'var(--fd-cyan)' : 'var(--surface)', color: m.role === 'user' ? 'white' : 'var(--text)', fontSize: 13, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                    {m.content}
+                  </div>
+                </div>
+              ))}
+              {chatSending && (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                  <div style={{ width: 24, height: 24, borderRadius: 6, background: '#7c3aed18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Bot size={12} style={{ color: '#a78bfa' }} />
+                  </div>
+                  <div style={{ padding: '9px 12px', background: 'var(--surface)', borderRadius: '12px 12px 12px 4px' }}>
+                    <Loader2 size={13} style={{ color: '#a78bfa', animation: 'spin 1s linear infinite' }} />
+                  </div>
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+
+            {/* Input */}
+            <div style={{ padding: '12px 18px', borderTop: '1px solid var(--line)', display: 'flex', gap: 8, flexShrink: 0 }}>
+              <input
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }}
+                placeholder={`Escribe a ${chatSlot.name}…`}
+                style={{ flex: 1, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: '9px 12px', fontSize: 13, color: 'var(--text)', outline: 'none', fontFamily: "'Inter Tight', sans-serif" }}
+              />
+              <button
+                onClick={sendChat}
+                disabled={!chatInput.trim() || chatSending}
+                style={{ width: 38, height: 38, borderRadius: 8, background: chatInput.trim() ? '#7c3aed' : 'var(--surface)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: chatInput.trim() ? 'pointer' : 'default' }}
+              >
+                <Send size={15} style={{ color: chatInput.trim() ? 'white' : 'var(--text-3)' }} />
+              </button>
+            </div>
+          </div>
+        </>
       )}
 
       {/* ══ WIZARD MODAL ══ */}
