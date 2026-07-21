@@ -1,11 +1,12 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import {
   Users, Bot, Plus, Search, X, ChevronRight, ChevronLeft,
   Monitor, Smartphone, Crown, UserCog, User, Truck, CheckCircle2,
   Loader2, Copy, Check, Trash2, Ban, CheckCircle, Pencil,
-  MessageSquare, Send, Sparkles,
+  MessageSquare, Send, Sparkles, LayoutDashboard,
 } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -66,6 +67,7 @@ const WORKER_TYPE_LABEL: Record<string, string> = {
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function TeamPage() {
+  const router = useRouter();
   const [slots,   setSlots]   = useState<Slot[]>([]);
   const [depts,   setDepts]   = useState<Dept[]>([]);
   const [search,  setSearch]  = useState('');
@@ -453,6 +455,13 @@ export default function TeamPage() {
                               style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#7c3aed18', border: '1px solid #7c3aed40', borderRadius: 7, padding: '4px 10px', cursor: 'pointer', color: '#a78bfa', fontSize: 11, fontWeight: 600, fontFamily: "'Inter Tight', sans-serif" }}
                             >
                               <MessageSquare size={12} /> Chat
+                            </button>
+                            <button
+                              title="Panel de control"
+                              onClick={() => router.push(`/agents/${slot.id}/panel`)}
+                              style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#1d4ed818', border: '1px solid #1d4ed840', borderRadius: 7, padding: '4px 10px', cursor: 'pointer', color: '#60a5fa', fontSize: 11, fontWeight: 600, fontFamily: "'Inter Tight', sans-serif" }}
+                            >
+                              <LayoutDashboard size={12} /> Panel
                             </button>
                             <button
                               title="Eliminar agente"
