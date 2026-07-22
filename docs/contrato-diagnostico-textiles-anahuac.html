@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contrato Diagn&oacute;stico de Automatizaci&oacute;n &mdash; Textiles An&aacute;huac &middot; TAC-2026-DGN-001</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue-ink:#0A2D52;
+  --blue-deep:#0F4F8A;
+  --blue-main:#1A7FDB;
+  --blue-light:#4DBBF0;
+  --blue-pale:#EBF4FC;
+  --body-bg:#F7F9FC;
+  --white:#FFFFFF;
+  --border:#D1E0EF;
+  --ink:#1A202C;
+  --muted:#718096;
+  --green:#16A34A;
+  --line:#CBD5E0;
+  --red:#DC2626;
+}
+body{
+  font-family:'Sora',system-ui,sans-serif;
+  background:var(--body-bg);
+  color:var(--ink);
+  font-size:15px;
+  line-height:1.7;
+  -webkit-print-color-adjust:exact;
+  print-color-adjust:exact;
+}
+/* PAGE WRAP */
+.page-wrap{
+  max-width:860px;
+  width:100%;
+  margin:24px auto 48px;
+  background:var(--white);
+  border-radius:12px;
+  box-shadow:0 4px 32px rgba(10,45,82,.13);
+  overflow:hidden;
+}
+/* HEADER */
+.doc-header{
+  background:linear-gradient(135deg,var(--blue-ink) 0%,var(--blue-main) 100%);
+  padding:36px 48px 28px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:24px;
+}
+.logo-text{
+  font-family:'DM Serif Display',Georgia,serif;
+  color:#FFFFFF;
+  font-size:26px;
+  letter-spacing:.5px;
+  line-height:1.2;
+}
+.logo-sub{
+  font-family:'Sora',system-ui,sans-serif;
+  color:rgba(255,255,255,.65);
+  font-size:11.5px;
+  letter-spacing:1.6px;
+  text-transform:uppercase;
+  margin-top:4px;
+}
+.header-right{
+  text-align:right;
+}
+.doc-type{
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:1.4px;
+  text-transform:uppercase;
+  color:var(--blue-light);
+  margin-bottom:6px;
+}
+.folio-badge{
+  display:inline-block;
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.25);
+  border-radius:6px;
+  padding:6px 14px;
+  font-size:13px;
+  font-weight:600;
+  color:#FFFFFF;
+  letter-spacing:.5px;
+}
+/* PRINT BUTTON */
+.btn-print{
+  position:fixed;
+  top:20px;
+  right:20px;
+  z-index:999;
+  background:var(--blue-main);
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  padding:10px 18px;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  box-shadow:0 4px 14px rgba(26,127,219,.4);
+  transition:background .2s;
+}
+.btn-print:hover{background:var(--blue-deep)}
+/* BODY CONTENT */
+.doc-body{
+  padding:44px 48px 48px;
+}
+/* PARTIES GRID */
+.parties-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:18px;
+  margin-bottom:36px;
+}
+.party-card{
+  border:1.5px solid var(--border);
+  border-radius:10px;
+  overflow:hidden;
+}
+.party-card-head{
+  padding:10px 18px;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:1.3px;
+  text-transform:uppercase;
+  color:#fff;
+}
+.party-card-head.prestador{background:var(--blue-ink)}
+.party-card-head.cliente{background:var(--blue-main)}
+.party-card-body{padding:18px 18px 16px}
+.party-field{margin-bottom:10px}
+.party-label{
+  display:block;
+  font-size:10.5px;
+  font-weight:600;
+  letter-spacing:.8px;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:3px;
+}
+.party-value{
+  font-size:14px;
+  font-weight:500;
+  color:var(--ink);
+}
+.party-input{
+  width:100%;
+  border:none;
+  border-bottom:1.5px solid var(--border);
+  padding:4px 0;
+  font-family:'Sora',system-ui,sans-serif;
+  font-size:14px;
+  font-weight:500;
+  color:var(--ink);
+  background:transparent;
+  outline:none;
+  transition:border-color .2s;
+}
+.party-input:focus{border-bottom-color:var(--blue-main)}
+.party-input::placeholder{color:var(--muted);font-weight:400}
+/* INTRO */
+.doc-intro{
+  background:var(--blue-pale);
+  border-left:4px solid var(--blue-main);
+  border-radius:0 8px 8px 0;
+  padding:16px 20px;
+  font-size:14px;
+  color:var(--ink);
+  margin-bottom:32px;
+  line-height:1.65;
+}
+/* SECTION DIVIDER */
+.section-divider{
+  border:none;
+  border-top:1px solid var(--line);
+  margin:28px 0;
+}
+/* CLAUSE */
+.clause{margin-bottom:4px}
+.clause-title{
+  font-family:'DM Serif Display',Georgia,serif;
+  font-size:16.5px;
+  color:var(--blue-main);
+  margin-bottom:12px;
+  letter-spacing:.2px;
+}
+.clause p{margin-bottom:10px;font-size:14.5px;color:var(--ink)}
+.clause p:last-child{margin-bottom:0}
+.clause ul{
+  margin:6px 0 10px 24px;
+  font-size:14.5px;
+  color:var(--ink);
+}
+.clause ul li{margin-bottom:5px}
+/* HIGHLIGHT BOX */
+.hl-box{
+  background:var(--blue-pale);
+  border-radius:8px;
+  padding:14px 18px;
+  font-size:14px;
+  color:var(--blue-ink);
+  border:1px solid var(--border);
+  margin-top:8px;
+}
+/* PAYMENT TABLE */
+.pay-table-wrap{margin:16px 0 10px;overflow-x:auto}
+.pay-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:14px;
+}
+.pay-table th{
+  background:var(--blue-ink);
+  color:#fff;
+  padding:10px 14px;
+  text-align:left;
+  font-weight:600;
+  font-size:12px;
+  letter-spacing:.6px;
+  text-transform:uppercase;
+}
+.pay-table th:last-child,.pay-table td:last-child{text-align:left}
+.pay-table td{
+  padding:11px 14px;
+  border-bottom:1px solid var(--border);
+  color:var(--ink);
+  vertical-align:top;
+}
+.pay-table tr:last-child td{
+  background:var(--blue-pale);
+  font-weight:700;
+  border-bottom:none;
+  color:var(--blue-ink);
+}
+.pay-table tr:nth-child(even) td{background:#f8fbff}
+.pay-table tr:last-child td{background:var(--blue-pale)}
+/* DIGITAL SIGNATURE SECTION */
+.sign-section{
+  margin-top:40px;
+  border:1.5px solid var(--border);
+  border-radius:12px;
+  overflow:hidden;
+}
+.sign-hdr{
+  background:var(--blue-ink);
+  color:#fff;
+  padding:14px 28px;
+  font-size:14px;
+  font-weight:700;
+  letter-spacing:.4px;
+}
+.sign-sub{
+  background:var(--blue-pale);
+  padding:12px 28px;
+  font-size:13px;
+  color:var(--muted);
+  border-bottom:1px solid var(--border);
+}
+.sign-inner{padding:24px 28px 28px}
+.nda-block{
+  background:#F0F7FF;
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:14px 18px;
+  margin-bottom:20px;
+}
+.nda-check{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  font-size:13.5px;
+  color:var(--ink);
+  cursor:pointer;
+  line-height:1.55;
+}
+.nda-check input[type="checkbox"]{
+  margin-top:3px;
+  width:16px;
+  height:16px;
+  flex-shrink:0;
+  accent-color:var(--blue-main);
+  cursor:pointer;
+}
+.btn-sign{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  background:var(--blue-main);
+  color:#fff;
+  border:none;
+  border-radius:9px;
+  padding:13px 28px;
+  font-family:'Sora',system-ui,sans-serif;
+  font-size:15px;
+  font-weight:700;
+  cursor:pointer;
+  transition:background .2s,box-shadow .2s;
+  box-shadow:0 4px 14px rgba(26,127,219,.35);
+  letter-spacing:.2px;
+}
+.btn-sign:hover{background:var(--blue-deep);box-shadow:0 6px 18px rgba(26,127,219,.45)}
+.btn-sign:disabled{opacity:.6;cursor:not-allowed}
+/* MESSAGES */
+.msg-err{
+  display:none;
+  margin-top:14px;
+  padding:12px 16px;
+  background:#FEF2F2;
+  border:1px solid #FECACA;
+  border-radius:8px;
+  color:var(--red);
+  font-size:13.5px;
+}
+.msg-ok{
+  display:none;
+  margin-top:16px;
+  padding:18px 20px;
+  background:#F0FDF4;
+  border:1px solid #BBF7D0;
+  border-radius:10px;
+  text-align:center;
+}
+.ok-icon{font-size:28px;margin-bottom:6px}
+.ok-title{font-size:16px;font-weight:700;color:#15803D;margin-bottom:4px}
+.ok-text{font-size:13.5px;color:#166534}
+/* SIGNATURE DISPLAY BLOCK */
+.sig-display{
+  display:none;
+  padding:24px 28px 28px;
+  border-top:1px solid var(--border);
+}
+.sig-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+  margin-bottom:16px;
+}
+.sig-box{
+  border:1.5px solid var(--border);
+  border-radius:10px;
+  padding:18px 20px;
+  background:var(--white);
+}
+.sig-box-title{
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--blue-main);
+  margin-bottom:12px;
+}
+.sig-line{
+  border-top:2px solid var(--blue-light);
+  margin-bottom:14px;
+}
+.sig-f{
+  display:flex;
+  flex-direction:column;
+  margin-bottom:8px;
+}
+.sig-f .lbl{
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.8px;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.sig-f .v{
+  font-size:14px;
+  font-weight:500;
+  color:var(--ink);
+}
+.sig-place{
+  font-size:13px;
+  color:var(--muted);
+  text-align:center;
+  margin-top:8px;
+}
+/* FOOTER */
+.doc-footer{
+  background:var(--blue-ink);
+  padding:14px 48px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:11px;
+  color:rgba(255,255,255,.6);
+}
+/* PRINT STYLES */
+@media print{
+  .btn-print{display:none!important}
+  .sign-section{display:none!important}
+  body{background:#fff!important;font-size:13px}
+  .page-wrap{max-width:100%;margin:0;border-radius:0;box-shadow:none}
+  .doc-body{padding:28px 36px 36px}
+  .doc-footer{padding:10px 36px}
+  .print-sig-block{display:block!important}
+  .parties-grid{break-inside:avoid}
+  .clause{break-inside:avoid}
+}
+/* PRINT SIG BLOCK (hidden on screen) */
+.print-sig-block{
+  display:none;
+  margin-top:40px;
+  border-top:2px solid var(--line);
+  padding-top:24px;
+}
+.print-sig-title{
+  font-size:13px;
+  color:var(--muted);
+  margin-bottom:28px;
+  text-align:center;
+}
+.print-sig-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:40px;
+  margin-bottom:20px;
+}
+.print-sig-party{text-align:center}
+.print-sig-line{
+  border-top:1.5px solid var(--ink);
+  margin-bottom:10px;
+  margin-top:48px;
+}
+.print-sig-lbl{
+  font-size:12px;
+  color:var(--ink);
+  margin-bottom:3px;
+}
+.print-date{
+  font-size:12px;
+  color:var(--muted);
+  text-align:center;
+  margin-top:12px;
+}
+/* RESPONSIVE */
+@media(max-width:640px){
+  .doc-header{flex-direction:column;align-items:flex-start;padding:28px 24px 22px}
+  .header-right{text-align:left}
+  .doc-body{padding:28px 20px 32px}
+  .parties-grid{grid-template-columns:1fr}
+  .sig-grid{grid-template-columns:1fr}
+  .print-sig-grid{grid-template-columns:1fr}
+  .doc-footer{flex-direction:column;gap:4px;text-align:center;padding:14px 20px}
+  .btn-print{top:12px;right:12px;padding:8px 14px;font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<!-- PRINT BUTTON -->
+<button class="btn-print" onclick="window.print()">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+  Imprimir / PDF
+</button>
+
+<div class="page-wrap">
+
+  <!-- HEADER -->
+  <div class="doc-header">
+    <div>
+      <div class="logo-text">MentorIA Systems</div>
+      <div class="logo-sub">CORDVAL SA DE CV &middot; RFC COR2008248E7</div>
+    </div>
+    <div class="header-right">
+      <div class="doc-type">Contrato de Prestaci&oacute;n de Servicios</div>
+      <div class="folio-badge">Folio TAC-2026-DGN-001</div>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="doc-body">
+
+    <!-- DECLARACIONES DE LAS PARTES -->
+    <div class="parties-grid">
+
+      <!-- PRESTADOR -->
+      <div class="party-card">
+        <div class="party-card-head prestador">El Prestador</div>
+        <div class="party-card-body">
+          <div class="party-field">
+            <span class="party-label">Raz&oacute;n Social</span>
+            <span class="party-value">CORDVAL SA DE CV</span>
+          </div>
+          <div class="party-field">
+            <span class="party-label">Marca Comercial</span>
+            <span class="party-value">MentorIA Systems</span>
+          </div>
+          <div class="party-field">
+            <span class="party-label">RFC</span>
+            <span class="party-value">COR2008248E7</span>
+          </div>
+          <div class="party-field">
+            <span class="party-label">Domicilio</span>
+            <span class="party-value">Calle 8 Poniente Torre 5, 4701-1, Col. Valle del Rey, C.P. 72140, Heroica Puebla de Zaragoza, Puebla, M&eacute;xico</span>
+          </div>
+          <div class="party-field">
+            <span class="party-label">Correo</span>
+            <span class="party-value">manolo@mentoriasystems.com</span>
+          </div>
+          <div class="party-field">
+            <span class="party-label">Firmante</span>
+            <span class="party-value">Manuel G&oacute;mez Haro S&aacute;nchez &middot; CEO</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CLIENTE -->
+      <div class="party-card">
+        <div class="party-card-head cliente">El Cliente</div>
+        <div class="party-card-body">
+          <div class="party-field">
+            <span class="party-label">Raz&oacute;n Social</span>
+            <input type="text" class="party-input" id="cli-empresa" placeholder="Textiles An&aacute;huac">
+          </div>
+          <div class="party-field">
+            <span class="party-label">RFC</span>
+            <input type="text" class="party-input" id="cli-rfc" placeholder="RFC de la empresa">
+          </div>
+          <div class="party-field">
+            <span class="party-label">Representante Legal</span>
+            <input type="text" class="party-input" id="cli-nombre" placeholder="Nombre completo">
+          </div>
+          <div class="party-field">
+            <span class="party-label">Cargo</span>
+            <input type="text" class="party-input" id="cli-cargo" placeholder="Director General, etc.">
+          </div>
+          <div class="party-field">
+            <span class="party-label">Correo electr&oacute;nico</span>
+            <input type="email" class="party-input" id="cli-email" placeholder="correo@empresa.com">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INTRO -->
+    <div class="doc-intro">
+      <strong>Contrato de Prestaci&oacute;n de Servicios</strong> celebrado en la ciudad de Heroica Puebla de Zaragoza, Puebla, M&eacute;xico, en el mes de <strong>julio de 2026</strong>, entre <strong>CORDVAL SA DE CV</strong>, en adelante <em>&ldquo;El Prestador&rdquo;</em>, y el <strong>Cliente</strong> indicado en la tarjeta correspondiente, al que en adelante se denominar&aacute; <em>&ldquo;El Cliente&rdquo;</em>, ambos en pleno ejercicio de sus derechos y obligaciones, al tenor de las siguientes cl&aacute;usulas:
+    </div>
+
+    <!-- DECLARACIONES -->
+    <div class="clause">
+      <div class="clause-title">Declaraciones de las Partes</div>
+      <p><strong>I. El Prestador</strong> declara ser <strong>CORDVAL SA DE CV</strong>, con RFC <strong>COR2008248E7</strong>, sociedad legalmente constituida conforme a las leyes de los Estados Unidos Mexicanos, con capacidad legal plena para obligarse y celebrar el presente contrato, y con amplia experiencia y expertise en el dise&ntilde;o, desarrollo e implementaci&oacute;n de soluciones de inteligencia artificial y automatizaci&oacute;n de procesos empresariales.</p>
+      <p><strong>II. El Cliente</strong> declara ser una persona moral legalmente constituida conforme a las leyes mexicanas, con capacidad para contratar y obligarse, cuyos datos generales han sido proporcionados en la presente contrataci&oacute;n, y que reconoce tener autoridad legal suficiente para suscribir el presente instrumento.</p>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- CL&Aacute;USULA 1 -->
+    <div class="clause">
+      <div class="clause-title">Primera &middot; Objeto del Contrato</div>
+      <p>El Prestador se obliga a prestar al Cliente el servicio de <strong>Diagn&oacute;stico de Automatizaci&oacute;n con IA</strong> (en adelante, el &ldquo;Servicio&rdquo; o el &ldquo;Diagn&oacute;stico&rdquo;), que comprende:</p>
+      <ul>
+        <li>An&aacute;lisis integral de los procesos comerciales, operativos y administrativos del Cliente.</li>
+        <li>Mapeo de los procesos actuales tal como operan hoy (AS-IS).</li>
+        <li>Identificaci&oacute;n de oportunidades de automatizaci&oacute;n con inteligencia artificial priorizadas por impacto.</li>
+        <li>Dise&ntilde;o de procesos optimizados (TO-BE) con propuestas de mejora concretas.</li>
+        <li>Plan de implementaci&oacute;n priorizado por impacto y viabilidad.</li>
+        <li>Estimaci&oacute;n de retorno de inversi&oacute;n (ROI) proyectado para cada iniciativa identificada.</li>
+        <li>Reporte ejecutivo con conclusiones, hallazgos y recomendaciones estrat&eacute;gicas.</li>
+      </ul>
+      <div class="hl-box">
+        <strong>Duraci&oacute;n estimada:</strong> 4 a 5 semanas a partir de la recepci&oacute;n del anticipo correspondiente.
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- CL&Aacute;USULA 2 -->
+    <div class="clause">
+      <div class="clause-title">Segunda &middot; Precio y Forma de Pago</div>
+      <p>El precio total por el Servicio de Diagn&oacute;stico es de <strong>$50,000.00 MXN (cincuenta mil pesos 00/100 M.N.) m&aacute;s IVA</strong>, de acuerdo con el siguiente esquema de pagos:</p>
+      <div class="pay-table-wrap">
+        <table class="pay-table">
+          <thead>
+            <tr>
+              <th>Concepto</th>
+              <th>Monto (MXN + IVA)</th>
+              <th>Momento de Pago</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>50&nbsp;% &mdash; Anticipo</td>
+              <td>$25,000.00 + IVA</td>
+              <td>Al momento de la firma del presente contrato</td>
+            </tr>
+            <tr>
+              <td>50&nbsp;% &mdash; Saldo</td>
+              <td>$25,000.00 + IVA</td>
+              <td>A la entrega del Reporte Final de Diagn&oacute;stico</td>
+            </tr>
+            <tr>
+              <td><strong>Total Diagn&oacute;stico</strong></td>
+              <td><strong>$50,000.00 + IVA</strong></td>
+              <td>&mdash;</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Forma de pago: <strong>SPEI o efectivo</strong>. El Prestador emitir&aacute; el CFDI correspondiente a cada pago en un plazo m&aacute;ximo de <strong>3 d&iacute;as h&aacute;biles</strong> tras su recepci&oacute;n y confirmaci&oacute;n.</p>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- CL&Aacute;USULA 3 -->
+    <div class="clause">
+      <div class="clause-title">Tercera &middot; Vigencia y Terminaci&oacute;n</div>
+      <p>El presente contrato tendr&aacute; una vigencia definida. Entrar&aacute; en vigor el d&iacute;a <strong>18 de julio de 2026</strong> y concluir&aacute; con la entrega formal del Reporte Final de Diagn&oacute;stico al Cliente y la liquidaci&oacute;n del saldo correspondiente.</p>
+      <p>Una vez cubiertos ambos supuestos (entrega del reporte y pago del saldo), el contrato se dar&aacute; por cumplido en todos sus t&eacute;rminos sin necesidad de notificaci&oacute;n adicional.</p>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- CL&Aacute;USULA 4 -->
+    <div class="clause">
+      <div class="clause-title">Cuarta &middot; Propiedad Intelectual</div>
+      <p>Todos los entregables del Diagn&oacute;stico &mdash;incluyendo los mapas de procesos AS-IS, los dise&ntilde;os TO-BE, el Roadmap de implementaci&oacute;n priorizado y el Reporte Ejecutivo&mdash; ser&aacute;n <strong>propiedad exclusiva del Cliente</strong> a partir de su entrega y del pago total del servicio.</p>
+      <p>MentorIA Systems no retendr&aacute; ning&uacute;n derecho sobre el contenido generado espec&iacute;ficamente para el Cliente en el marco de este contrato. El Prestador conserva &uacute;nicamente la titularidad de sus <strong>metodolog&iacute;as propias, herramientas de base y conocimiento t&eacute;cnico gen&eacute;rico preexistente</strong> que hayan sido aplicados como parte del proceso de diagn&oacute;stico.</p>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- CL&Aacute;USULA 5 -->
+    <div class="clause">
+      <div class="clause-title">Quinta &middot; Confidencialidad</div>
+      <p>Las Partes se obligan a guardar estricta confidencialidad sobre toda la informaci&oacute;n intercambiada durante la vigencia de este contrato. La obligaci&oacute;n de confidencialidad aplica, de manera enunciativa mas no limitativa, a:</p>
+      <ul>
+        <li>Datos de clientes y prospectos del Cliente.</li>
+        <li>Procesos internos, flujos operativos y procedimientos del Cliente.</li>
+        <li>Estrategias comerciales, planes de negocio e informaci&oacute;n financiera.</li>
+        <li>Cualquier informaci&oacute;n identificada como confidencial o sensible por cualquiera de las Partes.</li>
+      </ul>
+      <p>Esta obligaci&oacute;n permanecer&aacute; vigente durante la duraci&oacute;n del contrato y por <strong>2 a&ntilde;os</strong> posteriores a su terminaci&oacute;n. Se except&uacute;a la informaci&oacute;n que sea de dominio p&uacute;blico o que deba divulgarse por mandato de autoridad competente.</p>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- CL&Aacute;USULA 6 -->
+    <div class="clause">
+      <div class="clause-title">Sexta &middot; Obligaciones de las Partes</div>
+      <p><strong>El Prestador se obliga a:</strong></p>
+      <ul>
+        <li>Prestar el Servicio de Diagn&oacute;stico con calidad profesional y dentro de los plazos acordados.</li>
+        <li>Asignar un Project Manager dedicado como punto de contacto principal durante todo el proceso.</li>
+        <li>Entregar los documentos y entregables en los formatos acordados (PDF, presentaciones ejecutivas y hojas de procesos).</li>
+        <li>Mantener la confidencialidad de toda la informaci&oacute;n del Cliente en los t&eacute;rminos de la Cl&aacute;usula Quinta.</li>
+      </ul>
+      <p><strong>El Cliente se obliga a:</strong></p>
+      <ul>
+        <li>Realizar los pagos en las fechas y montos acordados en la Cl&aacute;usula Segunda.</li>
+        <li>Proporcionar en tiempo y forma la informaci&oacute;n, accesos y documentaci&oacute;n necesarios para el mapeo de procesos.</li>
+        <li>Garantizar la participaci&oacute;n activa del equipo interno en las entrevistas y sesiones de trabajo programadas.</li>
+        <li>Designar un punto de contacto interno (interlocutor) para coordinar el proceso de diagn&oacute;stico.</li>
+      </ul>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- CL&Aacute;USULA 7 -->
+    <div class="clause">
+      <div class="clause-title">S&eacute;ptima &middot; Limitaci&oacute;n de Responsabilidad</div>
+      <p>El Prestador no ser&aacute; responsable por resultados comerciales espec&iacute;ficos ni por las consecuencias derivadas de implementaciones que el Cliente decida realizar con base en los hallazgos y recomendaciones del Diagn&oacute;stico. El Reporte Final tiene car&aacute;cter de instrumento consultivo y de planeaci&oacute;n.</p>
+      <p>La responsabilidad m&aacute;xima del Prestador por cualquier causa derivada del presente contrato no exceder&aacute; el <strong>monto total pagado por el Cliente por el Servicio A ($50,000.00 MXN)</strong>.</p>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- CL&Aacute;USULA 8 -->
+    <div class="clause">
+      <div class="clause-title">Octava &middot; Caso Fortuito y Fuerza Mayor</div>
+      <p>Ninguna de las Partes ser&aacute; responsable por el incumplimiento de sus obligaciones cuando &eacute;ste sea causado por eventos fuera de su control razonable, incluyendo desastres naturales, actos de autoridad gubernamental, pandemias o fallas generalizadas de infraestructura de telecomunicaciones.</p>
+      <p>La Parte afectada deber&aacute; notificar a la otra en un plazo m&aacute;ximo de <strong>5 d&iacute;as h&aacute;biles</strong> desde que ocurra el evento. Si la situaci&oacute;n de fuerza mayor excede los <strong>30 d&iacute;as naturales</strong>, cualquiera de las Partes podr&aacute; dar por terminado el presente contrato sin responsabilidad ni penalizaci&oacute;n.</p>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- CL&Aacute;USULA 9 -->
+    <div class="clause">
+      <div class="clause-title">Novena &middot; Modificaciones</div>
+      <p>Cualquier modificaci&oacute;n, adici&oacute;n o ampliaci&oacute;n al presente contrato deber&aacute; constar por escrito en un adendum debidamente firmado por representantes autorizados de ambas Partes. Ning&uacute;n acuerdo verbal tendr&aacute; validez para modificar el contenido del presente instrumento.</p>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- CL&Aacute;USULA 10 -->
+    <div class="clause">
+      <div class="clause-title">D&eacute;cima &middot; Jurisdicci&oacute;n, Legislaci&oacute;n Aplicable y Datos Personales</div>
+      <p>El presente contrato se regir&aacute; e interpretar&aacute; conforme a las leyes de los <strong>Estados Unidos Mexicanos</strong>. Las Partes se someten expresamente a la jurisdicci&oacute;n de los Tribunales competentes de <strong>Puebla, Puebla, M&eacute;xico</strong>, renunciando a cualquier otro fuero que por raz&oacute;n de su domicilio presente o futuro pudiera corresponderles.</p>
+      <p><strong>Protecci&oacute;n de Datos Personales (LFPDPPP).</strong> En cumplimiento de la Ley Federal de Protecci&oacute;n de Datos Personales en Posesi&oacute;n de los Particulares, se informa lo siguiente:</p>
+      <ul>
+        <li><strong>Responsable:</strong> CORDVAL SA DE CV &middot; manolo@mentoriasystems.com &middot; Calle 8 Poniente Torre 5, 4701-1, Col. Valle del Rey, C.P. 72140, Puebla, Pue.</li>
+        <li><strong>Datos tratados:</strong> Nombre, cargo, correo electr&oacute;nico, tel&eacute;fono e informaci&oacute;n empresarial del firmante y su organizaci&oacute;n.</li>
+        <li><strong>Finalidades:</strong> Prestaci&oacute;n del Servicio, facturaci&oacute;n, cobranza y cumplimiento de obligaciones fiscales.</li>
+        <li><strong>Derechos ARCO</strong> (Acceso, Rectificaci&oacute;n, Cancelaci&oacute;n y Oposici&oacute;n): el titular podr&aacute; ejercerlos enviando solicitud a manolo@mentoriasystems.com. Respuesta en m&aacute;ximo <strong>20 d&iacute;as h&aacute;biles</strong>.</li>
+      </ul>
+      <div class="hl-box" style="margin-top:12px">Al firmar el presente contrato, el Cliente manifiesta haber le&iacute;do y aceptado el tratamiento de datos descrito en esta cl&aacute;usula, as&iacute; como la totalidad de los t&eacute;rminos y condiciones aqu&iacute; establecidos.</div>
+    </div>
+
+    <!-- PHYSICAL SIGNATURE BLOCK (print only) -->
+    <div class="print-sig-block">
+      <p class="print-sig-title">En testimonio de lo anterior, las Partes firman de conformidad el presente contrato.</p>
+      <div class="print-sig-grid">
+        <div class="print-sig-party">
+          <div class="print-sig-line"></div>
+          <p class="print-sig-lbl"><strong>Por el Prestador</strong></p>
+          <p class="print-sig-lbl">CORDVAL SA DE CV &mdash; MentorIA Systems</p>
+          <p class="print-sig-lbl">RFC: COR2008248E7</p>
+          <p class="print-sig-lbl">Manuel G&oacute;mez Haro S&aacute;nchez</p>
+          <p class="print-sig-lbl">CEO</p>
+        </div>
+        <div class="print-sig-party">
+          <div class="print-sig-line"></div>
+          <p class="print-sig-lbl"><strong>Por el Cliente</strong></p>
+          <p class="print-sig-lbl" id="print-empresa">Textiles An&aacute;huac</p>
+          <p class="print-sig-lbl">Nombre: ____________________________</p>
+          <p class="print-sig-lbl">Cargo: _____________________________</p>
+        </div>
+      </div>
+      <p class="print-date">Lugar y fecha: <span id="firma-lugar-fecha"></span></p>
+    </div>
+
+    <!-- DIGITAL SIGN SECTION -->
+    <div class="sign-section">
+      <div class="sign-hdr">Confirmar y Firmar Digitalmente</div>
+      <div class="sign-sub">
+        Complete sus datos en la tarjeta <strong>&ldquo;El Cliente&rdquo;</strong> al inicio del documento,<br>
+        luego acepte los t&eacute;rminos y firme aqu&iacute; abajo.
+      </div>
+
+      <div class="sign-inner" id="sign-inner">
+        <div class="nda-block">
+          <label class="nda-check">
+            <input type="checkbox" id="f-acepto">
+            <span>He le&iacute;do &iacute;ntegramente el presente contrato, comprendo su contenido y alcance legal, y acepto todos los t&eacute;rminos y condiciones aqu&iacute; establecidos, incluyendo las cl&aacute;usulas de confidencialidad, propiedad intelectual y protecci&oacute;n de datos personales.</span>
+          </label>
+        </div>
+        <button class="btn-sign" id="btn-firmar" onclick="firmarContrato()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22h6a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v3"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M4 12a1 1 0 0 0-2 0v4a5 5 0 0 0 5 5h4"/><path d="m3 15 2 2 4-4"/></svg>
+          Firmar Contrato Digitalmente
+        </button>
+        <div class="msg-err" id="msg-err"></div>
+        <div class="msg-ok" id="msg-ok">
+          <div class="ok-icon">&#9989;</div>
+          <div class="ok-title">Contrato firmado correctamente</div>
+          <div class="ok-text" id="msg-ok-text"></div>
+        </div>
+      </div>
+
+      <div class="sig-display" id="sig-display">
+        <div class="sig-grid">
+          <div class="sig-box">
+            <div class="sig-box-title">Por el Prestador</div>
+            <div class="sig-line"></div>
+            <div class="sig-f"><span class="lbl">Raz&oacute;n Social</span><span class="v">CORDVAL SA DE CV</span></div>
+            <div class="sig-f"><span class="lbl">Marca comercial</span><span class="v">MentorIA Systems</span></div>
+            <div class="sig-f"><span class="lbl">RFC</span><span class="v">COR2008248E7</span></div>
+            <div class="sig-f"><span class="lbl">Correo</span><span class="v">manolo@mentoriasystems.com</span></div>
+          </div>
+          <div class="sig-box">
+            <div class="sig-box-title">Por el Cliente</div>
+            <div class="sig-line"></div>
+            <div class="sig-f"><span class="lbl">Nombre</span><span class="v" id="sd-nombre"></span></div>
+            <div class="sig-f"><span class="lbl">Cargo</span><span class="v" id="sd-cargo"></span></div>
+            <div class="sig-f"><span class="lbl">Raz&oacute;n Social</span><span class="v" id="sd-empresa"></span></div>
+            <div class="sig-f"><span class="lbl">RFC</span><span class="v" id="sd-rfc"></span></div>
+            <div class="sig-f"><span class="lbl">Correo</span><span class="v" id="sd-email"></span></div>
+          </div>
+        </div>
+        <div class="sig-place" id="sig-place"></div>
+      </div>
+    </div>
+
+  </div><!-- /doc-body -->
+
+  <!-- FOOTER -->
+  <div class="doc-footer">
+    <span>CORDVAL SA DE CV &middot; MentorIA Systems &middot; RFC COR2008248E7</span>
+    <span>Contrato TAC-2026-DGN-001 &middot; Confidencial</span>
+  </div>
+
+</div><!-- /page-wrap -->
+
+<script>
+var FOLIO         = 'TAC-2026-DGN-001';
+var TITULO        = 'Contrato Diagnostico de Automatizacion con IA - Textiles Anahuac';
+var N8N_URL       = 'https://prueba-digisaurios-n8n.4jvoco.easypanel.host/webhook/propuesta-firmada';
+var WEB3FORMS_KEY = '32207b59-7222-46ab-8df2-8038a9f2b8d5';
+var SHEETS_URL    = 'https://script.google.com/macros/s/AKfycbyQHdhimVaUdVqQ2_QWrXNL9IoPRXiWbaK1XCF6UmCP-6VNt0HLJ2mtisRM73_4Ya99vQ/exec';
+var REMITENTE     = 'manolo@mentoriasystems.com';
+var CONTRATO_URL  = 'https://htmlpreview.github.io/?https://github.com/ManoloGH/flowdesk-desk/blob/main/docs/contrato-diagnostico-textiles-anahuac.html';
+
+async function firmarContrato() {
+  var nombre  = (document.getElementById('cli-nombre').value  || '').trim();
+  var cargo   = (document.getElementById('cli-cargo').value   || '').trim();
+  var empresa = (document.getElementById('cli-empresa').value || '').trim();
+  var rfc     = (document.getElementById('cli-rfc').value     || '').trim();
+  var email   = (document.getElementById('cli-email').value   || '').trim();
+  var acepto  = document.getElementById('f-acepto').checked;
+  var errEl   = document.getElementById('msg-err');
+
+  errEl.style.display = 'none';
+
+  if (!nombre || !cargo || !empresa || !rfc || !email) {
+    errEl.textContent = 'Faltan datos. Complete todos los campos en la sección "El Cliente" al inicio del documento.';
+    errEl.style.display = 'block';
+    document.querySelector('.party-card-head.cliente').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errEl.textContent = 'El correo electrónico no es válido.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!acepto) {
+    errEl.textContent = 'Debe aceptar los términos del contrato para proceder.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  var btn = document.getElementById('btn-firmar');
+  btn.disabled = true;
+  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Enviando...';
+
+  // Bloquear inputs del cliente
+  ['cli-nombre','cli-cargo','cli-empresa','cli-rfc','cli-email'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.readOnly = true;
+  });
+
+  var ahora  = new Date();
+  var ts     = ahora.toISOString();
+  var fecha  = ahora.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+  var hora   = ahora.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+
+  try {
+    // 1. Webhook n8n
+    var payload = {
+      documento: TITULO,
+      tipo: 'contrato',
+      folio: FOLIO,
+      nombre: nombre,
+      cargo: cargo,
+      empresa: empresa,
+      email: email,
+      rfc: rfc,
+      contrato_aceptado: true,
+      timestamp: ts,
+      remitente: REMITENTE,
+      url: CONTRATO_URL
+    };
+    await fetch(N8N_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(function() {});
+
+    // 2. Web3Forms
+    var fd = new FormData();
+    fd.append('access_key', WEB3FORMS_KEY);
+    fd.append('subject', 'Contrato firmado: ' + empresa + ' - ' + FOLIO);
+    fd.append('from_name', 'MentorIA Systems');
+    fd.append('replyto', email);
+    fd.append('cc', email);
+    fd.append('Documento', TITULO);
+    fd.append('Folio', FOLIO);
+    fd.append('Firmante', nombre);
+    fd.append('Cargo', cargo);
+    fd.append('Empresa', empresa);
+    fd.append('RFC Cliente', rfc);
+    fd.append('Email Cliente', email);
+    fd.append('Fecha de firma', fecha + ' ' + hora);
+    fd.append('Link contrato', CONTRATO_URL);
+    await fetch('https://api.web3forms.com/submit', { method: 'POST', body: fd }).catch(function() {});
+
+    // 3. Google Sheets
+    var params = new URLSearchParams({
+      folio: FOLIO,
+      documento: TITULO,
+      nombre: nombre,
+      cargo: cargo,
+      empresa: empresa,
+      email: email,
+      fecha: fecha,
+      url: CONTRATO_URL
+    });
+    await fetch(SHEETS_URL + '?' + params).catch(function() {});
+
+    // Mostrar bloque de confirmación
+    document.getElementById('sign-inner').style.display = 'none';
+
+    document.getElementById('sd-nombre').textContent  = nombre;
+    document.getElementById('sd-cargo').textContent   = cargo;
+    document.getElementById('sd-empresa').textContent = empresa;
+    document.getElementById('sd-rfc').textContent     = rfc;
+    document.getElementById('sd-email').textContent   = email;
+    document.getElementById('sig-place').innerHTML =
+      '<strong>Lugar:</strong> Heroica Puebla de Zaragoza, Puebla, México &middot; <strong>Fecha:</strong> ' + fecha + ' ' + hora;
+    document.getElementById('sig-display').style.display = 'block';
+
+    document.getElementById('msg-ok-text').innerHTML =
+      'El contrato ha sido registrado con folio <strong>' + FOLIO + '</strong>. Se enviará una copia a <strong>' + email + '</strong> y una notificación a <strong>' + REMITENTE + '</strong>.';
+    document.getElementById('msg-ok').style.display = 'block';
+
+  } catch (e) {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22h6a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v3"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M4 12a1 1 0 0 0-2 0v4a5 5 0 0 0 5 5h4"/><path d="m3 15 2 2 4-4"/></svg> Firmar Contrato Digitalmente';
+    errEl.textContent = 'Error al enviar. Por favor, intente de nuevo.';
+    errEl.style.display = 'block';
+    ['cli-nombre','cli-cargo','cli-empresa','cli-rfc','cli-email'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.readOnly = false;
+    });
+  }
+}
+
+// Fecha automática en bloque de firma física (print)
+(function() {
+  var meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  var h = new Date();
+  var el = document.getElementById('firma-lugar-fecha');
+  if (el) el.textContent = 'Puebla, Pue., ' + h.getDate() + ' de ' + meses[h.getMonth()] + ' de ' + h.getFullYear();
+  // Pre-llenar empresa en bloque print si ya tiene valor
+  var empInput = document.getElementById('cli-empresa');
+  var printEmp = document.getElementById('print-empresa');
+  if (empInput && printEmp) {
+    empInput.addEventListener('input', function() {
+      printEmp.textContent = empInput.value || 'Textiles Anáhuac';
+    });
+  }
+})();
+</script>
+</body>
+</html>

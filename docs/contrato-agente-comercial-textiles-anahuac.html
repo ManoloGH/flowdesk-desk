@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contrato AGT-001 — Agente Comercial Digital · Textiles Anáhuac</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet" />
+  <style>
+    /* ──────────────────────────────────────────────
+       VARIABLES
+    ────────────────────────────────────────────── */
+    :root {
+      --blue-ink:   #0A2D52;
+      --blue-deep:  #0F4F8A;
+      --blue-main:  #1A7FDB;
+      --blue-light: #4DBBF0;
+      --blue-pale:  #EAF4FD;
+      --gray-100:   #F7F9FC;
+      --gray-200:   #EDF0F5;
+      --gray-400:   #9AAABB;
+      --gray-600:   #5A6A7A;
+      --gray-800:   #2C3A4A;
+      --white:      #FFFFFF;
+      --success:    #0C8A5A;
+      --shadow:     0 4px 24px rgba(10,45,82,.10);
+      --radius:     10px;
+    }
+
+    /* ──────────────────────────────────────────────
+       RESET & BASE
+    ────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--gray-800);
+      background: var(--gray-100);
+      padding: 32px 16px 64px;
+    }
+
+    /* ──────────────────────────────────────────────
+       LAYOUT WRAPPER
+    ────────────────────────────────────────────── */
+    .doc-wrapper {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    /* ──────────────────────────────────────────────
+       FLOATING PRINT BUTTON
+    ────────────────────────────────────────────── */
+    .btn-print {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 999;
+      background: var(--blue-main);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 16px rgba(26,127,219,.35);
+      transition: background .2s, box-shadow .2s;
+    }
+    .btn-print:hover { background: var(--blue-deep); box-shadow: 0 6px 20px rgba(26,127,219,.45); }
+    .btn-print svg { flex-shrink: 0; }
+
+    /* ──────────────────────────────────────────────
+       HEADER
+    ────────────────────────────────────────────── */
+    .doc-header {
+      background: linear-gradient(135deg, var(--blue-ink) 0%, var(--blue-main) 100%);
+      border-radius: var(--radius) var(--radius) 0 0;
+      padding: 40px 48px 36px;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+    }
+    .doc-header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+    .header-inner {
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .header-brand { display: flex; align-items: center; gap: 16px; }
+    .header-icon {
+      width: 52px; height: 52px;
+      background: rgba(255,255,255,.15);
+      border: 2px solid rgba(255,255,255,.3);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    .header-brand-text {}
+    .header-logo {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: .3px;
+      color: #fff;
+    }
+    .header-sub {
+      font-size: 12px;
+      font-weight: 400;
+      color: rgba(255,255,255,.75);
+      margin-top: 2px;
+    }
+    .header-meta { text-align: right; }
+    .folio-badge {
+      display: inline-block;
+      background: rgba(255,255,255,.18);
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 20px;
+      padding: 5px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .5px;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .header-date {
+      font-size: 12px;
+      color: rgba(255,255,255,.7);
+    }
+    .header-title {
+      margin-top: 28px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255,255,255,.2);
+      position: relative;
+    }
+    .header-title h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 26px;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.3;
+    }
+    .header-title .subtitle {
+      font-size: 14px;
+      color: rgba(255,255,255,.8);
+      margin-top: 6px;
+    }
+
+    /* ──────────────────────────────────────────────
+       DOCUMENT BODY
+    ────────────────────────────────────────────── */
+    .doc-body {
+      background: var(--white);
+      padding: 48px;
+      box-shadow: var(--shadow);
+    }
+
+    /* ──────────────────────────────────────────────
+       PARTIES CARDS
+    ────────────────────────────────────────────── */
+    .parties-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+    @media (max-width: 620px) { .parties-grid { grid-template-columns: 1fr; } }
+
+    .party-card {
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius);
+      padding: 22px;
+      position: relative;
+    }
+    .party-card.prestador { border-top: 4px solid var(--blue-main); }
+    .party-card.cliente   { border-top: 4px solid var(--blue-light); }
+
+    .party-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--blue-main);
+      margin-bottom: 14px;
+    }
+    .party-card.cliente .party-label { color: var(--blue-deep); }
+
+    .party-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--blue-ink);
+      margin-bottom: 10px;
+    }
+    .party-detail {
+      font-size: 12.5px;
+      color: var(--gray-600);
+      line-height: 1.8;
+    }
+    .party-detail strong { color: var(--gray-800); font-weight: 600; }
+
+    /* Editable client inputs */
+    .field-group { margin-bottom: 10px; }
+    .field-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--gray-600);
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .field-input {
+      width: 100%;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      color: var(--gray-800);
+      background: var(--gray-100);
+      transition: border-color .2s, box-shadow .2s;
+      outline: none;
+    }
+    .field-input:focus {
+      border-color: var(--blue-light);
+      box-shadow: 0 0 0 3px rgba(77,187,240,.15);
+      background: #fff;
+    }
+    .field-input.error { border-color: #E05353; box-shadow: 0 0 0 3px rgba(224,83,83,.12); }
+
+    /* ──────────────────────────────────────────────
+       INTRO PARAGRAPH
+    ────────────────────────────────────────────── */
+    .intro-text {
+      font-size: 13.5px;
+      color: var(--gray-600);
+      line-height: 1.8;
+      margin-bottom: 36px;
+      padding: 16px 20px;
+      background: var(--blue-pale);
+      border-left: 4px solid var(--blue-main);
+      border-radius: 0 8px 8px 0;
+    }
+
+    /* ──────────────────────────────────────────────
+       CLAUSE SECTIONS
+    ────────────────────────────────────────────── */
+    .clause {
+      margin-bottom: 32px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .clause:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+    .clause-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--blue-main);
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .clause-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--gray-200);
+    }
+    .clause-num {
+      width: 28px; height: 28px;
+      background: var(--blue-pale);
+      border: 1.5px solid var(--blue-light);
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--blue-main);
+      flex-shrink: 0;
+    }
+
+    .clause p { margin-bottom: 10px; font-size: 13.5px; }
+    .clause p:last-child { margin-bottom: 0; }
+
+    .clause ul, .clause ol {
+      padding-left: 22px;
+      margin: 8px 0;
+    }
+    .clause li { margin-bottom: 6px; font-size: 13.5px; }
+
+    .clause h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--blue-deep);
+      margin: 14px 0 8px;
+    }
+
+    /* ──────────────────────────────────────────────
+       HIGHLIGHTED BOX
+    ────────────────────────────────────────────── */
+    .hl-box {
+      background: var(--blue-pale);
+      border: 1.5px solid rgba(26,127,219,.25);
+      border-radius: 8px;
+      padding: 18px 22px;
+      margin: 14px 0;
+      font-size: 13.5px;
+    }
+    .hl-box strong { color: var(--blue-ink); }
+    .hl-box.warning {
+      background: #FFF9EC;
+      border-color: #E8B84B;
+    }
+    .hl-box.warning strong { color: #8A6000; }
+    .hl-box.exit {
+      background: #EEF8F2;
+      border-color: #68C48B;
+    }
+    .hl-box.exit strong { color: #0C5A2E; }
+
+    /* ──────────────────────────────────────────────
+       PAYMENT TABLE
+    ────────────────────────────────────────────── */
+    .table-wrap { overflow-x: auto; margin: 14px 0; }
+    table.pay-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+    }
+    table.pay-table thead tr {
+      background: var(--blue-ink);
+      color: #fff;
+    }
+    table.pay-table thead th {
+      padding: 11px 16px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: .5px;
+    }
+    table.pay-table tbody tr:nth-child(even) { background: var(--gray-100); }
+    table.pay-table tbody td {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--gray-200);
+      vertical-align: top;
+    }
+    table.pay-table tfoot td {
+      padding: 10px 16px;
+      background: var(--blue-pale);
+      font-size: 12px;
+      color: var(--gray-600);
+    }
+
+    /* ──────────────────────────────────────────────
+       ALCANCE TAG
+    ────────────────────────────────────────────── */
+    .scope-tag {
+      display: inline-block;
+      background: #FDECEA;
+      color: #B22;
+      border: 1px solid #F5B5B5;
+      border-radius: 4px;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 2px 8px;
+      margin-right: 4px;
+    }
+
+    /* ──────────────────────────────────────────────
+       SIGNATURE SECTION
+    ────────────────────────────────────────────── */
+    .sig-section {
+      margin-top: 44px;
+      padding-top: 36px;
+      border-top: 2px solid var(--gray-200);
+    }
+    .sig-section-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--blue-ink);
+      font-family: 'Playfair Display', serif;
+      margin-bottom: 6px;
+    }
+    .sig-section-sub {
+      font-size: 13px;
+      color: var(--gray-600);
+      margin-bottom: 28px;
+    }
+
+    /* Acceptance */
+    .acceptance-box {
+      background: var(--gray-100);
+      border: 1.5px solid var(--gray-200);
+      border-radius: 8px;
+      padding: 20px 22px;
+      margin-bottom: 20px;
+    }
+    .acceptance-check {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .acceptance-check input[type="checkbox"] {
+      width: 20px; height: 20px;
+      cursor: pointer;
+      flex-shrink: 0;
+      margin-top: 2px;
+      accent-color: var(--blue-main);
+    }
+    .acceptance-check label {
+      font-size: 13.5px;
+      color: var(--gray-700);
+      line-height: 1.6;
+      cursor: pointer;
+    }
+    .acceptance-check label a {
+      color: var(--blue-main);
+      text-decoration: underline;
+    }
+
+    .btn-sign {
+      width: 100%;
+      background: linear-gradient(135deg, var(--blue-deep) 0%, var(--blue-main) 100%);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 15px 24px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 4px 16px rgba(26,127,219,.3);
+      transition: opacity .2s, box-shadow .2s;
+    }
+    .btn-sign:hover { opacity: .92; box-shadow: 0 6px 20px rgba(26,127,219,.4); }
+    .btn-sign:disabled { opacity: .55; cursor: not-allowed; }
+
+    .error-msg {
+      display: none;
+      color: #B22;
+      font-size: 12.5px;
+      margin-top: 10px;
+    }
+
+    /* Post-signature confirmation */
+    .sig-confirmed {
+      display: none;
+      background: #EEF8F2;
+      border: 1.5px solid #68C48B;
+      border-radius: 10px;
+      padding: 28px 30px;
+      margin-top: 20px;
+    }
+    .sig-confirmed.visible { display: block; }
+    .sig-confirmed-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .sig-check-icon {
+      width: 40px; height: 40px;
+      background: var(--success);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .sig-confirmed-header h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--success);
+    }
+    .sig-confirmed-header p { font-size: 13px; color: #3A5A46; }
+
+    .sig-parties {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    @media (max-width: 540px) { .sig-parties { grid-template-columns: 1fr; } }
+
+    .sig-party {
+      background: #fff;
+      border: 1px solid #C4E8D0;
+      border-radius: 8px;
+      padding: 18px;
+    }
+    .sig-party-role {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--success);
+      margin-bottom: 10px;
+    }
+    .sig-party-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--blue-ink);
+      margin-bottom: 4px;
+    }
+    .sig-party-detail {
+      font-size: 12px;
+      color: var(--gray-600);
+      line-height: 1.8;
+    }
+    .sig-timestamp {
+      margin-top: 16px;
+      font-size: 11.5px;
+      color: var(--gray-600);
+      text-align: center;
+    }
+    .sig-hash {
+      font-family: monospace;
+      font-size: 11px;
+      color: var(--gray-400);
+      word-break: break-all;
+      margin-top: 4px;
+      text-align: center;
+    }
+
+    /* ──────────────────────────────────────────────
+       FOOTER
+    ────────────────────────────────────────────── */
+    .doc-footer {
+      background: var(--blue-ink);
+      border-radius: 0 0 var(--radius) var(--radius);
+      padding: 20px 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .doc-footer .f-left, .doc-footer .f-right {
+      font-size: 11.5px;
+      color: rgba(255,255,255,.6);
+    }
+    .doc-footer .f-right { text-align: right; }
+    .doc-footer strong { color: rgba(255,255,255,.85); }
+
+    /* ──────────────────────────────────────────────
+       PRINT STYLES
+    ────────────────────────────────────────────── */
+    @media print {
+      body { background: #fff; padding: 0; }
+      .btn-print { display: none !important; }
+      .doc-wrapper { max-width: 100%; }
+      .doc-header { border-radius: 0; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .doc-body { box-shadow: none; padding: 32px; }
+      .doc-footer { border-radius: 0; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+
+      /* Hide digital sig UI, show print block */
+      .sig-section .acceptance-box,
+      .sig-section .btn-sign,
+      .sig-section .error-msg,
+      .sig-section .sig-confirmed { display: none !important; }
+      .sig-print { display: block !important; }
+
+      /* Page breaks */
+      .clause { page-break-inside: avoid; }
+      .parties-grid { page-break-inside: avoid; }
+      .pay-table { page-break-inside: avoid; }
+      .sig-print { page-break-before: auto; }
+    }
+
+    /* Print signature block — hidden on screen */
+    .sig-print {
+      display: none;
+      margin-top: 40px;
+      padding-top: 32px;
+      border-top: 2px solid var(--gray-200);
+    }
+    .sig-print-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--blue-ink);
+      margin-bottom: 32px;
+      text-align: center;
+    }
+    .sig-print-date {
+      text-align: center;
+      font-size: 13px;
+      color: var(--gray-600);
+      margin-bottom: 40px;
+    }
+    .sig-print-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+    }
+    .sig-print-col { text-align: center; }
+    .sig-print-line {
+      border-top: 1.5px solid var(--gray-800);
+      margin-bottom: 10px;
+      margin-top: 60px;
+    }
+    .sig-print-name { font-weight: 700; font-size: 13px; color: var(--blue-ink); }
+    .sig-print-detail { font-size: 12px; color: var(--gray-600); line-height: 1.7; margin-top: 4px; }
+    .sig-print-role {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--blue-main);
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Floating print button -->
+<button class="btn-print" onclick="window.print()">
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+  </svg>
+  Imprimir / PDF
+</button>
+
+<div class="doc-wrapper">
+
+  <!-- ── HEADER ── -->
+  <header class="doc-header">
+    <div class="header-inner">
+      <div class="header-brand">
+        <div class="header-icon">🤖</div>
+        <div class="header-brand-text">
+          <div class="header-logo">MentorIA Systems</div>
+          <div class="header-sub">CORDVAL SA DE CV · RFC COR2008248E7</div>
+        </div>
+      </div>
+      <div class="header-meta">
+        <div class="folio-badge">TAC-2026-AGT-001</div>
+        <div class="header-date">Emitido: Julio 2026</div>
+      </div>
+    </div>
+    <div class="header-title">
+      <h1>Contrato de Prestación de Servicios<br>Agente Comercial Digital</h1>
+      <div class="subtitle">Atención, calificación y procesamiento de pedidos vía WhatsApp Business API con Inteligencia Artificial</div>
+    </div>
+  </header>
+
+  <!-- ── BODY ── -->
+  <main class="doc-body">
+
+    <!-- PARTIES -->
+    <div class="parties-grid">
+
+      <!-- Prestador -->
+      <div class="party-card prestador">
+        <div class="party-label">El Prestador</div>
+        <div class="party-name">CORDVAL SA DE CV<br><span style="font-size:13px;font-weight:500;color:var(--blue-deep);">MentorIA Systems</span></div>
+        <div class="party-detail">
+          <strong>RFC:</strong> COR2008248E7<br>
+          <strong>Domicilio:</strong> Calle 8 Poniente Torre 5, 4701-1, Col. Valle del Rey, C.P. 72140, Heroica Puebla de Zaragoza, Puebla, México<br>
+          <strong>Correo:</strong> manolo@mentoriasystems.com<br>
+          <strong>Firmante:</strong> Manuel Gómez Haro Sánchez<br>
+          <strong>Cargo:</strong> CEO
+        </div>
+      </div>
+
+      <!-- Cliente -->
+      <div class="party-card cliente">
+        <div class="party-label">El Cliente</div>
+        <div class="field-group">
+          <label class="field-label" for="cRazonSocial">Razón Social</label>
+          <input class="field-input" id="cRazonSocial" type="text" placeholder="Textiles Anáhuac SA de CV" />
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="cRFC">RFC</label>
+          <input class="field-input" id="cRFC" type="text" placeholder="TAX000000XXX" />
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="cRepLegal">Representante Legal</label>
+          <input class="field-input" id="cRepLegal" type="text" placeholder="Nombre completo" />
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="cCargo">Cargo</label>
+          <input class="field-input" id="cCargo" type="text" placeholder="Director General" />
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="cEmail">Correo electrónico</label>
+          <input class="field-input" id="cEmail" type="email" placeholder="contacto@empresa.com" />
+        </div>
+      </div>
+
+    </div>
+
+    <!-- INTRO -->
+    <div class="intro-text">
+      Los suscritos, actuando en los términos de sus respectivas representaciones, celebran el presente <strong>Contrato de Prestación de Servicios</strong> de conformidad con las siguientes cláusulas, al tenor de la legislación mercantil y civil vigente en los Estados Unidos Mexicanos:
+    </div>
+
+    <!-- ── CLAUSE: DECLARACIONES ── -->
+    <div class="clause">
+      <div class="clause-title">
+        <span class="clause-num">I</span>
+        Declaraciones de las Partes
+      </div>
+      <h4>I. El Prestador declara que:</h4>
+      <ul>
+        <li>Es una sociedad mercantil legalmente constituida bajo las leyes de los Estados Unidos Mexicanos, con RFC COR2008248E7, con plena capacidad jurídica para contratar y obligarse.</li>
+        <li>Cuenta con el conocimiento técnico especializado, la infraestructura tecnológica y el equipo humano necesarios para prestar servicios de inteligencia artificial y automatización comercial.</li>
+        <li>Sus representantes tienen facultades suficientes para suscribir el presente contrato.</li>
+      </ul>
+      <h4>II. El Cliente declara que:</h4>
+      <ul>
+        <li>Es una persona moral legalmente constituida conforme a las leyes de los Estados Unidos Mexicanos, con plena capacidad jurídica para contratar y obligarse.</li>
+        <li>Ha revisado y comprende el alcance del servicio descrito en el presente contrato.</li>
+        <li>Su representante cuenta con las facultades suficientes para suscribir el presente instrumento.</li>
+      </ul>
+    </div>
+
+    <!-- ── CLAUSE 1: OBJETO ── -->
+    <div class="clause">
+      <div class="clause-title">
+        <span class="clause-num">1</span>
+        Primera · Objeto del Contrato
+      </div>
+      <p>El Prestador se obliga a proporcionar al Cliente el servicio denominado <strong>Agente Comercial Digital con Inteligencia Artificial (WhatsApp Business)</strong>, que comprende:</p>
+      <ul>
+        <li>Configuración y personalización del agente con el perfil de negocio del Cliente.</li>
+        <li>Atención, calificación y seguimiento automatizado de prospectos vía WhatsApp Business API.</li>
+        <li>Procesamiento automatizado de pedidos: recepción, confirmación y seguimiento.</li>
+        <li>Recordatorios de pago y cobranza preventiva.</li>
+        <li>Panel administrativo de conversaciones e indicadores en tiempo real.</li>
+        <li>Integración con sistemas del Cliente (TEXPLUS ERP, SAE, CRM).</li>
+        <li>Reporte mensual de actividad y métricas de desempeño.</li>
+        <li>Mantenimiento, actualizaciones de modelo y soporte técnico continuo.</li>
+      </ul>
+      <p>El servicio se presta bajo la modalidad de <strong>suscripción mensual continua</strong>, sin plazo forzoso, con inicio el <strong>18 de julio de 2026</strong>.</p>
+
+      <h4><span class="scope-tag">ALCANCE</span> El Agente NO:</h4>
+      <ul>
+        <li>Negocia precios ni otorga descuentos sin autorización humana explícita.</li>
+        <li>Aprueba cambios en pedidos ya confirmados.</li>
+        <li>Promete fechas de entrega sin confirmación del área de operaciones.</li>
+        <li>Reemplaza el juicio humano en decisiones comerciales estratégicas.</li>
+      </ul>
+    </div>
+
+    <!-- ── CLAUSE 2: PRECIO ── -->
+    <div class="clause">
+      <div class="clause-title">
+        <span class="clause-num">2</span>
+        Segunda · Precio y Forma de Pago
+      </div>
+      <div class="table-wrap">
+        <table class="pay-table">
+          <thead>
+            <tr>
+              <th>Concepto</th>
+              <th>Monto Mensual (MXN + IVA)</th>
+              <th>Fecha de Pago</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Primera mensualidad</td>
+              <td><strong>$20,000.00 + IVA</strong></td>
+              <td>18 de julio de 2026 <em>(fecha de inicio)</em></td>
+            </tr>
+            <tr>
+              <td>Mensualidades subsecuentes</td>
+              <td><strong>$20,000.00 + IVA</strong></td>
+              <td>Día 18 de cada mes <em>(hasta 5 días hábiles de gracia)</em></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3">El CFDI correspondiente se emitirá dentro de los 3 días hábiles siguientes a la recepción de cada pago.</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="hl-box">
+        <strong>Forma de pago:</strong> SPEI o efectivo. El CFDI se emite dentro de los 3 días hábiles posteriores a la confirmación de cada pago.
+      </div>
+
+      <div class="hl-box warning">
+        <strong>Mora:</strong> Si el pago no se recibe dentro de los 5 días hábiles de gracia posteriores al día 18, el Prestador podrá suspender el servicio hasta la regularización del adeudo, sin que esto constituya terminación del contrato.
+      </div>
+
+      <p style="font-size:13px;color:var(--gray-600);margin-top:10px;">
+        <em>Nota: El cobro mensual inicia a partir del mes en que el agente entre en operación activa. La fase de configuración e integración (estimada en 2–4 semanas) no se factura por separado.</em>
+      </p>
+    </div>
+
+    <!-- ── CLAUSE 3: VIGENCIA ── -->
+    <div class="clause">
+      <div class="clause-title">
+        <span class="clause-num">3</span>
+        Tercera · Vigencia y Terminación
+      </div>
+      <div class="hl-box">
+        <strong>Sin plazo forzoso.</strong> El Cliente podrá cancelar el servicio en cualquier momento mediante notificación escrita (correo electrónico). La cancelación surtirá efecto al término del mes en curso; no se generarán cargos adicionales a partir del siguiente período.
+      </div>
+      <p>El Prestador podrá dar por terminado el contrato con aviso previo de <strong>30 días naturales</strong> en caso de incumplimiento reiterado de pago (más de dos mensualidades vencidas) o uso indebido del servicio en contravención a las leyes aplicables.</p>
+    </div>
+
+    <!-- ── CLAUSE 4: PROPIEDAD INTELECTUAL ── -->
+    <div class="clause">
+      <div class="clause-title">
+        <span class="clause-num">4</span>
+        Cuarta · Propiedad Intelectual y Cláusula de Salida
+      </div>
+      <p>Los desarrollos, configuraciones, modelos de IA, flujos de conversación y documentación técnica creados específicamente para el Cliente son de <strong>uso exclusivo del Cliente</strong> durante la vigencia del presente contrato.</p>
+
+      <div class="hl-box exit">
+        <strong>Cláusula de Salida — Autonomía Total (opcional):</strong><br><br>
+        Si el Cliente desea operar el Agente Comercial Digital de forma independiente, podrá ejercer esta cláusula mediante el pago único de <strong>$60,000.00 MXN + IVA</strong> (equivalente a 3 mensualidades). A la recepción de dicho pago, el Prestador se obliga a:
+        <ul style="margin-top:10px;">
+          <li>Transferir la titularidad completa de todos los activos digitales del Agente.</li>
+          <li>Entregar código fuente, configuraciones, modelos, bases de datos y documentación técnica.</li>
+          <li>Brindar una sesión de transferencia y capacitación al equipo técnico del Cliente.</li>
+          <li>Renunciar a cualquier reclamación de propiedad sobre los desarrollos entregados.</li>
+        </ul>
+      </div>
+      <p>El Prestador conserva la titularidad de sus metodologías propias y el conocimiento técnico genérico preexistente no desarrollado específicamente para el Cliente.</p>
+    </div>
+
+    <!-- ── CLAUSE 5: SLA ── -->
+    <div class="clause">
+      <div class="clause-title">
+        <span class="clause-num">5</span>
+        Quinta · Nivel de Servicio (SLA)
+      </div>
+      <p>El Prestador garantiza una disponibilidad del Agente Comercial Digital de al menos el <strong>95% mensual</strong>, excluyendo:</p>
+      <ul>
+        <li>Mantenimientos programados notificados con mínimo 24 horas de anticipación.</li>
+        <li>Eventos de fuerza mayor o caso fortuito conforme a la Cláusula Novena.</li>
+        <li>Interrupciones atribuibles a la infraestructura de Meta (WhatsApp) o proveedores de nube.</li>
+      </ul>
+      <p>En caso de incumplimiento del SLA imputable al Prestador, se aplicará un crédito proporcional en la factura del siguiente mes de servicio.</p>
+    </div>
+
+    <!-- ── CLAUSE 6: CONFIDENCIALIDAD ── -->
+    <div class="clause">
+      <div class="clause-title">
+        <span class="clause-num">6</span>
+        Sexta · Confidencialidad
+      </div>
+      <p>Ambas partes se comprometen a mantener la más estricta confidencialidad respecto a la información intercambiada durante la vigencia del contrato y durante los <strong>2 años posteriores</strong> a su terminación. La obligación aplica, de manera enunciativa pero no limitativa, a:</p>
+      <ul>
+        <li>Datos de clientes del Cliente y conversaciones gestionadas vía WhatsApp.</li>
+        <li>Estrategias comerciales, listas de precios y políticas de descuento.</li>
+        <li>Información financiera, contable y fiscal.</li>
+        <li>Credenciales de acceso a sistemas y APIs.</li>
+      </ul>
+      <p>Se exceptúa la información que sea de dominio público, que sea requerida por autoridad competente mediante orden judicial o administrativa, o que fuera conocida de manera independiente por las partes.</p>
+    </div>
+
+    <!-- ── CLAUSE 7: OBLIGACIONES ── -->
+    <div class="clause">
+      <div class="clause-title">
+        <span class="clause-num">7</span>
+        Séptima · Obligaciones de las Partes
+      </div>
+      <h4>Obligaciones del Prestador:</h4>
+      <ul>
+        <li>Mantener el agente operativo y actualizado conforme a los niveles de servicio pactados.</li>
+        <li>Notificar incidencias al Cliente dentro de las <strong>4 horas hábiles</strong> siguientes a su detección.</li>
+        <li>Guardar confidencialidad absoluta respecto a la información del Cliente.</li>
+        <li>Entregar reporte mensual de actividad y métricas antes del día 5 del mes siguiente al reportado.</li>
+        <li>Brindar soporte técnico continuo por correo electrónico y canales acordados.</li>
+      </ul>
+      <h4>Obligaciones del Cliente:</h4>
+      <ul>
+        <li>Realizar los pagos mensuales en las fechas acordadas conforme a la Cláusula Segunda.</li>
+        <li>Proporcionar los accesos necesarios a WhatsApp Business API, TEXPLUS ERP, SAE y cualquier otro sistema requerido para la integración.</li>
+        <li>Notificar con un mínimo de 5 días hábiles de anticipación cualquier cambio en procesos que impacte la configuración del agente.</li>
+        <li>Utilizar el Agente Comercial Digital únicamente para fines comerciales lícitos, en cumplimiento de las políticas de uso de Meta (WhatsApp) y la legislación mexicana aplicable.</li>
+      </ul>
+    </div>
+
+    <!-- ── CLAUSE 8: LIMITACIÓN DE RESPONSABILIDAD ── -->
+    <div class="clause">
+      <div class="clause-title">
+        <span class="clause-num">8</span>
+        Octava · Limitación de Responsabilidad
+      </div>
+      <p>El Prestador no será responsable en ningún caso por:</p>
+      <ul>
+        <li>Resultados comerciales específicos atribuibles a las decisiones del Cliente.</li>
+        <li>Interrupciones o cambios en el servicio causados por Meta (WhatsApp) o terceros proveedores de tecnología.</li>
+        <li>Daños indirectos, consecuentes, pérdida de utilidades o daño emergente.</li>
+        <li>Pérdida de datos atribuible a acciones u omisiones del Cliente o de terceros no autorizados por el Prestador.</li>
+      </ul>
+      <p>En todo caso, la responsabilidad máxima total del Prestador frente al Cliente no excederá el monto equivalente a los pagos realizados por el Cliente durante los últimos <strong>3 meses</strong> de servicio previos al evento que da origen a la reclamación.</p>
+    </div>
+
+    <!-- ── CLAUSE 9: FUERZA MAYOR ── -->
+    <div class="clause">
+      <div class="clause-title">
+        <span class="clause-num">9</span>
+        Novena · Caso Fortuito y Fuerza Mayor
+      </div>
+      <p>Ninguna de las partes será responsable por incumplimientos derivados de eventos fuera de su control razonable, incluidos —de manera enunciativa— desastres naturales, actos de gobierno, fallas generalizadas de infraestructura de internet, cambios de política de Meta/WhatsApp que afecten materialmente la operación del agente, pandemias o actos de terceros maliciosos.</p>
+      <p>La parte afectada deberá notificar a la otra dentro de los <strong>5 días hábiles</strong> siguientes al evento. Si la situación de fuerza mayor se extiende por más de <strong>30 días naturales</strong>, cualquiera de las partes podrá dar por terminado el contrato sin penalización, debiendo el Prestador reembolsar la parte proporcional no devengada del último pago recibido.</p>
+    </div>
+
+    <!-- ── CLAUSE 10: MODIFICACIONES ── -->
+    <div class="clause">
+      <div class="clause-title">
+        <span class="clause-num">10</span>
+        Décima · Modificaciones
+      </div>
+      <p>Cualquier modificación al presente contrato deberá constar en un adendum escrito y firmado por ambas partes con la misma formalidad que el presente instrumento. Las modificaciones orales o tácitas no producirán efectos jurídicos entre las partes.</p>
+    </div>
+
+    <!-- ── CLAUSE 11: JURISDICCIÓN Y DATOS PERSONALES ── -->
+    <div class="clause">
+      <div class="clause-title">
+        <span class="clause-num">11</span>
+        Décima Primera · Jurisdicción, Legislación Aplicable y Datos Personales
+      </div>
+      <p>El presente contrato se rige e interpreta de conformidad con las leyes de los Estados Unidos Mexicanos. Para la resolución de cualquier controversia derivada del mismo, las partes se someten expresamente a la jurisdicción de los Tribunales competentes de la ciudad de <strong>Puebla, Puebla, México</strong>, renunciando al fuero que pudiera corresponderles por razón de sus domicilios presentes o futuros.</p>
+
+      <h4>Tratamiento de Datos Personales (LFPDPPP):</h4>
+      <ul>
+        <li><strong>Responsable:</strong> CORDVAL SA DE CV · manolo@mentoriasystems.com</li>
+        <li><strong>Datos tratados:</strong> Nombre, cargo, correo electrónico, teléfono y datos de conversaciones gestionadas por el Agente Comercial Digital.</li>
+        <li><strong>Finalidades:</strong> Prestación del servicio, facturación, cumplimiento fiscal y mejora continua del agente.</li>
+        <li><strong>Transferencias:</strong> Solo a proveedores tecnológicos de nube (Meta, OpenAI, Anthropic) bajo las mismas obligaciones de confidencialidad establecidas en la Cláusula Sexta.</li>
+        <li><strong>Derechos ARCO:</strong> El titular podrá ejercerlos enviando solicitud a manolo@mentoriasystems.com; respuesta garantizada en un máximo de 20 días hábiles.</li>
+      </ul>
+    </div>
+
+    <!-- ── SIGNATURE SECTION ── -->
+    <section class="sig-section">
+      <div class="sig-section-title">Firma Digital del Contrato</div>
+      <div class="sig-section-sub">
+        Complete los datos del Cliente en la tarjeta superior y proceda a firmar digitalmente. La firma enviará una copia confirmada a las partes.
+      </div>
+
+      <div class="acceptance-box">
+        <div class="acceptance-check">
+          <input type="checkbox" id="chkAcept" />
+          <label for="chkAcept">
+            He leído, comprendido y acepto en su totalidad los términos y condiciones del presente Contrato de Prestación de Servicios folio <strong>TAC-2026-AGT-001</strong>, incluyendo las 11 cláusulas y las declaraciones de las partes. Esta firma digital tiene plena validez legal conforme a la Ley de Firma Electrónica Avanzada vigente en México.
+          </label>
+        </div>
+        <button class="btn-sign" id="btnSign" onclick="firmarContrato()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22h6a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v3"/>
+            <path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10.42 12.61a2.1 2.1 0 1 1 2.97 2.97L7.95 21 4 22l.99-3.95z"/>
+          </svg>
+          Firmar Contrato Digitalmente
+        </button>
+        <div class="error-msg" id="errorMsg">Por favor completa todos los campos del Cliente y acepta los términos antes de continuar.</div>
+      </div>
+
+      <!-- Post-signature confirmation block -->
+      <div class="sig-confirmed" id="sigConfirmed">
+        <div class="sig-confirmed-header">
+          <div class="sig-check-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div>
+            <h3>Contrato firmado correctamente</h3>
+            <p>Las partes han sido notificadas. Conserve este documento como comprobante.</p>
+          </div>
+        </div>
+        <div class="sig-parties">
+          <div class="sig-party">
+            <div class="sig-party-role">Por el Prestador</div>
+            <div class="sig-party-name">Manuel Gómez Haro Sánchez</div>
+            <div class="sig-party-detail">
+              CORDVAL SA DE CV · MentorIA Systems<br>
+              RFC COR2008248E7<br>
+              manolo@mentoriasystems.com<br>
+              CEO
+            </div>
+          </div>
+          <div class="sig-party">
+            <div class="sig-party-role">Por el Cliente</div>
+            <div class="sig-party-name" id="sigClienteName">—</div>
+            <div class="sig-party-detail" id="sigClienteDetail">—</div>
+          </div>
+        </div>
+        <div class="sig-timestamp" id="sigTimestamp"></div>
+        <div class="sig-hash" id="sigHash"></div>
+      </div>
+    </section>
+
+    <!-- ── PRINT-ONLY SIGNATURE BLOCK ── -->
+    <div class="sig-print">
+      <div class="sig-print-title">Firmas de las Partes</div>
+      <div class="sig-print-date" id="printDate"></div>
+      <div class="sig-print-cols">
+        <div class="sig-print-col">
+          <div class="sig-print-role">El Prestador</div>
+          <div class="sig-print-line"></div>
+          <div class="sig-print-name">Manuel Gómez Haro Sánchez</div>
+          <div class="sig-print-detail">
+            CORDVAL SA DE CV · MentorIA Systems<br>
+            RFC COR2008248E7<br>
+            CEO
+          </div>
+        </div>
+        <div class="sig-print-col">
+          <div class="sig-print-role">El Cliente</div>
+          <div class="sig-print-line"></div>
+          <div class="sig-print-name">Representante Legal</div>
+          <div class="sig-print-detail">
+            Textiles Anáhuac<br>
+            RFC: ____________<br>
+            Cargo: ____________
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── FOOTER ── -->
+  <footer class="doc-footer">
+    <div class="f-left">
+      <strong>CORDVAL SA DE CV · MentorIA Systems</strong><br>
+      RFC COR2008248E7 · Puebla, México
+    </div>
+    <div class="f-right">
+      Folio: <strong>TAC-2026-AGT-001</strong><br>
+      Agente Comercial Digital · Textiles Anáhuac
+    </div>
+  </footer>
+
+</div><!-- /.doc-wrapper -->
+
+<script>
+  /* ────────────────────────────────────────────
+     CONFIG
+  ──────────────────────────────────────────── */
+  var WEBHOOK_URL  = 'https://prueba-digisaurios-n8n.4jvoco.easypanel.host/webhook/propuesta-firmada';
+  var W3F_KEY      = '32207b59-7222-46ab-8df2-8038a9f2b8d5';
+  var SHEETS_URL   = 'https://script.google.com/macros/s/AKfycbyQHdhimVaUdVqQ2_QWrXNL9IoPRXiWbaK1XCF6UmCP-6VNt0HLJ2mtisRM73_4Ya99vQ/exec';
+  var DOC_URL      = 'https://htmlpreview.github.io/?https://github.com/ManoloGH/flowdesk-desk/blob/main/docs/contrato-agente-comercial-textiles-anahuac.html';
+  var FOLIO        = 'TAC-2026-AGT-001';
+  var DOC_TYPE     = 'contrato';
+  var REMITENTE    = 'MentorIA Systems';
+
+  /* ────────────────────────────────────────────
+     PRINT DATE — auto on load
+  ──────────────────────────────────────────── */
+  (function setPrintDate() {
+    var meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    var d = new Date();
+    var txt = 'Puebla, Pue., ' + d.getDate() + ' de ' + meses[d.getMonth()] + ' de ' + d.getFullYear();
+    var el = document.getElementById('printDate');
+    if (el) el.textContent = txt;
+  })();
+
+  /* ────────────────────────────────────────────
+     HELPERS
+  ──────────────────────────────────────────── */
+  function val(id) { return (document.getElementById(id) || {}).value || ''; }
+
+  function getFields() {
+    return {
+      empresa:  val('cRazonSocial').trim(),
+      rfc:      val('cRFC').trim(),
+      nombre:   val('cRepLegal').trim(),
+      cargo:    val('cCargo').trim(),
+      email:    val('cEmail').trim()
+    };
+  }
+
+  function validate(f) {
+    var ok = f.empresa && f.rfc && f.nombre && f.cargo && f.email &&
+             /\S+@\S+\.\S+/.test(f.email) &&
+             document.getElementById('chkAcept').checked;
+    return ok;
+  }
+
+  function markErrors(f) {
+    ['cRazonSocial','cRFC','cRepLegal','cCargo','cEmail'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      var empty = !el.value.trim();
+      el.classList.toggle('error', empty);
+    });
+  }
+
+  function generateHash(str) {
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash).toString(16).toUpperCase().padStart(8,'0');
+  }
+
+  /* ────────────────────────────────────────────
+     SHOW CONFIRMATION
+  ──────────────────────────────────────────── */
+  function showConfirmation(f, ts) {
+    document.getElementById('sigClienteName').textContent = f.nombre;
+    document.getElementById('sigClienteDetail').innerHTML =
+      f.empresa + '<br>RFC ' + f.rfc + '<br>' + f.email + '<br>' + f.cargo;
+
+    var hash = generateHash(FOLIO + f.email + ts);
+    document.getElementById('sigTimestamp').textContent =
+      'Firmado el ' + new Date(ts).toLocaleString('es-MX', {
+        day:'2-digit', month:'long', year:'numeric',
+        hour:'2-digit', minute:'2-digit', second:'2-digit'
+      }) + ' · Hora del sistema';
+    document.getElementById('sigHash').textContent = 'Hash de verificación: ' + hash;
+
+    var box = document.getElementById('sigConfirmed');
+    box.classList.add('visible');
+    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    document.getElementById('btnSign').style.display = 'none';
+    document.getElementById('chkAcept').disabled = true;
+  }
+
+  /* ────────────────────────────────────────────
+     MAIN SIGN FUNCTION
+  ──────────────────────────────────────────── */
+  function firmarContrato() {
+    var f   = getFields();
+    var err = document.getElementById('errorMsg');
+
+    if (!validate(f)) {
+      markErrors(f);
+      err.style.display = 'block';
+      return;
+    }
+
+    err.style.display = 'none';
+    var btn = document.getElementById('btnSign');
+    btn.disabled = true;
+    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Procesando…';
+
+    var ts      = new Date().toISOString();
+    var payload = {
+      documento:         'Contrato de Prestación de Servicios',
+      tipo:              DOC_TYPE,
+      folio:             FOLIO,
+      nombre:            f.nombre,
+      cargo:             f.cargo,
+      empresa:           f.empresa,
+      email:             f.email,
+      rfc:               f.rfc,
+      contrato_aceptado: true,
+      timestamp:         ts,
+      remitente:         REMITENTE,
+      url:               DOC_URL
+    };
+
+    /* 1 · Webhook n8n */
+    fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(function() {});
+
+    /* 2 · Web3Forms */
+    (function() {
+      var fd = new FormData();
+      fd.append('access_key', W3F_KEY);
+      fd.append('subject', 'Contrato firmado: ' + f.empresa + ' — ' + FOLIO);
+      fd.append('from_name', f.nombre + ' · ' + f.empresa);
+      fd.append('email', 'manolo@mentoriasystems.com');
+      fd.append('cc', f.email);
+      fd.append('nombre',   f.nombre);
+      fd.append('cargo',    f.cargo);
+      fd.append('empresa',  f.empresa);
+      fd.append('rfc',      f.rfc);
+      fd.append('folio',    FOLIO);
+      fd.append('timestamp', ts);
+      fd.append('url',       DOC_URL);
+      fetch('https://api.web3forms.com/submit', { method:'POST', body: fd }).catch(function() {});
+    })();
+
+    /* 3 · Google Sheets */
+    (function() {
+      var params = new URLSearchParams({
+        folio:    FOLIO,
+        tipo:     DOC_TYPE,
+        nombre:   f.nombre,
+        cargo:    f.cargo,
+        empresa:  f.empresa,
+        email:    f.email,
+        rfc:      f.rfc,
+        timestamp: ts,
+        url:       DOC_URL
+      });
+      fetch(SHEETS_URL + '?' + params.toString()).catch(function() {});
+    })();
+
+    /* Show confirmation UI */
+    setTimeout(function() {
+      showConfirmation(f, ts);
+    }, 800);
+  }
+</script>
+
+</body>
+</html>
