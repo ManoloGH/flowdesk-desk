@@ -5,14 +5,15 @@ import { useAuth } from '@/store/auth';
 import { Building2, Palette, Loader2, Check, Lock, User, Cpu, Phone, MapPin, Plus, Trash2, LayoutGrid, Map } from 'lucide-react';
 
 const SIDEBAR_MODULES = [
-  { key: 'pipeline',    label: 'CRM',            section: 'main',     desc: 'Pipeline comercial' },
-  { key: 'erp-areas',  label: 'ERP',             section: 'main',     desc: 'Sistema operativo por área' },
-  { key: 'contactos',  label: 'Contactos',       section: 'recursos', desc: 'Directorio de contactos' },
-  { key: 'campus',     label: 'Campus digital',  section: 'recursos', desc: 'Mapa de oficina y sucursales' },
-  { key: 'espacios',   label: 'Espacios',        section: 'recursos', desc: 'Monitoreo con cámaras' },
-  { key: 'mi-web',     label: 'Mi Web',          section: 'recursos', desc: 'Constructor de sitio web' },
-  { key: 'integrations', label: 'Integraciones', section: 'recursos', desc: 'Conectores externos' },
-  { key: 'herramientas/comunicaciones', label: 'Comunicaciones', section: 'recursos', desc: 'WhatsApp y canales' },
+  // Sección core — también configurable
+  { key: 'focusmode', label: 'Focus Mode',           section: 'core', desc: 'Modo de concentración y productividad' },
+  { key: 'metrics',   label: 'Dashboard',            section: 'core', desc: 'Métricas de agentes, equipo y negocio' },
+  { key: 'team',      label: 'Equipo',               section: 'core', desc: 'Miembros y agentes IA del equipo' },
+  // Módulos principales
+  { key: 'mentoria',  label: 'CRM',                  section: 'main', desc: 'Pipeline comercial y prospectos' },
+  { key: 'erp',       label: 'ERP',                  section: 'main', desc: 'Workspace de clientes en implementación' },
+  { key: 'brain',     label: 'Base de conocimiento', section: 'main', desc: 'Documentos e información para los agentes' },
+  { key: 'recursos',  label: 'Recursos',             section: 'main', desc: 'Herramientas y extensiones adicionales' },
 ] as const;
 
 interface CompanyData {
@@ -857,12 +858,13 @@ export default function SettingsPage() {
         {/* Módulos del sidebar */}
         {canEdit && modules.length > 0 && (
           <Section title="Módulos del sidebar" icon={LayoutGrid}>
-            {(['main', 'recursos'] as const).map(section => {
+            {(['core', 'main'] as const).map(section => {
               const items = modules.filter(m => m.section === section);
+              if (!items.length) return null;
               return (
                 <div key={section} className="mb-5 last:mb-0">
                   <p className="text-[10px] font-mono uppercase tracking-widest text-gray-600 mb-3">
-                    {section === 'main' ? 'Módulos principales' : 'Recursos'}
+                    {section === 'core' ? 'Módulos base' : 'Módulos principales'}
                   </p>
                   <div className="space-y-2">
                     {items.map(m => (

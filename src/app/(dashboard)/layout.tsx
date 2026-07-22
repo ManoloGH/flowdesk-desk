@@ -172,26 +172,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   type NavGroups = { core: NavItem[]; main: NavItem[]; recursos: NavItem[]; bottom: NavItem[] };
 
   const buildNav = (): NavGroups => {
-    const core: NavItem[] = [...CORE_NAV];
-    const recursosFull: NavItem[] = [...RECURSOS_BASE];
-
     const mods = brand.modules_config;
     if (!mods || mods.length === 0) {
-      return { core, main: [...MAIN_NAV], recursos: recursosFull, bottom: BOTTOM_NAV };
+      return { core: [...CORE_NAV], main: [...MAIN_NAV], recursos: [...RECURSOS_BASE], bottom: BOTTOM_NAV };
     }
-
+    // modules_config definida → filtrar TODO el nav por las keys habilitadas
     const enabledKeys = new Set(mods.filter((m) => m.enabled).map((m) => m.key));
     const filterByKey = (items: NavItem[]) =>
       items.filter((n) => enabledKeys.has(n.href.replace(/^\//, '')));
 
-    const main = filterByKey(MAIN_NAV);
-    const recursos = filterByKey(recursosFull);
-
     return {
-      core,
-      main:     main.length > 0     ? main     : [...MAIN_NAV],
-      recursos: recursos.length > 0 ? recursos : recursosFull,
-      bottom: BOTTOM_NAV,
+      core:     filterByKey(CORE_NAV),
+      main:     filterByKey(MAIN_NAV),
+      recursos: filterByKey(RECURSOS_BASE),
+      bottom:   BOTTOM_NAV,
     };
   };
 
