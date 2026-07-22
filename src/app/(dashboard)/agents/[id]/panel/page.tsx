@@ -7,6 +7,7 @@ import {
   Package, Clock, UserCheck, ArrowUpRight, Brain, Settings, FileText,
   User2, HelpCircle, ChevronLeft, Loader2, Plus, Trash2, Check, X,
   RefreshCw, AlertCircle, CheckCircle, BarChart3, Bot, Pencil,
+  ChevronRight, Send,
 } from 'lucide-react';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -74,6 +75,25 @@ interface CalibratorData {
     context: any;
     created_at: string;
   } | null;
+}
+
+interface BotMessage {
+  id: string;
+  role: string;
+  content: string;
+  created_at: string;
+}
+
+interface ConvDetail {
+  conversation: {
+    id: string;
+    phone: string;
+    contact_name: string | null;
+    mode: string;
+    instance_name: string;
+    last_message_at: string | null;
+  };
+  messages: BotMessage[];
 }
 
 interface AvailableModel {
@@ -271,6 +291,8 @@ function SectionRenderer({
     case 'configuracion':  return <SectionConfiguracion agentId={agentId} agent={agent} setAgent={setAgent} />;
     case 'auditoria':      return <SectionAuditoria agentId={agentId} />;
     case 'prospectos':     return <SectionProspectos agentId={agentId} />;
+    case 'journey':        return <SectionJourney agentId={agentId} agent={agent} setAgent={setAgent} />;
+    case 'entregable':     return <SectionEntregable agentId={agentId} agent={agent} setAgent={setAgent} />;
     default:               return <SectionStub label={section} />;
   }
 }
@@ -352,6 +374,9 @@ function SectionConversaciones({ agentId }: { agentId: string }) {
   const [convs, setConvs] = useState<Conversation[]>([]);
   const [corrections, setCorrections] = useState<Correction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
+  const [convDetail, setConvDetail] = useState<ConvDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
     if (tab === 'real') {
@@ -369,6 +394,16 @@ function SectionConversaciones({ agentId }: { agentId: string }) {
     }
   }, [agentId, tab]);
 
+  const openConv = (convId: string) => {
+    setSelectedConvId(convId);
+    setDetailLoading(true);
+    setConvDetail(null);
+    api.get<ConvDetail>(`/agent-panel/${agentId}/conversations/${convId}/messages`)
+      .then(setConvDetail)
+      .catch(console.error)
+      .finally(() => setDetailLoading(false));
+  };
+
   return (
     <div className="p-8">
       <PageHeader title="Conversaciones" subtitle="Historial y correcciones para entrenamiento" />
@@ -380,9 +415,7 @@ function SectionConversaciones({ agentId }: { agentId: string }) {
             key={t}
             onClick={() => setTab(t)}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
-              tab === t
-                ? 'border-indigo-500 text-indigo-400'
-                : 'border-transparent text-gray-500 hover:text-gray-400'
+              tab === t ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-400'
             }`}
           >
             {t === 'real' ? 'Historial' : 'Correcciones'}
@@ -396,19 +429,71 @@ function SectionConversaciones({ agentId }: { agentId: string }) {
         <div className="space-y-2">
           {convs.length === 0 && <p className="text-sm text-gray-500 text-center py-16">Sin conversaciones aún.</p>}
           {convs.map(c => (
-            <div key={c.id} className="bg-gray-900 border border-gray-800 rounded-xl px-5 py-4 flex items-center justify-between">
+            <button
+              key={c.id}
+              onClick={() => openConv(c.id)}
+              className="w-full bg-gray-900 border border-gray-800 rounded-xl px-5 py-4 flex items-center justify-between hover:border-gray-700 hover:bg-gray-800/50 transition-all text-left"
+            >
               <div>
                 <p className="text-sm font-medium text-white">{c.contact_name ?? c.title ?? c.phone ?? 'Sin nombre'}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{new Date(c.created_at).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{(c as any).phone ?? ''} · {new Date(c.created_at).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
               </div>
-              <span className="text-xs px-2.5 py-1 rounded-full bg-gray-800 text-gray-400 border border-gray-700">
-                {c.stage ?? c.status}
-              </span>
-            </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs px-2.5 py-1 rounded-full bg-gray-800 text-gray-400 border border-gray-700">
+                  {(c as any).mode ?? c.stage ?? c.status ?? 'AI'}
+                </span>
+                <ChevronRight size={14} className="text-gray-600" />
+              </div>
+            </button>
           ))}
         </div>
       ) : (
         <CorrectionsPanel agentId={agentId} corrections={corrections} setCorrections={setCorrections} />
+      )}
+
+      {/* Slide-over de mensajes */}
+      {selectedConvId && (
+        <div className="fixed inset-0 z-50 flex">
+          <div className="flex-1 bg-black/50" onClick={() => setSelectedConvId(null)} />
+          <div className="w-[420px] bg-gray-950 border-l border-gray-800 flex flex-col h-full">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+              <div>
+                <p className="text-sm font-semibold text-white">
+                  {convDetail?.conversation.contact_name ?? convDetail?.conversation.phone ?? 'Conversación'}
+                </p>
+                <p className="text-xs text-gray-500">{convDetail?.conversation.phone}</p>
+              </div>
+              <button onClick={() => setSelectedConvId(null)} className="text-gray-600 hover:text-gray-400">
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {detailLoading ? (
+                <div className="flex justify-center pt-16"><Loader2 size={20} className="text-indigo-500 animate-spin" /></div>
+              ) : !convDetail || convDetail.messages.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center pt-16">Sin mensajes registrados.</p>
+              ) : (
+                convDetail.messages.map(m => (
+                  <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
+                      m.role === 'user'
+                        ? 'bg-indigo-600 text-white rounded-br-sm'
+                        : 'bg-gray-800 text-gray-200 rounded-bl-sm'
+                    }`}>
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{m.content}</p>
+                      <p className={`text-[10px] mt-1 ${m.role === 'user' ? 'text-indigo-300' : 'text-gray-500'}`}>
+                        {new Date(m.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -1013,6 +1098,264 @@ function SectionProspectos({ agentId }: { agentId: string }) {
             ))}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ── SECCIÓN: Journey del cliente ───────────────────────────────────────────────
+
+const JOURNEY_STAGES = [
+  { n: 1, label: 'Bienvenida', desc: 'Saludo + presentación del agente' },
+  { n: 2, label: 'Escucha', desc: 'Detecta necesidad o contexto inicial' },
+  { n: 3, label: 'Gancho', desc: 'Ofrece el micro-diagnóstico gratuito' },
+  { n: 4, label: 'Preguntas', desc: 'Hace las preguntas de calificación' },
+  { n: 5, label: 'Entrega', desc: 'Envía el link del micro-diagnóstico' },
+  { n: 6, label: 'Cierre', desc: 'Agenda cita o cierra con calidez' },
+];
+
+function SectionJourney({ agentId, agent, setAgent }: { agentId: string; agent: AgentSlot; setAgent: (a: AgentSlot) => void }) {
+  const cfg = agent.agent_config ?? {};
+  const [tab, setTab] = useState<'identidad' | 'preguntas' | 'criterios'>('identidad');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const [form, setForm] = useState({
+    instance_name: (cfg.instance_name as string) ?? '',
+    cal_com_url: (cfg.cal_com_url as string) ?? '',
+    pitch: (cfg.pitch as string) ?? '',
+  });
+
+  const rawQs = cfg.qualifying_questions;
+  const initialQs: string[] = Array.isArray(rawQs) ? rawQs : [];
+  const [questions, setQuestions] = useState<string[]>(initialQs.length ? initialQs : ['', '', '', '']);
+  const [goodCriteria, setGoodCriteria] = useState<string>((cfg.good_lead_criteria as string) ?? '');
+  const [badCriteria, setBadCriteria] = useState<string>((cfg.bad_lead_criteria as string) ?? '');
+
+  const save = async (extra?: Record<string, unknown>) => {
+    setSaving(true);
+    try {
+      const payload = { ...form, qualifying_questions: questions, good_lead_criteria: goodCriteria, bad_lead_criteria: badCriteria, ...extra };
+      await api.patch(`/agent-panel/${agentId}/config`, payload);
+      setAgent({ ...agent, agent_config: { ...cfg, ...payload } });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e: any) { alert(e?.message ?? 'Error al guardar'); }
+    setSaving(false);
+  };
+
+  const addQuestion = () => setQuestions(prev => [...prev, '']);
+  const removeQuestion = (i: number) => setQuestions(prev => prev.filter((_, idx) => idx !== i));
+  const updateQuestion = (i: number, val: string) => setQuestions(prev => prev.map((q, idx) => idx === i ? val : q));
+
+  const SaveBtn = () => (
+    <button onClick={() => save()} disabled={saving} className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors">
+      {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <Check size={14} /> : null}
+      {saving ? 'Guardando...' : saved ? 'Guardado' : 'Guardar cambios'}
+    </button>
+  );
+
+  return (
+    <div className="p-8">
+      <PageHeader title="Journey del cliente" subtitle="Flujo de conversación y calificación de leads" />
+
+      {/* Etapas — solo visualización */}
+      <div className="mt-6 mb-8">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Flujo del journey</p>
+        <div className="flex items-center gap-0 flex-wrap">
+          {JOURNEY_STAGES.map((s, i) => (
+            <div key={s.n} className="flex items-center">
+              <div className="bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-center min-w-[90px]">
+                <p className="text-[10px] text-indigo-400 font-bold">Etapa {s.n}</p>
+                <p className="text-xs font-semibold text-white">{s.label}</p>
+                <p className="text-[10px] text-gray-600 leading-tight mt-0.5">{s.desc}</p>
+              </div>
+              {i < JOURNEY_STAGES.length - 1 && (
+                <ChevronRight size={12} className="text-gray-700 mx-1 flex-shrink-0" />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Tabs de configuración */}
+      <div className="flex gap-1 border-b border-gray-800 mb-6">
+        {(['identidad', 'preguntas', 'criterios'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)} className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${tab === t ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-400'}`}>
+            {t === 'identidad' ? 'Identidad del bot' : t === 'preguntas' ? 'Preguntas' : 'Criterios de calificación'}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'identidad' && (
+        <div className="max-w-lg space-y-5">
+          <div>
+            <label className="text-xs text-gray-400 mb-1.5 block">Instancia Evolution (WhatsApp)</label>
+            <input value={form.instance_name} onChange={e => setForm(p => ({ ...p, instance_name: e.target.value }))} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="Ej: Mentoriacomercial" />
+            <p className="text-xs text-gray-600 mt-1">El nombre exacto de la instancia en Evolution API</p>
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 mb-1.5 block">URL de agenda (Cal.com)</label>
+            <input value={form.cal_com_url} onChange={e => setForm(p => ({ ...p, cal_com_url: e.target.value }))} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="https://cal.com/tu-usuario/tu-evento" />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 mb-1.5 block">Pitch del negocio</label>
+            <textarea value={form.pitch} onChange={e => setForm(p => ({ ...p, pitch: e.target.value }))} rows={4} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white resize-none focus:outline-none focus:border-indigo-500" placeholder="Somos una empresa de tecnología expertos en..." />
+            <p className="text-xs text-gray-600 mt-1">El agente usa este texto para presentarse en la Etapa 1</p>
+          </div>
+          <SaveBtn />
+        </div>
+      )}
+
+      {tab === 'preguntas' && (
+        <div className="max-w-lg space-y-4">
+          <p className="text-xs text-gray-500">El agente hace estas preguntas en la Etapa 4 (en orden). Agrega o quita según necesites.</p>
+          {questions.map((q, i) => (
+            <div key={i} className="flex gap-2 items-start">
+              <span className="text-xs text-indigo-400 font-bold w-5 pt-3.5 flex-shrink-0">{i + 1}.</span>
+              <input
+                value={q}
+                onChange={e => updateQuestion(i, e.target.value)}
+                className="flex-1 bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500"
+                placeholder={`Pregunta ${i + 1}...`}
+              />
+              <button onClick={() => removeQuestion(i)} className="mt-2.5 text-gray-600 hover:text-red-400 transition-colors">
+                <X size={14} />
+              </button>
+            </div>
+          ))}
+          <button onClick={addQuestion} className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-400 transition-colors">
+            <Plus size={13} /> Agregar pregunta
+          </button>
+          <SaveBtn />
+        </div>
+      )}
+
+      {tab === 'criterios' && (
+        <div className="max-w-lg space-y-5">
+          <div>
+            <label className="text-xs text-gray-400 mb-1.5 block flex items-center gap-1.5">
+              <CheckCircle size={12} className="text-green-400" /> Lead BUENO — agenda cita
+            </label>
+            <textarea value={goodCriteria} onChange={e => setGoodCriteria(e.target.value)} rows={5} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white resize-none focus:outline-none focus:border-green-600" placeholder={`- Más de 10 años operando\n- Más de 100 empleados\n- Sin área de programación suficiente\n- Dolor operativo claro`} />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 mb-1.5 block flex items-center gap-1.5">
+              <X size={12} className="text-red-400" /> Lead MALO — responde con calidez, no agendes
+            </label>
+            <textarea value={badCriteria} onChange={e => setBadCriteria(e.target.value)} rows={5} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white resize-none focus:outline-none focus:border-red-700" placeholder={`- Menos de 10 años operando\n- Menos de 100 empleados\n- Sin presupuesto\n- Sin dolor claro identificado`} />
+          </div>
+          <SaveBtn />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── SECCIÓN: Entregable ────────────────────────────────────────────────────────
+
+function SectionEntregable({ agentId, agent, setAgent }: { agentId: string; agent: AgentSlot; setAgent: (a: AgentSlot) => void }) {
+  const cfg = agent.agent_config ?? {};
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [form, setForm] = useState({
+    deliverable_type: (cfg.deliverable_type as string) ?? 'micro_diagnostico',
+    deliverable_url: (cfg.deliverable_url as string) ?? '',
+    deliverable_description: (cfg.deliverable_description as string) ?? '',
+  });
+
+  const DELIVERABLE_TYPES = [
+    { value: 'micro_diagnostico', label: 'Micro-diagnóstico', desc: 'Página HTML personalizada con análisis del prospecto' },
+    { value: 'propuesta', label: 'Propuesta comercial', desc: 'PDF o página con propuesta de servicios' },
+    { value: 'informe', label: 'Informe de diagnóstico', desc: 'Diagnóstico completo (versión extendida)' },
+    { value: 'ninguno', label: 'Sin entregable', desc: 'El agente solo agenda, sin entregar documento' },
+  ];
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await api.patch(`/agent-panel/${agentId}/config`, form);
+      setAgent({ ...agent, agent_config: { ...cfg, ...form } });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e: any) { alert(e?.message ?? 'Error al guardar'); }
+    setSaving(false);
+  };
+
+  const selected = DELIVERABLE_TYPES.find(d => d.value === form.deliverable_type);
+
+  return (
+    <div className="p-8">
+      <PageHeader title="Entregable" subtitle="Qué recibe el prospecto al finalizar el journey" />
+      <div className="mt-6 max-w-lg space-y-6">
+
+        {/* Tipo de entregable */}
+        <div>
+          <label className="text-xs text-gray-400 mb-3 block">Tipo de entregable</label>
+          <div className="space-y-2">
+            {DELIVERABLE_TYPES.map(d => (
+              <button
+                key={d.value}
+                onClick={() => setForm(p => ({ ...p, deliverable_type: d.value }))}
+                className={`w-full flex items-start gap-3 p-4 rounded-xl border text-left transition-all ${
+                  form.deliverable_type === d.value
+                    ? 'border-indigo-500 bg-indigo-500/10'
+                    : 'border-gray-800 bg-gray-900 hover:border-gray-700'
+                }`}
+              >
+                <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 mt-0.5 ${
+                  form.deliverable_type === d.value ? 'border-indigo-500 bg-indigo-500' : 'border-gray-600'
+                }`} />
+                <div>
+                  <p className="text-sm font-semibold text-white">{d.label}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{d.desc}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {form.deliverable_type !== 'ninguno' && (
+          <>
+            <div>
+              <label className="text-xs text-gray-400 mb-1.5 block">URL base del entregable</label>
+              <input
+                value={form.deliverable_url}
+                onChange={e => setForm(p => ({ ...p, deliverable_url: e.target.value }))}
+                className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500"
+                placeholder="https://app.flowdesk.mx/micro/"
+              />
+              <p className="text-xs text-gray-600 mt-1">El token único del prospecto se agrega al final automáticamente</p>
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-400 mb-1.5 block">Descripción del entregable</label>
+              <textarea
+                value={form.deliverable_description}
+                onChange={e => setForm(p => ({ ...p, deliverable_description: e.target.value }))}
+                rows={4}
+                className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white resize-none focus:outline-none focus:border-indigo-500"
+                placeholder={`Ej: "Te comparto tu micro-diagnóstico personalizado con los hallazgos clave de tu empresa y las áreas donde podemos generar más valor con IA..."`}
+              />
+              <p className="text-xs text-gray-600 mt-1">Mensaje que el agente envía junto al link del entregable (Etapa 5)</p>
+            </div>
+
+            {/* Preview */}
+            {form.deliverable_url && (
+              <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+                <p className="text-xs text-gray-500 mb-2">Vista previa del link que recibirá el prospecto:</p>
+                <p className="text-sm text-indigo-400 font-mono break-all">
+                  {form.deliverable_url.replace(/\/$/, '')}/[token-prospecto]
+                </p>
+              </div>
+            )}
+          </>
+        )}
+
+        <button onClick={save} disabled={saving} className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors">
+          {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <Check size={14} /> : null}
+          {saving ? 'Guardando...' : saved ? 'Guardado' : 'Guardar configuración'}
+        </button>
       </div>
     </div>
   );
