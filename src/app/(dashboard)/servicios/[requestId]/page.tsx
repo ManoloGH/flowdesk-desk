@@ -1,13 +1,15 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/store/auth';
 import { api } from '@/lib/api';
-import { Clock, AlertTriangle, Send, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Clock, AlertTriangle, Send, CheckCircle, XCircle, Loader2, Paperclip, Download, ChevronDown, UserCheck } from 'lucide-react';
 
 interface Comment { id: string; content: string; is_internal: boolean; created_at: string; slot: { id: string; name: string; avatar_url: string | null; type: string } }
 interface History { id: string; action: string; from_value: string | null; to_value: string | null; notes: string | null; created_at: string; slot: { name: string; avatar_url: string | null } | null }
 interface Approval { id: string; step: number; status: string; notes: string | null; decided_at: string | null; approver: { id: string; name: string; avatar_url: string | null } }
+interface Document { id: string; name: string; url: string; mime_type: string | null; size_bytes: number | null; created_at: string; slot: { id: string; name: string } | null }
+interface TeamSlotOption { id: string; name: string; type: string }
 interface SocRequest {
   id: string; request_number: string; title: string; description: string | null;
   status: string; priority: string; form_data: Record<string, any> | null;
@@ -19,6 +21,7 @@ interface SocRequest {
   comments: Comment[];
   history: History[];
   approvals: Approval[];
+  documents: Document[];
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -62,17 +65,31 @@ export default function RequestDetailPage() {
   const [isInternal, setIsInternal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
+  const [teamSlots, setTeamSlots] = useState<TeamSlotOption[]>([]);
+  const [assigning, setAssigning] = useState(false);
+  const [showAssign, setShowAssign] = useState(false);
+  const [selectedAssignee, setSelectedAssignee] = useState('');
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { load(); }, [requestId]);
+  useEffect(() => { load(); loadTeam(); }, [requestId]);
 
   async function load() {
     setLoading(true);
     try {
       const data = await api.get<SocRequest>(`/soc/requests/${requestId}`);
       setRequest(data);
+      setSelectedAssignee(data.assigned_to?.id ?? '');
     } finally {
       setLoading(false);
     }
+  }
+
+  async function loadTeam() {
+    try {
+      const data = await api.get<TeamSlotOption[]>('/team');
+      setTeamSlots(Array.isArray(data) ? data.filter((s: TeamSlotOption) => s.type === 'HUMAN') : []);
+    } catch {}
   }
 
   async function transition(status: string) {
@@ -100,6 +117,65 @@ export default function RequestDetailPage() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function assign() {
+    if (!request) return;
+    setAssigning(true);
+    try {
+      await api.patch(`/soc/requests/${request.id}/assign`, { assigned_to_id: selectedAssignee || undefined });
+      setShowAssign(false);
+      await load();
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setAssigning(false);
+    }
+  }
+
+  async function decideApproval(approvalId: string, decision: 'approved' | 'rejected') {
+    if (!request) return;
+    const notes = decision === 'rejected' ? prompt('Motivo del rechazo (opcional):') ?? undefined : undefined;
+    try {
+      await api.patch(`/soc/requests/${request.id}/approvals/${approvalId}`, { decision, notes });
+      await load();
+    } catch (e: any) {
+      alert(e.message);
+    }
+  }
+
+  async function uploadFile(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!request || !e.target.files?.[0]) return;
+    const file = e.target.files[0];
+    setUploadingFile(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const token = typeof window !== 'undefined' ? localStorage.getItem('fd_access') : null;
+      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+      const res = await fetch(`${apiBase}/soc/requests/${request.id}/documents`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: fd,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message ?? 'Error al subir archivo');
+      }
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      await load();
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setUploadingFile(false);
+    }
+  }
+
+  function fmtFileSize(bytes: number | null) {
+    if (!bytes) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
   if (loading) {
@@ -162,9 +238,33 @@ export default function RequestDetailPage() {
         {/* Meta */}
         <div className="flex items-center gap-4 mt-4 text-xs text-gray-500 flex-wrap">
           <span>Solicitó: <strong className="text-gray-300">{request.requester.name}</strong></span>
-          {request.assigned_to && (
-            <span>Asignado: <strong className="text-gray-300">{request.assigned_to.name}</strong></span>
-          )}
+          <span className="flex items-center gap-1">
+            Asignado:&nbsp;
+            {showAssign ? (
+              <span className="flex items-center gap-1">
+                <div className="relative">
+                  <select
+                    value={selectedAssignee}
+                    onChange={e => setSelectedAssignee(e.target.value)}
+                    className="bg-gray-800 border border-gray-700 rounded px-2 py-0.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 appearance-none pr-5"
+                  >
+                    <option value="">Sin asignar</option>
+                    {teamSlots.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                  <ChevronDown size={10} className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                </div>
+                <button onClick={assign} disabled={assigning} className="text-indigo-400 hover:text-indigo-300 font-medium">
+                  {assigning ? <Loader2 size={11} className="animate-spin" /> : 'Guardar'}
+                </button>
+                <button onClick={() => setShowAssign(false)} className="text-gray-500 hover:text-gray-300">Cancelar</button>
+              </span>
+            ) : (
+              <button onClick={() => setShowAssign(true)} className="flex items-center gap-1 text-gray-300 hover:text-white">
+                <strong>{request.assigned_to?.name ?? 'Sin asignar'}</strong>
+                <UserCheck size={11} className="text-gray-500" />
+              </button>
+            )}
+          </span>
           <span>{formatDate(request.created_at)}</span>
           {request.due_date && (
             <span className={`flex items-center gap-1 ${request.sla_breached ? 'text-red-400' : ''}`}>
@@ -276,18 +376,76 @@ export default function RequestDetailPage() {
           {request.service.requires_approval && request.approvals.length > 0 && (
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
               <h3 className="text-sm font-semibold text-white mb-3">Aprobaciones</h3>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {request.approvals.map(a => (
-                  <div key={a.id} className="flex items-center gap-2">
-                    {a.status === 'approved' && <CheckCircle size={14} className="text-emerald-400" />}
-                    {a.status === 'rejected' && <XCircle size={14} className="text-red-400" />}
-                    {a.status === 'pending' && <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-600" />}
-                    <span className="text-xs text-gray-300">Paso {a.step}: {a.approver.name}</span>
+                  <div key={a.id} className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      {a.status === 'approved' && <CheckCircle size={14} className="text-emerald-400 flex-shrink-0" />}
+                      {a.status === 'rejected' && <XCircle size={14} className="text-red-400 flex-shrink-0" />}
+                      {a.status === 'pending' && <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-600 flex-shrink-0" />}
+                      <span className="text-xs text-gray-300 flex-1">Paso {a.step}: {a.approver.name}</span>
+                    </div>
+                    {a.status === 'pending' && a.approver.id === user?.slot_id && (
+                      <div className="flex gap-1.5 pl-5">
+                        <button
+                          onClick={() => decideApproval(a.id, 'approved')}
+                          className="flex items-center gap-1 text-xs bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 px-2 py-1 rounded transition-colors"
+                        >
+                          <CheckCircle size={11} /> Aprobar
+                        </button>
+                        <button
+                          onClick={() => decideApproval(a.id, 'rejected')}
+                          className="flex items-center gap-1 text-xs bg-red-500/10 text-red-400 hover:bg-red-500/20 px-2 py-1 rounded transition-colors"
+                        >
+                          <XCircle size={11} /> Rechazar
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             </div>
           )}
+
+          {/* Documentos */}
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-white">Archivos adjuntos</h3>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingFile}
+                className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 disabled:opacity-50"
+              >
+                {uploadingFile ? <Loader2 size={12} className="animate-spin" /> : <Paperclip size={12} />}
+                {uploadingFile ? 'Subiendo...' : 'Adjuntar'}
+              </button>
+              <input ref={fileInputRef} type="file" className="hidden" onChange={uploadFile} />
+            </div>
+            {!request.documents || request.documents.length === 0 ? (
+              <p className="text-xs text-gray-500">Sin archivos adjuntos</p>
+            ) : (
+              <div className="space-y-2">
+                {request.documents.map(doc => (
+                  <a
+                    key={doc.id}
+                    href={doc.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-2 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors group"
+                  >
+                    <Paperclip size={12} className="text-gray-500 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-gray-300 truncate">{doc.name}</p>
+                      {doc.size_bytes && (
+                        <p className="text-xs text-gray-600">{fmtFileSize(doc.size_bytes)}</p>
+                      )}
+                    </div>
+                    <Download size={11} className="text-gray-600 group-hover:text-indigo-400 flex-shrink-0" />
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Historial */}
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">

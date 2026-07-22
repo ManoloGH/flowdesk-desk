@@ -267,6 +267,41 @@ export default function NuevaSolicitudPage() {
                         <span className="text-sm text-gray-300">{field.placeholder ?? 'Sí'}</span>
                       </label>
                     )}
+
+                    {field.type === 'multiselect' && field.options && (
+                      <div className="space-y-1.5">
+                        {field.options.map((opt: string) => (
+                          <label key={opt} className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={((formData[field.id] as string[]) ?? []).includes(opt)}
+                              onChange={e => {
+                                const current = (formData[field.id] as string[]) ?? [];
+                                updateField(field.id, e.target.checked
+                                  ? [...current, opt]
+                                  : current.filter((v: string) => v !== opt)
+                                );
+                              }}
+                              className="w-4 h-4 rounded border-gray-700 text-indigo-500 focus:ring-indigo-500"
+                            />
+                            <span className="text-sm text-gray-300">{opt}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+
+                    {field.type === 'file' && (
+                      <div>
+                        <input
+                          type="file"
+                          onChange={e => updateField(field.id, e.target.files?.[0]?.name ?? '')}
+                          className="text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-gray-700 file:text-gray-300 file:cursor-pointer file:text-xs hover:file:bg-gray-600"
+                        />
+                        {formData[field.id] && (
+                          <p className="text-xs text-gray-500 mt-1">{formData[field.id]}</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

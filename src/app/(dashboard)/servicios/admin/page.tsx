@@ -7,7 +7,9 @@ import { Plus, Edit2, ToggleLeft, ToggleRight, Clock, ChevronDown, X, GripVertic
 
 interface Department { id: string; name: string; color: string; dept_type: string | null }
 interface TeamSlotAgent { id: string; name: string }
+interface TeamSlot { id: string; name: string; role: string; type: string }
 interface FormField { id: string; label: string; type: string; required: boolean; placeholder?: string; options?: string; helpText?: string }
+interface ApprovalStep { step: number; label: string; role: string; slot_id: string }
 
 interface SocService {
   id: string; name: string; description: string | null; category: string | null;
@@ -15,17 +17,18 @@ interface SocService {
   sla_hours: number | null; requires_approval: boolean; auto_respond: boolean;
   auto_agent_id: string | null;
   form_schema: FormField[] | null;
+  approval_flow: ApprovalStep[] | null;
   department: Department;
   _count: { requests: number };
 }
 
-const FIELD_TYPES = ['text','textarea','number','select','date','checkbox'];
+const FIELD_TYPES = ['text','textarea','number','select','multiselect','date','checkbox','file'];
 
-const EMPTY_FORM: Partial<SocService> & { form_fields: FormField[] } = {
+const EMPTY_FORM: Partial<SocService> & { form_fields: FormField[]; approval_steps: ApprovalStep[] } = {
   name: '', description: '', category: '', icon: '📋', color: '#6366F1',
   sla_hours: undefined, requires_approval: false, auto_respond: false,
   visible_to: 'all', auto_agent_id: undefined, department_id: undefined,
-  form_fields: [],
+  form_fields: [], approval_steps: [],
 } as any;
 
 export default function AdminCatalogoPage() {
@@ -34,10 +37,11 @@ export default function AdminCatalogoPage() {
   const [services, setServices] = useState<SocService[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [agents, setAgents] = useState<TeamSlotAgent[]>([]);
+  const [teamSlots, setTeamSlots] = useState<TeamSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<any>({ ...EMPTY_FORM, form_fields: [] });
+  const [form, setForm] = useState<any>({ ...EMPTY_FORM, form_fields: [], approval_steps: [] });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [selectedDept, setSelectedDept] = useState<string>('');
@@ -47,13 +51,17 @@ export default function AdminCatalogoPage() {
   async function load() {
     setLoading(true);
     try {
-      const [svcs, depts] = await Promise.all([
+      const [svcs, depts, agts, slots] = await Promise.all([
         api.get<SocService[]>('/soc/services?active_only=false'),
         api.get<Department[]>('/departments'),
+        api.get<TeamSlotAgent[]>('/team?type=AI_AGENT').catch(() => []),
+        api.get<TeamSlot[]>('/team').catch(() => []),
       ]);
       setServices(Array.isArray(svcs) ? svcs : []);
       const deptList = Array.isArray(depts) ? depts : [];
       setDepartments(deptList);
+      setAgents(Array.isArray(agts) ? agts : []);
+      setTeamSlots(Array.isArray(slots) ? (slots as TeamSlot[]).filter((s: TeamSlot) => s.type === 'HUMAN') : []);
       if (deptList.length > 0 && !selectedDept) setSelectedDept(deptList[0].id);
     } finally {
       setLoading(false);
@@ -62,7 +70,7 @@ export default function AdminCatalogoPage() {
 
   function openCreate() {
     setEditingId(null);
-    setForm({ ...EMPTY_FORM, form_fields: [], department_id: selectedDept });
+    setForm({ ...EMPTY_FORM, form_fields: [], approval_steps: [], department_id: selectedDept });
     setError('');
     setShowForm(true);
   }
@@ -77,6 +85,9 @@ export default function AdminCatalogoPage() {
       department_id: svc.department.id,
       form_fields: (svc.form_schema ?? []).map((f: any) => ({
         ...f, options: Array.isArray(f.options) ? f.options.join(', ') : '',
+      })),
+      approval_steps: (svc.approval_flow ?? []).map((s: any) => ({
+        step: s.step, label: s.label ?? '', role: s.role ?? 'manager', slot_id: s.slot_id ?? '',
       })),
     });
     setError('');
@@ -116,8 +127,18 @@ export default function AdminCatalogoPage() {
           label: f.label, type: f.type, required: f.required,
           placeholder: f.placeholder || undefined,
           helpText: f.helpText || undefined,
-          options: f.options ? f.options.split(',').map((o: string) => o.trim()).filter(Boolean) : undefined,
+          options: (f.type === 'select' || f.type === 'multiselect') && f.options
+            ? f.options.split(',').map((o: string) => o.trim()).filter(Boolean)
+            : undefined,
         })),
+        approval_flow: form.requires_approval && form.approval_steps.length > 0
+          ? form.approval_steps.map((s: any, i: number) => ({
+              step: i + 1,
+              label: s.label || `Paso ${i + 1}`,
+              role: s.role || 'manager',
+              slot_id: s.slot_id || undefined,
+            }))
+          : undefined,
       };
       if (editingId) {
         await api.patch(`/soc/services/${editingId}`, payload);
@@ -138,6 +159,25 @@ export default function AdminCatalogoPage() {
       ...prev,
       form_fields: [...prev.form_fields, { id: '', label: '', type: 'text', required: false, placeholder: '', options: '', helpText: '' }],
     }));
+  }
+
+  function addApprovalStep() {
+    setForm((prev: any) => ({
+      ...prev,
+      approval_steps: [...prev.approval_steps, { step: prev.approval_steps.length + 1, label: '', role: 'manager', slot_id: '' }],
+    }));
+  }
+
+  function updateApprovalStep(idx: number, key: string, val: any) {
+    setForm((prev: any) => {
+      const steps = [...prev.approval_steps];
+      steps[idx] = { ...steps[idx], [key]: val };
+      return { ...prev, approval_steps: steps };
+    });
+  }
+
+  function removeApprovalStep(idx: number) {
+    setForm((prev: any) => ({ ...prev, approval_steps: prev.approval_steps.filter((_: any, i: number) => i !== idx) }));
   }
 
   function updateField(idx: number, key: string, val: any) {
@@ -375,6 +415,87 @@ export default function AdminCatalogoPage() {
                 ))}
               </div>
 
+              {/* Agente IA — solo si auto_respond */}
+              {form.auto_respond && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1.5">Agente IA</label>
+                  <div className="relative">
+                    <select
+                      value={form.auto_agent_id ?? ''}
+                      onChange={e => setForm((p: any) => ({ ...p, auto_agent_id: e.target.value || undefined }))}
+                      className="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none"
+                    >
+                      <option value="">Sin agente específico</option>
+                      {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                    </select>
+                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                  </div>
+                </div>
+              )}
+
+              {/* Flujo de aprobación — solo si requires_approval */}
+              {form.requires_approval && (
+                <div className="border border-amber-500/20 bg-amber-500/5 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-amber-400">Flujo de aprobación</h3>
+                    <button type="button" onClick={addApprovalStep} className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300">
+                      <Plus size={13} /> Agregar paso
+                    </button>
+                  </div>
+                  {form.approval_steps.length === 0 ? (
+                    <p className="text-xs text-gray-500">Sin pasos definidos — la solicitud requerirá aprobación manual sin flujo</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {form.approval_steps.map((step: any, idx: number) => (
+                        <div key={idx} className="bg-gray-900 border border-gray-700 rounded-lg p-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xs font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">Paso {idx + 1}</span>
+                            <button type="button" onClick={() => removeApprovalStep(idx)} className="ml-auto text-gray-600 hover:text-red-400">
+                              <X size={13} />
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <input
+                              type="text"
+                              value={step.label}
+                              onChange={e => updateApprovalStep(idx, 'label', e.target.value)}
+                              placeholder="Ej: Aprobación gerente"
+                              className="bg-gray-800 border border-gray-700 rounded px-2.5 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                            />
+                            <div className="relative">
+                              <select
+                                value={step.role}
+                                onChange={e => updateApprovalStep(idx, 'role', e.target.value)}
+                                className="w-full bg-gray-800 border border-gray-700 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500 appearance-none"
+                              >
+                                <option value="owner">Dueño</option>
+                                <option value="admin">Admin</option>
+                                <option value="manager">Gerente</option>
+                                <option value="employee">Empleado</option>
+                              </select>
+                              <ChevronDown size={11} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                            </div>
+                          </div>
+                          {teamSlots.length > 0 && (
+                            <div className="relative mt-2">
+                              <select
+                                value={step.slot_id}
+                                onChange={e => updateApprovalStep(idx, 'slot_id', e.target.value)}
+                                className="w-full bg-gray-800 border border-gray-700 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500 appearance-none"
+                              >
+                                <option value="">Cualquier persona con el rol</option>
+                                {teamSlots.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                              </select>
+                              <ChevronDown size={11} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Formulario dinámico */}
               <div className="border-t border-gray-800 pt-5">
                 <div className="flex items-center justify-between mb-3">
@@ -422,7 +543,7 @@ export default function AdminCatalogoPage() {
                             <ChevronDown size={11} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
                           </div>
                         </div>
-                        {(field.type === 'select') && (
+                        {(field.type === 'select' || field.type === 'multiselect') && (
                           <input
                             type="text"
                             value={field.options ?? ''}
