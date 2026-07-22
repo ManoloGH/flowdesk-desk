@@ -394,15 +394,177 @@ function SectionConversaciones({ agentId }: { agentId: string }) {
     }
   }, [agentId, tab]);
 
+  const [correctingId, setCorrectingId] = useState<string | null>(null);
+  const [correctionForm, setCorrectionForm] = useState({ corrected_text: '', note: '' });
+  const [savingCorrection, setSavingCorrection] = useState(false);
+  const [savedCorrections, setSavedCorrections] = useState<Set<string>>(new Set());
+
   const openConv = (convId: string) => {
     setSelectedConvId(convId);
     setDetailLoading(true);
     setConvDetail(null);
+    setCorrectingId(null);
     api.get<ConvDetail>(`/agent-panel/${agentId}/conversations/${convId}/messages`)
       .then(setConvDetail)
       .catch(console.error)
       .finally(() => setDetailLoading(false));
   };
+
+  const startCorrection = (msg: BotMessage) => {
+    setCorrectingId(msg.id);
+    setCorrectionForm({ corrected_text: '', note: '' });
+  };
+
+  const saveCorrection = async (msg: BotMessage) => {
+    if (!correctionForm.corrected_text.trim()) return;
+    setSavingCorrection(true);
+    try {
+      await api.post(`/agent-panel/${agentId}/corrections`, {
+        original_text: msg.content,
+        corrected_text: correctionForm.corrected_text,
+        note: correctionForm.note || undefined,
+        verdict: 'error',
+        source: 'conversation',
+        conversation_id: convDetail?.conversation.id,
+      });
+      setSavedCorrections(prev => new Set(prev).add(msg.id));
+      setCorrectingId(null);
+    } catch (e: any) { alert(e?.message ?? 'Error al guardar'); }
+    setSavingCorrection(false);
+  };
+
+  // Pantalla de detalle de conversación (full-screen)
+  if (selectedConvId) {
+    return (
+      <div className="flex flex-col h-screen bg-gray-950">
+        {/* Header */}
+        <div className="flex-shrink-0 flex items-center gap-4 px-6 py-4 border-b border-gray-800 bg-gray-950">
+          <button
+            onClick={() => { setSelectedConvId(null); setConvDetail(null); setCorrectingId(null); }}
+            className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+          >
+            <ChevronLeft size={16} /> Volver
+          </button>
+          <div className="h-4 w-px bg-gray-800" />
+          <div>
+            <p className="text-sm font-semibold text-white">
+              {convDetail?.conversation.contact_name ?? convDetail?.conversation.phone ?? 'Conversación'}
+            </p>
+            <p className="text-xs text-gray-500">
+              {convDetail?.conversation.phone}
+              {convDetail?.conversation.instance_name && ` · ${convDetail.conversation.instance_name}`}
+            </p>
+          </div>
+          <div className="ml-auto">
+            <span className="text-xs px-2.5 py-1 rounded-full bg-gray-800 text-gray-400 border border-gray-700">
+              {convDetail?.conversation.mode ?? 'AI'}
+            </span>
+          </div>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-6 py-6">
+          {detailLoading ? (
+            <div className="flex justify-center pt-20"><Loader2 size={22} className="text-indigo-500 animate-spin" /></div>
+          ) : !convDetail || convDetail.messages.length === 0 ? (
+            <p className="text-sm text-gray-500 text-center pt-20">Sin mensajes registrados.</p>
+          ) : (
+            <div className="max-w-2xl mx-auto space-y-4">
+              {convDetail.messages.map(m => {
+                const isAgent = m.role !== 'user';
+                const isCorrecting = correctingId === m.id;
+                const alreadyCorrected = savedCorrections.has(m.id);
+                return (
+                  <div key={m.id} className={`flex flex-col ${isAgent ? 'items-start' : 'items-end'}`}>
+                    {/* Role label */}
+                    <p className="text-[10px] text-gray-600 mb-1 px-1">
+                      {isAgent ? 'Agente' : 'Cliente'}
+                    </p>
+
+                    {/* Bubble */}
+                    <div className={`group relative max-w-[75%] rounded-2xl px-4 py-3 ${
+                      isAgent
+                        ? 'bg-gray-800 text-gray-100 rounded-tl-sm'
+                        : 'bg-indigo-600 text-white rounded-tr-sm'
+                    }`}>
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{m.content}</p>
+                      <p className={`text-[10px] mt-1.5 ${isAgent ? 'text-gray-500' : 'text-indigo-300'}`}>
+                        {new Date(m.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+
+                      {/* Botón Corregir — solo mensajes del agente */}
+                      {isAgent && !isCorrecting && (
+                        <div className="absolute -bottom-6 left-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {alreadyCorrected ? (
+                            <span className="flex items-center gap-1 text-[10px] text-green-500">
+                              <Check size={10} /> Corrección guardada
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => startCorrection(m)}
+                              className="flex items-center gap-1 text-[10px] text-amber-400 hover:text-amber-300 transition-colors"
+                            >
+                              <Pencil size={10} /> Corregir respuesta
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Formulario de corrección inline */}
+                    {isCorrecting && (
+                      <div className="mt-6 w-full max-w-[75%] bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 space-y-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Pencil size={12} className="text-amber-400" />
+                          <p className="text-xs font-semibold text-amber-400">¿Cómo debería haber respondido el agente?</p>
+                        </div>
+                        <div className="bg-gray-900/60 border border-gray-700 rounded-lg p-3">
+                          <p className="text-[10px] text-gray-500 mb-1">Respuesta original del agente</p>
+                          <p className="text-xs text-gray-400 italic">{m.content}</p>
+                        </div>
+                        <textarea
+                          autoFocus
+                          value={correctionForm.corrected_text}
+                          onChange={e => setCorrectionForm(p => ({ ...p, corrected_text: e.target.value }))}
+                          placeholder="Escribe cómo debería haber respondido el agente..."
+                          rows={3}
+                          className="w-full bg-gray-900 border border-amber-500/40 rounded-lg p-3 text-sm text-white placeholder-gray-600 resize-none focus:outline-none focus:border-amber-400"
+                        />
+                        <input
+                          value={correctionForm.note}
+                          onChange={e => setCorrectionForm(p => ({ ...p, note: e.target.value }))}
+                          placeholder="Nota adicional (opcional): por qué estaba mal, contexto..."
+                          className="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-gray-600"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => saveCorrection(m)}
+                            disabled={savingCorrection || !correctionForm.corrected_text.trim()}
+                            className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-gray-900 text-sm font-semibold rounded-lg transition-colors"
+                          >
+                            {savingCorrection ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+                            Guardar corrección
+                          </button>
+                          <button
+                            onClick={() => setCorrectingId(null)}
+                            className="px-4 py-2 text-sm text-gray-500 hover:text-gray-400 transition-colors"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {/* Spacer para que el último mensaje no quede tapado por el botón hover */}
+              <div className="h-8" />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8">
@@ -449,51 +611,6 @@ function SectionConversaciones({ agentId }: { agentId: string }) {
         </div>
       ) : (
         <CorrectionsPanel agentId={agentId} corrections={corrections} setCorrections={setCorrections} />
-      )}
-
-      {/* Slide-over de mensajes */}
-      {selectedConvId && (
-        <div className="fixed inset-0 z-50 flex">
-          <div className="flex-1 bg-black/50" onClick={() => setSelectedConvId(null)} />
-          <div className="w-[420px] bg-gray-950 border-l border-gray-800 flex flex-col h-full">
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
-              <div>
-                <p className="text-sm font-semibold text-white">
-                  {convDetail?.conversation.contact_name ?? convDetail?.conversation.phone ?? 'Conversación'}
-                </p>
-                <p className="text-xs text-gray-500">{convDetail?.conversation.phone}</p>
-              </div>
-              <button onClick={() => setSelectedConvId(null)} className="text-gray-600 hover:text-gray-400">
-                <X size={16} />
-              </button>
-            </div>
-
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {detailLoading ? (
-                <div className="flex justify-center pt-16"><Loader2 size={20} className="text-indigo-500 animate-spin" /></div>
-              ) : !convDetail || convDetail.messages.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center pt-16">Sin mensajes registrados.</p>
-              ) : (
-                convDetail.messages.map(m => (
-                  <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
-                      m.role === 'user'
-                        ? 'bg-indigo-600 text-white rounded-br-sm'
-                        : 'bg-gray-800 text-gray-200 rounded-bl-sm'
-                    }`}>
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{m.content}</p>
-                      <p className={`text-[10px] mt-1 ${m.role === 'user' ? 'text-indigo-300' : 'text-gray-500'}`}>
-                        {new Date(m.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );
