@@ -63,6 +63,7 @@ export default function AreaUploadPage() {
   const [error, setError]       = useState('');
   const [qaDoc, setQaDoc]       = useState<QADoc | null>(null);
   const [fileLoading, setFileLoading] = useState(false);
+  const [folio, setFolio] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { load(); }, [token]);
@@ -154,10 +155,11 @@ export default function AreaUploadPage() {
   async function handleReview() {
     setSending(true); setError('');
     try {
-      await apiFetch(`/proyectos-soc/intake/area/${token}/answer`, {
+      const res = await apiFetch<{ requirement?: { id: string; folio: string } }>(`/proyectos-soc/intake/area/${token}/answer`, {
         method: 'POST',
         body: JSON.stringify({ area_answers: review }),
       });
+      if (res.requirement) setFolio(res.requirement.folio);
       setStep('done');
     } catch (err: any) { setError(err?.message ?? 'Error al enviar'); }
     finally { setSending(false); }
@@ -227,11 +229,16 @@ export default function AreaUploadPage() {
 
   if (step === 'done') return (
     <div style={{ ...s.wrap, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ textAlign: 'center', background: '#fff', padding: 48, borderRadius: 16, border: '1px solid #e9ecef', maxWidth: 460 }}>
+      <div style={{ textAlign: 'center', background: '#fff', padding: 48, borderRadius: 16, border: '1px solid #e9ecef', maxWidth: 480 }}>
         <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#d1fae5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 28 }}>✓</div>
-        <h2 style={{ margin: '0 0 10px', fontSize: 22, fontWeight: 700, color: '#111827' }}>¡Gracias!</h2>
+        <h2 style={{ margin: '0 0 10px', fontSize: 22, fontWeight: 700, color: '#111827' }}>¡Solicitud registrada!</h2>
+        {folio && (
+          <div style={{ display: 'inline-block', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '8px 20px', margin: '0 0 16px', fontFamily: 'monospace', fontSize: 15, fontWeight: 700, color: '#1d4ed8', letterSpacing: '0.05em' }}>
+            {folio}
+          </div>
+        )}
         <p style={{ margin: 0, fontSize: 14, color: '#6b7280', lineHeight: 1.7 }}>
-          Tu confirmación fue enviada al equipo de Proyectos SOC. Nos pondremos en contacto si necesitamos algo más.
+          Tu solicitud fue enviada al equipo de Proyectos SOC.{folio ? ' El folio de seguimiento es el que aparece arriba.' : ''} Nos pondremos en contacto si necesitamos algo más.
         </p>
       </div>
     </div>
