@@ -52,8 +52,12 @@ export default function AreaUploadPage() {
   const { token } = useParams<{ token: string }>();
   const [step, setStep]         = useState<Step>('loading');
   const [info, setInfo]         = useState<TokenInfo | null>(null);
-  const [content, setContent]   = useState('');
-  const [fileName, setFileName] = useState('');
+  const [solicitante, setSolicitante]       = useState('');
+  const [areaSol, setAreaSol]               = useState('');
+  const [tipoDesarrollo, setTipoDesarrollo] = useState('');
+  const [descripcion, setDescripcion]       = useState('');
+  const [excelFileName, setExcelFileName]   = useState('');
+  const [excelData, setExcelData]           = useState('');
   const [review, setReview]     = useState<ReviewState>({ question_answers: {}, screen_reviews: {}, assumption_reviews: {} });
   const [sending, setSending]   = useState(false);
   const [error, setError]       = useState('');
@@ -98,13 +102,12 @@ export default function AreaUploadPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     setFileLoading(true);
-    setFileName(file.name);
+    setExcelFileName(file.name);
     try {
       if (file.name.match(/\.(csv|txt|tsv)$/i)) {
         const text = await file.text();
-        setContent(text);
+        setExcelData(text);
       } else {
-        // xlsx / xls — usar librería xlsx
         const XLSX = await import('xlsx');
         const buf  = await file.arrayBuffer();
         const wb   = XLSX.read(buf, { type: 'array' });
@@ -114,7 +117,7 @@ export default function AreaUploadPage() {
           const csv = XLSX.utils.sheet_to_csv(wb.Sheets[sheetName]);
           lines.push(csv);
         }
-        setContent(lines.join('\n\n'));
+        setExcelData(lines.join('\n\n'));
       }
     } catch {
       setError('No se pudo leer el archivo. Prueba guardarlo como CSV e inténtalo de nuevo.');
@@ -124,12 +127,24 @@ export default function AreaUploadPage() {
   }
 
   async function handleUpload() {
-    if (!content.trim()) { setError('Pega el contenido de tu Excel o escribe los datos.'); return; }
+    if (!solicitante.trim()) { setError('El nombre del solicitante es obligatorio.'); return; }
+    if (!descripcion.trim()) { setError('Por favor describe cómo y cuándo usas el Excel.'); return; }
     setSending(true); setError('');
+
+    const content = [
+      `Solicitante: ${solicitante}`,
+      `Área: ${areaSol || info?.area_name || '—'}`,
+      `Tipo de desarrollo: ${tipoDesarrollo === 'modificacion' ? 'Modificación a sistema existente' : tipoDesarrollo === 'nuevo' ? 'Nuevo desarrollo' : 'No especificado'}`,
+      '',
+      '=== Descripción del proceso ===',
+      descripcion,
+      ...(excelData ? ['', '=== Datos del Excel ===', excelData] : []),
+    ].join('\n');
+
     try {
       await apiFetch(`/proyectos-soc/intake/area/${token}/submit`, {
         method: 'POST',
-        body: JSON.stringify({ content, file_name: fileName || undefined }),
+        body: JSON.stringify({ content, file_name: excelFileName || solicitante }),
       });
       setStep('processing');
     } catch (err: any) { setError(err?.message ?? 'Error al enviar'); }
@@ -245,9 +260,9 @@ export default function AreaUploadPage() {
       <div style={s.content}>
         <div style={{ marginBottom: 28 }}>
           <p style={{ margin: '0 0 4px', ...s.label }}>Área: {info?.area_name}</p>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#111827' }}>Enviar información del Excel</h1>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#111827' }}>Enviar solicitud de requerimiento</h1>
           <p style={{ margin: '8px 0 0', fontSize: 14, color: '#6b7280' }}>
-            Copia y pega el contenido de tu Excel — columnas, datos de ejemplo y cómo se usa cada campo en tu trabajo diario.
+            Completa los datos del solicitante y describe cómo usas el Excel. El equipo de Proyectos SOC lo analizará y te enviará una propuesta de pantallas para confirmar.
           </p>
         </div>
 
@@ -256,7 +271,75 @@ export default function AreaUploadPage() {
         <div style={s.section}>
           <div style={s.secBody}>
 
-            {/* ── Zona de carga de archivo ─────────────────────────── */}
+            {/* ── Datos del solicitante ────────────────────────────── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#4b5563', marginBottom: 6 }}>
+                  Nombre del solicitante <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <input
+                  value={solicitante}
+                  onChange={e => setSolicitante(e.target.value)}
+                  placeholder="Ej: Ana García"
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 14, boxSizing: 'border-box' as const, outline: 'none' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#4b5563', marginBottom: 6 }}>
+                  Área del solicitante
+                </label>
+                <input
+                  value={areaSol}
+                  onChange={e => setAreaSol(e.target.value)}
+                  placeholder="Ej: Marketing Digital"
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 14, boxSizing: 'border-box' as const, outline: 'none' }}
+                />
+              </div>
+            </div>
+
+            {/* ── Tipo de desarrollo ───────────────────────────────── */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#4b5563', marginBottom: 8 }}>
+                ¿Es modificación a sistema existente o nuevo desarrollo?
+              </label>
+              <div style={{ display: 'flex', gap: 10 }}>
+                {[
+                  { value: 'modificacion', label: '✎  Modificación a sistema existente' },
+                  { value: 'nuevo',        label: '✦  Nuevo desarrollo' },
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setTipoDesarrollo(opt.value)}
+                    style={{
+                      flex: 1, padding: '10px 14px', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                      border: tipoDesarrollo === opt.value ? '2px solid #0d6efd' : '2px solid #e5e7eb',
+                      background: tipoDesarrollo === opt.value ? '#eff6ff' : '#f9fafb',
+                      color: tipoDesarrollo === opt.value ? '#1d4ed8' : '#6b7280',
+                      transition: 'all .15s',
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* ── Descripción del proceso ──────────────────────────── */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#4b5563', marginBottom: 6 }}>
+                ¿Cómo y cuándo llenas este Excel? ¿De dónde sacas la información para llenarlo? <span style={{ color: '#dc2626' }}>*</span>
+              </label>
+              <textarea
+                value={descripcion}
+                onChange={e => setDescripcion(e.target.value)}
+                rows={6}
+                placeholder="Explica el proceso: con qué frecuencia lo llenas, qué información capturas, de qué sistemas o fuentes obtienes los datos, quién más lo usa o lo consulta…"
+                style={s.ta}
+              />
+            </div>
+
+            {/* ── Archivo Excel (opcional) ─────────────────────────── */}
             <input
               ref={fileRef}
               type="file"
@@ -264,62 +347,46 @@ export default function AreaUploadPage() {
               style={{ display: 'none' }}
               onChange={handleFileChange}
             />
-            <div
-              onClick={() => !fileLoading && fileRef.current?.click()}
-              style={{
-                border: '2px dashed #d1d5db', borderRadius: 10, padding: '28px 20px', textAlign: 'center',
-                cursor: fileLoading ? 'wait' : 'pointer', marginBottom: 20, background: '#f9fafb',
-                transition: 'border-color .15s',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = '#0d6efd')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = '#d1d5db')}
-            >
-              {fileLoading ? (
-                <>
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid #e5e7eb', borderTopColor: '#0d6efd', animation: 'spin 1s linear infinite', margin: '0 auto 10px' }} />
-                  <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-                  <p style={{ margin: 0, fontSize: 14, color: '#6b7280' }}>Leyendo archivo…</p>
-                </>
-              ) : content ? (
-                <>
-                  <div style={{ fontSize: 28, marginBottom: 8 }}>📄</div>
-                  <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600, color: '#111827' }}>{fileName}</p>
-                  <p style={{ margin: 0, fontSize: 12, color: '#6b7280' }}>{content.length.toLocaleString()} caracteres cargados · Haz clic para cambiar el archivo</p>
-                </>
-              ) : (
-                <>
-                  <div style={{ fontSize: 32, marginBottom: 10 }}>📊</div>
-                  <p style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700, color: '#111827' }}>Selecciona tu archivo Excel</p>
-                  <p style={{ margin: '0 0 14px', fontSize: 13, color: '#6b7280' }}>Soporta .xlsx, .xls, .csv</p>
-                  <div style={{ display: 'inline-block', background: '#0d6efd', color: '#fff', padding: '8px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600 }}>
-                    Buscar archivo
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* ── Opción alternativa: pegar texto ─────────────────── */}
-            <details style={{ marginTop: 4 }}>
-              <summary style={{ fontSize: 12, color: '#9ca3af', cursor: 'pointer', userSelect: 'none' }}>
-                O pega el contenido manualmente
-              </summary>
-              <div style={{ marginTop: 10 }}>
-                <div style={{ marginBottom: 12 }}>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#4b5563', marginBottom: 6 }}>Nombre del archivo</label>
-                  <input value={fileName} onChange={e => setFileName(e.target.value)} placeholder="Ej: Reporte_Marketing_Junio2026.xlsx"
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 14, boxSizing: 'border-box' as const, outline: 'none' }} />
-                </div>
-                <textarea value={content} onChange={e => setContent(e.target.value)} rows={10}
-                  placeholder="Pega aquí el contenido de tu Excel: columnas, filas de ejemplo…"
-                  style={s.ta} />
-                <div style={{ marginTop: 4, fontSize: 11, color: '#9ca3af' }}>{content.length.toLocaleString()} caracteres</div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#4b5563', marginBottom: 8 }}>
+                Adjuntar Excel (opcional pero recomendado)
+              </label>
+              <div
+                onClick={() => !fileLoading && fileRef.current?.click()}
+                style={{
+                  border: '2px dashed #d1d5db', borderRadius: 10, padding: '20px', textAlign: 'center',
+                  cursor: fileLoading ? 'wait' : 'pointer', background: '#f9fafb', transition: 'border-color .15s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = '#0d6efd')}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = excelData ? '#059669' : '#d1d5db')}
+              >
+                {fileLoading ? (
+                  <>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', border: '3px solid #e5e7eb', borderTopColor: '#0d6efd', animation: 'spin 1s linear infinite', margin: '0 auto 8px' }} />
+                    <p style={{ margin: 0, fontSize: 13, color: '#6b7280' }}>Leyendo archivo…</p>
+                  </>
+                ) : excelData ? (
+                  <>
+                    <div style={{ fontSize: 24, marginBottom: 6 }}>✅</div>
+                    <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 600, color: '#111827' }}>{excelFileName}</p>
+                    <p style={{ margin: 0, fontSize: 11, color: '#6b7280' }}>{excelData.length.toLocaleString()} caracteres · Haz clic para cambiar</p>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 26, marginBottom: 8 }}>📊</div>
+                    <p style={{ margin: '0 0 10px', fontSize: 13, color: '#6b7280' }}>Soporta .xlsx, .xls, .csv</p>
+                    <div style={{ display: 'inline-block', background: '#f3f4f6', color: '#374151', padding: '6px 16px', borderRadius: 7, fontSize: 12, fontWeight: 600 }}>
+                      Buscar archivo
+                    </div>
+                  </>
+                )}
               </div>
-            </details>
+            </div>
 
           </div>
         </div>
 
-        <button onClick={handleUpload} disabled={sending || !content.trim()} style={s.submit(sending || !content.trim())}>
+        <button onClick={handleUpload} disabled={sending || !solicitante.trim() || !descripcion.trim()} style={s.submit(sending || !solicitante.trim() || !descripcion.trim())}>
           {sending ? 'Enviando…' : 'Enviar información'}
         </button>
         <p style={{ margin: '14px 0 0', fontSize: 11, color: '#9ca3af', textAlign: 'center' }}>
