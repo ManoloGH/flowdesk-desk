@@ -141,7 +141,7 @@ export default function NuevoRequerimientoPage() {
     try {
       const { token, upload_id } = await api.post<{ token: string; upload_id: string }>(
         '/proyectos-soc/intake/tokens',
-        { area_name: areaSol || solicitante, area_email: '', expires_days: 3 },
+        { area_name: areaSol || solicitante, expires_days: 3 },
       );
       setIntakeToken(token);
       setUploadId(upload_id);
