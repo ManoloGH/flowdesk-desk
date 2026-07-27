@@ -79,10 +79,19 @@ export default function NuevoRequerimientoPage() {
   });
   function setF(field: string, value: string) { setForm(p => ({ ...p, [field]: value })); }
 
-  // ── Poll questionnaire ─────────────────────────────────────────────────────
+  // ── Poll questionnaire (timeout 4 min) ────────────────────────────────────
   useEffect(() => {
     if (intakeStep !== 'processing' || !intakeToken) return;
+    const start = Date.now();
+    const TIMEOUT_MS = 4 * 60 * 1000;
+
     const iv = setInterval(async () => {
+      if (Date.now() - start > TIMEOUT_MS) {
+        clearInterval(iv);
+        setError('El análisis tardó demasiado. Por favor intenta de nuevo.');
+        setIntakeStep('form');
+        return;
+      }
       try {
         const data = await publicFetch<any>(`/proyectos-soc/intake/area/${intakeToken}`);
         if (data.excel_upload?.questionnaire) {
