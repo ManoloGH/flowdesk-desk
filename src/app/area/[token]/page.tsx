@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
@@ -58,6 +58,8 @@ export default function AreaUploadPage() {
   const [sending, setSending]   = useState(false);
   const [error, setError]       = useState('');
   const [qaDoc, setQaDoc]       = useState<QADoc | null>(null);
+  const [fileLoading, setFileLoading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { load(); }, [token]);
 
@@ -90,6 +92,35 @@ export default function AreaUploadPage() {
 
   function parseQaDoc(raw: string): QADoc {
     try { return JSON.parse(raw) as QADoc; } catch { return {}; }
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFileLoading(true);
+    setFileName(file.name);
+    try {
+      if (file.name.match(/\.(csv|txt|tsv)$/i)) {
+        const text = await file.text();
+        setContent(text);
+      } else {
+        // xlsx / xls — usar librería xlsx
+        const XLSX = await import('xlsx');
+        const buf  = await file.arrayBuffer();
+        const wb   = XLSX.read(buf, { type: 'array' });
+        const lines: string[] = [];
+        for (const sheetName of wb.SheetNames) {
+          lines.push(`=== Hoja: ${sheetName} ===`);
+          const csv = XLSX.utils.sheet_to_csv(wb.Sheets[sheetName]);
+          lines.push(csv);
+        }
+        setContent(lines.join('\n\n'));
+      }
+    } catch {
+      setError('No se pudo leer el archivo. Prueba guardarlo como CSV e inténtalo de nuevo.');
+    } finally {
+      setFileLoading(false);
+    }
   }
 
   async function handleUpload() {
@@ -224,18 +255,67 @@ export default function AreaUploadPage() {
 
         <div style={s.section}>
           <div style={s.secBody}>
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#4b5563', marginBottom: 6 }}>Nombre del archivo (opcional)</label>
-              <input value={fileName} onChange={e => setFileName(e.target.value)} placeholder="Ej: Reporte_Marketing_Junio2026.xlsx"
-                style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 14, boxSizing: 'border-box', outline: 'none' }} />
+
+            {/* ── Zona de carga de archivo ─────────────────────────── */}
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".xlsx,.xls,.csv,.txt,.tsv"
+              style={{ display: 'none' }}
+              onChange={handleFileChange}
+            />
+            <div
+              onClick={() => !fileLoading && fileRef.current?.click()}
+              style={{
+                border: '2px dashed #d1d5db', borderRadius: 10, padding: '28px 20px', textAlign: 'center',
+                cursor: fileLoading ? 'wait' : 'pointer', marginBottom: 20, background: '#f9fafb',
+                transition: 'border-color .15s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = '#0d6efd')}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = '#d1d5db')}
+            >
+              {fileLoading ? (
+                <>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid #e5e7eb', borderTopColor: '#0d6efd', animation: 'spin 1s linear infinite', margin: '0 auto 10px' }} />
+                  <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                  <p style={{ margin: 0, fontSize: 14, color: '#6b7280' }}>Leyendo archivo…</p>
+                </>
+              ) : content ? (
+                <>
+                  <div style={{ fontSize: 28, marginBottom: 8 }}>📄</div>
+                  <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600, color: '#111827' }}>{fileName}</p>
+                  <p style={{ margin: 0, fontSize: 12, color: '#6b7280' }}>{content.length.toLocaleString()} caracteres cargados · Haz clic para cambiar el archivo</p>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: 32, marginBottom: 10 }}>📊</div>
+                  <p style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700, color: '#111827' }}>Selecciona tu archivo Excel</p>
+                  <p style={{ margin: '0 0 14px', fontSize: 13, color: '#6b7280' }}>Soporta .xlsx, .xls, .csv</p>
+                  <div style={{ display: 'inline-block', background: '#0d6efd', color: '#fff', padding: '8px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600 }}>
+                    Buscar archivo
+                  </div>
+                </>
+              )}
             </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#4b5563', marginBottom: 6 }}>Contenido del Excel *</label>
-              <textarea value={content} onChange={e => setContent(e.target.value)} rows={12}
-                placeholder="Pega aquí el contenido de tu Excel: columnas, filas de ejemplo, y una descripción breve de para qué sirve cada campo…"
-                style={s.ta} />
-              <div style={{ marginTop: 4, fontSize: 11, color: '#9ca3af' }}>{content.length.toLocaleString()} caracteres</div>
-            </div>
+
+            {/* ── Opción alternativa: pegar texto ─────────────────── */}
+            <details style={{ marginTop: 4 }}>
+              <summary style={{ fontSize: 12, color: '#9ca3af', cursor: 'pointer', userSelect: 'none' }}>
+                O pega el contenido manualmente
+              </summary>
+              <div style={{ marginTop: 10 }}>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#4b5563', marginBottom: 6 }}>Nombre del archivo</label>
+                  <input value={fileName} onChange={e => setFileName(e.target.value)} placeholder="Ej: Reporte_Marketing_Junio2026.xlsx"
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 14, boxSizing: 'border-box' as const, outline: 'none' }} />
+                </div>
+                <textarea value={content} onChange={e => setContent(e.target.value)} rows={10}
+                  placeholder="Pega aquí el contenido de tu Excel: columnas, filas de ejemplo…"
+                  style={s.ta} />
+                <div style={{ marginTop: 4, fontSize: 11, color: '#9ca3af' }}>{content.length.toLocaleString()} caracteres</div>
+              </div>
+            </details>
+
           </div>
         </div>
 
