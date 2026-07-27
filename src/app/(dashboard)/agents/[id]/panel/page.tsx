@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import {
@@ -7,7 +7,8 @@ import {
   Package, Clock, UserCheck, ArrowUpRight, Brain, Settings, FileText,
   User2, HelpCircle, ChevronLeft, Loader2, Plus, Trash2, Check, X,
   RefreshCw, AlertCircle, CheckCircle, BarChart3, Bot, Pencil,
-  ChevronRight, Send,
+  ChevronRight, ChevronDown, Send, Search, Tag, Library,
+  ThumbsUp, ThumbsDown, Sparkles,
 } from 'lucide-react';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -26,15 +27,19 @@ interface DashboardData {
   corrections_total: number;
   active_skills: number;
   agent_role: string | null;
+  handoffs_total?: number;
+  active_conversations?: number;
+  volume_30_days?: { date: string; count: number }[];
+  mode_distribution?: { mode: string; count: number }[];
 }
 
 interface Conversation {
   id: string;
   phone?: string;
-  contact_name?: string;
-  title?: string;
-  status: string;
-  stage?: string;
+  contact_name?: string | null;
+  mode?: string;
+  last_message_at?: string | null;
+  messages_count?: number;
   created_at: string;
 }
 
@@ -54,6 +59,8 @@ interface Skill {
   trigger_condition: string;
   response_instructions: string;
   example_conversation?: string;
+  action_type: string;
+  action_config?: Record<string, string> | null;
   status: string;
   created_at: string;
 }
@@ -104,10 +111,32 @@ interface AvailableModel {
   tier: string;
 }
 
+interface AgentCase {
+  id: string;
+  name: string;
+  linea?: string | null;
+  area?: string | null;
+  content: string;
+  disposition: string;
+  status: string;
+  created_at: string;
+}
+
+interface AgentClassification {
+  id: string;
+  source: string;
+  message_text?: string | null;
+  resolution: string;
+  caso?: string | null;
+  feedback?: string | null;
+  created_at: string;
+}
+
 // ── Nav Structure ──────────────────────────────────────────────────────────────
 
 type SectionId =
-  | 'inicio' | 'conversaciones' | 'skills' | 'base-conocimiento'
+  | 'inicio' | 'conversaciones' | 'probar' | 'clasificaciones'
+  | 'skills' | 'base-conocimiento' | 'catalogo'
   | 'prospectos' | 'journey' | 'entregable' | 'seguimiento'
   | 'agentes-humanos' | 'escalacion'
   | 'calibrador'
@@ -124,6 +153,8 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: 'inicio', label: 'Inicio', icon: LayoutDashboard },
       { id: 'conversaciones', label: 'Conversaciones', icon: MessageSquare },
+      { id: 'probar', label: 'Probar agente', icon: Send },
+      { id: 'clasificaciones', label: 'Clasificaciones', icon: Tag },
       { id: 'skills', label: 'Skills', icon: Zap },
     ],
   },
@@ -131,6 +162,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Conocimiento',
     items: [
       { id: 'base-conocimiento', label: 'Base de conocimiento', icon: BookOpen },
+      { id: 'catalogo', label: 'Catálogo de casos', icon: Library },
     ],
   },
   {
@@ -267,6 +299,7 @@ export default function AgentPanelPage() {
           agentId={agentId}
           agent={agent}
           setAgent={setAgent}
+          setSection={setActiveSection}
         />
       </main>
     </div>
@@ -276,17 +309,21 @@ export default function AgentPanelPage() {
 // ── Section Renderer ───────────────────────────────────────────────────────────
 
 function SectionRenderer({
-  section, agentId, agent, setAgent,
+  section, agentId, agent, setAgent, setSection,
 }: {
   section: SectionId;
   agentId: string;
   agent: AgentSlot;
   setAgent: (a: AgentSlot) => void;
+  setSection: (s: SectionId) => void;
 }) {
   switch (section) {
     case 'inicio':         return <SectionInicio agentId={agentId} />;
-    case 'conversaciones': return <SectionConversaciones agentId={agentId} />;
-    case 'skills':         return <SectionSkills agentId={agentId} />;
+    case 'conversaciones':   return <SectionConversaciones agentId={agentId} setSection={setSection} />;
+    case 'probar':           return <SectionProbar agentId={agentId} />;
+    case 'clasificaciones':  return <SectionClasificaciones agentId={agentId} />;
+    case 'catalogo':         return <SectionCatalogo agentId={agentId} />;
+    case 'skills':           return <SectionSkills agentId={agentId} />;
     case 'calibrador':     return <SectionCalibrador agentId={agentId} />;
     case 'configuracion':  return <SectionConfiguracion agentId={agentId} agent={agent} setAgent={setAgent} />;
     case 'auditoria':      return <SectionAuditoria agentId={agentId} />;
@@ -333,43 +370,262 @@ function SectionStub({ label }: { label: string }) {
   );
 }
 
+// ── Conversation helpers ───────────────────────────────────────────────────────
+
+const CONV_MODE: Record<string, { label: string; bg: string; dot: string }> = {
+  AI:       { label: 'Bot activo',  bg: 'bg-indigo-500/15 text-indigo-400',  dot: 'bg-indigo-500' },
+  ai:       { label: 'Bot activo',  bg: 'bg-indigo-500/15 text-indigo-400',  dot: 'bg-indigo-500' },
+  human:    { label: 'Asesor',      bg: 'bg-amber-500/15 text-amber-400',    dot: 'bg-amber-500'  },
+  HUMAN:    { label: 'Asesor',      bg: 'bg-amber-500/15 text-amber-400',    dot: 'bg-amber-500'  },
+  resolved: { label: 'Resuelto',    bg: 'bg-green-500/15 text-green-400',    dot: 'bg-green-500'  },
+  RESOLVED: { label: 'Resuelto',    bg: 'bg-green-500/15 text-green-400',    dot: 'bg-green-500'  },
+};
+function getConvMode(mode?: string) {
+  return CONV_MODE[mode ?? 'AI'] ?? { label: mode ?? 'Bot', bg: 'bg-gray-800 text-gray-400', dot: 'bg-gray-500' };
+}
+function fmtConvDate(d: string | null | undefined) {
+  if (!d) return '—';
+  return new Date(d).toLocaleString('es-MX', {
+    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true,
+  });
+}
+
+// ── Chart Helpers ──────────────────────────────────────────────────────────────
+
+function VolumeChart({ data }: { data: { date: string; count: number }[] }) {
+  const maxCount = Math.max(...data.map(d => d.count), 1);
+  const W = 1000;
+  const H = 80;
+  const gap = 2;
+  const barW = Math.floor((W - gap * (data.length - 1)) / data.length);
+  const labelIndices = [0, 6, 13, 20, 29];
+
+  return (
+    <div>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="w-full" style={{ height: 80 }}>
+        <defs>
+          <linearGradient id="vg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#6366f1" stopOpacity="0.3" />
+          </linearGradient>
+        </defs>
+        {data.map((d, i) => {
+          const barH = d.count > 0 ? Math.max((d.count / maxCount) * H, 3) : 0;
+          return (
+            <rect
+              key={d.date}
+              x={i * (barW + gap)}
+              y={H - barH}
+              width={barW}
+              height={barH}
+              rx={1}
+              fill="url(#vg)"
+            />
+          );
+        })}
+        <line x1={0} y1={H} x2={W} y2={H} stroke="#374151" strokeWidth={1} />
+      </svg>
+      <div className="flex justify-between mt-2">
+        {data
+          .filter((_, i) => labelIndices.includes(i))
+          .map(d => (
+            <span key={d.date} className="text-[10px] text-gray-600">
+              {new Date(d.date + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
+            </span>
+          ))}
+      </div>
+    </div>
+  );
+}
+
+function ModeDistribution({ distribution, total }: {
+  distribution: { mode: string; count: number }[];
+  total: number;
+}) {
+  const MODE_META: Record<string, { bg: string; text: string; label: string }> = {
+    AI: { bg: 'bg-indigo-500', text: 'text-indigo-400', label: 'Bot (IA)' },
+    human: { bg: 'bg-amber-500', text: 'text-amber-400', label: 'Asesor humano' },
+    HUMAN: { bg: 'bg-amber-500', text: 'text-amber-400', label: 'Asesor humano' },
+    qualified: { bg: 'bg-green-500', text: 'text-green-400', label: 'Calificado' },
+  };
+  const FALLBACK = [
+    { bg: 'bg-purple-500', text: 'text-purple-400' },
+    { bg: 'bg-cyan-500', text: 'text-cyan-400' },
+    { bg: 'bg-rose-500', text: 'text-rose-400' },
+  ];
+  const sorted = [...distribution].sort((a, b) => b.count - a.count);
+
+  return (
+    <div className="space-y-3">
+      {sorted.map((item, i) => {
+        const pct = total > 0 ? Math.round((item.count / total) * 100) : 0;
+        const meta = MODE_META[item.mode] ?? { ...FALLBACK[i % FALLBACK.length], label: item.mode };
+        return (
+          <div key={item.mode} className="flex items-center gap-3">
+            <span className="text-xs text-gray-400 w-24 flex-shrink-0">{meta.label}</span>
+            <div className="flex-1 bg-gray-800 rounded-full h-1.5 overflow-hidden">
+              <div className={`h-1.5 rounded-full ${meta.bg}`} style={{ width: `${pct}%` }} />
+            </div>
+            <span className={`text-xs font-semibold ${meta.text} w-9 text-right tabular-nums`}>{pct}%</span>
+            <span className="text-xs text-gray-600 w-8 text-right tabular-nums">{item.count}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── SECCIÓN: Inicio ────────────────────────────────────────────────────────────
 
 function SectionInicio({ agentId }: { agentId: string }) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true);
     api.get<DashboardData>(`/agent-panel/${agentId}/dashboard`)
       .then(setData)
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [agentId]);
 
+  useEffect(() => { load(); }, [load]);
+
+  const isSales = data?.agent_role === 'sales';
+  const total = data?.total_conversations ?? 0;
+  const handoffs = data?.handoffs_total ?? 0;
+  const handoffPct = total > 0 ? Math.round((handoffs / total) * 100) : 0;
+
   return (
     <div className="p-8">
-      <PageHeader title="Inicio" subtitle="Métricas y resumen del agente" />
-      <div className="mt-6">
-        {loading ? (
-          <div className="flex justify-center py-16"><Loader2 size={20} className="text-indigo-500 animate-spin" /></div>
-        ) : data ? (
+      <div className="flex items-center justify-between border-b border-gray-800 pb-6 mb-6">
+        <div>
+          <h1 className="text-lg font-bold text-white">Inicio</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Métricas y resumen del agente</p>
+        </div>
+        <button
+          onClick={load}
+          disabled={loading}
+          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-400 transition-colors disabled:opacity-50"
+        >
+          <RefreshCw size={11} className={loading ? 'animate-spin' : ''} /> Actualizar
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <Loader2 size={20} className="text-indigo-500 animate-spin" />
+        </div>
+      ) : data ? (
+        <div className="space-y-5">
+
+          {/* KPI Row 1 */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard label="Conversaciones totales" value={data.total_conversations} />
             <StatCard label="Este mes" value={data.conversations_this_month} />
-            <StatCard label="Correcciones" value={data.corrections_total} sub="Para entrenamiento" />
-            <StatCard label="Skills activos" value={data.active_skills} />
+            {isSales ? (
+              <>
+                <StatCard label="Activas (últimas 24h)" value={data.active_conversations ?? 0} />
+                <StatCard
+                  label="Turnadas al asesor"
+                  value={handoffs}
+                  sub={total > 0 ? `${handoffPct}% del total` : undefined}
+                />
+              </>
+            ) : (
+              <>
+                <StatCard label="Correcciones" value={data.corrections_total} sub="Para entrenamiento" />
+                <StatCard label="Skills activos" value={data.active_skills} />
+              </>
+            )}
           </div>
-        ) : (
-          <p className="text-sm text-gray-500 text-center py-16">No se pudieron cargar las métricas.</p>
-        )}
-      </div>
+
+          {/* Sales — gráficas y análisis */}
+          {isSales && (
+            <>
+              {/* Volumen 30 días */}
+              {data.volume_30_days && data.volume_30_days.length > 0 && (
+                <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">
+                    Volumen últimos 30 días
+                  </p>
+                  <VolumeChart data={data.volume_30_days} />
+                </div>
+              )}
+
+              {/* Distribución + Bot vs Asesor */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+                {data.mode_distribution && data.mode_distribution.length > 0 && (
+                  <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">
+                      Distribución por modo
+                    </p>
+                    <ModeDistribution distribution={data.mode_distribution} total={total} />
+                  </div>
+                )}
+
+                <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">
+                    Bot vs. Asesor
+                  </p>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-indigo-500 flex-shrink-0" />
+                        <span className="text-xs text-gray-400">Gestionadas por bot</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-sm font-bold text-white tabular-nums">{total - handoffs}</span>
+                        <span className="text-xs text-gray-600 ml-1.5">
+                          {total > 0 ? `${100 - handoffPct}%` : '—'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />
+                        <span className="text-xs text-gray-400">Turnadas al asesor</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-sm font-bold text-white tabular-nums">{handoffs}</span>
+                        <span className="text-xs text-gray-600 ml-1.5">
+                          {total > 0 ? `${handoffPct}%` : '—'}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Stacked bar */}
+                    <div className="flex h-1.5 rounded-full overflow-hidden mt-1">
+                      <div className="bg-indigo-500 transition-all" style={{ flex: Math.max(total - handoffs, 0) }} />
+                      <div className="bg-amber-500 transition-all" style={{ flex: Math.max(handoffs, 0) }} />
+                    </div>
+                    {/* Secondary stats */}
+                    <div className="pt-3 border-t border-gray-800 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-500">Correcciones de entrenamiento</span>
+                        <span className="text-xs font-semibold text-white tabular-nums">{data.corrections_total}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-500">Skills activos</span>
+                        <span className="text-xs font-semibold text-white tabular-nums">{data.active_skills}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      ) : (
+        <p className="text-sm text-gray-500 text-center py-16">No se pudieron cargar las métricas.</p>
+      )}
     </div>
   );
 }
 
 // ── SECCIÓN: Conversaciones ────────────────────────────────────────────────────
 
-function SectionConversaciones({ agentId }: { agentId: string }) {
+function SectionConversaciones({ agentId, setSection }: { agentId: string; setSection: (s: SectionId) => void }) {
   const [tab, setTab] = useState<'real' | 'corrections'>('real');
   const [convs, setConvs] = useState<Conversation[]>([]);
   const [corrections, setCorrections] = useState<Correction[]>([]);
@@ -377,12 +633,20 @@ function SectionConversaciones({ agentId }: { agentId: string }) {
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
   const [convDetail, setConvDetail] = useState<ConvDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [modeFilter, setModeFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const [convTotal, setConvTotal] = useState(0);
+  const totalPages = Math.ceil(convTotal / 20) || 1;
 
   useEffect(() => {
     if (tab === 'real') {
       setLoading(true);
-      api.get<{ items: Conversation[] }>(`/agent-panel/${agentId}/conversations`)
-        .then(d => setConvs(d.items ?? []))
+      api.get<{ items: Conversation[]; total: number }>(`/agent-panel/${agentId}/conversations?page=${page}&limit=20`)
+        .then(d => {
+          setConvs(d.items ?? []);
+          setConvTotal(d.total ?? 0);
+        })
         .catch(console.error)
         .finally(() => setLoading(false));
     } else {
@@ -392,7 +656,7 @@ function SectionConversaciones({ agentId }: { agentId: string }) {
         .catch(console.error)
         .finally(() => setLoading(false));
     }
-  }, [agentId, tab]);
+  }, [agentId, tab, page]);
 
   const [correctingId, setCorrectingId] = useState<string | null>(null);
   const [correctionForm, setCorrectionForm] = useState({ corrected_text: '', note: '' });
@@ -566,12 +830,33 @@ function SectionConversaciones({ agentId }: { agentId: string }) {
     );
   }
 
+  const uniqueModes = [...new Set(convs.map(c => c.mode).filter((m): m is string => Boolean(m)))];
+  const filtered = convs
+    .filter(c => modeFilter === 'all' || c.mode === modeFilter)
+    .filter(c => {
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return (c.contact_name ?? '').toLowerCase().includes(q) || (c.phone ?? '').toLowerCase().includes(q);
+    });
+
   return (
     <div className="p-8">
       <PageHeader title="Conversaciones" subtitle="Historial y correcciones para entrenamiento" />
 
+      {/* Acceso rápido a prueba */}
+      <div className="mt-5">
+        <button
+          onClick={() => setSection('probar')}
+          className="flex items-center gap-2 text-xs text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/15 border border-indigo-500/20 hover:border-indigo-500/30 rounded-lg px-3 py-2 transition-all"
+        >
+          <Send size={11} />
+          Probar agente en vivo
+          <span className="text-indigo-500 ml-0.5">→</span>
+        </button>
+      </div>
+
       {/* Tabs */}
-      <div className="flex gap-1 mt-6 border-b border-gray-800 mb-6">
+      <div className="flex gap-1 mt-5 border-b border-gray-800 mb-6">
         {(['real', 'corrections'] as const).map(t => (
           <button
             key={t}
@@ -588,26 +873,111 @@ function SectionConversaciones({ agentId }: { agentId: string }) {
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 size={20} className="text-indigo-500 animate-spin" /></div>
       ) : tab === 'real' ? (
-        <div className="space-y-2">
-          {convs.length === 0 && <p className="text-sm text-gray-500 text-center py-16">Sin conversaciones aún.</p>}
-          {convs.map(c => (
-            <button
-              key={c.id}
-              onClick={() => openConv(c.id)}
-              className="w-full bg-gray-900 border border-gray-800 rounded-xl px-5 py-4 flex items-center justify-between hover:border-gray-700 hover:bg-gray-800/50 transition-all text-left"
-            >
-              <div>
-                <p className="text-sm font-medium text-white">{c.contact_name ?? c.title ?? c.phone ?? 'Sin nombre'}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{(c as any).phone ?? ''} · {new Date(c.created_at).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+        <div>
+          {/* Filtros y búsqueda */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="relative">
+              <select
+                value={modeFilter}
+                onChange={e => { setModeFilter(e.target.value); setPage(1); }}
+                className="appearance-none bg-gray-900 border border-gray-800 rounded-lg pl-3 pr-8 py-2 text-xs text-gray-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+              >
+                <option value="all">Todos los estados</option>
+                {uniqueModes.map(m => (
+                  <option key={m} value={m}>{getConvMode(m).label}</option>
+                ))}
+              </select>
+              <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+            </div>
+            <div className="relative flex-1 max-w-xs">
+              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
+              <input
+                type="text"
+                placeholder="Buscar por nombre o teléfono..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full bg-gray-900 border border-gray-800 rounded-lg pl-8 pr-3 py-2 text-xs text-gray-300 placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+            <span className="text-xs text-gray-600 ml-auto">{convTotal} conversación{convTotal !== 1 ? 'es' : ''}</span>
+          </div>
+
+          {/* Tabla */}
+          <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+            {/* Header columnas */}
+            <div className="grid grid-cols-[140px_1fr_120px_70px_150px] gap-0 px-5 py-2.5 border-b border-gray-800">
+              {['ÚLTIMA ACT.', 'BROKER', 'ESTADO', 'MSGS', 'INICIO'].map(h => (
+                <p key={h} className="text-[10px] font-semibold text-gray-600 tracking-wide uppercase">{h}</p>
+              ))}
+            </div>
+
+            {/* Filas */}
+            {filtered.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-16">Sin conversaciones aún.</p>
+            ) : (
+              <div className="divide-y divide-gray-800/70">
+                {filtered.map(c => {
+                  const cm = getConvMode(c.mode);
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => openConv(c.id)}
+                      className="w-full grid grid-cols-[140px_1fr_120px_70px_150px] gap-0 px-5 py-3.5 hover:bg-gray-800/40 transition-colors text-left"
+                    >
+                      {/* Última actividad */}
+                      <div className="flex items-center gap-1.5">
+                        <span className={`inline-block w-1.5 h-1.5 rounded-full flex-shrink-0 ${cm.dot}`} />
+                        <span className="text-xs text-gray-300 font-medium tabular-nums">{fmtConvDate(c.last_message_at ?? c.created_at)}</span>
+                      </div>
+                      {/* Broker (nombre + teléfono) */}
+                      <div className="min-w-0 pr-4">
+                        <p className="text-sm font-medium text-white truncate">{c.contact_name ?? c.phone ?? 'Sin nombre'}</p>
+                        {c.phone && c.contact_name && (
+                          <p className="text-xs text-gray-500 truncate">{c.phone}</p>
+                        )}
+                      </div>
+                      {/* Estado */}
+                      <div className="flex items-center">
+                        <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${cm.bg}`}>{cm.label}</span>
+                      </div>
+                      {/* Mensajes */}
+                      <div className="flex items-center">
+                        <span className="text-sm text-gray-400 tabular-nums">{c.messages_count ?? 0}</span>
+                      </div>
+                      {/* Inicio */}
+                      <div className="flex items-center">
+                        <span className="text-xs text-gray-500 tabular-nums">{fmtConvDate(c.created_at)}</span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs px-2.5 py-1 rounded-full bg-gray-800 text-gray-400 border border-gray-700">
-                  {(c as any).mode ?? c.stage ?? c.status ?? 'AI'}
-                </span>
-                <ChevronRight size={14} className="text-gray-600" />
+            )}
+          </div>
+
+          {/* Paginación */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4 px-1">
+              <span className="text-xs text-gray-600">{convTotal} conversaciones</span>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="text-xs text-gray-400 hover:text-white disabled:text-gray-700 disabled:cursor-not-allowed transition-colors"
+                >
+                  ← Anterior
+                </button>
+                <span className="text-xs text-gray-500">{page} / {totalPages}</span>
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="text-xs text-gray-400 hover:text-white disabled:text-gray-700 disabled:cursor-not-allowed transition-colors"
+                >
+                  Siguiente →
+                </button>
               </div>
-            </button>
-          ))}
+            </div>
+          )}
         </div>
       ) : (
         <CorrectionsPanel agentId={agentId} corrections={corrections} setCorrections={setCorrections} />
@@ -690,11 +1060,35 @@ function CorrectionsPanel({
 
 // ── SECCIÓN: Skills ────────────────────────────────────────────────────────────
 
+const ACTION_TYPE_LABELS: Record<string, string> = {
+  text: 'Texto',
+  micro_diagnosis: 'Micro-diagnóstico',
+  schedule_meeting: 'Agendar reunión',
+  webhook: 'Webhook',
+};
+
+const ACTION_TYPE_COLORS: Record<string, string> = {
+  text: 'bg-gray-800 text-gray-400',
+  micro_diagnosis: 'bg-purple-500/15 text-purple-400',
+  schedule_meeting: 'bg-blue-500/15 text-blue-400',
+  webhook: 'bg-orange-500/15 text-orange-400',
+};
+
+const EMPTY_SKILL_FORM = {
+  name: '',
+  trigger_condition: '',
+  response_instructions: '',
+  example_conversation: '',
+  action_type: 'text',
+  cal_url: '',
+  webhook_url: '',
+};
+
 function SectionSkills({ agentId }: { agentId: string }) {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', trigger_condition: '', response_instructions: '', example_conversation: '' });
+  const [form, setForm] = useState(EMPTY_SKILL_FORM);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -711,16 +1105,29 @@ function SectionSkills({ agentId }: { agentId: string }) {
     if (!form.name.trim() || !form.trigger_condition.trim()) return;
     setSaving(true);
     try {
+      const payload: Record<string, any> = {
+        name: form.name,
+        trigger_condition: form.trigger_condition,
+        response_instructions: form.response_instructions,
+        example_conversation: form.example_conversation,
+        action_type: form.action_type,
+      };
+      if (form.action_type === 'schedule_meeting' && form.cal_url.trim()) {
+        payload.action_config = { cal_url: form.cal_url.trim() };
+      }
+      if (form.action_type === 'webhook' && form.webhook_url.trim()) {
+        payload.action_config = { webhook_url: form.webhook_url.trim() };
+      }
       if (editingId) {
-        const updated = await api.patch<Skill>(`/agent-panel/${agentId}/skills/${editingId}`, form);
+        const updated = await api.patch<Skill>(`/agent-panel/${agentId}/skills/${editingId}`, payload);
         setSkills(prev => prev.map(s => s.id === editingId ? updated : s));
       } else {
-        const created = await api.post<Skill>(`/agent-panel/${agentId}/skills`, form);
+        const created = await api.post<Skill>(`/agent-panel/${agentId}/skills`, payload);
         setSkills(prev => [...prev, created]);
       }
       setShowForm(false);
       setEditingId(null);
-      setForm({ name: '', trigger_condition: '', response_instructions: '', example_conversation: '' });
+      setForm(EMPTY_SKILL_FORM);
     } catch (e: any) { alert(e?.message ?? 'Error'); }
     setSaving(false);
   };
@@ -735,46 +1142,103 @@ function SectionSkills({ agentId }: { agentId: string }) {
 
   const startEdit = (s: Skill) => {
     setEditingId(s.id);
-    setForm({ name: s.name, trigger_condition: s.trigger_condition, response_instructions: s.response_instructions, example_conversation: s.example_conversation ?? '' });
+    setForm({
+      name: s.name,
+      trigger_condition: s.trigger_condition,
+      response_instructions: s.response_instructions,
+      example_conversation: s.example_conversation ?? '',
+      action_type: s.action_type ?? 'text',
+      cal_url: (s.action_config as any)?.cal_url ?? '',
+      webhook_url: (s.action_config as any)?.webhook_url ?? '',
+    });
     setShowForm(true);
   };
+
+  const isActionSkill = form.action_type !== 'text';
 
   return (
     <div className="p-8">
       <PageHeader title="Skills" subtitle="Habilidades especiales del agente para situaciones específicas" />
 
       <div className="mt-6">
-        {/* Add button */}
         {!showForm && (
           <button
-            onClick={() => { setShowForm(true); setEditingId(null); setForm({ name: '', trigger_condition: '', response_instructions: '', example_conversation: '' }); }}
+            onClick={() => { setShowForm(true); setEditingId(null); setForm(EMPTY_SKILL_FORM); }}
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors mb-6"
           >
             <Plus size={14} /> Nuevo skill
           </button>
         )}
 
-        {/* Form */}
         {showForm && (
           <div className="bg-gray-900 border border-indigo-500/30 rounded-xl p-6 mb-6">
             <p className="text-sm font-semibold text-white mb-4">{editingId ? 'Editar skill' : 'Nuevo skill'}</p>
             <div className="space-y-3">
               <div>
                 <label className="text-xs text-gray-400 mb-1 block">Nombre del skill</label>
-                <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500" placeholder="ej. Manejo de objeciones de precio" />
+                <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500" placeholder="ej. Ofrecer micro-diagnóstico" />
               </div>
+
+              {/* Tipo de acción */}
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Tipo de skill</label>
+                <div className="flex gap-2 flex-wrap">
+                  {(['text', 'micro_diagnosis', 'schedule_meeting', 'webhook'] as const).map(t => (
+                    <button
+                      key={t}
+                      onClick={() => setForm(p => ({ ...p, action_type: t }))}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${form.action_type === t ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300' : 'border-gray-700 bg-gray-800 text-gray-500 hover:text-gray-300'}`}
+                    >
+                      {ACTION_TYPE_LABELS[t]}
+                    </button>
+                  ))}
+                </div>
+                {form.action_type === 'micro_diagnosis' && (
+                  <p className="text-xs text-purple-400/70 mt-1.5">El agente enviará botones de WhatsApp para que el prospecto confirme el micro-diagnóstico.</p>
+                )}
+                {form.action_type === 'schedule_meeting' && (
+                  <p className="text-xs text-blue-400/70 mt-1.5">El agente enviará el link de Cal.com al prospecto cuando corresponda.</p>
+                )}
+                {form.action_type === 'webhook' && (
+                  <p className="text-xs text-orange-400/70 mt-1.5">El agente llamará a tu URL cuando se active. Puedes conectarlo a n8n, Make o cualquier endpoint.</p>
+                )}
+              </div>
+
               <div>
                 <label className="text-xs text-gray-400 mb-1 block">¿Cuándo se activa?</label>
-                <input value={form.trigger_condition} onChange={e => setForm(p => ({ ...p, trigger_condition: e.target.value }))} className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500" placeholder="ej. Cuando el cliente dice que es muy caro" />
+                <input value={form.trigger_condition} onChange={e => setForm(p => ({ ...p, trigger_condition: e.target.value }))} className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500" placeholder="ej. Cuando el prospecto muestre interés en conocer más" />
               </div>
-              <div>
-                <label className="text-xs text-gray-400 mb-1 block">Instrucciones de respuesta</label>
-                <textarea value={form.response_instructions} onChange={e => setForm(p => ({ ...p, response_instructions: e.target.value }))} className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-white placeholder-gray-600 resize-none focus:outline-none focus:border-indigo-500" rows={3} placeholder="¿Cómo debe responder el agente?" />
-              </div>
-              <div>
-                <label className="text-xs text-gray-400 mb-1 block">Ejemplo de conversación (opcional)</label>
-                <textarea value={form.example_conversation} onChange={e => setForm(p => ({ ...p, example_conversation: e.target.value }))} className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-white placeholder-gray-600 resize-none focus:outline-none focus:border-indigo-500" rows={2} placeholder="Usuario: 'es muy caro'&#10;Agente: '...'" />
-              </div>
+
+              {/* Cal.com URL solo para schedule_meeting */}
+              {form.action_type === 'schedule_meeting' && (
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">URL de Cal.com (opcional — usa la del agente si se deja vacía)</label>
+                  <input value={form.cal_url} onChange={e => setForm(p => ({ ...p, cal_url: e.target.value }))} className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500" placeholder="https://cal.com/tu-usuario/reunión" />
+                </div>
+              )}
+
+              {/* Webhook URL */}
+              {form.action_type === 'webhook' && (
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">URL del webhook</label>
+                  <input value={form.webhook_url} onChange={e => setForm(p => ({ ...p, webhook_url: e.target.value }))} className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500" placeholder="https://n8n.tudominio.com/webhook/abc123" />
+                  <p className="text-xs text-gray-600 mt-1.5">El webhook recibirá: skill, conversation_id, phone, prospect (datos del prospecto). Si responde con <code className="text-orange-400/80">{'{ "reply": "..." }'}</code> ese texto se enviará al prospecto.</p>
+                </div>
+              )}
+
+              {/* Instrucciones y ejemplo solo para skills de texto */}
+              {!isActionSkill && (
+                <>
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">Instrucciones de respuesta</label>
+                    <textarea value={form.response_instructions} onChange={e => setForm(p => ({ ...p, response_instructions: e.target.value }))} className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-white placeholder-gray-600 resize-none focus:outline-none focus:border-indigo-500" rows={3} placeholder="¿Cómo debe responder el agente?" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">Ejemplo de conversación (opcional)</label>
+                    <textarea value={form.example_conversation} onChange={e => setForm(p => ({ ...p, example_conversation: e.target.value }))} className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-white placeholder-gray-600 resize-none focus:outline-none focus:border-indigo-500" rows={2} placeholder="Usuario: 'es muy caro'&#10;Agente: '...'" />
+                  </div>
+                </>
+              )}
             </div>
             <div className="flex gap-2 mt-4">
               <button onClick={save} disabled={saving || !form.name.trim() || !form.trigger_condition.trim()} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
@@ -787,7 +1251,6 @@ function SectionSkills({ agentId }: { agentId: string }) {
           </div>
         )}
 
-        {/* List */}
         {loading ? (
           <div className="flex justify-center py-16"><Loader2 size={20} className="text-indigo-500 animate-spin" /></div>
         ) : skills.length === 0 ? (
@@ -802,14 +1265,21 @@ function SectionSkills({ agentId }: { agentId: string }) {
               <div key={s.id} className="bg-gray-900 border border-gray-800 rounded-xl p-5">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <p className="text-sm font-semibold text-white">{s.name}</p>
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${s.status === 'active' ? 'bg-green-500/15 text-green-400' : 'bg-gray-800 text-gray-500'}`}>
                         {s.status === 'active' ? 'Activo' : 'Borrador'}
                       </span>
+                      {s.action_type && s.action_type !== 'text' && (
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${ACTION_TYPE_COLORS[s.action_type] ?? 'bg-gray-800 text-gray-400'}`}>
+                          {ACTION_TYPE_LABELS[s.action_type] ?? s.action_type}
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-gray-500"><span className="text-gray-600">Activa cuando:</span> {s.trigger_condition}</p>
-                    <p className="text-xs text-gray-400 mt-1 line-clamp-2">{s.response_instructions}</p>
+                    {s.response_instructions && (
+                      <p className="text-xs text-gray-400 mt-1 line-clamp-2">{s.response_instructions}</p>
+                    )}
                   </div>
                   <div className="flex items-center gap-1 ml-3">
                     <button onClick={() => startEdit(s)} className="p-1.5 rounded-lg text-gray-600 hover:text-gray-400 hover:bg-gray-800 transition-colors">
@@ -1474,6 +1944,554 @@ function SectionEntregable({ agentId, agent, setAgent }: { agentId: string; agen
           {saving ? 'Guardando...' : saved ? 'Guardado' : 'Guardar configuración'}
         </button>
       </div>
+    </div>
+  );
+}
+
+// ── SECCIÓN: Probar agente ─────────────────────────────────────────────────────
+
+interface TestMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+function SectionProbar({ agentId }: { agentId: string }) {
+  const [messages, setMessages] = useState<TestMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [sending, setSending] = useState(false);
+  const [phone, setPhone] = useState('');
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, sending]);
+
+  const send = async () => {
+    const text = input.trim();
+    if (!text || sending) return;
+    setInput('');
+    const userMsg: TestMessage = { role: 'user', content: text };
+    setMessages(prev => [...prev, userMsg]);
+    setSending(true);
+    try {
+      const data = await api.post<{ response: string }>(
+        `/agent-panel/${agentId}/test-message`,
+        { message: text, history: messages.slice(-20), phone: phone || undefined },
+      );
+      setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+    } catch (e: any) {
+      setMessages(prev => [
+        ...prev,
+        { role: 'assistant', content: `⚠️ Error: ${e?.message ?? 'No se pudo obtener respuesta'}` },
+      ]);
+    }
+    setSending(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-screen bg-gray-950">
+      {/* Header */}
+      <div className="flex-shrink-0 border-b border-gray-800 px-8 py-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-bold text-white">Probar agente</h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Escribe como si fueras el cliente — el agente responde en vivo
+            </p>
+          </div>
+          <button
+            onClick={() => setMessages([])}
+            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-400 border border-gray-800 hover:border-gray-700 rounded-lg px-3 py-2 transition-colors"
+          >
+            <RefreshCw size={11} /> Nueva conversación
+          </button>
+        </div>
+        <div className="flex items-center gap-3 mt-4">
+          <input
+            value={phone}
+            onChange={e => setPhone(e.target.value)}
+            placeholder="+52 1 55 0000 0000 (opcional)"
+            className="bg-gray-900 border border-gray-800 rounded-lg px-3 py-1.5 text-xs text-gray-300 placeholder-gray-600 focus:outline-none focus:border-gray-700 w-52"
+          />
+          <span className="text-[10px] text-gray-600">Teléfono de prueba — sin efecto real</span>
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-8 py-6">
+        {messages.length === 0 && !sending ? (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <div className="w-12 h-12 rounded-xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center mb-3">
+              <Bot size={20} className="text-indigo-400" />
+            </div>
+            <p className="text-sm text-gray-500">Escribe el primer mensaje para iniciar la prueba</p>
+            <p className="text-xs text-gray-700 mt-1">
+              El agente usa sus instrucciones y configuración actuales
+            </p>
+          </div>
+        ) : (
+          <div className="max-w-2xl mx-auto space-y-5">
+            {messages.map((m, i) => {
+              const isAgent = m.role === 'assistant';
+              return (
+                <div key={i} className={`flex flex-col ${isAgent ? 'items-start' : 'items-end'}`}>
+                  <p className="text-[10px] text-gray-600 mb-1 px-1">
+                    {isAgent ? 'Agente' : 'Tú (como cliente)'}
+                  </p>
+                  <div className={`max-w-[78%] rounded-2xl px-4 py-3 ${
+                    isAgent
+                      ? 'bg-gray-800 text-gray-100 rounded-tl-sm'
+                      : 'bg-indigo-600 text-white rounded-tr-sm'
+                  }`}>
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{m.content}</p>
+                  </div>
+                </div>
+              );
+            })}
+            {sending && (
+              <div className="flex flex-col items-start">
+                <p className="text-[10px] text-gray-600 mb-1 px-1">Agente</p>
+                <div className="bg-gray-800 rounded-2xl rounded-tl-sm px-4 py-3.5">
+                  <div className="flex gap-1 items-center">
+                    <span className="w-1.5 h-1.5 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={bottomRef} />
+          </div>
+        )}
+      </div>
+
+      {/* Input */}
+      <div className="flex-shrink-0 border-t border-gray-800 px-8 py-4">
+        <div className="max-w-2xl mx-auto flex gap-3 items-end">
+          <textarea
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Escribe como si fueras el cliente… (Enter envía · Shift+Enter salta línea)"
+            rows={2}
+            disabled={sending}
+            className="flex-1 bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 resize-none focus:outline-none focus:border-gray-700 disabled:opacity-50"
+          />
+          <button
+            onClick={send}
+            disabled={!input.trim() || sending}
+            className="flex-shrink-0 w-10 h-10 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 rounded-xl flex items-center justify-center transition-colors"
+          >
+            {sending
+              ? <Loader2 size={15} className="animate-spin text-white" />
+              : <Send size={15} className="text-white" />}
+          </button>
+        </div>
+        <p className="text-[10px] text-gray-700 text-center mt-2 max-w-2xl mx-auto">
+          Las conversaciones de prueba no se guardan en el historial del agente
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── SECCIÓN: Clasificaciones ───────────────────────────────────────────────────
+
+const RESOLUTION_MAP: Record<string, { label: string; bg: string }> = {
+  reply:      { label: 'Respondido', bg: 'bg-green-500/15 text-green-400' },
+  handoff:    { label: 'Turnado', bg: 'bg-amber-500/15 text-amber-400' },
+  unresolved: { label: 'Sin resolver', bg: 'bg-red-500/15 text-red-400' },
+  clarify:    { label: 'Aclaración', bg: 'bg-blue-500/15 text-blue-400' },
+};
+const SOURCE_MAP: Record<string, string> = {
+  live:      'live',
+  simulado:  'simulado',
+};
+
+function SectionClasificaciones({ agentId }: { agentId: string }) {
+  const [items, setItems] = useState<AgentClassification[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [source, setSource] = useState('all');
+  const [resolution, setResolution] = useState('all');
+  const [feedbackF, setFeedbackF] = useState('all');
+  const totalPages = Math.ceil(total / 20) || 1;
+
+  const load = useCallback(() => {
+    setLoading(true);
+    const params = new URLSearchParams({ page: String(page), limit: '20' });
+    if (source !== 'all') params.set('source', source);
+    if (resolution !== 'all') params.set('resolution', resolution);
+    if (feedbackF !== 'all') params.set('feedback', feedbackF);
+    api.get<{ items: AgentClassification[]; total: number }>(`/agent-panel/${agentId}/classifications?${params}`)
+      .then(d => { setItems(d.items ?? []); setTotal(d.total ?? 0); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [agentId, page, source, resolution, feedbackF]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const setFeedback = async (id: string, fb: string) => {
+    const item = items.find(i => i.id === id);
+    const next = item?.feedback === fb ? '' : fb;
+    await api.patch(`/agent-panel/${agentId}/classifications/${id}/feedback`, { feedback: next });
+    setItems(prev => prev.map(i => i.id === id ? { ...i, feedback: next } : i));
+  };
+
+  return (
+    <div className="p-8">
+      <PageHeader title="Clasificaciones" subtitle="QA de conversaciones — cómo respondió el agente a cada mensaje" />
+
+      {/* Filtros */}
+      <div className="flex items-center gap-3 mt-6 mb-4 flex-wrap">
+        {[
+          { label: 'Fuente', value: source, onChange: setSource, options: [['all','Todas las fuentes'],['live','Live'],['simulado','Simulado']] },
+          { label: 'Resultado', value: resolution, onChange: setResolution, options: [['all','Todos los resultados'],['reply','Respondido'],['handoff','Turnado'],['unresolved','Sin resolver'],['clarify','Aclaración']] },
+          { label: 'Feedback', value: feedbackF, onChange: setFeedbackF, options: [['all','Todo el feedback'],['positive','Positivo'],['negative','Negativo'],['','Sin feedback']] },
+        ].map(f => (
+          <div key={f.label} className="relative">
+            <select
+              value={f.value}
+              onChange={e => { f.onChange(e.target.value); setPage(1); }}
+              className="appearance-none bg-gray-900 border border-gray-800 rounded-lg pl-3 pr-8 py-2 text-xs text-gray-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+            >
+              {f.options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </select>
+            <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+          </div>
+        ))}
+        <span className="text-xs text-gray-600 ml-auto">{total} resultado{total !== 1 ? 's' : ''}</span>
+      </div>
+
+      {/* Tabla */}
+      {loading ? (
+        <div className="flex justify-center py-16"><Loader2 size={20} className="text-indigo-500 animate-spin" /></div>
+      ) : (
+        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+          <div className="grid grid-cols-[130px_90px_70px_1fr_140px_90px] gap-0 px-5 py-2.5 border-b border-gray-800">
+            {['FECHA', 'RESUELTO', 'FUENTE', 'MENSAJE', 'CASO', 'FEEDBACK'].map(h => (
+              <p key={h} className="text-[10px] font-semibold text-gray-600 tracking-wide uppercase">{h}</p>
+            ))}
+          </div>
+          {items.length === 0 ? (
+            <p className="text-sm text-gray-500 text-center py-16">Sin clasificaciones aún.</p>
+          ) : (
+            <div className="divide-y divide-gray-800/70">
+              {items.map(item => {
+                const rm = RESOLUTION_MAP[item.resolution] ?? { label: item.resolution, bg: 'bg-gray-800 text-gray-400' };
+                return (
+                  <div key={item.id} className="grid grid-cols-[130px_90px_70px_1fr_140px_90px] gap-0 px-5 py-3.5 items-start">
+                    <p className="text-xs text-gray-400 tabular-nums pt-0.5">
+                      {new Date(item.created_at).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                    <div className="flex items-start pt-0.5">
+                      <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${rm.bg}`}>{rm.label}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 pt-1">
+                      {item.source === 'live' ? 'live' : 'simulado'}
+                    </p>
+                    <p className="text-sm text-gray-300 pr-4 leading-relaxed line-clamp-3">
+                      {item.message_text ?? '—'}
+                    </p>
+                    <p className="text-xs text-indigo-400 pr-2 pt-0.5 truncate">
+                      {item.caso ?? '—'}
+                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => setFeedback(item.id, 'positive')}
+                        className={`p-1.5 rounded-lg transition-colors ${item.feedback === 'positive' ? 'bg-green-500/20 text-green-400' : 'text-gray-600 hover:text-gray-400'}`}
+                      >
+                        <ThumbsUp size={13} />
+                      </button>
+                      <button
+                        onClick={() => setFeedback(item.id, 'negative')}
+                        className={`p-1.5 rounded-lg transition-colors ${item.feedback === 'negative' ? 'bg-red-500/20 text-red-400' : 'text-gray-600 hover:text-gray-400'}`}
+                      >
+                        <ThumbsDown size={13} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Paginación */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4 px-1">
+          <span className="text-xs text-gray-600">{total} registros</span>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+              className="text-xs text-gray-400 hover:text-white disabled:text-gray-700 disabled:cursor-not-allowed transition-colors">
+              ← Anterior
+            </button>
+            <span className="text-xs text-gray-500">{page} / {totalPages}</span>
+            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+              className="text-xs text-gray-400 hover:text-white disabled:text-gray-700 disabled:cursor-not-allowed transition-colors">
+              Siguiente →
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── SECCIÓN: Catálogo de casos ─────────────────────────────────────────────────
+
+const DISPOSITION_MAP: Record<string, { label: string; bg: string }> = {
+  reply:    { label: 'Responder', bg: 'bg-green-500/15 text-green-400' },
+  handoff:  { label: 'Handoff', bg: 'bg-amber-500/15 text-amber-400' },
+  schedule: { label: 'Agendar', bg: 'bg-indigo-500/15 text-indigo-400' },
+};
+
+const EMPTY_CASE_FORM = { name: '', linea: '', area: '', content: '', disposition: 'reply', status: 'active' };
+
+function SectionCatalogo({ agentId }: { agentId: string }) {
+  const [cases, setCases] = useState<AgentCase[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<AgentCase | null>(null);
+  const [form, setForm] = useState(EMPTY_CASE_FORM);
+  const [saving, setSaving] = useState(false);
+  const [testQuery, setTestQuery] = useState('');
+  const [testResult, setTestResult] = useState<{ matched: AgentCase | null } | null>(null);
+  const [testLoading, setTestLoading] = useState(false);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    api.get<AgentCase[]>(`/agent-panel/${agentId}/cases`)
+      .then(d => setCases(Array.isArray(d) ? d : []))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [agentId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const filtered = cases.filter(c => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return c.name.toLowerCase().includes(q) || (c.linea ?? '').toLowerCase().includes(q) || (c.area ?? '').toLowerCase().includes(q);
+  });
+
+  const openCreate = () => { setEditing(null); setForm(EMPTY_CASE_FORM); setShowForm(true); };
+  const openEdit = (c: AgentCase) => { setEditing(c); setForm({ name: c.name, linea: c.linea ?? '', area: c.area ?? '', content: c.content, disposition: c.disposition, status: c.status }); setShowForm(true); };
+  const closeForm = () => { setShowForm(false); setEditing(null); };
+
+  const save = async () => {
+    if (!form.name.trim() || !form.content.trim()) return;
+    setSaving(true);
+    try {
+      if (editing) {
+        const updated = await api.patch<AgentCase>(`/agent-panel/${agentId}/cases/${editing.id}`, form);
+        setCases(prev => prev.map(c => c.id === editing.id ? updated : c));
+      } else {
+        const created = await api.post<AgentCase>(`/agent-panel/${agentId}/cases`, form);
+        setCases(prev => [...prev, created]);
+      }
+      closeForm();
+    } catch (e: any) { alert(e?.message ?? 'Error'); }
+    setSaving(false);
+  };
+
+  const del = async (id: string) => {
+    if (!confirm('¿Eliminar este caso?')) return;
+    await api.delete(`/agent-panel/${agentId}/cases/${id}`);
+    setCases(prev => prev.filter(c => c.id !== id));
+  };
+
+  const testSearch = async () => {
+    if (!testQuery.trim()) return;
+    setTestLoading(true);
+    try {
+      const r = await api.post<{ matched: AgentCase | null }>(`/agent-panel/${agentId}/cases/search`, { query: testQuery });
+      setTestResult(r);
+    } catch (e: any) { alert(e?.message ?? 'Error'); }
+    setTestLoading(false);
+  };
+
+  return (
+    <div className="p-8">
+      <div className="flex items-center justify-between mb-6">
+        <PageHeader title="Catálogo de casos" subtitle="Los ~10 casos que el agente recupera (base de conocimiento)" />
+        <button
+          onClick={openCreate}
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+        >
+          <Plus size={14} /> Nuevo caso
+        </button>
+      </div>
+
+      {/* Probar búsqueda */}
+      <div className="bg-gray-900 border border-indigo-500/20 rounded-xl p-5 mb-6">
+        <div className="flex items-center gap-2 mb-1">
+          <Sparkles size={14} className="text-indigo-400" />
+          <p className="text-xs font-semibold text-indigo-300">Probar búsqueda en el catálogo</p>
+        </div>
+        <p className="text-xs text-gray-500 mb-3">Escribe un mensaje del broker y observa qué caso recupera y cómo elige el agente.</p>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Ej: ¿Cuánto cuesta el servicio?"
+            value={testQuery}
+            onChange={e => setTestQuery(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && testSearch()}
+            className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+          />
+          <button
+            onClick={testSearch}
+            disabled={testLoading || !testQuery.trim()}
+            className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+          >
+            {testLoading ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />}
+            Buscar
+          </button>
+        </div>
+        {testResult && (
+          <div className="mt-3 p-3 bg-gray-800 rounded-lg border border-gray-700">
+            {testResult.matched ? (
+              <div>
+                <p className="text-[10px] text-gray-500 uppercase font-semibold mb-1">Caso recuperado</p>
+                <p className="text-sm font-semibold text-white">{testResult.matched.name}</p>
+                <p className="text-xs text-gray-400 mt-1 line-clamp-2">{testResult.matched.content}</p>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">Ningún caso coincide con esa búsqueda.</p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Formulario inline */}
+      {showForm && (
+        <div className="bg-gray-900 border border-indigo-500/30 rounded-xl p-5 mb-6">
+          <p className="text-sm font-semibold text-white mb-4">{editing ? 'Editar caso' : 'Nuevo caso'}</p>
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className="text-[10px] text-gray-500 uppercase font-semibold mb-1 block">Nombre *</label>
+              <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+                placeholder="Ej: Solicitud de precio" />
+            </div>
+            <div>
+              <label className="text-[10px] text-gray-500 uppercase font-semibold mb-1 block">Disposición</label>
+              <select value={form.disposition} onChange={e => setForm(p => ({ ...p, disposition: e.target.value }))}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+                <option value="reply">Responder</option>
+                <option value="handoff">Handoff</option>
+                <option value="schedule">Agendar</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] text-gray-500 uppercase font-semibold mb-1 block">Línea</label>
+              <input value={form.linea} onChange={e => setForm(p => ({ ...p, linea: e.target.value }))}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+                placeholder="Ej: Objeción, Pregunta, Cierre" />
+            </div>
+            <div>
+              <label className="text-[10px] text-gray-500 uppercase font-semibold mb-1 block">Área</label>
+              <input value={form.area} onChange={e => setForm(p => ({ ...p, area: e.target.value }))}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+                placeholder="Ej: Precio, Servicios, Timeline" />
+            </div>
+          </div>
+          <div className="mb-4">
+            <label className="text-[10px] text-gray-500 uppercase font-semibold mb-1 block">Instrucciones para el agente *</label>
+            <textarea value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))}
+              rows={4}
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 resize-none focus:outline-none focus:border-indigo-500"
+              placeholder="Explica cómo debe responder el agente en este caso..." />
+          </div>
+          <div className="flex items-center gap-3">
+            <button onClick={save} disabled={saving || !form.name.trim() || !form.content.trim()}
+              className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+              {saving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+              {editing ? 'Guardar cambios' : 'Crear caso'}
+            </button>
+            <button onClick={closeForm} className="text-sm text-gray-500 hover:text-gray-400 transition-colors px-2 py-2">Cancelar</button>
+            {editing && (
+              <div className="ml-auto">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <span className="text-xs text-gray-500">Estado:</span>
+                  <button onClick={() => setForm(p => ({ ...p, status: p.status === 'active' ? 'inactive' : 'active' }))}
+                    className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${form.status === 'active' ? 'bg-green-500/15 text-green-400' : 'bg-gray-800 text-gray-500'}`}>
+                    {form.status === 'active' ? 'Activo' : 'Inactivo'}
+                  </button>
+                </label>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Búsqueda y tabla */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="relative flex-1 max-w-xs">
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
+          <input type="text" placeholder="Buscar caso..." value={search} onChange={e => setSearch(e.target.value)}
+            className="w-full bg-gray-900 border border-gray-800 rounded-lg pl-8 pr-3 py-2 text-xs text-gray-300 placeholder-gray-600 focus:outline-none focus:border-indigo-500" />
+        </div>
+        <span className="text-xs text-gray-600">{filtered.length} caso{filtered.length !== 1 ? 's' : ''}</span>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-16"><Loader2 size={20} className="text-indigo-500 animate-spin" /></div>
+      ) : (
+        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+          <div className="grid grid-cols-[50px_1fr_120px_120px_120px_80px_60px] gap-0 px-5 py-2.5 border-b border-gray-800">
+            {['ID', 'NOMBRE', 'LÍNEA', 'ÁREA', 'DISPOSICIÓN', 'ESTADO', ''].map(h => (
+              <p key={h} className="text-[10px] font-semibold text-gray-600 tracking-wide uppercase">{h}</p>
+            ))}
+          </div>
+          {filtered.length === 0 ? (
+            <p className="text-sm text-gray-500 text-center py-16">Sin casos en el catálogo. Crea el primero.</p>
+          ) : (
+            <div className="divide-y divide-gray-800/70">
+              {filtered.map((c, idx) => {
+                const disp = DISPOSITION_MAP[c.disposition] ?? { label: c.disposition, bg: 'bg-gray-800 text-gray-400' };
+                return (
+                  <div key={c.id} className="grid grid-cols-[50px_1fr_120px_120px_120px_80px_60px] gap-0 px-5 py-3.5 items-center hover:bg-gray-800/30 transition-colors">
+                    <p className="text-xs text-gray-600 tabular-nums font-mono">{String(idx + 1).padStart(4, '0')}</p>
+                    <div className="min-w-0 pr-4">
+                      <p className="text-sm font-medium text-white truncate">{c.name}</p>
+                      <p className="text-xs text-gray-600 truncate mt-0.5 line-clamp-1">{c.content.slice(0, 80)}</p>
+                    </div>
+                    <p className="text-xs text-gray-400 truncate pr-2">{c.linea ?? '—'}</p>
+                    <p className="text-xs text-gray-400 truncate pr-2">{c.area ?? '—'}</p>
+                    <div>
+                      <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${disp.bg}`}>{disp.label}</span>
+                    </div>
+                    <div>
+                      <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${c.status === 'active' ? 'bg-green-500/15 text-green-400' : 'bg-gray-800 text-gray-500'}`}>
+                        {c.status === 'active' ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => openEdit(c)} className="p-1.5 text-gray-600 hover:text-indigo-400 transition-colors rounded">
+                        <Pencil size={13} />
+                      </button>
+                      <button onClick={() => del(c.id)} className="p-1.5 text-gray-600 hover:text-red-400 transition-colors rounded">
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

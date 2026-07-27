@@ -22,7 +22,7 @@ import {
   Users, LogOut, ShieldCheck, Layers,
   Building2, CreditCard, ShieldAlert, Settings, Bell, X, CheckCheck,
   ExternalLink, ChevronLeft, Zap, ChevronDown, Brain, ListChecks, GitBranch,
-  Workflow, BarChart2, Inbox,
+  Workflow, BarChart2, Inbox, ClipboardList,
 } from 'lucide-react';
 
 /* ── Navigation ── */
@@ -35,11 +35,12 @@ const CORE_NAV: NavItem[] = [
 ];
 
 const MAIN_NAV: NavItem[] = [
-  { href: '/mentoria',  label: 'CRM',                 icon: Workflow },
-  { href: '/erp',       label: 'ERP',                  icon: GitBranch },
-  { href: '/servicios', label: 'SOC OS',               icon: Inbox },
-  { href: '/brain',     label: 'Base de conocimiento', icon: Brain },
-  { href: '/recursos',  label: 'Recursos',             icon: Layers },
+  { href: '/mentoria',   label: 'CRM',                 icon: Workflow },
+  { href: '/erp',        label: 'ERP',                 icon: GitBranch },
+  { href: '/servicios',  label: 'SOC OS',              icon: Inbox },
+  { href: '/proyectos',  label: 'Proyectos SOC',       icon: ClipboardList },
+  { href: '/brain',      label: 'Base de conocimiento', icon: Brain },
+  { href: '/recursos',   label: 'Recursos',            icon: Layers },
 ];
 
 const RECURSOS_BASE: NavItem[] = [];
