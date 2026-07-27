@@ -194,7 +194,7 @@ export default function AreaUploadPage() {
     label:   { fontSize: 11, color: '#9ca3af', textTransform: 'uppercase' as const, letterSpacing: '0.05em', marginBottom: 4 },
     qText:   { margin: 0, fontSize: 14, fontWeight: 600, color: '#111827', lineHeight: 1.5 } as React.CSSProperties,
     why:     { margin: '4px 0 0', fontSize: 12, color: '#6b7280', fontStyle: 'italic' as const },
-    ta:      { width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 14, boxSizing: 'border-box' as const, outline: 'none', resize: 'vertical' as const, fontFamily: 'inherit', lineHeight: 1.5 },
+    ta:      { width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 14, boxSizing: 'border-box' as const, outline: 'none', resize: 'vertical' as const, fontFamily: 'inherit', lineHeight: 1.5, color: '#fff' },
     btn:     (bg: string, active: boolean) => ({ padding: '7px 16px', borderRadius: 7, border: 'none', background: active ? bg : '#f3f4f6', color: active ? '#fff' : '#6b7280', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all .15s' }),
     submit:  (disabled: boolean) => ({ width: '100%', padding: 13, borderRadius: 9, border: 'none', background: disabled ? '#93c5fd' : '#0d6efd', color: '#fff', fontSize: 15, fontWeight: 700, cursor: disabled ? 'wait' : 'pointer' }),
   };
@@ -281,7 +281,7 @@ export default function AreaUploadPage() {
                   value={solicitante}
                   onChange={e => setSolicitante(e.target.value)}
                   placeholder="Ej: Ana García"
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 14, boxSizing: 'border-box' as const, outline: 'none' }}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 14, boxSizing: 'border-box' as const, outline: 'none', color: '#fff' }}
                 />
               </div>
               <div>
@@ -292,7 +292,7 @@ export default function AreaUploadPage() {
                   value={areaSol}
                   onChange={e => setAreaSol(e.target.value)}
                   placeholder="Ej: Marketing Digital"
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 14, boxSizing: 'border-box' as const, outline: 'none' }}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 14, boxSizing: 'border-box' as const, outline: 'none', color: '#fff' }}
                 />
               </div>
             </div>
