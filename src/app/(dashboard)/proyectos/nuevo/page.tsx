@@ -174,7 +174,7 @@ export default function NuevoRequerimientoPage() {
       });
       setIntakeStep('creating');
       const req = await api.post<{ id: string }>(`/proyectos-soc/requirements/from-intake/${uploadId}`, {});
-      router.push(`/proyectos/${req.id}`);
+      router.push(`/proyectos/${req.id}?generate=true`);
     } catch (err: any) {
       setError(err?.message ?? 'Error al crear el requerimiento');
       setIntakeStep('reviewing');

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { ArrowLeft, Sparkles, RefreshCw, Loader2, Clock, CheckCircle2, FileDown, Edit3, Save, X, FileText } from 'lucide-react';
 
@@ -67,6 +67,7 @@ function Section({ title, content, empty = '(vacío)' }: { title: string; conten
 export default function RequirementDetailPage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const [req, setReq]       = useState<Requirement | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -75,6 +76,15 @@ export default function RequirementDetailPage() {
   const [tab, setTab] = useState<'doc' | 'datos' | 'historial'>('doc');
 
   useEffect(() => { load(); }, [id]);
+
+  // Auto-generar si viene de un intake (?generate=true)
+  useEffect(() => {
+    if (!req || generating) return;
+    if (searchParams.get('generate') === 'true') {
+      router.replace(`/proyectos/${id}`);
+      generate();
+    }
+  }, [req]);
 
   async function load() {
     setLoading(true);
@@ -192,6 +202,17 @@ export default function RequirementDetailPage() {
           </button>
         ))}
       </div>
+
+      {/* Generando banner */}
+      {generating && (
+        <div style={{ marginBottom: 20, padding: '14px 20px', borderRadius: 10, background: 'linear-gradient(135deg, rgba(124,58,237,0.08), rgba(79,70,229,0.05))', border: '1px solid rgba(124,58,237,0.25)', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Loader2 size={18} style={{ animation: 'spin 1s linear infinite', color: '#7c3aed', flexShrink: 0 }} />
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>El agente IA está completando el documento R-ISO…</div>
+            <div style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 2 }}>Usa las respuestas del paquete de confirmación para rellenar todas las secciones. Toma ~30 segundos.</div>
+          </div>
+        </div>
+      )}
 
       {/* Doc tab */}
       {tab === 'doc' && (
