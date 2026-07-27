@@ -183,7 +183,6 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: 'inicio', label: 'Inicio', icon: LayoutDashboard },
       { id: 'conversaciones', label: 'Conversaciones', icon: MessageSquare },
-      { id: 'probar', label: 'Probar agente', icon: Send },
       { id: 'clasificaciones', label: 'Clasificaciones', icon: Tag },
       { id: 'skills', label: 'Skills', icon: Zap },
     ],
@@ -348,19 +347,20 @@ function SectionRenderer({
   setSection: (s: SectionId) => void;
 }) {
   switch (section) {
-    case 'inicio':         return <SectionInicio agentId={agentId} />;
+    case 'inicio':           return <SectionInicio agentId={agentId} />;
     case 'conversaciones':   return <SectionConversaciones agentId={agentId} setSection={setSection} />;
     case 'probar':           return <SectionProbar agentId={agentId} />;
     case 'clasificaciones':  return <SectionClasificaciones agentId={agentId} />;
     case 'catalogo':         return <SectionCatalogo agentId={agentId} />;
     case 'skills':           return <SectionSkills agentId={agentId} />;
-    case 'calibrador':     return <SectionCalibrador agentId={agentId} />;
-    case 'configuracion':  return <SectionConfiguracion agentId={agentId} agent={agent} setAgent={setAgent} />;
-    case 'auditoria':      return <SectionAuditoria agentId={agentId} />;
-    case 'prospectos':     return <SectionProspectos agentId={agentId} />;
-    case 'journey':        return <SectionJourney agentId={agentId} agent={agent} setAgent={setAgent} />;
-    case 'entregable':     return <SectionEntregables agentId={agentId} />;
-    default:               return <SectionStub label={section} />;
+    case 'base-conocimiento': return <SectionBaseConocimiento agentId={agentId} agent={agent} setAgent={setAgent} />;
+    case 'calibrador':       return <SectionCalibrador agentId={agentId} />;
+    case 'configuracion':    return <SectionConfiguracion agentId={agentId} agent={agent} setAgent={setAgent} />;
+    case 'auditoria':        return <SectionAuditoria agentId={agentId} />;
+    case 'prospectos':       return <SectionProspectos agentId={agentId} />;
+    case 'journey':          return <SectionJourney agentId={agentId} agent={agent} setAgent={setAgent} />;
+    case 'entregable':       return <SectionEntregables agentId={agentId} />;
+    default:                 return <SectionStub label={section} />;
   }
 }
 
@@ -1092,7 +1092,7 @@ function CorrectionsPanel({
 
 const ACTION_TYPE_LABELS: Record<string, string> = {
   text: 'Texto',
-  micro_diagnosis: 'Micro-diagnóstico',
+  entregable: 'Entregable',
   schedule_meeting: 'Agendar reunión',
   webhook: 'Webhook',
   send_image: 'Enviar imagen',
@@ -1104,7 +1104,7 @@ const ACTION_TYPE_LABELS: Record<string, string> = {
 
 const ACTION_TYPE_COLORS: Record<string, string> = {
   text: 'bg-gray-800 text-gray-400',
-  micro_diagnosis: 'bg-purple-500/15 text-purple-400',
+  entregable: 'bg-purple-500/15 text-purple-400',
   schedule_meeting: 'bg-blue-500/15 text-blue-400',
   webhook: 'bg-orange-500/15 text-orange-400',
   send_image: 'bg-pink-500/15 text-pink-400',
@@ -1242,7 +1242,7 @@ function SectionSkills({ agentId }: { agentId: string }) {
               <div>
                 <label className="text-xs text-gray-400 mb-1 block">Tipo de skill</label>
                 <div className="flex gap-2 flex-wrap">
-                  {(['text', 'micro_diagnosis', 'schedule_meeting', 'webhook', 'send_image', 'send_video', 'create_crm_contact', 'notify_team', 'send_custom_buttons']).map(t => (
+                  {(['text', 'entregable', 'schedule_meeting', 'webhook', 'send_image', 'send_video', 'create_crm_contact', 'notify_team', 'send_custom_buttons']).map(t => (
                     <button
                       key={t}
                       onClick={() => setForm(p => ({ ...p, action_type: t }))}
@@ -1252,8 +1252,8 @@ function SectionSkills({ agentId }: { agentId: string }) {
                     </button>
                   ))}
                 </div>
-                {form.action_type === 'micro_diagnosis' && (
-                  <p className="text-xs text-purple-400/70 mt-1.5">El agente enviará botones de WhatsApp para que el prospecto confirme el micro-diagnóstico.</p>
+                {form.action_type === 'entregable' && (
+                  <p className="text-xs text-purple-400/70 mt-1.5">El agente enviará botones de WhatsApp para que el prospecto confirme y reciba el entregable configurado.</p>
                 )}
                 {form.action_type === 'schedule_meeting' && (
                   <p className="text-xs text-blue-400/70 mt-1.5">El agente enviará el link de Cal.com al prospecto cuando corresponda.</p>
@@ -1964,6 +1964,235 @@ function SectionJourney({ agentId, agent, setAgent }: { agentId: string; agent: 
   );
 }
 
+// ── SECCIÓN: Base de conocimiento ─────────────────────────────────────────────
+
+interface KnowledgeSource {
+  id: string;
+  name: string;
+  url: string;
+  covers: string;
+  notes: string;
+  status: 'active' | 'inactive';
+}
+
+const EMPTY_SOURCE: Omit<KnowledgeSource, 'id'> = {
+  name: '', url: '', covers: '', notes: '', status: 'active',
+};
+
+function SectionBaseConocimiento({
+  agentId, agent, setAgent,
+}: { agentId: string; agent: AgentSlot; setAgent: (a: AgentSlot) => void }) {
+  const cfg = (agent.agent_config ?? {}) as Record<string, any>;
+  const [sources, setSources] = useState<KnowledgeSource[]>(() => {
+    const raw = cfg.knowledge_sources;
+    return Array.isArray(raw) ? raw : [];
+  });
+  const [view, setView] = useState<'list' | 'form'>('list');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState({ ...EMPTY_SOURCE });
+  const [saving, setSaving] = useState(false);
+
+  const persist = async (next: KnowledgeSource[]) => {
+    setSaving(true);
+    try {
+      await api.patch(`/agent-panel/${agentId}/config`, {
+        ...cfg,
+        knowledge_sources: next,
+      });
+      setSources(next);
+      setAgent({ ...agent, agent_config: { ...cfg, knowledge_sources: next } });
+    } catch (e: any) { alert(e?.message ?? 'Error al guardar'); }
+    setSaving(false);
+  };
+
+  const openCreate = () => {
+    setEditingId(null);
+    setForm({ ...EMPTY_SOURCE });
+    setView('form');
+  };
+
+  const openEdit = (s: KnowledgeSource) => {
+    setEditingId(s.id);
+    setForm({ name: s.name, url: s.url, covers: s.covers, notes: s.notes, status: s.status });
+    setView('form');
+  };
+
+  const save = async () => {
+    if (!form.name.trim()) { alert('El nombre del sistema es obligatorio'); return; }
+    const id = editingId ?? `ks_${Date.now()}`;
+    const entry: KnowledgeSource = { id, ...form };
+    const next = editingId
+      ? sources.map(s => s.id === editingId ? entry : s)
+      : [...sources, entry];
+    await persist(next);
+    setView('list');
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm('¿Eliminar esta fuente de conocimiento?')) return;
+    await persist(sources.filter(s => s.id !== id));
+  };
+
+  if (view === 'form') {
+    return (
+      <div className="p-8 max-w-2xl">
+        <div className="flex items-center gap-3 mb-6">
+          <button onClick={() => setView('list')} className="text-gray-400 hover:text-white transition-colors shrink-0">
+            <ChevronLeft size={20} />
+          </button>
+          <div>
+            <h1 className="text-lg font-bold text-white">{editingId ? 'Editar sistema' : 'Agregar sistema'}</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Define qué información maneja este sistema o fuente</p>
+          </div>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs text-gray-400 mb-1.5 block">Nombre del sistema *</label>
+            <input
+              value={form.name}
+              onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+              className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500"
+              placeholder="CRM, ERP, Base de Datos, Portal Clientes..."
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 mb-1.5 block">URL o ubicación</label>
+            <input
+              value={form.url}
+              onChange={e => setForm(p => ({ ...p, url: e.target.value }))}
+              className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500"
+              placeholder="https://sistema.empresa.com"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 mb-1.5 block">¿Qué información maneja? (el agente sabrá consultar aquí)</label>
+            <textarea
+              value={form.covers}
+              onChange={e => setForm(p => ({ ...p, covers: e.target.value }))}
+              rows={3}
+              className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white resize-none focus:outline-none focus:border-indigo-500"
+              placeholder="Historial de clientes, facturas, pedidos pendientes, inventario..."
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 mb-1.5 block">Notas adicionales</label>
+            <textarea
+              value={form.notes}
+              onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
+              rows={2}
+              className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white resize-none focus:outline-none focus:border-indigo-500"
+              placeholder="Solo lectura, requiere VPN, actualizado diariamente..."
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 mb-1.5 block">Estado</label>
+            <select
+              value={form.status}
+              onChange={e => setForm(p => ({ ...p, status: e.target.value as 'active' | 'inactive' }))}
+              className="bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+            >
+              <option value="active">Activo</option>
+              <option value="inactive">Inactivo</option>
+            </select>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={save}
+              disabled={saving}
+              className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors"
+            >
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+              {saving ? 'Guardando...' : 'Guardar'}
+            </button>
+            <button onClick={() => setView('list')} className="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-xl transition-colors">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-8">
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="text-lg font-bold text-white">Base de conocimiento</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Sistemas y fuentes de información que el agente puede referenciar</p>
+        </div>
+        <button
+          onClick={openCreate}
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl transition-colors shrink-0"
+        >
+          <Plus size={14} /> Agregar sistema
+        </button>
+      </div>
+
+      {sources.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <BookOpen size={40} className="text-gray-700 mb-4" />
+          <p className="text-gray-400 font-medium mb-1">Sin fuentes configuradas</p>
+          <p className="text-gray-600 text-sm mb-5 max-w-xs">Agrega los sistemas o bases de datos que el agente debe conocer para responder preguntas de los prospectos.</p>
+          <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl transition-colors">
+            <Plus size={14} /> Agregar primer sistema
+          </button>
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-gray-800">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-800 bg-gray-900/50">
+                <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 uppercase tracking-wider">Sistema</th>
+                <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 uppercase tracking-wider">URL</th>
+                <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 uppercase tracking-wider">Información que maneja</th>
+                <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 uppercase tracking-wider">Notas</th>
+                <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 uppercase tracking-wider">Estado</th>
+                <th className="px-4 py-3" />
+              </tr>
+            </thead>
+            <tbody>
+              {sources.map((s, i) => (
+                <tr key={s.id} className={`border-b border-gray-800/50 hover:bg-gray-900/40 transition-colors ${i % 2 === 0 ? '' : 'bg-gray-900/20'}`}>
+                  <td className="px-4 py-3 font-semibold text-white whitespace-nowrap">{s.name}</td>
+                  <td className="px-4 py-3 text-gray-400 max-w-[160px]">
+                    {s.url ? (
+                      <a href={s.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 transition-colors truncate">
+                        <span className="truncate">{s.url.replace(/^https?:\/\//, '')}</span>
+                        <ArrowUpRight size={11} className="shrink-0" />
+                      </a>
+                    ) : <span className="text-gray-700">—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-gray-400 max-w-[240px]">
+                    <p className="line-clamp-2 text-xs">{s.covers || '—'}</p>
+                  </td>
+                  <td className="px-4 py-3 text-gray-500 max-w-[160px]">
+                    <p className="line-clamp-1 text-xs">{s.notes || '—'}</p>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.status === 'active' ? 'bg-green-500/15 text-green-400' : 'bg-gray-700 text-gray-500'}`}>
+                      {s.status === 'active' ? 'Activo' : 'Inactivo'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => openEdit(s)} className="p-1.5 text-gray-500 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+                        <Pencil size={13} />
+                      </button>
+                      <button onClick={() => remove(s.id)} className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-gray-800 rounded-lg transition-colors">
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── SECCIÓN: Entregables (CRUD) ────────────────────────────────────────────────
 
 const EMPTY_DELIVERABLE = {
@@ -2004,12 +2233,13 @@ function SectionEntregables({ agentId }: { agentId: string }) {
 
   const openEdit = (d: Deliverable) => {
     setEditing(d);
+    const parseJson = (v: any) => Array.isArray(v) ? v : (typeof v === 'string' ? JSON.parse(v) : []);
     setForm({
       name: d.name,
       description: d.description,
-      offer_text: d.offer_text,
-      questions: d.questions ?? [],
-      sections: d.sections ?? [],
+      offer_text: d.offer_text ?? '',
+      questions: parseJson(d.questions),
+      sections: parseJson(d.sections),
       status: d.status,
     });
     setView('form');
@@ -2079,13 +2309,13 @@ function SectionEntregables({ agentId }: { agentId: string }) {
     return (
       <div className="p-8 max-w-2xl">
         <div className="flex items-center gap-3 mb-6">
-          <button onClick={() => setView('list')} className="text-gray-400 hover:text-white transition-colors">
+          <button onClick={() => setView('list')} className="text-gray-400 hover:text-white transition-colors shrink-0">
             <ChevronLeft size={20} />
           </button>
-          <PageHeader
-            title={editing ? 'Editar entregable' : 'Nuevo entregable'}
-            subtitle="Define el flujo de preguntas y las secciones que generará la IA"
-          />
+          <div>
+            <h1 className="text-lg font-bold text-white">{editing ? 'Editar entregable' : 'Nuevo entregable'}</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Define el flujo de preguntas y las secciones que generará la IA</p>
+          </div>
         </div>
 
         <div className="space-y-5">
