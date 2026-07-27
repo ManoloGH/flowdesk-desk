@@ -132,6 +132,36 @@ interface AgentClassification {
   created_at: string;
 }
 
+interface DeliverableQuestion {
+  field: string;
+  question: string;
+  order: number;
+}
+
+interface DeliverableSection {
+  title: string;
+  prompt: string;
+}
+
+interface Deliverable {
+  id: string;
+  name: string;
+  description: string;
+  offer_text: string;
+  questions: DeliverableQuestion[];
+  sections: DeliverableSection[];
+  status: string;
+  created_at: string;
+}
+
+interface DeliverableResponse {
+  id: string;
+  token: string;
+  prospect_name?: string | null;
+  answers: Record<string, string>;
+  created_at: string;
+}
+
 // ── Nav Structure ──────────────────────────────────────────────────────────────
 
 type SectionId =
@@ -170,7 +200,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: 'prospectos', label: 'Prospectos', icon: Users, salesOnly: true },
       { id: 'journey', label: 'Journey del cliente', icon: GitBranch, salesOnly: true },
-      { id: 'entregable', label: 'Entregable', icon: Package, salesOnly: true },
+      { id: 'entregable', label: 'Entregables', icon: Package, salesOnly: true },
       { id: 'seguimiento', label: 'Seguimiento', icon: Clock, salesOnly: true },
     ],
   },
@@ -329,7 +359,7 @@ function SectionRenderer({
     case 'auditoria':      return <SectionAuditoria agentId={agentId} />;
     case 'prospectos':     return <SectionProspectos agentId={agentId} />;
     case 'journey':        return <SectionJourney agentId={agentId} agent={agent} setAgent={setAgent} />;
-    case 'entregable':     return <SectionEntregable agentId={agentId} agent={agent} setAgent={setAgent} />;
+    case 'entregable':     return <SectionEntregables agentId={agentId} />;
     default:               return <SectionStub label={section} />;
   }
 }
@@ -1065,6 +1095,11 @@ const ACTION_TYPE_LABELS: Record<string, string> = {
   micro_diagnosis: 'Micro-diagnóstico',
   schedule_meeting: 'Agendar reunión',
   webhook: 'Webhook',
+  send_image: 'Enviar imagen',
+  send_video: 'Enviar video',
+  create_crm_contact: 'Crear contacto CRM',
+  notify_team: 'Notificar equipo',
+  send_custom_buttons: 'Botones personalizados',
 };
 
 const ACTION_TYPE_COLORS: Record<string, string> = {
@@ -1072,6 +1107,11 @@ const ACTION_TYPE_COLORS: Record<string, string> = {
   micro_diagnosis: 'bg-purple-500/15 text-purple-400',
   schedule_meeting: 'bg-blue-500/15 text-blue-400',
   webhook: 'bg-orange-500/15 text-orange-400',
+  send_image: 'bg-pink-500/15 text-pink-400',
+  send_video: 'bg-rose-500/15 text-rose-400',
+  create_crm_contact: 'bg-green-500/15 text-green-400',
+  notify_team: 'bg-yellow-500/15 text-yellow-400',
+  send_custom_buttons: 'bg-cyan-500/15 text-cyan-400',
 };
 
 const EMPTY_SKILL_FORM = {
@@ -1082,6 +1122,12 @@ const EMPTY_SKILL_FORM = {
   action_type: 'text',
   cal_url: '',
   webhook_url: '',
+  image_url: '',
+  video_url: '',
+  media_caption: '',
+  team_phone: '',
+  message_template: '',
+  button_labels: '',
 };
 
 function SectionSkills({ agentId }: { agentId: string }) {
@@ -1114,9 +1160,16 @@ function SectionSkills({ agentId }: { agentId: string }) {
       };
       if (form.action_type === 'schedule_meeting' && form.cal_url.trim()) {
         payload.action_config = { cal_url: form.cal_url.trim() };
-      }
-      if (form.action_type === 'webhook' && form.webhook_url.trim()) {
+      } else if (form.action_type === 'webhook' && form.webhook_url.trim()) {
         payload.action_config = { webhook_url: form.webhook_url.trim() };
+      } else if (form.action_type === 'send_image') {
+        payload.action_config = { url: form.image_url.trim(), caption: form.media_caption.trim() };
+      } else if (form.action_type === 'send_video') {
+        payload.action_config = { url: form.video_url.trim(), caption: form.media_caption.trim() };
+      } else if (form.action_type === 'notify_team') {
+        payload.action_config = { phone: form.team_phone.trim(), message_template: form.message_template.trim() };
+      } else if (form.action_type === 'send_custom_buttons') {
+        payload.action_config = { button_labels: form.button_labels.trim() };
       }
       if (editingId) {
         const updated = await api.patch<Skill>(`/agent-panel/${agentId}/skills/${editingId}`, payload);
@@ -1150,6 +1203,12 @@ function SectionSkills({ agentId }: { agentId: string }) {
       action_type: s.action_type ?? 'text',
       cal_url: (s.action_config as any)?.cal_url ?? '',
       webhook_url: (s.action_config as any)?.webhook_url ?? '',
+      image_url: (s.action_config as any)?.url ?? '',
+      video_url: (s.action_config as any)?.url ?? '',
+      media_caption: (s.action_config as any)?.caption ?? '',
+      team_phone: (s.action_config as any)?.phone ?? '',
+      message_template: (s.action_config as any)?.message_template ?? '',
+      button_labels: (s.action_config as any)?.button_labels ?? '',
     });
     setShowForm(true);
   };
@@ -1183,7 +1242,7 @@ function SectionSkills({ agentId }: { agentId: string }) {
               <div>
                 <label className="text-xs text-gray-400 mb-1 block">Tipo de skill</label>
                 <div className="flex gap-2 flex-wrap">
-                  {(['text', 'micro_diagnosis', 'schedule_meeting', 'webhook'] as const).map(t => (
+                  {(['text', 'micro_diagnosis', 'schedule_meeting', 'webhook', 'send_image', 'send_video', 'create_crm_contact', 'notify_team', 'send_custom_buttons']).map(t => (
                     <button
                       key={t}
                       onClick={() => setForm(p => ({ ...p, action_type: t }))}
@@ -1201,6 +1260,21 @@ function SectionSkills({ agentId }: { agentId: string }) {
                 )}
                 {form.action_type === 'webhook' && (
                   <p className="text-xs text-orange-400/70 mt-1.5">El agente llamará a tu URL cuando se active. Puedes conectarlo a n8n, Make o cualquier endpoint.</p>
+                )}
+                {form.action_type === 'send_image' && (
+                  <p className="text-xs text-pink-400/70 mt-1.5">El agente enviará una imagen de WhatsApp al prospecto.</p>
+                )}
+                {form.action_type === 'send_video' && (
+                  <p className="text-xs text-rose-400/70 mt-1.5">El agente enviará un video de WhatsApp al prospecto.</p>
+                )}
+                {form.action_type === 'create_crm_contact' && (
+                  <p className="text-xs text-green-400/70 mt-1.5">El agente creará automáticamente un contacto en el CRM con los datos del prospecto.</p>
+                )}
+                {form.action_type === 'notify_team' && (
+                  <p className="text-xs text-yellow-400/70 mt-1.5">El agente enviará una notificación de WhatsApp a un número de tu equipo.</p>
+                )}
+                {form.action_type === 'send_custom_buttons' && (
+                  <p className="text-xs text-cyan-400/70 mt-1.5">El agente enviará un mensaje con botones interactivos de WhatsApp.</p>
                 )}
               </div>
 
@@ -1222,7 +1296,58 @@ function SectionSkills({ agentId }: { agentId: string }) {
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">URL del webhook</label>
                   <input value={form.webhook_url} onChange={e => setForm(p => ({ ...p, webhook_url: e.target.value }))} className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500" placeholder="https://n8n.tudominio.com/webhook/abc123" />
-                  <p className="text-xs text-gray-600 mt-1.5">El webhook recibirá: skill, conversation_id, phone, prospect (datos del prospecto). Si responde con <code className="text-orange-400/80">{'{ "reply": "..." }'}</code> ese texto se enviará al prospecto.</p>
+                  <p className="text-xs text-gray-600 mt-1.5">El webhook recibirá: skill, conversation_id, phone, prospect. Si responde con <code className="text-orange-400/80">{'{ "reply": "..." }'}</code> ese texto se enviará al prospecto.</p>
+                </div>
+              )}
+
+              {/* Imagen */}
+              {form.action_type === 'send_image' && (
+                <div className="space-y-2">
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">URL de la imagen</label>
+                    <input value={form.image_url} onChange={e => setForm(p => ({ ...p, image_url: e.target.value }))} className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500" placeholder="https://cdn.tudominio.com/imagen.jpg" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">Texto de acompañamiento (opcional)</label>
+                    <input value={form.media_caption} onChange={e => setForm(p => ({ ...p, media_caption: e.target.value }))} className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500" placeholder="ej. Aquí te comparto nuestro catálogo 👆" />
+                  </div>
+                </div>
+              )}
+
+              {/* Video */}
+              {form.action_type === 'send_video' && (
+                <div className="space-y-2">
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">URL del video</label>
+                    <input value={form.video_url} onChange={e => setForm(p => ({ ...p, video_url: e.target.value }))} className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500" placeholder="https://cdn.tudominio.com/demo.mp4" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">Texto de acompañamiento (opcional)</label>
+                    <input value={form.media_caption} onChange={e => setForm(p => ({ ...p, media_caption: e.target.value }))} className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500" placeholder="ej. Mira nuestro video de presentación 🎥" />
+                  </div>
+                </div>
+              )}
+
+              {/* Notificar equipo */}
+              {form.action_type === 'notify_team' && (
+                <div className="space-y-2">
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">Número de WhatsApp del equipo (con código de país)</label>
+                    <input value={form.team_phone} onChange={e => setForm(p => ({ ...p, team_phone: e.target.value }))} className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500" placeholder="5215512345678" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">Mensaje (usa {'{{nombre}}'}, {'{{empresa}}'}, {'{{telefono}}'})</label>
+                    <input value={form.message_template} onChange={e => setForm(p => ({ ...p, message_template: e.target.value }))} className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500" placeholder="🔔 Nuevo lead: {{nombre}} ({{empresa}}) — {{telefono}}" />
+                  </div>
+                </div>
+              )}
+
+              {/* Botones personalizados */}
+              {form.action_type === 'send_custom_buttons' && (
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">Opciones de botones (separadas por coma)</label>
+                  <input value={form.button_labels} onChange={e => setForm(p => ({ ...p, button_labels: e.target.value }))} className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500" placeholder="Sí, me interesa, Más información, No por ahora" />
+                  <p className="text-xs text-gray-600 mt-1">Máximo 3 botones. Las instrucciones del skill definen el mensaje de acompañamiento.</p>
                 </div>
               )}
 
@@ -1839,111 +1964,388 @@ function SectionJourney({ agentId, agent, setAgent }: { agentId: string; agent: 
   );
 }
 
-// ── SECCIÓN: Entregable ────────────────────────────────────────────────────────
+// ── SECCIÓN: Entregables (CRUD) ────────────────────────────────────────────────
 
-function SectionEntregable({ agentId, agent, setAgent }: { agentId: string; agent: AgentSlot; setAgent: (a: AgentSlot) => void }) {
-  const cfg = agent.agent_config ?? {};
+const EMPTY_DELIVERABLE = {
+  name: '',
+  description: '',
+  offer_text: '',
+  questions: [] as DeliverableQuestion[],
+  sections: [] as DeliverableSection[],
+  status: 'active',
+};
+
+function SectionEntregables({ agentId }: { agentId: string }) {
+  const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<'list' | 'form' | 'responses'>('list');
+  const [editing, setEditing] = useState<Deliverable | null>(null);
+  const [responsesFor, setResponsesFor] = useState<Deliverable | null>(null);
+  const [responses, setResponses] = useState<DeliverableResponse[]>([]);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [form, setForm] = useState({
-    deliverable_type: (cfg.deliverable_type as string) ?? 'micro_diagnostico',
-    deliverable_url: (cfg.deliverable_url as string) ?? '',
-    deliverable_description: (cfg.deliverable_description as string) ?? '',
-  });
+  const [form, setForm] = useState({ ...EMPTY_DELIVERABLE });
 
-  const DELIVERABLE_TYPES = [
-    { value: 'micro_diagnostico', label: 'Micro-diagnóstico', desc: 'Página HTML personalizada con análisis del prospecto' },
-    { value: 'propuesta', label: 'Propuesta comercial', desc: 'PDF o página con propuesta de servicios' },
-    { value: 'informe', label: 'Informe de diagnóstico', desc: 'Diagnóstico completo (versión extendida)' },
-    { value: 'ninguno', label: 'Sin entregable', desc: 'El agente solo agenda, sin entregar documento' },
-  ];
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api.get<Deliverable[]>(`/agent-panel/${agentId}/deliverables`);
+      setDeliverables(data ?? []);
+    } catch { setDeliverables([]); }
+    setLoading(false);
+  }, [agentId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm({ ...EMPTY_DELIVERABLE });
+    setView('form');
+  };
+
+  const openEdit = (d: Deliverable) => {
+    setEditing(d);
+    setForm({
+      name: d.name,
+      description: d.description,
+      offer_text: d.offer_text,
+      questions: d.questions ?? [],
+      sections: d.sections ?? [],
+      status: d.status,
+    });
+    setView('form');
+  };
+
+  const openResponses = async (d: Deliverable) => {
+    setResponsesFor(d);
+    setView('responses');
+    try {
+      const data = await api.get<DeliverableResponse[]>(`/agent-panel/${agentId}/deliverables/${d.id}/responses`);
+      setResponses(data ?? []);
+    } catch { setResponses([]); }
+  };
 
   const save = async () => {
+    if (!form.name.trim()) { alert('El nombre es obligatorio'); return; }
     setSaving(true);
     try {
-      await api.patch(`/agent-panel/${agentId}/config`, form);
-      setAgent({ ...agent, agent_config: { ...cfg, ...form } });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      if (editing) {
+        const updated = await api.patch<Deliverable>(`/agent-panel/${agentId}/deliverables/${editing.id}`, form);
+        setDeliverables(prev => prev.map(d => d.id === editing.id ? updated : d));
+      } else {
+        const created = await api.post<Deliverable>(`/agent-panel/${agentId}/deliverables`, form);
+        setDeliverables(prev => [created, ...prev]);
+      }
+      setView('list');
     } catch (e: any) { alert(e?.message ?? 'Error al guardar'); }
     setSaving(false);
   };
 
-  const selected = DELIVERABLE_TYPES.find(d => d.value === form.deliverable_type);
+  const remove = async (d: Deliverable) => {
+    if (!confirm(`¿Eliminar entregable "${d.name}"?`)) return;
+    try {
+      await api.delete(`/agent-panel/${agentId}/deliverables/${d.id}`);
+      setDeliverables(prev => prev.filter(x => x.id !== d.id));
+    } catch (e: any) { alert(e?.message ?? 'Error al eliminar'); }
+  };
+
+  const addQuestion = () => {
+    setForm(p => ({
+      ...p,
+      questions: [...p.questions, { field: `pregunta_${p.questions.length + 1}`, question: '', order: p.questions.length + 1 }],
+    }));
+  };
+
+  const updateQuestion = (i: number, patch: Partial<DeliverableQuestion>) => {
+    setForm(p => ({ ...p, questions: p.questions.map((q, idx) => idx === i ? { ...q, ...patch } : q) }));
+  };
+
+  const removeQuestion = (i: number) => {
+    setForm(p => ({ ...p, questions: p.questions.filter((_, idx) => idx !== i).map((q, idx) => ({ ...q, order: idx + 1 })) }));
+  };
+
+  const addSection = () => {
+    setForm(p => ({ ...p, sections: [...p.sections, { title: '', prompt: '' }] }));
+  };
+
+  const updateSection = (i: number, patch: Partial<DeliverableSection>) => {
+    setForm(p => ({ ...p, sections: p.sections.map((s, idx) => idx === i ? { ...s, ...patch } : s) }));
+  };
+
+  const removeSection = (i: number) => {
+    setForm(p => ({ ...p, sections: p.sections.filter((_, idx) => idx !== i) }));
+  };
+
+  if (view === 'form') {
+    return (
+      <div className="p-8 max-w-2xl">
+        <div className="flex items-center gap-3 mb-6">
+          <button onClick={() => setView('list')} className="text-gray-400 hover:text-white transition-colors">
+            <ChevronLeft size={20} />
+          </button>
+          <PageHeader
+            title={editing ? 'Editar entregable' : 'Nuevo entregable'}
+            subtitle="Define el flujo de preguntas y las secciones que generará la IA"
+          />
+        </div>
+
+        <div className="space-y-5">
+          <div>
+            <label className="text-xs text-gray-400 mb-1.5 block">Nombre del entregable *</label>
+            <input
+              value={form.name}
+              onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+              className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500"
+              placeholder="Micro-diagnóstico IA"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-400 mb-1.5 block">Descripción interna</label>
+            <textarea
+              value={form.description}
+              onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+              rows={2}
+              className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white resize-none focus:outline-none focus:border-indigo-500"
+              placeholder="Análisis de 5 preguntas que genera un diagnóstico personalizado"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-400 mb-1.5 block">Texto de oferta (lo que el agente dice para proponer el entregable)</label>
+            <textarea
+              value={form.offer_text}
+              onChange={e => setForm(p => ({ ...p, offer_text: e.target.value }))}
+              rows={3}
+              className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white resize-none focus:outline-none focus:border-indigo-500"
+              placeholder="¿Te gustaría que preparara un micro-diagnóstico personalizado para tu empresa? Es gratuito y te lo entrego en minutos."
+            />
+          </div>
+
+          {/* Preguntas */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs text-gray-400">Preguntas de recolección</label>
+              <button onClick={addQuestion} className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+                <Plus size={12} /> Agregar pregunta
+              </button>
+            </div>
+            <div className="space-y-3">
+              {form.questions.map((q, i) => (
+                <div key={i} className="bg-gray-900 border border-gray-800 rounded-xl p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 w-5">{i + 1}.</span>
+                    <input
+                      value={q.field}
+                      onChange={e => updateQuestion(i, { field: e.target.value })}
+                      className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs text-gray-300 focus:outline-none focus:border-indigo-500 font-mono"
+                      placeholder="nombre_campo"
+                    />
+                    <button onClick={() => removeQuestion(i)} className="text-gray-600 hover:text-red-400 transition-colors">
+                      <X size={14} />
+                    </button>
+                  </div>
+                  <textarea
+                    value={q.question}
+                    onChange={e => updateQuestion(i, { question: e.target.value })}
+                    rows={2}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-sm text-white resize-none focus:outline-none focus:border-indigo-500"
+                    placeholder="¿A qué se dedica tu empresa y cuántos años lleva operando?"
+                  />
+                </div>
+              ))}
+              {form.questions.length === 0 && (
+                <p className="text-xs text-gray-600 italic">Sin preguntas. Agrega al menos una.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Secciones del documento */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs text-gray-400">Secciones del documento generado</label>
+              <button onClick={addSection} className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+                <Plus size={12} /> Agregar sección
+              </button>
+            </div>
+            <div className="space-y-3">
+              {form.sections.map((s, i) => (
+                <div key={i} className="bg-gray-900 border border-gray-800 rounded-xl p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={s.title}
+                      onChange={e => updateSection(i, { title: e.target.value })}
+                      className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-sm text-white font-medium focus:outline-none focus:border-indigo-500"
+                      placeholder="Título de la sección (ej: Situación actual)"
+                    />
+                    <button onClick={() => removeSection(i)} className="text-gray-600 hover:text-red-400 transition-colors">
+                      <X size={14} />
+                    </button>
+                  </div>
+                  <textarea
+                    value={s.prompt}
+                    onChange={e => updateSection(i, { prompt: e.target.value })}
+                    rows={3}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-gray-300 resize-none focus:outline-none focus:border-indigo-500"
+                    placeholder="Instrucción para la IA: Describe en 2-3 párrafos la situación actual de la empresa basándote en sus respuestas..."
+                  />
+                </div>
+              ))}
+              {form.sections.length === 0 && (
+                <p className="text-xs text-gray-600 italic">Sin secciones. La IA generará el contenido del documento por sección.</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-400 mb-1.5 block">Estado</label>
+            <select
+              value={form.status}
+              onChange={e => setForm(p => ({ ...p, status: e.target.value }))}
+              className="bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+            >
+              <option value="active">Activo</option>
+              <option value="inactive">Inactivo</option>
+            </select>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={save}
+              disabled={saving}
+              className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors"
+            >
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+              {saving ? 'Guardando...' : 'Guardar entregable'}
+            </button>
+            <button onClick={() => setView('list')} className="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-xl transition-colors">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === 'responses' && responsesFor) {
+    return (
+      <div className="p-8 max-w-2xl">
+        <div className="flex items-center gap-3 mb-6">
+          <button onClick={() => setView('list')} className="text-gray-400 hover:text-white transition-colors">
+            <ChevronLeft size={20} />
+          </button>
+          <PageHeader title={`Respuestas: ${responsesFor.name}`} subtitle={`${responses.length} respuesta(s) generada(s)`} />
+        </div>
+        <div className="space-y-4">
+          {responses.length === 0 && (
+            <div className="text-center py-12 text-gray-500 text-sm">Aún no hay respuestas para este entregable.</div>
+          )}
+          {responses.map(r => (
+            <div key={r.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-white">{r.prospect_name ?? 'Prospecto'}</p>
+                  <p className="text-xs text-gray-500">{new Date(r.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+                <a
+                  href={`/entregable/${r.token}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+                >
+                  Ver documento <ArrowUpRight size={12} />
+                </a>
+              </div>
+              <div className="space-y-1">
+                {Object.entries(r.answers).map(([k, v]) => (
+                  <div key={k} className="flex gap-2 text-xs">
+                    <span className="text-gray-500 font-mono shrink-0">{k}:</span>
+                    <span className="text-gray-300">{v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8">
-      <PageHeader title="Entregable" subtitle="Qué recibe el prospecto al finalizar el journey" />
-      <div className="mt-6 max-w-lg space-y-6">
-
-        {/* Tipo de entregable */}
-        <div>
-          <label className="text-xs text-gray-400 mb-3 block">Tipo de entregable</label>
-          <div className="space-y-2">
-            {DELIVERABLE_TYPES.map(d => (
-              <button
-                key={d.value}
-                onClick={() => setForm(p => ({ ...p, deliverable_type: d.value }))}
-                className={`w-full flex items-start gap-3 p-4 rounded-xl border text-left transition-all ${
-                  form.deliverable_type === d.value
-                    ? 'border-indigo-500 bg-indigo-500/10'
-                    : 'border-gray-800 bg-gray-900 hover:border-gray-700'
-                }`}
-              >
-                <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 mt-0.5 ${
-                  form.deliverable_type === d.value ? 'border-indigo-500 bg-indigo-500' : 'border-gray-600'
-                }`} />
-                <div>
-                  <p className="text-sm font-semibold text-white">{d.label}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{d.desc}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {form.deliverable_type !== 'ninguno' && (
-          <>
-            <div>
-              <label className="text-xs text-gray-400 mb-1.5 block">URL base del entregable</label>
-              <input
-                value={form.deliverable_url}
-                onChange={e => setForm(p => ({ ...p, deliverable_url: e.target.value }))}
-                className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500"
-                placeholder="https://app.flowdesk.mx/micro/"
-              />
-              <p className="text-xs text-gray-600 mt-1">El token único del prospecto se agrega al final automáticamente</p>
-            </div>
-
-            <div>
-              <label className="text-xs text-gray-400 mb-1.5 block">Descripción del entregable</label>
-              <textarea
-                value={form.deliverable_description}
-                onChange={e => setForm(p => ({ ...p, deliverable_description: e.target.value }))}
-                rows={4}
-                className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white resize-none focus:outline-none focus:border-indigo-500"
-                placeholder={`Ej: "Te comparto tu micro-diagnóstico personalizado con los hallazgos clave de tu empresa y las áreas donde podemos generar más valor con IA..."`}
-              />
-              <p className="text-xs text-gray-600 mt-1">Mensaje que el agente envía junto al link del entregable (Etapa 5)</p>
-            </div>
-
-            {/* Preview */}
-            {form.deliverable_url && (
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-                <p className="text-xs text-gray-500 mb-2">Vista previa del link que recibirá el prospecto:</p>
-                <p className="text-sm text-indigo-400 font-mono break-all">
-                  {form.deliverable_url.replace(/\/$/, '')}/[token-prospecto]
-                </p>
-              </div>
-            )}
-          </>
-        )}
-
-        <button onClick={save} disabled={saving} className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors">
-          {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <Check size={14} /> : null}
-          {saving ? 'Guardando...' : saved ? 'Guardado' : 'Guardar configuración'}
+      <div className="flex items-start justify-between mb-6">
+        <PageHeader title="Entregables" subtitle="Documentos generados por IA que el agente entrega al prospecto" />
+        <button
+          onClick={openCreate}
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl transition-colors shrink-0"
+        >
+          <Plus size={14} /> Nuevo entregable
         </button>
       </div>
+
+      {loading ? (
+        <div className="flex items-center gap-2 text-gray-500 text-sm"><Loader2 size={16} className="animate-spin" /> Cargando...</div>
+      ) : deliverables.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Package size={40} className="text-gray-700 mb-4" />
+          <p className="text-gray-400 font-medium mb-1">Sin entregables configurados</p>
+          <p className="text-gray-600 text-sm mb-5">Crea un entregable para que el agente recopile información del prospecto y genere documentos personalizados con IA.</p>
+          <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl transition-colors">
+            <Plus size={14} /> Crear primer entregable
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-3 max-w-2xl">
+          {deliverables.map(d => (
+            <div key={d.id} className="bg-gray-900 border border-gray-800 hover:border-gray-700 rounded-xl p-5 transition-colors">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm font-semibold text-white truncate">{d.name}</p>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${
+                      d.status === 'active' ? 'bg-green-500/15 text-green-400' : 'bg-gray-700 text-gray-400'
+                    }`}>
+                      {d.status === 'active' ? 'Activo' : 'Inactivo'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 line-clamp-2">{d.description}</p>
+                  <div className="flex items-center gap-4 mt-2 text-xs text-gray-600">
+                    <span>{d.questions?.length ?? 0} preguntas</span>
+                    <span>{d.sections?.length ?? 0} secciones</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => openResponses(d)}
+                    title="Ver respuestas"
+                    className="p-2 text-gray-500 hover:text-indigo-400 hover:bg-gray-800 rounded-lg transition-colors"
+                  >
+                    <Users size={14} />
+                  </button>
+                  <button
+                    onClick={() => openEdit(d)}
+                    title="Editar"
+                    className="p-2 text-gray-500 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    onClick={() => remove(d)}
+                    title="Eliminar"
+                    className="p-2 text-gray-500 hover:text-red-400 hover:bg-gray-800 rounded-lg transition-colors"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+              {d.offer_text && (
+                <div className="mt-3 pt-3 border-t border-gray-800">
+                  <p className="text-xs text-gray-600 italic line-clamp-1">"{d.offer_text}"</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
