@@ -199,6 +199,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: 'prospectos', label: 'Prospectos', icon: Users, salesOnly: true },
       { id: 'journey', label: 'Journey del cliente', icon: GitBranch, salesOnly: true },
+      { id: 'entregable', label: 'Entregables', icon: Package, salesOnly: true },
       { id: 'seguimiento', label: 'Seguimiento', icon: Clock, salesOnly: true },
     ],
   },

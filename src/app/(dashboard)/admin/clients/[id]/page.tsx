@@ -7,7 +7,7 @@ import {
   ArrowLeft, Building2, Users, Brain, MessageSquare, CheckCircle, XCircle,
   Phone, DollarSign, Bot, User, Loader2, RefreshCw, Activity,
   Server, Download, PackageOpen, AlertTriangle, ShieldCheck, ClipboardList,
-  Wifi, WifiOff, ChevronDown, ChevronUp, Globe, Plus, Copy, Check,
+  Wifi, WifiOff, ChevronDown, ChevronUp, Globe, Plus, Copy, Check, Trash2,
 } from 'lucide-react';
 
 interface TeamSlotRow {
@@ -183,6 +183,16 @@ export default function TenantDetailPage() {
       setCreateError(msg);
     }
     setCreatingUser(false);
+  }
+
+  async function deleteSlot(slotId: string, slotName: string) {
+    if (!confirm(`¿Eliminar al usuario "${slotName}" permanentemente? Esta acción no se puede deshacer.`)) return;
+    try {
+      await api.delete(`/team-slots/${slotId}`);
+      await load();
+    } catch (e: any) {
+      alert(e?.message ?? 'Error al eliminar usuario');
+    }
   }
 
   function copyPassword(pw: string) {
@@ -381,15 +391,22 @@ export default function TenantDetailPage() {
                 {humans.length === 0
                   ? <p className="text-xs text-gray-600">Sin usuarios humanos</p>
                   : humans.map(s => (
-                    <div key={s.id} className="flex items-center gap-3 py-1.5">
+                    <div key={s.id} className="flex items-center gap-3 py-1.5 group">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-600/40 to-violet-600/40 flex items-center justify-center flex-shrink-0">
                         <User className="w-3.5 h-3.5 text-indigo-300" />
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="text-xs font-medium text-white">{s.name}</p>
                         <p className="text-[10px] text-gray-600 truncate">{s.email ?? s.role}</p>
                       </div>
-                      <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-gray-500 border border-white/5 flex-shrink-0">{s.role}</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-gray-500 border border-white/5 flex-shrink-0">{s.role}</span>
+                      <button
+                        onClick={() => deleteSlot(s.id, s.name)}
+                        title="Eliminar usuario"
+                        className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-400 transition-all flex-shrink-0"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   ))
                 }
