@@ -199,7 +199,6 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: 'prospectos', label: 'Prospectos', icon: Users, salesOnly: true },
       { id: 'journey', label: 'Journey del cliente', icon: GitBranch, salesOnly: true },
-      { id: 'entregable', label: 'Entregables', icon: Package, salesOnly: true },
       { id: 'seguimiento', label: 'Seguimiento', icon: Clock, salesOnly: true },
     ],
   },
@@ -1128,27 +1127,43 @@ const EMPTY_SKILL_FORM = {
   team_phone: '',
   message_template: '',
   button_labels: '',
+  deliverable_id: '',
+};
+
+const EMPTY_DELIV_FORM = {
+  offer_text: '',
+  questions: [] as DeliverableQuestion[],
+  sections: [] as DeliverableSection[],
 };
 
 function SectionSkills({ agentId }: { agentId: string }) {
   const [skills, setSkills] = useState<Skill[]>([]);
+  const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_SKILL_FORM);
+  const [delivForm, setDelivForm] = useState({ ...EMPTY_DELIV_FORM });
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const load = useCallback(() => {
-    api.get<Skill[]>(`/agent-panel/${agentId}/skills`)
-      .then(d => setSkills(Array.isArray(d) ? d : []))
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    Promise.all([
+      api.get<Skill[]>(`/agent-panel/${agentId}/skills`),
+      api.get<Deliverable[]>(`/agent-panel/${agentId}/deliverables`),
+    ]).then(([s, d]) => {
+      setSkills(Array.isArray(s) ? s : []);
+      setDeliverables(Array.isArray(d) ? d : []);
+    }).catch(console.error).finally(() => setLoading(false));
   }, [agentId]);
 
   useEffect(() => { load(); }, [load]);
 
   const save = async () => {
     if (!form.name.trim() || !form.trigger_condition.trim()) return;
+    if (form.action_type === 'entregable' && !form.deliverable_id) {
+      alert('Selecciona un entregable o crea uno primero en el tab Entregables');
+      return;
+    }
     setSaving(true);
     try {
       const payload: Record<string, any> = {
@@ -1158,7 +1173,18 @@ function SectionSkills({ agentId }: { agentId: string }) {
         example_conversation: form.example_conversation,
         action_type: form.action_type,
       };
-      if (form.action_type === 'schedule_meeting' && form.cal_url.trim()) {
+      if (form.action_type === 'entregable') {
+        payload.action_config = { deliverable_id: form.deliverable_id };
+        // Guardar cambios al entregable en paralelo
+        await api.patch(`/agent-panel/${agentId}/deliverables/${form.deliverable_id}`, {
+          offer_text: delivForm.offer_text,
+          questions: delivForm.questions,
+          sections: delivForm.sections,
+        });
+        setDeliverables(prev => prev.map(d =>
+          d.id === form.deliverable_id ? { ...d, ...delivForm } : d
+        ));
+      } else if (form.action_type === 'schedule_meeting' && form.cal_url.trim()) {
         payload.action_config = { cal_url: form.cal_url.trim() };
       } else if (form.action_type === 'webhook' && form.webhook_url.trim()) {
         payload.action_config = { webhook_url: form.webhook_url.trim() };
@@ -1181,6 +1207,7 @@ function SectionSkills({ agentId }: { agentId: string }) {
       setShowForm(false);
       setEditingId(null);
       setForm(EMPTY_SKILL_FORM);
+      setDelivForm({ ...EMPTY_DELIV_FORM });
     } catch (e: any) { alert(e?.message ?? 'Error'); }
     setSaving(false);
   };
@@ -1195,6 +1222,7 @@ function SectionSkills({ agentId }: { agentId: string }) {
 
   const startEdit = (s: Skill) => {
     setEditingId(s.id);
+    const delivId = (s.action_config as any)?.deliverable_id ?? '';
     setForm({
       name: s.name,
       trigger_condition: s.trigger_condition,
@@ -1209,9 +1237,41 @@ function SectionSkills({ agentId }: { agentId: string }) {
       team_phone: (s.action_config as any)?.phone ?? '',
       message_template: (s.action_config as any)?.message_template ?? '',
       button_labels: (s.action_config as any)?.button_labels ?? '',
+      deliverable_id: delivId,
     });
+    if (delivId) {
+      const parseJson = (v: any) => Array.isArray(v) ? v : (typeof v === 'string' ? JSON.parse(v) : []);
+      const d = deliverables.find(x => x.id === delivId);
+      if (d) setDelivForm({ offer_text: d.offer_text ?? '', questions: parseJson(d.questions), sections: parseJson(d.sections) });
+    }
     setShowForm(true);
   };
+
+  const selectDeliverable = (id: string) => {
+    setForm(p => ({ ...p, deliverable_id: id }));
+    if (id) {
+      const parseJson = (v: any) => Array.isArray(v) ? v : (typeof v === 'string' ? JSON.parse(v) : []);
+      const d = deliverables.find(x => x.id === id);
+      if (d) setDelivForm({ offer_text: d.offer_text ?? '', questions: parseJson(d.questions), sections: parseJson(d.sections) });
+    } else {
+      setDelivForm({ ...EMPTY_DELIV_FORM });
+    }
+  };
+
+  const addDelivQ = () => setDelivForm(p => ({
+    ...p,
+    questions: [...p.questions, { field: `pregunta_${p.questions.length + 1}`, question: '', order: p.questions.length + 1 }],
+  }));
+  const updateDelivQ = (i: number, patch: Partial<DeliverableQuestion>) =>
+    setDelivForm(p => ({ ...p, questions: p.questions.map((q, idx) => idx === i ? { ...q, ...patch } : q) }));
+  const removeDelivQ = (i: number) =>
+    setDelivForm(p => ({ ...p, questions: p.questions.filter((_, idx) => idx !== i).map((q, idx) => ({ ...q, order: idx + 1 })) }));
+
+  const addDelivS = () => setDelivForm(p => ({ ...p, sections: [...p.sections, { title: '', prompt: '' }] }));
+  const updateDelivS = (i: number, patch: Partial<DeliverableSection>) =>
+    setDelivForm(p => ({ ...p, sections: p.sections.map((s, idx) => idx === i ? { ...s, ...patch } : s) }));
+  const removeDelivS = (i: number) =>
+    setDelivForm(p => ({ ...p, sections: p.sections.filter((_, idx) => idx !== i) }));
 
   const isActionSkill = form.action_type !== 'text';
 
@@ -1253,7 +1313,117 @@ function SectionSkills({ agentId }: { agentId: string }) {
                   ))}
                 </div>
                 {form.action_type === 'entregable' && (
-                  <p className="text-xs text-purple-400/70 mt-1.5">El agente enviará botones de WhatsApp para que el prospecto confirme y reciba el entregable configurado.</p>
+                  <div className="mt-3 space-y-4 bg-purple-500/5 border border-purple-500/20 rounded-xl p-4">
+                    {/* Selector de entregable */}
+                    <div>
+                      <label className="text-xs text-purple-300 mb-1.5 block font-medium">Entregable vinculado</label>
+                      {deliverables.length === 0 ? (
+                        <p className="text-xs text-gray-500">No hay entregables creados. Ve al tab <span className="text-purple-400">Entregables</span> para crear uno primero.</p>
+                      ) : (
+                        <select
+                          value={form.deliverable_id}
+                          onChange={e => selectDeliverable(e.target.value)}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                        >
+                          <option value="">— Selecciona un entregable —</option>
+                          {deliverables.map(d => (
+                            <option key={d.id} value={d.id}>{d.name}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+
+                    {form.deliverable_id && (
+                      <>
+                        {/* Texto de oferta */}
+                        <div>
+                          <label className="text-xs text-gray-400 mb-1 block">Texto de oferta (lo que el agente dice para proponer el entregable)</label>
+                          <textarea
+                            value={delivForm.offer_text}
+                            onChange={e => setDelivForm(p => ({ ...p, offer_text: e.target.value }))}
+                            rows={2}
+                            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-2 text-sm text-white resize-none focus:outline-none focus:border-purple-500"
+                            placeholder="¿Te gustaría que preparara un micro-diagnóstico gratuito para tu empresa?"
+                          />
+                        </div>
+
+                        {/* Preguntas */}
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="text-xs text-gray-400">Preguntas que hará el agente (una por turno)</label>
+                            <button onClick={addDelivQ} className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 transition-colors">
+                              <Plus size={11} /> Agregar
+                            </button>
+                          </div>
+                          <div className="space-y-2">
+                            {delivForm.questions.map((q, i) => (
+                              <div key={i} className="bg-gray-900 border border-gray-800 rounded-lg p-2.5 space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-gray-600 w-4">{i + 1}.</span>
+                                  <input
+                                    value={q.field}
+                                    onChange={e => updateDelivQ(i, { field: e.target.value })}
+                                    className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-gray-300 font-mono focus:outline-none focus:border-purple-500"
+                                    placeholder="nombre_campo"
+                                  />
+                                  <button onClick={() => removeDelivQ(i)} className="text-gray-600 hover:text-red-400 transition-colors">
+                                    <X size={12} />
+                                  </button>
+                                </div>
+                                <textarea
+                                  value={q.question}
+                                  onChange={e => updateDelivQ(i, { question: e.target.value })}
+                                  rows={2}
+                                  className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm text-white resize-none focus:outline-none focus:border-purple-500"
+                                  placeholder="¿A qué se dedica tu empresa?"
+                                />
+                              </div>
+                            ))}
+                            {delivForm.questions.length === 0 && (
+                              <p className="text-xs text-gray-600 italic">Sin preguntas todavía.</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Secciones del documento */}
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="text-xs text-gray-400">Secciones del documento generado por IA</label>
+                            <button onClick={addDelivS} className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 transition-colors">
+                              <Plus size={11} /> Agregar
+                            </button>
+                          </div>
+                          <div className="space-y-2">
+                            {delivForm.sections.map((s, i) => (
+                              <div key={i} className="bg-gray-900 border border-gray-800 rounded-lg p-2.5 space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    value={s.title}
+                                    onChange={e => updateDelivS(i, { title: e.target.value })}
+                                    className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white font-medium focus:outline-none focus:border-purple-500"
+                                    placeholder="Título de sección (ej: Situación actual)"
+                                  />
+                                  <button onClick={() => removeDelivS(i)} className="text-gray-600 hover:text-red-400 transition-colors">
+                                    <X size={12} />
+                                  </button>
+                                </div>
+                                <textarea
+                                  value={s.prompt}
+                                  onChange={e => updateDelivS(i, { prompt: e.target.value })}
+                                  rows={2}
+                                  className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-xs text-gray-300 resize-none focus:outline-none focus:border-purple-500"
+                                  placeholder="Instrucción para la IA: describe la situación actual en 2-3 párrafos..."
+                                />
+                              </div>
+                            ))}
+                            {delivForm.sections.length === 0 && (
+                              <p className="text-xs text-gray-600 italic">Sin secciones todavía.</p>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 )}
                 {form.action_type === 'schedule_meeting' && (
                   <p className="text-xs text-blue-400/70 mt-1.5">El agente enviará el link de Cal.com al prospecto cuando corresponda.</p>
