@@ -1987,6 +1987,23 @@ function SectionProspectos({ agentId }: { agentId: string }) {
 
 // ── SECCIÓN: Journey del cliente ───────────────────────────────────────────────
 
+interface JourneyStage {
+  n: number;
+  label: string;
+  desc: string;
+  script: string;
+  crm_stage: string;
+}
+
+const DEFAULT_JOURNEY_STAGES: JourneyStage[] = [
+  { n: 1, label: 'Bienvenida',  desc: 'Saludo y presentación del agente',        script: '', crm_stage: '' },
+  { n: 2, label: 'Escucha',     desc: 'Detecta necesidad o contexto inicial',     script: '', crm_stage: 'agente_ia' },
+  { n: 3, label: 'Gancho',      desc: 'Ofrece el entregable gratuito',            script: '', crm_stage: 'micro_diagnostico' },
+  { n: 4, label: 'Preguntas',   desc: 'Recopila respuestas del prospecto',        script: '', crm_stage: '' },
+  { n: 5, label: 'Entrega',     desc: 'Envía URL del documento generado por IA',  script: '', crm_stage: 'discovery' },
+  { n: 6, label: 'Cierre',      desc: 'Califica y agenda cita o cierra',          script: '', crm_stage: 'propuesta' },
+];
+
 const JOURNEY_STAGES = [
   { n: 1, label: 'Bienvenida', desc: 'Saludo + presentación del agente' },
   { n: 2, label: 'Escucha', desc: 'Detecta necesidad o contexto inicial' },
@@ -1998,26 +2015,38 @@ const JOURNEY_STAGES = [
 
 function SectionJourney({ agentId, agent, setAgent }: { agentId: string; agent: AgentSlot; setAgent: (a: AgentSlot) => void }) {
   const cfg = agent.agent_config ?? {};
-  const [tab, setTab] = useState<'identidad' | 'preguntas' | 'criterios'>('identidad');
+  const [tab, setTab] = useState<'identidad' | 'journey' | 'criterios' | 'crm'>('identidad');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [editingStages, setEditingStages] = useState(false);
+
+  const parseStages = (): JourneyStage[] => {
+    const raw = cfg.journey_stages;
+    if (Array.isArray(raw) && raw.length > 0) return raw as JourneyStage[];
+    return DEFAULT_JOURNEY_STAGES;
+  };
 
   const [form, setForm] = useState({
     instance_name: (cfg.instance_name as string) ?? '',
     cal_com_url: (cfg.cal_com_url as string) ?? '',
     pitch: (cfg.pitch as string) ?? '',
   });
-
-  const rawQs = cfg.qualifying_questions;
-  const initialQs: string[] = Array.isArray(rawQs) ? rawQs : [];
-  const [questions, setQuestions] = useState<string[]>(initialQs.length ? initialQs : ['', '', '', '']);
+  const [stages, setStages] = useState<JourneyStage[]>(parseStages);
   const [goodCriteria, setGoodCriteria] = useState<string>((cfg.good_lead_criteria as string) ?? '');
   const [badCriteria, setBadCriteria] = useState<string>((cfg.bad_lead_criteria as string) ?? '');
+  const [crmGeneral, setCrmGeneral] = useState<string>((cfg.crm_instructions as string) ?? '');
 
   const save = async (extra?: Record<string, unknown>) => {
     setSaving(true);
     try {
-      const payload = { ...form, qualifying_questions: questions, good_lead_criteria: goodCriteria, bad_lead_criteria: badCriteria, ...extra };
+      const payload = {
+        ...form,
+        journey_stages: stages,
+        good_lead_criteria: goodCriteria,
+        bad_lead_criteria: badCriteria,
+        crm_instructions: crmGeneral,
+        ...extra,
+      };
       await api.patch(`/agent-panel/${agentId}/config`, payload);
       setAgent({ ...agent, agent_config: { ...cfg, ...payload } });
       setSaved(true);
@@ -2026,49 +2055,93 @@ function SectionJourney({ agentId, agent, setAgent }: { agentId: string; agent: 
     setSaving(false);
   };
 
-  const addQuestion = () => setQuestions(prev => [...prev, '']);
-  const removeQuestion = (i: number) => setQuestions(prev => prev.filter((_, idx) => idx !== i));
-  const updateQuestion = (i: number, val: string) => setQuestions(prev => prev.map((q, idx) => idx === i ? val : q));
+  const updateStage = (i: number, patch: Partial<JourneyStage>) =>
+    setStages(prev => prev.map((s, idx) => idx === i ? { ...s, ...patch } : s));
 
-  const SaveBtn = () => (
-    <button onClick={() => save()} disabled={saving} className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors">
-      {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <Check size={14} /> : null}
+  const SaveBtn = ({ extra }: { extra?: Record<string, unknown> }) => (
+    <button onClick={() => save(extra)} disabled={saving} className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors">
+      {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <Check size={14} className="text-white" /> : null}
       {saving ? 'Guardando...' : saved ? 'Guardado' : 'Guardar cambios'}
     </button>
   );
+
+  const STAGE_COLORS = ['bg-indigo-500', 'bg-violet-500', 'bg-purple-500', 'bg-pink-500', 'bg-rose-500', 'bg-orange-500'];
 
   return (
     <div className="p-8">
       <PageHeader title="Journey del cliente" subtitle="Flujo de conversación y calificación de leads" />
 
-      {/* Etapas — solo visualización */}
-      <div className="mt-6 mb-8">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Flujo del journey</p>
-        <div className="flex items-center gap-0 flex-wrap">
-          {JOURNEY_STAGES.map((s, i) => (
+      {/* ── Flujo visual editable ─────────────────────────────────────── */}
+      <div className="mt-6 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Flujo del journey</p>
+          <button
+            onClick={() => setEditingStages(p => !p)}
+            className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+          >
+            <Pencil size={11} /> {editingStages ? 'Cerrar edición' : 'Editar etapas'}
+          </button>
+        </div>
+
+        {/* Pills visualización */}
+        <div className="flex items-center flex-wrap gap-0">
+          {stages.map((s, i) => (
             <div key={s.n} className="flex items-center">
-              <div className="bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-center min-w-[90px]">
+              <div className={`rounded-xl px-3 py-2 text-center min-w-[90px] border ${
+                s.script ? 'bg-indigo-600/10 border-indigo-500/30' : 'bg-gray-900 border-gray-800'
+              }`}>
                 <p className="text-[10px] text-indigo-400 font-bold">Etapa {s.n}</p>
                 <p className="text-xs font-semibold text-white">{s.label}</p>
-                <p className="text-[10px] text-gray-600 leading-tight mt-0.5">{s.desc}</p>
+                <p className="text-[10px] text-gray-500 leading-tight mt-0.5">{s.desc}</p>
+                {s.crm_stage && (
+                  <p className="text-[9px] text-green-500 mt-0.5 font-mono">→ {s.crm_stage}</p>
+                )}
               </div>
-              {i < JOURNEY_STAGES.length - 1 && (
-                <ChevronRight size={12} className="text-gray-700 mx-1 flex-shrink-0" />
-              )}
+              {i < stages.length - 1 && <ChevronRight size={12} className="text-gray-700 mx-1 flex-shrink-0" />}
             </div>
           ))}
         </div>
+
+        {/* Editor inline de etapas */}
+        {editingStages && (
+          <div className="mt-4 space-y-2 bg-gray-900/50 border border-gray-800 rounded-xl p-4">
+            <p className="text-xs text-gray-500 mb-3">Edita los nombres y descripciones de cada etapa. Los scripts detallados se configuran en el tab <span className="text-indigo-400">Journey completo</span>.</p>
+            {stages.map((s, i) => (
+              <div key={s.n} className="flex items-center gap-3">
+                <div className={`w-5 h-5 rounded-full ${STAGE_COLORS[i] ?? 'bg-gray-600'} flex items-center justify-center flex-shrink-0`}>
+                  <span className="text-[9px] text-white font-bold">{s.n}</span>
+                </div>
+                <input
+                  value={s.label}
+                  onChange={e => updateStage(i, { label: e.target.value })}
+                  className="w-28 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                  placeholder="Nombre"
+                />
+                <input
+                  value={s.desc}
+                  onChange={e => updateStage(i, { desc: e.target.value })}
+                  className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-indigo-500"
+                  placeholder="Descripción corta"
+                />
+              </div>
+            ))}
+            <div className="pt-2">
+              <SaveBtn />
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Tabs de configuración */}
+      {/* ── Tabs ─────────────────────────────────────────────────────── */}
       <div className="flex gap-1 border-b border-gray-800 mb-6">
-        {(['identidad', 'preguntas', 'criterios'] as const).map(t => (
+        {(['identidad', 'journey', 'criterios', 'crm'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${tab === t ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-400'}`}>
-            {t === 'identidad' ? 'Identidad del bot' : t === 'preguntas' ? 'Preguntas' : 'Criterios de calificación'}
+            {t === 'identidad' ? 'Identidad del agente' : t === 'journey' ? 'Journey completo' : t === 'criterios' ? 'Criterios de calificación' : 'Movimiento en CRM'}
           </button>
         ))}
       </div>
 
+      {/* ── Tab: Identidad del agente ─────────────────────────────────── */}
       {tab === 'identidad' && (
         <div className="max-w-lg space-y-5">
           <div>
@@ -2089,44 +2162,104 @@ function SectionJourney({ agentId, agent, setAgent }: { agentId: string; agent: 
         </div>
       )}
 
-      {tab === 'preguntas' && (
-        <div className="max-w-lg space-y-4">
-          <p className="text-xs text-gray-500">El agente hace estas preguntas en la Etapa 4 (en orden). Agrega o quita según necesites.</p>
-          {questions.map((q, i) => (
-            <div key={i} className="flex gap-2 items-start">
-              <span className="text-xs text-indigo-400 font-bold w-5 pt-3.5 flex-shrink-0">{i + 1}.</span>
-              <input
-                value={q}
-                onChange={e => updateQuestion(i, e.target.value)}
-                className="flex-1 bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500"
-                placeholder={`Pregunta ${i + 1}...`}
-              />
-              <button onClick={() => removeQuestion(i)} className="mt-2.5 text-gray-600 hover:text-red-400 transition-colors">
-                <X size={14} />
-              </button>
+      {/* ── Tab: Journey completo ─────────────────────────────────────── */}
+      {tab === 'journey' && (
+        <div className="max-w-2xl space-y-4">
+          <p className="text-xs text-gray-500 mb-2">Escribe el script de cada etapa — qué dice el agente, qué preguntas hace, qué acciones toma. Incluye el entregable en las etapas 3-5.</p>
+          {stages.map((s, i) => (
+            <div key={s.n} className="border border-gray-800 rounded-xl overflow-hidden">
+              <div className={`flex items-center gap-3 px-4 py-3 ${s.script ? 'bg-indigo-600/8' : 'bg-gray-900/50'}`}>
+                <div className={`w-6 h-6 rounded-full ${STAGE_COLORS[i] ?? 'bg-gray-600'} flex items-center justify-center flex-shrink-0`}>
+                  <span className="text-[10px] text-white font-bold">{s.n}</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-white">{s.label}</p>
+                  <p className="text-xs text-gray-500">{s.desc}</p>
+                </div>
+                {s.script && <CheckCircle size={14} className="text-indigo-400 shrink-0" />}
+              </div>
+              <div className="px-4 pb-4 pt-2 bg-gray-950">
+                <textarea
+                  value={s.script}
+                  onChange={e => updateStage(i, { script: e.target.value })}
+                  rows={4}
+                  className="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-sm text-white resize-y focus:outline-none focus:border-indigo-500 placeholder-gray-700"
+                  placeholder={
+                    s.n === 1 ? 'Ej: "¡Hola! Soy Leo de MentorIA. ¿Con quién tengo el gusto?" — Recoge nombre y empresa de forma natural.' :
+                    s.n === 2 ? 'Ej: Pregunta qué los trajo aquí. Escucha y muestra interés genuino.' :
+                    s.n === 3 ? 'Ej: "Me gustaría regalarte un micro-diagnóstico gratuito de automatización para tu empresa. ¿Te parece bien?" — Usa ofrecerEntregable() cuando acepten.' :
+                    s.n === 4 ? 'Ej: Haz las preguntas del entregable una por turno. Espera la respuesta antes de continuar.' :
+                    s.n === 5 ? 'Ej: "Listo! Aquí tienes tu diagnóstico: [URL]" — Usa completarEntregable() para generar la URL.' :
+                    'Ej: Califica con calificar(). Si score ≥ 7 usa agendar(). Si no califica, cierra con calidez y queda abierto para el futuro.'
+                  }
+                />
+              </div>
             </div>
           ))}
-          <button onClick={addQuestion} className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-400 transition-colors">
-            <Plus size={13} /> Agregar pregunta
-          </button>
           <SaveBtn />
         </div>
       )}
 
+      {/* ── Tab: Criterios de calificación ───────────────────────────── */}
       {tab === 'criterios' && (
         <div className="max-w-lg space-y-5">
           <div>
-            <label className="text-xs text-gray-400 mb-1.5 block flex items-center gap-1.5">
+            <label className="text-xs text-gray-400 mb-1.5 flex items-center gap-1.5">
               <CheckCircle size={12} className="text-green-400" /> Lead BUENO — agenda cita
             </label>
-            <textarea value={goodCriteria} onChange={e => setGoodCriteria(e.target.value)} rows={5} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white resize-none focus:outline-none focus:border-green-600" placeholder={`- Más de 10 años operando\n- Más de 100 empleados\n- Sin área de programación suficiente\n- Dolor operativo claro`} />
+            <textarea value={goodCriteria} onChange={e => setGoodCriteria(e.target.value)} rows={5} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white resize-none focus:outline-none focus:border-green-600" placeholder={'- Más de 10 años operando\n- Más de 100 empleados\n- Sin área de programación suficiente\n- Dolor operativo claro'} />
           </div>
           <div>
-            <label className="text-xs text-gray-400 mb-1.5 block flex items-center gap-1.5">
+            <label className="text-xs text-gray-400 mb-1.5 flex items-center gap-1.5">
               <X size={12} className="text-red-400" /> Lead MALO — responde con calidez, no agendes
             </label>
-            <textarea value={badCriteria} onChange={e => setBadCriteria(e.target.value)} rows={5} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white resize-none focus:outline-none focus:border-red-700" placeholder={`- Menos de 10 años operando\n- Menos de 100 empleados\n- Sin presupuesto\n- Sin dolor claro identificado`} />
+            <textarea value={badCriteria} onChange={e => setBadCriteria(e.target.value)} rows={5} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white resize-none focus:outline-none focus:border-red-700" placeholder={'- Menos de 10 años operando\n- Menos de 100 empleados\n- Sin presupuesto\n- Sin dolor claro identificado'} />
           </div>
+          <SaveBtn />
+        </div>
+      )}
+
+      {/* ── Tab: Movimiento en CRM ───────────────────────────────────── */}
+      {tab === 'crm' && (
+        <div className="max-w-2xl space-y-6">
+          <div>
+            <label className="text-xs text-gray-400 mb-1.5 block">Instrucciones generales de CRM</label>
+            <textarea
+              value={crmGeneral}
+              onChange={e => setCrmGeneral(e.target.value)}
+              rows={3}
+              className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white resize-none focus:outline-none focus:border-indigo-500"
+              placeholder="Ej: Registra el contacto en CRM desde la Etapa 2. Avanza el deal automáticamente a medida que el prospecto progresa en el journey."
+            />
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Etapa del pipeline por cada fase del journey</p>
+            <div className="space-y-3">
+              {stages.map((s, i) => (
+                <div key={s.n} className="flex items-center gap-3 bg-gray-900 border border-gray-800 rounded-xl px-4 py-3">
+                  <div className={`w-6 h-6 rounded-full ${STAGE_COLORS[i] ?? 'bg-gray-600'} flex items-center justify-center flex-shrink-0`}>
+                    <span className="text-[10px] text-white font-bold">{s.n}</span>
+                  </div>
+                  <div className="w-24 shrink-0">
+                    <p className="text-xs font-semibold text-white">{s.label}</p>
+                    <p className="text-[10px] text-gray-600">{s.desc}</p>
+                  </div>
+                  <ChevronRight size={12} className="text-gray-700 shrink-0" />
+                  <div className="flex-1">
+                    <input
+                      value={s.crm_stage}
+                      onChange={e => updateStage(i, { crm_stage: e.target.value })}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white font-mono focus:outline-none focus:border-indigo-500"
+                      placeholder="etapa_pipeline (ej: micro_diagnostico)"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-gray-600 mt-3">Los nombres deben coincidir con las etapas del pipeline en el CRM. Deja vacío si no debe mover el lead automáticamente en esa fase.</p>
+          </div>
+
           <SaveBtn />
         </div>
       )}
