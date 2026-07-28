@@ -173,10 +173,12 @@ export default function NuevoRequerimientoPage() {
         { method: 'POST', body: JSON.stringify({ area_answers: review }) },
       );
       setIntakeStep('creating');
-      // answerByToken ya auto-crea el requirement; si no lo creó, llamamos from-intake como fallback
-      const reqId = ans.requirement?.id
-        ?? (await api.post<{ id: string }>(`/proyectos-soc/requirements/from-intake/${uploadId}`, {})).id;
-      router.push(`/proyectos/${reqId}?generate=true`);
+      if (ans.requirement?.id) {
+        router.push(`/proyectos/${ans.requirement.id}?generate=true`);
+      } else {
+        // El API confirmó la respuesta pero no devolvió el ID aún — ir a la lista
+        router.push('/proyectos');
+      }
     } catch (err: any) {
       setError(err?.message ?? 'Error al crear el requerimiento');
       setIntakeStep('reviewing');
