@@ -7,7 +7,7 @@ import {
   Package, Clock, UserCheck, ArrowUpRight, Brain, Settings, FileText,
   User2, HelpCircle, ChevronLeft, Loader2, Plus, Trash2, Check, X,
   RefreshCw, AlertCircle, CheckCircle, BarChart3, Bot, Pencil,
-  ChevronRight, ChevronDown, Send, Search, Tag, Library,
+  ChevronRight, ChevronDown, ChevronUp, Send, Search, Tag, Library,
   ThumbsUp, ThumbsDown, Sparkles,
 } from 'lucide-react';
 
@@ -1130,19 +1130,12 @@ const EMPTY_SKILL_FORM = {
   deliverable_id: '',
 };
 
-const EMPTY_DELIV_FORM = {
-  offer_text: '',
-  questions: [] as DeliverableQuestion[],
-  sections: [] as DeliverableSection[],
-};
-
 function SectionSkills({ agentId }: { agentId: string }) {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_SKILL_FORM);
-  const [delivForm, setDelivForm] = useState({ ...EMPTY_DELIV_FORM });
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -1175,15 +1168,6 @@ function SectionSkills({ agentId }: { agentId: string }) {
       };
       if (form.action_type === 'entregable') {
         payload.action_config = { deliverable_id: form.deliverable_id };
-        // Guardar cambios al entregable en paralelo
-        await api.patch(`/agent-panel/${agentId}/deliverables/${form.deliverable_id}`, {
-          offer_text: delivForm.offer_text,
-          questions: delivForm.questions,
-          sections: delivForm.sections,
-        });
-        setDeliverables(prev => prev.map(d =>
-          d.id === form.deliverable_id ? { ...d, ...delivForm } : d
-        ));
       } else if (form.action_type === 'schedule_meeting' && form.cal_url.trim()) {
         payload.action_config = { cal_url: form.cal_url.trim() };
       } else if (form.action_type === 'webhook' && form.webhook_url.trim()) {
@@ -1207,7 +1191,6 @@ function SectionSkills({ agentId }: { agentId: string }) {
       setShowForm(false);
       setEditingId(null);
       setForm(EMPTY_SKILL_FORM);
-      setDelivForm({ ...EMPTY_DELIV_FORM });
     } catch (e: any) { alert(e?.message ?? 'Error'); }
     setSaving(false);
   };
@@ -1239,39 +1222,8 @@ function SectionSkills({ agentId }: { agentId: string }) {
       button_labels: (s.action_config as any)?.button_labels ?? '',
       deliverable_id: delivId,
     });
-    if (delivId) {
-      const parseJson = (v: any) => Array.isArray(v) ? v : (typeof v === 'string' ? JSON.parse(v) : []);
-      const d = deliverables.find(x => x.id === delivId);
-      if (d) setDelivForm({ offer_text: d.offer_text ?? '', questions: parseJson(d.questions), sections: parseJson(d.sections) });
-    }
     setShowForm(true);
   };
-
-  const selectDeliverable = (id: string) => {
-    setForm(p => ({ ...p, deliverable_id: id }));
-    if (id) {
-      const parseJson = (v: any) => Array.isArray(v) ? v : (typeof v === 'string' ? JSON.parse(v) : []);
-      const d = deliverables.find(x => x.id === id);
-      if (d) setDelivForm({ offer_text: d.offer_text ?? '', questions: parseJson(d.questions), sections: parseJson(d.sections) });
-    } else {
-      setDelivForm({ ...EMPTY_DELIV_FORM });
-    }
-  };
-
-  const addDelivQ = () => setDelivForm(p => ({
-    ...p,
-    questions: [...p.questions, { field: `pregunta_${p.questions.length + 1}`, question: '', order: p.questions.length + 1 }],
-  }));
-  const updateDelivQ = (i: number, patch: Partial<DeliverableQuestion>) =>
-    setDelivForm(p => ({ ...p, questions: p.questions.map((q, idx) => idx === i ? { ...q, ...patch } : q) }));
-  const removeDelivQ = (i: number) =>
-    setDelivForm(p => ({ ...p, questions: p.questions.filter((_, idx) => idx !== i).map((q, idx) => ({ ...q, order: idx + 1 })) }));
-
-  const addDelivS = () => setDelivForm(p => ({ ...p, sections: [...p.sections, { title: '', prompt: '' }] }));
-  const updateDelivS = (i: number, patch: Partial<DeliverableSection>) =>
-    setDelivForm(p => ({ ...p, sections: p.sections.map((s, idx) => idx === i ? { ...s, ...patch } : s) }));
-  const removeDelivS = (i: number) =>
-    setDelivForm(p => ({ ...p, sections: p.sections.filter((_, idx) => idx !== i) }));
 
   const isActionSkill = form.action_type !== 'text';
 
@@ -1313,116 +1265,33 @@ function SectionSkills({ agentId }: { agentId: string }) {
                   ))}
                 </div>
                 {form.action_type === 'entregable' && (
-                  <div className="mt-3 space-y-4 bg-purple-500/5 border border-purple-500/20 rounded-xl p-4">
-                    {/* Selector de entregable */}
-                    <div>
-                      <label className="text-xs text-purple-300 mb-1.5 block font-medium">Entregable vinculado</label>
-                      {deliverables.length === 0 ? (
-                        <p className="text-xs text-gray-500">No hay entregables creados. Ve al tab <span className="text-purple-400">Entregables</span> para crear uno primero.</p>
-                      ) : (
-                        <select
-                          value={form.deliverable_id}
-                          onChange={e => selectDeliverable(e.target.value)}
-                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
-                        >
-                          <option value="">— Selecciona un entregable —</option>
-                          {deliverables.map(d => (
-                            <option key={d.id} value={d.id}>{d.name}</option>
-                          ))}
-                        </select>
-                      )}
-                    </div>
-
-                    {form.deliverable_id && (
-                      <>
-                        {/* Texto de oferta */}
-                        <div>
-                          <label className="text-xs text-gray-400 mb-1 block">Texto de oferta (lo que el agente dice para proponer el entregable)</label>
-                          <textarea
-                            value={delivForm.offer_text}
-                            onChange={e => setDelivForm(p => ({ ...p, offer_text: e.target.value }))}
-                            rows={2}
-                            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-2 text-sm text-white resize-none focus:outline-none focus:border-purple-500"
-                            placeholder="¿Te gustaría que preparara un micro-diagnóstico gratuito para tu empresa?"
-                          />
-                        </div>
-
-                        {/* Preguntas */}
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <label className="text-xs text-gray-400">Preguntas que hará el agente (una por turno)</label>
-                            <button onClick={addDelivQ} className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 transition-colors">
-                              <Plus size={11} /> Agregar
-                            </button>
-                          </div>
-                          <div className="space-y-2">
-                            {delivForm.questions.map((q, i) => (
-                              <div key={i} className="bg-gray-900 border border-gray-800 rounded-lg p-2.5 space-y-1.5">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs text-gray-600 w-4">{i + 1}.</span>
-                                  <input
-                                    value={q.field}
-                                    onChange={e => updateDelivQ(i, { field: e.target.value })}
-                                    className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-gray-300 font-mono focus:outline-none focus:border-purple-500"
-                                    placeholder="nombre_campo"
-                                  />
-                                  <button onClick={() => removeDelivQ(i)} className="text-gray-600 hover:text-red-400 transition-colors">
-                                    <X size={12} />
-                                  </button>
-                                </div>
-                                <textarea
-                                  value={q.question}
-                                  onChange={e => updateDelivQ(i, { question: e.target.value })}
-                                  rows={2}
-                                  className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm text-white resize-none focus:outline-none focus:border-purple-500"
-                                  placeholder="¿A qué se dedica tu empresa?"
-                                />
-                              </div>
-                            ))}
-                            {delivForm.questions.length === 0 && (
-                              <p className="text-xs text-gray-600 italic">Sin preguntas todavía.</p>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Secciones del documento */}
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <label className="text-xs text-gray-400">Secciones del documento generado por IA</label>
-                            <button onClick={addDelivS} className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 transition-colors">
-                              <Plus size={11} /> Agregar
-                            </button>
-                          </div>
-                          <div className="space-y-2">
-                            {delivForm.sections.map((s, i) => (
-                              <div key={i} className="bg-gray-900 border border-gray-800 rounded-lg p-2.5 space-y-1.5">
-                                <div className="flex items-center gap-2">
-                                  <input
-                                    value={s.title}
-                                    onChange={e => updateDelivS(i, { title: e.target.value })}
-                                    className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white font-medium focus:outline-none focus:border-purple-500"
-                                    placeholder="Título de sección (ej: Situación actual)"
-                                  />
-                                  <button onClick={() => removeDelivS(i)} className="text-gray-600 hover:text-red-400 transition-colors">
-                                    <X size={12} />
-                                  </button>
-                                </div>
-                                <textarea
-                                  value={s.prompt}
-                                  onChange={e => updateDelivS(i, { prompt: e.target.value })}
-                                  rows={2}
-                                  className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-xs text-gray-300 resize-none focus:outline-none focus:border-purple-500"
-                                  placeholder="Instrucción para la IA: describe la situación actual en 2-3 párrafos..."
-                                />
-                              </div>
-                            ))}
-                            {delivForm.sections.length === 0 && (
-                              <p className="text-xs text-gray-600 italic">Sin secciones todavía.</p>
-                            )}
-                          </div>
-                        </div>
-                      </>
+                  <div className="mt-3 bg-purple-500/5 border border-purple-500/20 rounded-xl p-4 space-y-3">
+                    <label className="text-xs text-purple-300 font-medium block">Entregable vinculado</label>
+                    {deliverables.length === 0 ? (
+                      <p className="text-xs text-gray-500">No hay entregables creados. Ve a <span className="text-purple-400">Entregables</span> en el menú lateral para crear uno primero.</p>
+                    ) : (
+                      <select
+                        value={form.deliverable_id}
+                        onChange={e => setForm(p => ({ ...p, deliverable_id: e.target.value }))}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                      >
+                        <option value="">— Selecciona un entregable —</option>
+                        {deliverables.map(d => (
+                          <option key={d.id} value={d.id}>{d.name}</option>
+                        ))}
+                      </select>
                     )}
+                    {form.deliverable_id && (() => {
+                      const d = deliverables.find(x => x.id === form.deliverable_id);
+                      return d ? (
+                        <div className="bg-gray-900 border border-gray-800 rounded-lg px-3 py-2.5 space-y-1">
+                          <p className="text-xs font-semibold text-white">{d.name}</p>
+                          {d.description && <p className="text-xs text-gray-500">{d.description}</p>}
+                          <p className="text-[11px] text-gray-600">{Array.isArray(d.questions) ? d.questions.length : 0} pregunta(s) · {Array.isArray(d.sections) ? d.sections.length : 0} sección(es)</p>
+                        </div>
+                      ) : null;
+                    })()}
+                    <p className="text-[11px] text-purple-400/70">Para editar el contenido del entregable (preguntas, secciones, texto de oferta) ve a <span className="font-semibold">Entregables</span> en el menú lateral.</p>
                   </div>
                 )}
                 {form.action_type === 'schedule_meeting' && (
@@ -1987,6 +1856,248 @@ function SectionProspectos({ agentId }: { agentId: string }) {
 
 // ── SECCIÓN: Journey del cliente ───────────────────────────────────────────────
 
+// ── Journey Node types ────────────────────────────────────────────────────────
+
+interface JNode {
+  id: string;
+  type: 'dialogo' | 'pregunta' | 'entregable' | 'agendar';
+  label: string;
+  mensaje?: string;
+  branching?: boolean;
+  si?: JNode[];
+  no?: JNode[];
+  pregunta?: string;
+  answerType?: 'free' | 'multiple';
+  options?: string[];
+  deliverable_id?: string;
+}
+
+function makeJNode(type: JNode['type']): JNode {
+  const id = `n${Date.now()}${Math.random().toString(36).slice(2, 5)}`;
+  switch (type) {
+    case 'dialogo':    return { id, type, label: 'Diálogo', mensaje: '', branching: false };
+    case 'pregunta':   return { id, type, label: 'Pregunta', pregunta: '', answerType: 'free', options: [] };
+    case 'entregable': return { id, type, label: 'Entregar diagnóstico', deliverable_id: '' };
+    case 'agendar':    return { id, type, label: 'Agendar reunión' };
+  }
+}
+
+const JNODE_META: Record<JNode['type'], { label: string; color: string; bg: string; border: string }> = {
+  dialogo:    { label: 'Diálogo',    color: 'text-indigo-300', bg: 'bg-indigo-500/5',  border: 'border-indigo-500/25' },
+  pregunta:   { label: 'Pregunta',   color: 'text-amber-300',  bg: 'bg-amber-500/5',   border: 'border-amber-500/25' },
+  entregable: { label: 'Entregable', color: 'text-purple-300', bg: 'bg-purple-500/5',  border: 'border-purple-500/25' },
+  agendar:    { label: 'Agendar',    color: 'text-green-300',  bg: 'bg-green-500/5',   border: 'border-green-500/25' },
+};
+
+function JNodeList({
+  nodes,
+  onChange,
+  deliverables,
+  depth = 0,
+}: {
+  nodes: JNode[];
+  onChange: (nodes: JNode[]) => void;
+  deliverables: Deliverable[];
+  depth?: number;
+}) {
+  const update = (i: number, patch: Partial<JNode>) =>
+    onChange(nodes.map((n, idx) => idx === i ? { ...n, ...patch } : n));
+  const remove = (i: number) =>
+    onChange(nodes.filter((_, idx) => idx !== i));
+  const add = (type: JNode['type']) =>
+    onChange([...nodes, makeJNode(type)]);
+  const moveUp = (i: number) => {
+    if (i === 0) return;
+    const next = [...nodes]; [next[i - 1], next[i]] = [next[i], next[i - 1]]; onChange(next);
+  };
+  const moveDown = (i: number) => {
+    if (i === nodes.length - 1) return;
+    const next = [...nodes]; [next[i], next[i + 1]] = [next[i + 1], next[i]]; onChange(next);
+  };
+
+  const addBtnClass = depth === 0
+    ? 'px-3 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-gray-400 hover:text-white transition-colors'
+    : 'px-2 py-1 text-[11px] bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded text-gray-500 hover:text-gray-300 transition-colors';
+
+  return (
+    <div className={`space-y-2 ${depth > 0 ? 'ml-4 border-l-2 border-gray-800 pl-3 mt-1' : ''}`}>
+      {nodes.map((node, i) => {
+        const meta = JNODE_META[node.type];
+        return (
+          <div key={node.id} className={`border rounded-xl overflow-hidden ${meta.border}`}>
+            {/* Header del nodo */}
+            <div className={`flex items-center gap-2 px-3 py-2 ${meta.bg}`}>
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide ${meta.color} bg-gray-950/70 shrink-0`}>
+                {meta.label}
+              </span>
+              <input
+                value={node.label}
+                onChange={e => update(i, { label: e.target.value })}
+                className="flex-1 bg-transparent text-sm font-medium text-white placeholder-gray-600 focus:outline-none min-w-0"
+                placeholder="Nombre del nodo"
+              />
+              <div className="flex items-center gap-0.5 shrink-0">
+                <button onClick={() => moveUp(i)} disabled={i === 0} className="text-gray-700 hover:text-gray-400 disabled:opacity-20 transition-colors p-0.5">
+                  <ChevronUp size={12} />
+                </button>
+                <button onClick={() => moveDown(i)} disabled={i === nodes.length - 1} className="text-gray-700 hover:text-gray-400 disabled:opacity-20 transition-colors p-0.5">
+                  <ChevronDown size={12} />
+                </button>
+                <button onClick={() => remove(i)} className="text-gray-700 hover:text-red-400 transition-colors p-0.5 ml-1">
+                  <X size={12} />
+                </button>
+              </div>
+            </div>
+
+            {/* Cuerpo del nodo */}
+            <div className="px-3 pb-3 pt-2 bg-gray-950/60 space-y-2">
+
+              {/* ── DIÁLOGO ── */}
+              {node.type === 'dialogo' && (
+                <>
+                  <textarea
+                    value={node.mensaje ?? ''}
+                    onChange={e => update(i, { mensaje: e.target.value })}
+                    rows={2}
+                    className="w-full bg-gray-900 border border-gray-800 rounded-lg px-2.5 py-2 text-sm text-white resize-none focus:outline-none focus:border-indigo-500 placeholder-gray-700"
+                    placeholder="Mensaje que envía el agente..."
+                  />
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={node.branching ?? false}
+                      onChange={e => update(i, {
+                        branching: e.target.checked,
+                        si: e.target.checked ? (node.si ?? []) : undefined,
+                        no: e.target.checked ? (node.no ?? []) : undefined,
+                      })}
+                      className="accent-indigo-500"
+                    />
+                    <span className="text-xs text-gray-400">Bifurcación — el agente espera respuesta y sigue caminos distintos</span>
+                  </label>
+                  {node.branching && (
+                    <div className="space-y-3 pt-1">
+                      <div>
+                        <p className="text-[11px] font-semibold text-green-400 mb-1 flex items-center gap-1">
+                          <Check size={10} /> SI acepta / responde sí
+                        </p>
+                        <JNodeList nodes={node.si ?? []} onChange={si => update(i, { si })} deliverables={deliverables} depth={depth + 1} />
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-semibold text-red-400 mb-1 flex items-center gap-1">
+                          <X size={10} /> NO acepta / responde no
+                        </p>
+                        <JNodeList nodes={node.no ?? []} onChange={no => update(i, { no })} deliverables={deliverables} depth={depth + 1} />
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* ── PREGUNTA ── */}
+              {node.type === 'pregunta' && (
+                <>
+                  <textarea
+                    value={node.pregunta ?? ''}
+                    onChange={e => update(i, { pregunta: e.target.value })}
+                    rows={2}
+                    className="w-full bg-gray-900 border border-gray-800 rounded-lg px-2.5 py-2 text-sm text-white resize-none focus:outline-none focus:border-amber-500 placeholder-gray-700"
+                    placeholder="¿A qué se dedica tu empresa?"
+                  />
+                  <div className="flex items-center gap-4">
+                    {(['free', 'multiple'] as const).map(at => (
+                      <label key={at} className="flex items-center gap-1.5 cursor-pointer select-none">
+                        <input
+                          type="radio"
+                          name={`ans_${node.id}`}
+                          checked={node.answerType === at}
+                          onChange={() => update(i, {
+                            answerType: at,
+                            options: at === 'multiple' ? (node.options?.length ? node.options : ['']) : [],
+                          })}
+                          className="accent-amber-500"
+                        />
+                        <span className="text-xs text-gray-400">
+                          {at === 'free' ? 'Respuesta libre' : 'Opciones / botones'}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  {node.answerType === 'multiple' && (
+                    <div className="space-y-1.5 pl-0.5">
+                      {(node.options ?? []).map((opt, oi) => (
+                        <div key={oi} className="flex items-center gap-2">
+                          <span className="text-xs text-gray-600 w-4 shrink-0">{oi + 1}.</span>
+                          <input
+                            value={opt}
+                            onChange={e => {
+                              const opts = [...(node.options ?? [])];
+                              opts[oi] = e.target.value;
+                              update(i, { options: opts });
+                            }}
+                            className="flex-1 bg-gray-900 border border-gray-800 rounded-lg px-2.5 py-1.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                            placeholder={`Opción ${oi + 1}`}
+                          />
+                          <button
+                            onClick={() => update(i, { options: (node.options ?? []).filter((_, oidx) => oidx !== oi) })}
+                            className="text-gray-700 hover:text-red-400 transition-colors shrink-0"
+                          >
+                            <X size={11} />
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        onClick={() => update(i, { options: [...(node.options ?? []), ''] })}
+                        className="flex items-center gap-1 text-xs text-amber-400/70 hover:text-amber-400 transition-colors mt-1"
+                      >
+                        <Plus size={11} /> Agregar opción
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* ── ENTREGABLE ── */}
+              {node.type === 'entregable' && (
+                deliverables.length === 0 ? (
+                  <p className="text-xs text-gray-600">No hay entregables. Crea uno en <span className="text-purple-400 font-medium">Entregables</span> del menú lateral.</p>
+                ) : (
+                  <select
+                    value={node.deliverable_id ?? ''}
+                    onChange={e => update(i, { deliverable_id: e.target.value })}
+                    className="w-full bg-gray-900 border border-gray-800 rounded-lg px-2.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                  >
+                    <option value="">— Selecciona el entregable —</option>
+                    {deliverables.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  </select>
+                )
+              )}
+
+              {/* ── AGENDAR ── */}
+              {node.type === 'agendar' && (
+                <p className="text-xs text-gray-500">
+                  El agente llamará a <code className="text-green-400 font-mono text-[11px]">agendar()</code> usando la URL de Cal.com configurada en Identidad del agente.
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Botones para agregar nodos */}
+      <div className="flex flex-wrap gap-2 pt-1">
+        {(['dialogo', 'pregunta', 'entregable', 'agendar'] as const).map(t => (
+          <button key={t} onClick={() => add(t)} className={addBtnClass}>
+            + {JNODE_META[t].label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 interface JourneyStage {
   n: number;
   label: string;
@@ -2019,11 +2130,24 @@ function SectionJourney({ agentId, agent, setAgent }: { agentId: string; agent: 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [editingStages, setEditingStages] = useState(false);
+  const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
+
+  useEffect(() => {
+    api.get<Deliverable[]>(`/agent-panel/${agentId}/deliverables`)
+      .then(d => setDeliverables(Array.isArray(d) ? d : []))
+      .catch(() => {});
+  }, [agentId]);
 
   const parseStages = (): JourneyStage[] => {
     const raw = cfg.journey_stages;
     if (Array.isArray(raw) && raw.length > 0) return raw as JourneyStage[];
     return DEFAULT_JOURNEY_STAGES;
+  };
+
+  const parseNodes = (): JNode[] => {
+    const raw = cfg.journey;
+    if (Array.isArray(raw) && raw.length > 0) return raw as JNode[];
+    return [];
   };
 
   const [form, setForm] = useState({
@@ -2032,6 +2156,7 @@ function SectionJourney({ agentId, agent, setAgent }: { agentId: string; agent: 
     pitch: (cfg.pitch as string) ?? '',
   });
   const [stages, setStages] = useState<JourneyStage[]>(parseStages);
+  const [nodes, setNodes] = useState<JNode[]>(parseNodes);
   const [goodCriteria, setGoodCriteria] = useState<string>((cfg.good_lead_criteria as string) ?? '');
   const [badCriteria, setBadCriteria] = useState<string>((cfg.bad_lead_criteria as string) ?? '');
   const [crmGeneral, setCrmGeneral] = useState<string>((cfg.crm_instructions as string) ?? '');
@@ -2041,6 +2166,7 @@ function SectionJourney({ agentId, agent, setAgent }: { agentId: string; agent: 
     try {
       const payload = {
         ...form,
+        journey: nodes,
         journey_stages: stages,
         good_lead_criteria: goodCriteria,
         bad_lead_criteria: badCriteria,
@@ -2164,39 +2290,28 @@ function SectionJourney({ agentId, agent, setAgent }: { agentId: string; agent: 
 
       {/* ── Tab: Journey completo ─────────────────────────────────────── */}
       {tab === 'journey' && (
-        <div className="max-w-2xl space-y-4">
-          <p className="text-xs text-gray-500 mb-2">Escribe el script de cada etapa — qué dice el agente, qué preguntas hace, qué acciones toma. Incluye el entregable en las etapas 3-5.</p>
-          {stages.map((s, i) => (
-            <div key={s.n} className="border border-gray-800 rounded-xl overflow-hidden">
-              <div className={`flex items-center gap-3 px-4 py-3 ${s.script ? 'bg-indigo-600/8' : 'bg-gray-900/50'}`}>
-                <div className={`w-6 h-6 rounded-full ${STAGE_COLORS[i] ?? 'bg-gray-600'} flex items-center justify-center flex-shrink-0`}>
-                  <span className="text-[10px] text-white font-bold">{s.n}</span>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-white">{s.label}</p>
-                  <p className="text-xs text-gray-500">{s.desc}</p>
-                </div>
-                {s.script && <CheckCircle size={14} className="text-indigo-400 shrink-0" />}
-              </div>
-              <div className="px-4 pb-4 pt-2 bg-gray-950">
-                <textarea
-                  value={s.script}
-                  onChange={e => updateStage(i, { script: e.target.value })}
-                  rows={4}
-                  className="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-sm text-white resize-y focus:outline-none focus:border-indigo-500 placeholder-gray-700"
-                  placeholder={
-                    s.n === 1 ? 'Ej: "¡Hola! Soy Leo de MentorIA. ¿Con quién tengo el gusto?" — Recoge nombre y empresa de forma natural.' :
-                    s.n === 2 ? 'Ej: Pregunta qué los trajo aquí. Escucha y muestra interés genuino.' :
-                    s.n === 3 ? 'Ej: "Me gustaría regalarte un micro-diagnóstico gratuito de automatización para tu empresa. ¿Te parece bien?" — Usa ofrecerEntregable() cuando acepten.' :
-                    s.n === 4 ? 'Ej: Haz las preguntas del entregable una por turno. Espera la respuesta antes de continuar.' :
-                    s.n === 5 ? 'Ej: "Listo! Aquí tienes tu diagnóstico: [URL]" — Usa completarEntregable() para generar la URL.' :
-                    'Ej: Califica con calificar(). Si score ≥ 7 usa agendar(). Si no califica, cierra con calidez y queda abierto para el futuro.'
-                  }
-                />
-              </div>
+        <div className="max-w-2xl">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Construye el flujo paso a paso. Usa <span className="text-indigo-300">Diálogo</span> para mensajes,{' '}
+                <span className="text-amber-300">Pregunta</span> para recopilar respuestas (libre o con botones/opciones),{' '}
+                <span className="text-purple-300">Entregable</span> para el micro-diagnóstico y{' '}
+                <span className="text-green-300">Agendar</span> para agenda de reunión.
+              </p>
             </div>
-          ))}
-          <SaveBtn />
+            <SaveBtn />
+          </div>
+          {nodes.length === 0 && (
+            <div className="border border-dashed border-gray-800 rounded-xl p-8 text-center mb-4">
+              <p className="text-sm text-gray-600 mb-1">El journey está vacío.</p>
+              <p className="text-xs text-gray-700">Usa los botones de abajo para agregar el primer nodo.</p>
+            </div>
+          )}
+          <JNodeList nodes={nodes} onChange={setNodes} deliverables={deliverables} depth={0} />
+          <div className="mt-4">
+            <SaveBtn />
+          </div>
         </div>
       )}
 
