@@ -10,6 +10,7 @@ const SIDEBAR_MODULES = [
   { key: 'metrics',   label: 'Dashboard',            section: 'core', desc: 'Métricas de agentes, equipo y negocio' },
   { key: 'team',      label: 'Equipo',               section: 'core', desc: 'Miembros y agentes IA del equipo' },
   // Módulos principales
+  { key: 'proyectos', label: 'Proyectos SOC',         section: 'main', desc: 'Requerimientos ISO/IEC 20000 para SOC Asesores' },
   { key: 'mentoria',  label: 'CRM',                  section: 'main', desc: 'Pipeline comercial y prospectos' },
   { key: 'erp',       label: 'ERP',                  section: 'main', desc: 'Workspace de clientes en implementación' },
   { key: 'brain',     label: 'Base de conocimiento', section: 'main', desc: 'Documentos e información para los agentes' },
