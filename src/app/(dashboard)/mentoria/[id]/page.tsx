@@ -135,9 +135,8 @@ export default function ClienteWorkspace() {
 
   const [cliente, setCliente]   = useState<Cliente | null>(null);
   const [loading, setLoading]   = useState(true);
-  const [tab, setTab]           = useState<'proyecto' | 'diagnosticos' | 'hallazgos' | 'plan' | 'sesiones' | 'facturacion'>('proyecto');
+  const [tab, setTab]           = useState<'proyecto' | 'diagnosticos' | 'hallazgos' | 'plan' | 'sesiones' | 'facturacion' | 'cubo'>('proyecto');
   const [editing, setEditing]   = useState(false);
-  const [editForm, setEditForm] = useState<Partial<Cliente>>({});
   const [checks, setChecks]     = useState<Record<string, boolean>>({});
   const [sesiones, setSesiones] = useState<Sesion[]>([]);
   const [pagos, setPagos]       = useState<Pago[]>([]);
@@ -201,9 +200,9 @@ export default function ClienteWorkspace() {
     setSavingNotas(false);
   }
 
-  async function saveEdit() {
-    const updated = { ...cliente, ...editForm } as Cliente;
-    try { await api.patch(`/mentoria/clientes/${id}`, editForm); } catch {}
+  async function saveEdit(datos: Partial<Cliente>) {
+    const updated = { ...cliente, ...datos } as Cliente;
+    try { await api.patch(`/mentoria/clientes/${id}`, datos); } catch {}
     setCliente(updated);
     setEditing(false);
   }
@@ -365,7 +364,7 @@ export default function ClienteWorkspace() {
                     📁 Drive del cliente
                   </a>
                 )}
-                <button onClick={() => { setEditForm({}); setEditing(true); }} style={btnGhost}><Edit2 size={12} /> Editar</button>
+                <button onClick={() => setEditing(true)} style={btnGhost}><Edit2 size={12} /> Editar</button>
                 {cliente.fase_actual < 3 && fasePct === 100 && (
                   <button onClick={advanceFase} style={btnPrimary}>Avanzar a Fase {cliente.fase_actual + 1} →</button>
                 )}
@@ -385,6 +384,7 @@ export default function ClienteWorkspace() {
           {([
             { key: 'proyecto',     label: '📋 Proyecto' },
             { key: 'diagnosticos', label: '🔬 Diagnósticos' },
+            { key: 'cubo',         label: '🎯 Cubo & Entregables' },
             { key: 'hallazgos',    label: `🚦 Hallazgos${hallazgos.length ? ` (${hallazgos.length})` : ''}` },
             { key: 'plan',         label: `⚡ Plan de Acción${plan.length ? ` (${plan.filter(a=>a.status==='completado').length}/${plan.length})` : ''}` },
             { key: 'sesiones',     label: `💬 Sesiones (${sesiones.length})` },
@@ -515,6 +515,10 @@ export default function ClienteWorkspace() {
               </div>
             </div>
           </div>
+        )}
+
+        {tab === 'cubo' && (
+          <TabCubo clienteId={id} empresa={cliente.empresa} sesiones={sesiones} />
         )}
 
         {tab === 'hallazgos' && (
@@ -668,12 +672,83 @@ function PhaseTracker({ current }: { current: number }) {
 }
 
 // ── Edit Form ──────────────────────────────────────────────────────────────────
-function EditForm({ cliente, onSave, onCancel }: { cliente: Cliente; onSave: () => void; onCancel: () => void }) {
+function EditForm({ cliente, onSave, onCancel }: {
+  cliente: Cliente;
+  onSave: (datos: Partial<Cliente>) => void;
+  onCancel: () => void;
+}) {
+  const [f, setF] = useState({
+    empresa:             cliente.empresa,
+    contacto_nombre:     cliente.contacto_nombre,
+    contacto_cargo:      cliente.contacto_cargo,
+    email:               cliente.email ?? '',
+    whatsapp:            cliente.whatsapp ?? '',
+    industria:           cliente.industria,
+    tamano:              cliente.tamano,
+    ejecutivo_asignado:  cliente.ejecutivo_asignado,
+    precio:              String(cliente.precio),
+    fecha_inicio:        cliente.fecha_inicio,
+    fecha_fin:           cliente.fecha_fin ?? '',
+    drive_url:           cliente.drive_url ?? '',
+  });
+  const u = (k: keyof typeof f, v: string) => setF(p => ({ ...p, [k]: v }));
+
+  function handleSave() {
+    onSave({
+      empresa:            f.empresa,
+      contacto_nombre:    f.contacto_nombre,
+      contacto_cargo:     f.contacto_cargo,
+      email:              f.email || null,
+      whatsapp:           f.whatsapp || null,
+      industria:          f.industria,
+      tamano:             f.tamano,
+      ejecutivo_asignado: f.ejecutivo_asignado,
+      precio:             parseInt(f.precio) || cliente.precio,
+      fecha_inicio:       f.fecha_inicio,
+      fecha_fin:          f.fecha_fin || null,
+      drive_url:          f.drive_url || undefined,
+    });
+  }
+
   return (
-    <div>
-      <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 12 }}>Edición inline — guarda los cambios directamente</p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#8b6ef5', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        Editando datos del cliente
+      </div>
+
+      {/* Empresa */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 10 }}>
+        <div><label style={labelSt}>Empresa *</label><input value={f.empresa} onChange={e => u('empresa', e.target.value)} style={inputSt} /></div>
+        <div><label style={labelSt}>Industria</label><input value={f.industria} onChange={e => u('industria', e.target.value)} placeholder="Logística, Salud…" style={inputSt} /></div>
+        <div><label style={labelSt}>Tamaño empresa</label>
+          <select value={f.tamano} onChange={e => u('tamano', e.target.value)} style={{ ...inputSt, cursor: 'pointer' } as any}>
+            <option value="<10">Menos de 10</option>
+            <option value="10-100">10 – 100 empleados</option>
+            <option value=">100">Más de 100</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Contacto */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 10 }}>
+        <div><label style={labelSt}>Nombre contacto</label><input value={f.contacto_nombre} onChange={e => u('contacto_nombre', e.target.value)} style={inputSt} /></div>
+        <div><label style={labelSt}>Cargo</label><input value={f.contacto_cargo} onChange={e => u('contacto_cargo', e.target.value)} placeholder="CEO, Director…" style={inputSt} /></div>
+        <div><label style={labelSt}>Email</label><input value={f.email} onChange={e => u('email', e.target.value)} type="email" placeholder="correo@empresa.mx" style={inputSt} /></div>
+        <div><label style={labelSt}>WhatsApp</label><input value={f.whatsapp} onChange={e => u('whatsapp', e.target.value)} placeholder="+52 55 0000 0000" style={inputSt} /></div>
+      </div>
+
+      {/* Contrato */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 2fr', gap: 10 }}>
+        <div><label style={labelSt}>Precio MXN</label><input value={f.precio} onChange={e => u('precio', e.target.value)} type="number" style={inputSt} /></div>
+        <div><label style={labelSt}>Fecha inicio</label><input value={f.fecha_inicio} onChange={e => u('fecha_inicio', e.target.value)} type="date" style={inputSt} /></div>
+        <div><label style={labelSt}>Fecha fin</label><input value={f.fecha_fin} onChange={e => u('fecha_fin', e.target.value)} type="date" style={inputSt} /></div>
+        <div><label style={labelSt}>Ejecutivo</label><input value={f.ejecutivo_asignado} onChange={e => u('ejecutivo_asignado', e.target.value)} style={inputSt} /></div>
+        <div><label style={labelSt}>Google Drive del cliente</label><input value={f.drive_url} onChange={e => u('drive_url', e.target.value)} placeholder="https://drive.google.com/…" style={inputSt} /></div>
+      </div>
+
+      {/* Botones */}
       <div style={{ display: 'flex', gap: 8 }}>
-        <button onClick={onSave} style={btnPrimary}><Check size={12} /> Guardar</button>
+        <button onClick={handleSave} style={btnPrimary}><Check size={12} /> Guardar cambios</button>
         <button onClick={onCancel} style={btnGhost}><X size={12} /> Cancelar</button>
       </div>
     </div>
@@ -839,6 +914,242 @@ const btnPrimary: React.CSSProperties = { display: 'flex', alignItems: 'center',
 const btnGhost: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: '1px solid var(--line)', background: 'transparent', color: 'var(--text-2)', fontSize: 13, cursor: 'pointer' };
 const labelSt: React.CSSProperties = { fontSize: 11, fontWeight: 500, color: 'var(--text-2)', display: 'block', marginBottom: 4 };
 const inputSt: React.CSSProperties = { width: '100%', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 7, padding: '8px 10px', color: 'var(--text)', fontSize: 13, fontFamily: 'inherit', outline: 'none' };
+
+// ── Tab Cubo & Entregables ─────────────────────────────────────────────────────
+const CUESTIONARIOS_SRC = [
+  { id: 'dg',       label: 'Cuestionario DG',              icon: '👤', path: '/flowdesk/diagnosticos/cuestionario-dg.html',       color: '#6c4de6' },
+  { id: 'gerente',  label: 'Cuestionario Gerentes/Dirs.',  icon: '🏢', path: '/flowdesk/diagnosticos/cuestionario-gerente.html',  color: '#3b82f6' },
+  { id: 'operador', label: 'Cuestionario Operadores',      icon: '⚙️', path: '/flowdesk/diagnosticos/cuestionario-operador.html', color: '#f59e0b' },
+] as const;
+
+const ENTREGABLES = [
+  { id: 'flujo_asis',    num: 1, titulo: 'Flujo AS-IS',                 desc: 'Swimlane de procesos actuales',           fuente: 'Áreas + Procesos + Brechas',        icon: '🗺️',  path: '/flowdesk/diagnosticos/flujo-asis.html'     },
+  { id: 'org_actual',   num: 2, titulo: 'Organigrama actual',           desc: 'Roles, tareas y herramientas por cargo',  fuente: 'Áreas + Roles + Herramientas',      icon: '👥',  path: '/flowdesk/diagnosticos/organigrama.html'   },
+  { id: 'flujo_tobe',   num: 3, titulo: 'Flujo TO-BE por fases',        desc: 'Procesos optimizados con IA',             fuente: 'Procesos + Agentes IA + Fases',     icon: '✨',  path: '/flowdesk/diagnosticos/flujo-tobe.html'    },
+  { id: 'org_nuevo',    num: 4, titulo: 'Organigrama nuevo + costo $',  desc: 'Ahorro de headcount con agentes',         fuente: 'Roles + Agentes IA + Headcount',    icon: '💰',  path: '/flowdesk/diagnosticos/org-nuevo.html'     },
+  { id: 'propuesta',    num: 5, titulo: 'Propuesta agentes IA',         desc: 'Descripción y ROI de cada agente',        fuente: 'Agentes IA + ROI',                  icon: '🤖',  path: '/flowdesk/diagnosticos/propuesta-agentes.html' },
+  { id: 'roadmap',      num: 6, titulo: 'Roadmap 24 meses',             desc: 'Fases e hitos de implementación',         fuente: 'Fases + Hitos + Entregables',       icon: '🚀',  path: '/flowdesk/diagnosticos/roadmap.html'        },
+] as const;
+
+type CuboKey = 'contexto' | 'areas_procesos' | 'organigrama' | 'sistemas' | 'brechas' | 'agentes';
+
+interface CuboSection {
+  key: CuboKey;
+  titulo: string;
+  desc: string;
+  fuente: string;
+  fuenteColor: string;
+  placeholder: string;
+}
+
+const CUBO_SECTIONS: CuboSection[] = [
+  {
+    key: 'contexto',
+    titulo: 'Empresa & Contexto estratégico',
+    desc: 'Descripción del negocio, objetivos del DG, prioridades 12 meses',
+    fuente: 'Cuestionario DG',
+    fuenteColor: '#6c4de6',
+    placeholder: 'Empresa: ___\nActividad principal: ___\n# Empleados: ___\nFacturación estimada: ___\n\nObjetivos del DG para los próximos 12 meses:\n—\n\nPrioridades más urgentes:\n—',
+  },
+  {
+    key: 'areas_procesos',
+    titulo: 'Áreas & Procesos principales',
+    desc: 'Por cada área: función, procesos clave, problemas actuales',
+    fuente: 'Cuestionario Gerentes',
+    fuenteColor: '#3b82f6',
+    placeholder: 'VENTAS\nFunción: ___\nProcesos: captación → calificación → propuesta → cierre\nProblemas: ___\n\nOPERACIONES\nFunción: ___\nProcesos: ___\nProblemas: ___\n\nADMINISTRACIÓN\n...',
+  },
+  {
+    key: 'organigrama',
+    titulo: 'Organigrama & Roles',
+    desc: 'Personas por área, cargo, sueldo estimado, herramientas que usan',
+    fuente: 'Cuestionario Gerentes + Operadores',
+    fuenteColor: '#f59e0b',
+    placeholder: 'NOMBRE · Cargo · Área · $sueldo/mes\nHerramientas: Excel, WhatsApp, Contpaq…\nPrincipal tarea repetitiva: ___\n\n...',
+  },
+  {
+    key: 'sistemas',
+    titulo: 'Sistemas & Herramientas actuales',
+    desc: 'Software, plataformas, licencias y costos mensuales',
+    fuente: 'Cuestionario Operadores',
+    fuenteColor: '#f59e0b',
+    placeholder: 'SISTEMA · Tipo · Licencia/mes · # usuarios\n\nEjemplo:\nContpaq · ERP/Contabilidad · $2,500/mes · 3 usuarios\nWhatsApp Business · Comunicación · Gratis · todos\nExcel · Gestión · O365 $150/usuario · 8 usuarios\n\n...',
+  },
+  {
+    key: 'brechas',
+    titulo: 'Brechas & Diagnóstico del asesor',
+    desc: 'Gaps detectados, ineficiencias, observaciones de sesión',
+    fuente: 'Sesión asesor',
+    fuenteColor: '#ef4444',
+    placeholder: 'BRECHA CRÍTICA\nDescripción: ___\nÁrea afectada: ___\nImpacto estimado: ___ horas/semana · $___ pérdida\n\nBRECHA IMPORTANTE\n...\n\nOBSERVACIONES DEL ASESOR\n—',
+  },
+  {
+    key: 'agentes',
+    titulo: 'Agentes IA propuestos',
+    desc: 'Automatizaciones identificadas, ROI estimado por agente',
+    fuente: 'Sesión asesor + análisis',
+    fuenteColor: '#8b5cf6',
+    placeholder: 'AGENTE 1 · Nombre descriptivo\nFunción: ___\nÁrea que libera: ___\nTareas que reemplaza: ___\nAhorro estimado: ___ horas/semana = $___ MXN/mes\nFase de implementación: Quick Win / Expansión\n\nAGENTE 2\n...',
+  },
+];
+
+function TabCubo({ clienteId, empresa, sesiones }: { clienteId: string; empresa: string; sesiones: Sesion[] }) {
+  const cuboKey = `mentoria_cubo_${clienteId}`;
+  const entKey  = `mentoria_ent_${clienteId}`;
+
+  const [cubo, setCubo] = React.useState<Record<CuboKey, string>>(() => {
+    try { return JSON.parse(localStorage.getItem(cuboKey) || '{}') as Record<CuboKey, string>; } catch { return {} as Record<CuboKey, string>; }
+  });
+  const [entStatus, setEntStatus] = React.useState<Record<string, 'borrador' | 'revision' | 'aprobado'>>(() => {
+    try { return JSON.parse(localStorage.getItem(entKey) || '{}'); } catch { return {}; }
+  });
+  const [saving, setSaving] = React.useState(false);
+  const [openSection, setOpenSection] = React.useState<CuboKey | null>('contexto');
+
+  const totalFilled = CUBO_SECTIONS.filter(s => cubo[s.key]?.trim()).length;
+  const pctCubo = Math.round(totalFilled / CUBO_SECTIONS.length * 100);
+
+  function saveSection(key: CuboKey, value: string) {
+    const next = { ...cubo, [key]: value };
+    setCubo(next);
+    localStorage.setItem(cuboKey, JSON.stringify(next));
+  }
+
+  function cycleStatus(id: string) {
+    const order: Array<'borrador' | 'revision' | 'aprobado'> = ['borrador', 'revision', 'aprobado'];
+    const cur = entStatus[id] ?? 'borrador';
+    const next = order[(order.indexOf(cur) + 1) % order.length];
+    const updated = { ...entStatus, [id]: next };
+    setEntStatus(updated);
+    localStorage.setItem(entKey, JSON.stringify(updated));
+  }
+
+  const statusCfg = {
+    borrador:  { label: 'Borrador',      color: '#6b7280', bg: 'rgba(107,114,128,0.1)' },
+    revision:  { label: 'En revisión',   color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
+    aprobado:  { label: 'Aprobado ✓',   color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
+  };
+
+  return (
+    <div style={{ display: 'flex', gap: 18 }}>
+
+      {/* ── Cubo de información ── */}
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+        {/* Header cubo */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '16px 20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Cubo de información — {empresa}</div>
+              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>Fuente única para los 6 entregables. Edita durante la reunión de verificación.</div>
+            </div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: pctCubo === 100 ? '#22c55e' : '#6c4de6' }}>{pctCubo}%</div>
+          </div>
+          <div style={{ height: 5, background: 'var(--surface-2)', borderRadius: 99, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: pctCubo + '%', background: 'linear-gradient(90deg,#6c4de6,#22c55e)', borderRadius: 99, transition: 'width 0.4s' }} />
+          </div>
+
+          {/* Fuentes de datos */}
+          <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+            {CUESTIONARIOS_SRC.map(q => (
+              <a key={q.id} href={`${q.path}?empresa=${encodeURIComponent(empresa)}&clienteId=${clienteId}`} target="_blank" rel="noreferrer"
+                style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: q.color, background: `${q.color}10`, border: `1px solid ${q.color}30`, borderRadius: 7, padding: '4px 10px', textDecoration: 'none', fontWeight: 600 }}>
+                <ExternalLink size={10} /> {q.icon} {q.label}
+              </a>
+            ))}
+            {sesiones.length > 0 && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#ef4444', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 7, padding: '4px 10px', fontWeight: 600 }}>
+                💬 {sesiones.length} sesión{sesiones.length > 1 ? 'es' : ''} registrada{sesiones.length > 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Secciones del cubo */}
+        {CUBO_SECTIONS.map(section => {
+          const isOpen = openSection === section.key;
+          const value  = cubo[section.key] ?? '';
+          const filled = !!value.trim();
+          return (
+            <div key={section.key} style={{ background: 'var(--surface)', border: `1px solid ${filled ? 'rgba(34,197,94,0.25)' : 'var(--line)'}`, borderRadius: 11, overflow: 'hidden' }}>
+              <button
+                onClick={() => setOpenSection(isOpen ? null : section.key)}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+              >
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: filled ? '#22c55e' : 'var(--line)', flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{section.titulo}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{section.desc}</div>
+                </div>
+                <span style={{ fontSize: 9, fontWeight: 700, color: section.fuenteColor, background: `${section.fuenteColor}15`, border: `1px solid ${section.fuenteColor}30`, padding: '2px 8px', borderRadius: 99, flexShrink: 0 }}>
+                  {section.fuente}
+                </span>
+                <span style={{ color: 'var(--text-3)', fontSize: 12, flexShrink: 0 }}>{isOpen ? '▲' : '▼'}</span>
+              </button>
+              {isOpen && (
+                <div style={{ padding: '0 18px 16px' }}>
+                  <textarea
+                    value={value}
+                    onChange={e => saveSection(section.key, e.target.value)}
+                    placeholder={section.placeholder}
+                    style={{ width: '100%', minHeight: 180, background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8, padding: '10px 12px', color: 'var(--text)', fontSize: 12, fontFamily: 'var(--font-mono, monospace)', lineHeight: 1.7, outline: 'none', resize: 'vertical' }}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── Entregables ── */}
+      <div style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', padding: '4px 0' }}>
+          6 Entregables Parte 1
+        </div>
+        {ENTREGABLES.map(e => {
+          const st = entStatus[e.id] ?? 'borrador';
+          const cfg = statusCfg[st];
+          return (
+            <div key={e.id} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 11, padding: '14px 16px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 8 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 7, background: 'rgba(108,77,230,0.1)', border: '1px solid rgba(108,77,230,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>{e.icon}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', lineHeight: 1.3 }}>{e.num}. {e.titulo}</div>
+                  <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>{e.desc}</div>
+                </div>
+              </div>
+              <div style={{ fontSize: 9, color: 'var(--text-3)', marginBottom: 8 }}>Fuente: {e.fuente}</div>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <button onClick={() => cycleStatus(e.id)} style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.color}40`, cursor: 'pointer' }}>
+                  {cfg.label}
+                </button>
+                <a href={`${e.path}?empresa=${encodeURIComponent(empresa)}&clienteId=${clienteId}`} target="_blank" rel="noreferrer"
+                  style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: 'var(--text-3)', textDecoration: 'none', marginLeft: 'auto' }}>
+                  <ExternalLink size={9} /> Ver HTML
+                </a>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Resumen estado */}
+        <div style={{ background: 'rgba(108,77,230,0.05)', border: '1px solid rgba(108,77,230,0.2)', borderRadius: 10, padding: '12px 14px', marginTop: 4 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#8b6ef5', marginBottom: 6 }}>Estado de entregables</div>
+          {(['borrador', 'revision', 'aprobado'] as const).map(s => {
+            const count = Object.values(entStatus).filter(v => v === s).length + (s === 'borrador' ? Math.max(0, 6 - Object.keys(entStatus).length) : 0);
+            const cfg = statusCfg[s];
+            return count > 0 ? (
+              <div key={s} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, padding: '3px 0', color: 'var(--text-2)' }}>
+                <span style={{ color: cfg.color }}>{cfg.label}</span>
+                <span style={{ fontWeight: 700 }}>{count}</span>
+              </div>
+            ) : null;
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── Config de tipos de hallazgo ────────────────────────────────────────────────
 const HALLAZGO_CONFIG = {
