@@ -6,14 +6,16 @@ import { Building2, Palette, Loader2, Check, Lock, User, Cpu, Phone, MapPin, Plu
 
 const SIDEBAR_MODULES = [
   // Sección core — también configurable
-  { key: 'focusmode', label: 'Focus Mode',           section: 'core', desc: 'Modo de concentración y productividad' },
-  { key: 'metrics',   label: 'Dashboard',            section: 'core', desc: 'Métricas de agentes, equipo y negocio' },
-  { key: 'team',      label: 'Equipo',               section: 'core', desc: 'Miembros y agentes IA del equipo' },
+  { key: 'focusmode',  label: 'Focus Mode',           section: 'core', desc: 'Modo de concentración y productividad' },
+  { key: 'metrics',    label: 'Dashboard',            section: 'core', desc: 'Métricas de agentes, equipo y negocio' },
+  { key: 'team',       label: 'Equipo',               section: 'core', desc: 'Miembros y agentes IA del equipo' },
   // Módulos principales
-  { key: 'mentoria',  label: 'CRM',                  section: 'main', desc: 'Pipeline comercial y prospectos' },
-  { key: 'erp',       label: 'ERP',                  section: 'main', desc: 'Workspace de clientes en implementación' },
-  { key: 'brain',     label: 'Base de conocimiento', section: 'main', desc: 'Documentos e información para los agentes' },
-  { key: 'recursos',  label: 'Recursos',             section: 'main', desc: 'Herramientas y extensiones adicionales' },
+  { key: 'mentoria',   label: 'CRM',                  section: 'main', desc: 'Pipeline comercial y prospectos' },
+  { key: 'erp',        label: 'ERP',                  section: 'main', desc: 'Workspace de clientes en implementación' },
+  { key: 'servicios',  label: 'SOC OS',               section: 'main', desc: 'Sistema operativo de servicios internos' },
+  { key: 'proyectos',  label: 'Proyectos SOC',        section: 'main', desc: 'Requerimientos de sistemas — ISO/IEC 20000' },
+  { key: 'brain',      label: 'Base de conocimiento', section: 'main', desc: 'Documentos e información para los agentes' },
+  { key: 'recursos',   label: 'Recursos',             section: 'main', desc: 'Herramientas y extensiones adicionales' },
 ] as const;
 
 interface CompanyData {
