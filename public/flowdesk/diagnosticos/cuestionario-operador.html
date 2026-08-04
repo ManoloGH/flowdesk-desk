@@ -215,8 +215,11 @@ textarea{resize:vertical;min-height:80px}
 
 </div>
 <script>
+var _QP=new URLSearchParams(window.location.search);
+var _CID=_QP.get('clienteId')||'';
+var _EMP=_QP.get('empresa')||'la empresa';
 var C={
-  empresa:"Textiles Anáhuac S.A. de C.V.",
+  empresa:_EMP,
   areas:[
     {id:"div2",label:"División 2 — Marketing & Comercialización",depts:["Marketing","Ejecución MKT","Soporte Comercial","Desarrollo de Negocios"]},
     {id:"div3cxc",label:"División 3 — Tesorería / CxC & Crédito",depts:["Cartera de Clientes","Cobranza","Sección Bancaria"]},

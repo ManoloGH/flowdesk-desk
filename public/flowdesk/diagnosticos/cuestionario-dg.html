@@ -88,7 +88,7 @@ textarea{resize:vertical;min-height:80px}
   <div class="secb">
     <div class="g3">
       <div class="field"><label class="lbl req">Empresa</label>
-        <input type="text" id="empresa" value="Textiles Anáhuac S.A. de C.V." readonly style="background:#F8FAFC;color:var(--ink3)"></div>
+        <input type="text" id="empresa" value="" readonly style="background:#F8FAFC;color:var(--ink3)"></div>
       <div class="field"><label class="lbl">ID Diagnóstico</label>
         <input type="text" id="diagid" placeholder="ej. TAC-2026-DG1" oninput="upd()"></div>
       <div class="field"><label class="lbl">Fecha de sesión</label><input type="date" id="fecha"></div>
@@ -219,12 +219,15 @@ textarea{resize:vertical;min-height:80px}
 
 </div>
 <script>
-var URL_GTE="https://claude.ai/code/artifact/75128f57-53ed-464e-8b93-4ec9a4f30bf9";
-var EMPRESA="Textiles Anáhuac S.A. de C.V.";
+var _QP=new URLSearchParams(window.location.search);
+var _CID=_QP.get('clienteId')||'';
+var EMPRESA=_QP.get('empresa')||'la empresa';
+var URL_GTE=window.location.origin+'/flowdesk/diagnosticos/cuestionario-gerente.html?clienteId='+_CID+'&empresa='+encodeURIComponent(EMPRESA);
 var SISTEMAS=["SAP","Excel","CRM propio","WMS","WhatsApp Business","Correo / Outlook","Sistema a la medida","No hay ERP","Otro"];
 var dirCnt=0;
 function init(){
   document.getElementById("fecha").value=new Date().toISOString().split("T")[0];
+  document.getElementById("empresa").value=EMPRESA;
   var tc=document.getElementById("chips-sis");
   SISTEMAS.forEach(function(s){var t=document.createElement("span");t.className="chip";t.textContent=s;t.onclick=function(){t.classList.toggle("on");};tc.appendChild(t);});
   addDir();addDir();

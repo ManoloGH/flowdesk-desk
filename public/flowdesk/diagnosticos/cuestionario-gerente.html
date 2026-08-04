@@ -93,7 +93,7 @@ textarea{resize:vertical;min-height:72px}
   <div class="secb">
     <div class="g2">
       <div class="field"><label class="lbl req">Cliente</label>
-        <input type="text" id="cliente" value="Textiles Anáhuac S.A. de C.V." readonly style="background:#F8FAFC;color:var(--ink3)"></div>
+        <input type="text" id="cliente" value="" readonly style="background:#F8FAFC;color:var(--ink3)"></div>
       <div class="field"><label class="lbl">Fecha de entrevista</label><input type="date" id="fecha"></div>
     </div>
     <div class="g2">
@@ -238,10 +238,13 @@ textarea{resize:vertical;min-height:72px}
 
 </div>
 <script>
-var URL_GTE="https://claude.ai/code/artifact/75128f57-53ed-464e-8b93-4ec9a4f30bf9";
-var URL_OPS="https://claude.ai/code/artifact/b04942ab-cd3c-41f3-8068-1d2085a7e965";
+var _QP=new URLSearchParams(window.location.search);
+var _CID=_QP.get('clienteId')||'';
+var _EMP=_QP.get('empresa')||'la empresa';
+var URL_GTE=window.location.origin+'/flowdesk/diagnosticos/cuestionario-gerente.html?clienteId='+_CID+'&empresa='+encodeURIComponent(_EMP);
+var URL_OPS=window.location.origin+'/flowdesk/diagnosticos/cuestionario-operador.html?clienteId='+_CID+'&empresa='+encodeURIComponent(_EMP);
 var C={
-  empresa:"Textiles Anáhuac S.A. de C.V.",
+  empresa:_EMP,
   areas:[
     {id:"div2",label:"División 2 — Marketing & Comercialización",depts:["Marketing","Ejecución MKT","Soporte Comercial","Desarrollo de Negocios"]},
     {id:"div3cxc",label:"División 3 — Tesorería / CxC & Crédito",depts:["Cartera de Clientes","Cobranza","Sección Bancaria"]},
@@ -258,6 +261,7 @@ var C={
 var pc=0,dc=0,decc=0,invCnt=0;
 function init(){
   document.getElementById("fecha").value=new Date().toISOString().split("T")[0];
+  document.getElementById("cliente").value=_EMP;
   var s=document.getElementById("area-sel");
   C.areas.forEach(function(a){var o=document.createElement("option");o.value=a.id;o.textContent=a.label;s.appendChild(o);});
   var dl=document.getElementById("adl");
@@ -396,8 +400,8 @@ function genInv(){
     if(!nombre||!contacto)return;
     count++;
     var msg="Hola "+nombre+(cargo?", "+cargo:"")+",\n\n"
-      +"Te invito a completar "+tipoLabel+" de diagnóstico organizacional de MentorIA Systems para Textiles Anáhuac.\n\n"
-      +"*Empresa:* Textiles Anáhuac S.A. de C.V.\n"
+      +"Te invito a completar "+tipoLabel+" de diagnóstico organizacional de MentorIA Systems para "+_EMP+".\n\n"
+      +"*Empresa:* "+_EMP+"\n"
       +"*Área de referencia:* "+areaLabel+"\n\n"
       +"Ingresa aquí y llena el cuestionario:\n"+url+"\n\n"
       +"⏱ Tiempo estimado: 15-20 minutos\n"
@@ -413,7 +417,7 @@ function genInv(){
       var waUrl="https://wa.me/"+phone+"?text="+encodeURIComponent(msg);
       waBtn="<a href='"+waUrl+"' target='_blank' style='text-decoration:none'><button class='btn btn-grn'>📱 Abrir WhatsApp</button></a>";
     } else {
-      var sub="Diagnóstico MentorIA — Textiles Anáhuac";
+      var sub="Diagnóstico MentorIA — "+_EMP;
       var mailUrl="mailto:"+contacto+"?subject="+encodeURIComponent(sub)+"&body="+encodeURIComponent(msg);
       emBtn="<a href='"+mailUrl+"' style='text-decoration:none'><button class='btn btn-pri'>✉ Abrir Correo</button></a>";
     }
