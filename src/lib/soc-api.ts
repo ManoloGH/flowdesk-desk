@@ -1,5 +1,7 @@
-const SOC_BASE = process.env.NEXT_PUBLIC_SOC_API_URL
-  ?? 'https://soc-requirements-production.up.railway.app';
+// Use the local Next.js proxy so the browser never calls the SOC API directly.
+// The proxy re-signs the request with the correct SOC JWT secret, avoiding
+// any mismatch between the FlowDesk JWT_SECRET and the SOC API Jwt__Secret.
+const SOC_BASE = '/api/soc';
 
 function getAccessToken(): string | null {
   if (typeof window === 'undefined') return null;
