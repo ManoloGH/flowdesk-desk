@@ -1,0 +1,1628 @@
+<title>Cédula de Diagnóstico — MentorIA Systems</title>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#EEF2F7;--sf:#FFF;--sf2:#F4F7FA;--sf3:#E8EEF5;
+  --br:#DDE4EF;--br-s:#CBD5E1;
+  --ink:#0F172A;--ink2:#334155;--ink3:#64748B;--ink4:#94A3B8;
+  --acc:#6C4DE6;--acc-bg:rgba(108,77,230,0.08);--acc-br:rgba(108,77,230,0.22);
+  --cyan:#0EA5E9;--cyan-bg:rgba(14,165,233,0.08);--cyan-br:rgba(14,165,233,0.25);
+  --amb:#D97706;--amb-bg:rgba(217,119,6,0.1);--amb-br:rgba(217,119,6,0.3);
+  --grn:#16A34A;--grn-bg:rgba(22,163,74,0.09);--grn-br:rgba(22,163,74,0.28);
+  --err:#DC2626;--err-bg:rgba(220,38,38,0.09);
+  --r:5px;--rm:10px;
+  --sh:0 1px 3px rgba(15,23,42,0.08),0 1px 2px rgba(15,23,42,0.05);
+  --hdr-h:108px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#06101E;--sf:#0B1727;--sf2:#101F32;--sf3:#162840;
+  --br:#18293F;--br-s:#213451;
+  --ink:#E2EAF6;--ink2:#BBC9DE;--ink3:#7A96BA;--ink4:#445C7A;
+  --acc:#8B6EF5;--acc-bg:rgba(139,110,245,0.12);--acc-br:rgba(139,110,245,0.28);
+  --cyan:#38BDF8;--cyan-bg:rgba(56,189,248,0.09);--cyan-br:rgba(56,189,248,0.25);
+  --amb:#FBBF24;--amb-bg:rgba(251,191,36,0.1);--amb-br:rgba(251,191,36,0.3);
+  --grn:#22C55E;--grn-bg:rgba(34,197,94,0.09);--grn-br:rgba(34,197,94,0.28);
+  --err:#F87171;--err-bg:rgba(248,113,113,0.1);
+  --sh:0 1px 3px rgba(0,0,0,0.3);
+}}
+:root[data-theme=light]{--bg:#EEF2F7;--sf:#FFF;--sf2:#F4F7FA;--sf3:#E8EEF5;--br:#DDE4EF;--br-s:#CBD5E1;--ink:#0F172A;--ink2:#334155;--ink3:#64748B;--ink4:#94A3B8;--acc:#6C4DE6;--acc-bg:rgba(108,77,230,0.08);--acc-br:rgba(108,77,230,0.22);--cyan:#0EA5E9;--cyan-bg:rgba(14,165,233,0.08);--cyan-br:rgba(14,165,233,0.25);--amb:#D97706;--amb-bg:rgba(217,119,6,0.1);--amb-br:rgba(217,119,6,0.3);--grn:#16A34A;--grn-bg:rgba(22,163,74,0.09);--grn-br:rgba(22,163,74,0.28);--err:#DC2626;--err-bg:rgba(220,38,38,0.09);}
+:root[data-theme=dark]{--bg:#06101E;--sf:#0B1727;--sf2:#101F32;--sf3:#162840;--br:#18293F;--br-s:#213451;--ink:#E2EAF6;--ink2:#BBC9DE;--ink3:#7A96BA;--ink4:#445C7A;--acc:#8B6EF5;--acc-bg:rgba(139,110,245,0.12);--acc-br:rgba(139,110,245,0.28);--cyan:#38BDF8;--cyan-bg:rgba(56,189,248,0.09);--cyan-br:rgba(56,189,248,0.25);--amb:#FBBF24;--amb-bg:rgba(251,191,36,0.1);--amb-br:rgba(251,191,36,0.3);--grn:#22C55E;--grn-bg:rgba(34,197,94,0.09);--grn-br:rgba(34,197,94,0.28);--err:#F87171;--err-bg:rgba(248,113,113,0.1);}
+
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+
+/* ── Header ── */
+.hdr{position:sticky;top:0;z-index:200;background:var(--sf);border-bottom:2px solid var(--acc);box-shadow:var(--sh);}
+.hdr1{display:flex;align-items:center;gap:12px;padding:10px 20px 8px;}
+.logo{width:26px;height:26px;border-radius:7px;flex-shrink:0;background:linear-gradient(135deg,#6C4DE6,#00D4FF);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:800;}
+.hdr-title{font-size:12px;font-weight:600;color:var(--ink3);}
+.stype{display:flex;gap:2px;background:var(--sf3);border-radius:6px;padding:2px;margin-left:auto;}
+.stype-btn{padding:4px 14px;border:none;border-radius:5px;font-size:11.5px;font-weight:600;cursor:pointer;background:transparent;color:var(--ink3);font-family:inherit;transition:all .12s;}
+.stype-btn.on{background:var(--sf);color:var(--ink);box-shadow:var(--sh);}
+
+.hdr2{display:flex;align-items:flex-end;gap:0;padding:0 20px 10px;border-top:1px solid var(--br);}
+.hdr-fields{display:flex;gap:10px;flex:1;flex-wrap:wrap;}
+.hdr-f{display:flex;flex-direction:column;gap:2px;}
+.hdr-fl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink4);}
+.hdr-inp{background:var(--sf2);border:1px solid var(--br-s);border-radius:var(--r);padding:5px 9px;color:var(--ink);font-size:12px;font-family:inherit;outline:none;width:140px;transition:border-color .12s;}
+.hdr-inp:focus{border-color:var(--acc);}
+.hdr-inp.wide{width:180px;}
+
+.hdr-metrics{display:flex;align-items:flex-end;gap:14px;margin-left:auto;padding-left:16px;border-left:1px solid var(--br);}
+.metric{display:flex;flex-direction:column;gap:1px;align-items:center;}
+.metric-l{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink4);}
+.metric-v{font-size:18px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1;}
+.metric-v.cyan{color:var(--cyan);}
+.metric-v.ok{color:var(--grn);}
+.timer-btn{padding:5px 12px;border:1px solid var(--acc-br);background:var(--acc-bg);color:var(--acc);border-radius:var(--r);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .12s;}
+.timer-btn.running{border-color:var(--grn-br);background:var(--grn-bg);color:var(--grn);}
+
+/* ── Page ── */
+.page{max-width:860px;margin:0 auto;padding:24px 20px 90px;}
+
+/* ── Section card ── */
+.sec{background:var(--sf);border:1px solid var(--br);border-radius:var(--rm);margin-bottom:16px;overflow:hidden;}
+.sec-hdr{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--br);}
+.sec-icon{width:32px;height:32px;border-radius:8px;background:var(--acc-bg);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.sec-ey{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--acc);margin-bottom:2px;}
+.sec-t{font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-.01em;}
+.sec-body{padding:18px 20px;display:flex;flex-direction:column;gap:12px;}
+
+/* ── Brief band (survey snapshot) ── */
+.brief-band{
+  background:var(--sf3);border-bottom:1px solid var(--br);
+  padding:7px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.brief-ey{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--ink4);padding-right:10px;border-right:1px solid var(--br-s);white-space:nowrap;}
+.brief-chip{background:var(--sf);border:1px solid var(--br);border-radius:4px;padding:2px 8px;font-size:11px;color:var(--ink2);white-space:nowrap;}
+.brief-chip.sw{color:var(--acc);border-color:var(--acc-br);background:var(--acc-bg);}
+
+/* ── Task card ── */
+.task-wrap{display:flex;flex-direction:column;gap:10px;}
+.task-card{
+  border:1px solid var(--br);border-radius:var(--rm);overflow:hidden;
+  background:var(--sf2);border-left:3px solid var(--br-s);
+  transition:border-left-color .15s;
+}
+.task-card.verified{border-left-color:var(--grn);}
+.task-card.reviewing{border-left-color:var(--acc);}
+
+.task-head{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--br);}
+.tnum{width:22px;height:22px;border-radius:50%;background:var(--acc);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-variant-numeric:tabular-nums;}
+.tname{font-size:13px;font-weight:600;color:var(--ink2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+.cfd-badge{
+  padding:2px 9px;border-radius:99px;font-size:10px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.08em;
+}
+.cfd-badge.media{background:var(--amb-bg);border:1px solid var(--amb-br);color:var(--amb);}
+.cfd-badge.alta{background:var(--grn-bg);border:1px solid var(--grn-br);color:var(--grn);}
+
+.ver-btn{border:none;background:none;font-size:11.5px;font-weight:600;cursor:pointer;padding:3px 10px;border-radius:99px;color:var(--ink4);border:1px solid var(--br-s);font-family:inherit;transition:all .12s;}
+.ver-btn.on{background:var(--grn-bg);border-color:var(--grn-br);color:var(--grn);}
+.del{border:none;background:none;font-size:18px;line-height:1;color:var(--ink4);cursor:pointer;padding:1px 5px;border-radius:4px;transition:all .12s;}
+.del:hover{color:var(--err);background:var(--err-bg);}
+
+.task-body{padding:14px 14px 12px;display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:start;}
+.task-body .full{grid-column:1/-1;}
+.task-body .span2{grid-column:span 2;}
+.task-body .span3{grid-column:span 3;}
+
+/* ── Calc box (horas_org_mes) ── */
+.calc-box{
+  background:var(--cyan-bg);border:1px solid var(--cyan-br);
+  border-radius:var(--r);padding:8px 12px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  min-width:90px;align-self:stretch;
+}
+.calc-l{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--cyan);white-space:nowrap;}
+.calc-v{font-size:22px;font-weight:700;color:var(--cyan);font-variant-numeric:tabular-nums;line-height:1.1;}
+.calc-u{font-size:9px;color:var(--cyan);opacity:.8;}
+
+/* ── Fields ── */
+.field{display:flex;flex-direction:column;gap:4px;}
+.lbl{font-size:11px;font-weight:600;color:var(--ink3);}
+.req{color:var(--acc);}
+.hint{font-size:10px;color:var(--ink4);margin-top:-2px;}
+.inp,.sel,.txa{
+  background:var(--sf);border:1px solid var(--br-s);border-radius:var(--r);
+  padding:8px 10px;color:var(--ink);font-size:12.5px;font-family:inherit;
+  outline:none;width:100%;transition:border-color .12s,box-shadow .12s;
+}
+.inp:focus,.sel:focus,.txa:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-bg);}
+.txa{resize:vertical;min-height:60px;line-height:1.5;}
+.sel{appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' fill='none'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%2364748B' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;}
+.inp[type=number]{font-variant-numeric:tabular-nums;}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.r4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;}
+
+/* ── Fuente del dato radio ── */
+.fuente-group{display:flex;gap:6px;flex-wrap:wrap;}
+.fuente-opt{display:flex;align-items:center;gap:5px;padding:5px 10px;border:1px solid var(--br-s);border-radius:99px;cursor:pointer;transition:all .12s;font-size:11.5px;color:var(--ink2);}
+.fuente-opt:has(input:checked){border-color:var(--acc-br);background:var(--acc-bg);color:var(--acc);}
+.fuente-opt input{accent-color:var(--acc);cursor:pointer;}
+
+/* ── Cubeta radio ── */
+.cubeta-group{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;}
+.cubeta-opt{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 6px;border:1px solid var(--br);border-radius:var(--r);cursor:pointer;transition:all .12s;text-align:center;}
+.cubeta-opt:has(input:checked){border-color:var(--acc-br);background:var(--acc-bg);}
+.cubeta-opt input{accent-color:var(--acc);cursor:pointer;}
+.cubeta-opt .cicon{font-size:16px;}
+.cubeta-opt .clbl{font-size:10px;font-weight:600;color:var(--ink2);line-height:1.3;}
+
+/* ── Add task btn ── */
+.add-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px;border:1.5px dashed var(--br-s);border-radius:var(--rm);background:transparent;color:var(--ink3);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .12s;}
+.add-btn:hover{border-color:var(--acc);color:var(--acc);background:var(--acc-bg);}
+
+/* ── Software audit ── */
+.sw-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.sw-item{background:var(--sf2);border:1px solid var(--br);border-radius:var(--r);padding:10px 12px;display:flex;flex-direction:column;gap:6px;}
+.sw-name{font-size:12px;font-weight:600;color:var(--ink2);}
+.sw-meta{font-size:11px;color:var(--ink4);}
+.sw-confirm{display:flex;gap:6px;align-items:center;}
+.sw-cbtn{padding:3px 10px;border-radius:99px;font-size:10.5px;font-weight:600;cursor:pointer;font-family:inherit;border:1px solid var(--br-s);background:transparent;color:var(--ink3);transition:all .12s;}
+.sw-cbtn.confirmed{background:var(--grn-bg);border-color:var(--grn-br);color:var(--grn);}
+.sw-cbtn.shadow{background:var(--amb-bg);border-color:var(--amb-br);color:var(--amb);}
+
+/* ── Economic block ── */
+.eco-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.eco-calc{background:var(--cyan-bg);border:1px solid var(--cyan-br);border-radius:var(--r);padding:10px 14px;display:flex;flex-direction:column;gap:3px;}
+.eco-calc-l{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--cyan);}
+.eco-calc-v{font-size:20px;font-weight:700;color:var(--cyan);font-variant-numeric:tabular-nums;}
+.eco-calc-u{font-size:10px;color:var(--cyan);opacity:.7;}
+
+.palanca-group{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.palanca-opt{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:1px solid var(--br);border-radius:var(--r);cursor:pointer;transition:all .12s;}
+.palanca-opt:has(input:checked){border-color:var(--acc-br);background:var(--acc-bg);}
+.palanca-opt input{accent-color:var(--acc);margin-top:2px;flex-shrink:0;cursor:pointer;}
+.palanca-opt span{font-size:12px;color:var(--ink2);cursor:pointer;}
+
+/* ── Mode visibility ── */
+.ger-only{display:none;}
+body.ger-mode .ger-only{display:block;}
+.op-only{display:block;}
+body.ger-mode .op-only{display:none;}
+
+/* ── Bottom bar ── */
+.bot{position:fixed;bottom:0;left:0;right:0;background:var(--sf);border-top:1px solid var(--br);padding:11px 20px;z-index:100;box-shadow:0 -4px 16px rgba(15,23,42,0.08);}
+.bot-in{max-width:860px;margin:0 auto;display:flex;align-items:center;gap:14px;}
+.bot-stat{font-size:11.5px;color:var(--ink3);margin-right:auto;}
+.btn-save{background:var(--acc);color:#fff;border:none;border-radius:var(--r);padding:9px 26px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .12s;}
+.btn-save:hover{opacity:.88;}
+.btn-outline{background:transparent;border:1px solid var(--br-s);color:var(--ink2);border-radius:var(--r);padding:9px 18px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .12s;}
+.btn-outline:hover{border-color:var(--acc);color:var(--acc);}
+
+/* ── Note box ── */
+.note{background:var(--sf2);border:1px solid var(--br);border-radius:var(--r);padding:10px 13px;font-size:12px;color:var(--ink3);line-height:1.6;}
+.note strong{color:var(--ink2);}
+
+@media(max-width:640px){
+  .r2,.r3,.r4,.eco-grid,.cubeta-group{grid-template-columns:1fr;}
+  .sw-grid{grid-template-columns:1fr 1fr;}
+  .task-body{grid-template-columns:1fr 1fr;}
+  .palanca-group{grid-template-columns:1fr;}
+}
+
+/* ── Secuencia del flujo ── */
+.seq-block{background:var(--sf2);border:1px solid var(--br);border-radius:var(--r);padding:10px 14px;display:flex;flex-direction:column;gap:0;}
+.seq-title{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--ink4);}
+.seq-block .r3{gap:8px;}
+
+/* ── Eval block (score) ── */
+.eval-block{background:linear-gradient(135deg,var(--acc-bg),var(--sf));border:1.5px solid var(--acc-br);border-radius:var(--rm);padding:14px 16px;display:flex;flex-direction:column;gap:0;}
+.eval-title{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--acc);}
+.score-display{margin-top:8px;}
+.score-empty{font-size:11px;color:var(--ink4);font-style:italic;}
+.score-result{display:flex;align-items:center;gap:14px;padding:10px 14px;background:var(--sf);border-radius:var(--r);border:1px solid var(--br);}
+.score-num{font-size:28px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;}
+.ola-badge{padding:3px 12px;border-radius:99px;font-size:11px;font-weight:700;border:1px solid;}
+.ola-badge.ola1{background:var(--grn-bg);border-color:var(--grn-br);color:var(--grn);}
+.ola-badge.ola2{background:var(--acc-bg);border-color:var(--acc-br);color:var(--acc);}
+.ola-badge.ola3{background:var(--sf3);border-color:var(--br);color:var(--ink4);}
+.score-formula{font-size:10px;color:var(--ink4);font-variant-numeric:tabular-nums;margin-left:auto;font-style:italic;}
+
+/* ── Coverage ── */
+.cov-bar{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:var(--r);font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;background:var(--sf2);border:1px solid var(--br);color:var(--ink3);white-space:nowrap;}
+</style>
+
+<!-- ─── HEADER ─── -->
+<div class="hdr">
+  <div class="hdr1">
+    <div class="logo">M</div>
+    <span class="hdr-title">Cédula de diagnóstico · MentorIA Systems</span>
+    <span id="save-status" style="font-size:11px;font-weight:600;color:var(--ink4);margin-left:8px;">Sin datos guardados</span>
+    <div style="display:flex;align-items:center;gap:10px;margin-left:auto;">
+      <span style="font-size:11px;font-weight:600;color:var(--ink3);white-space:nowrap;">¿Tienes personal a tu cargo?</span>
+      <div class="stype">
+        <button class="stype-btn on" onclick="setMode('op',this)">No</button>
+        <button class="stype-btn" onclick="setMode('ger',this)">Sí</button>
+      </div>
+    </div>
+  </div>
+  <div class="hdr2">
+    <div class="hdr-fields">
+      <div class="hdr-f">
+        <span class="hdr-fl">Empresa</span>
+        <input class="hdr-inp wide" type="text" placeholder="Nombre del cliente" id="hdr-empresa">
+      </div>
+      <div class="hdr-f">
+        <span class="hdr-fl">Entrevistado</span>
+        <input class="hdr-inp" type="text" placeholder="Nombre o iniciales">
+      </div>
+      <div class="hdr-f">
+        <span class="hdr-fl">Cargo</span>
+        <input class="hdr-inp" type="text" placeholder="Puesto">
+      </div>
+      <div class="hdr-f">
+        <span class="hdr-fl">Asesor MentorIA</span>
+        <input class="hdr-inp" type="text" placeholder="Tu nombre">
+      </div>
+    </div>
+    <div class="hdr-metrics">
+      <div class="metric">
+        <span class="metric-l">Tiempo</span>
+        <span class="metric-v" id="timer-disp">00:00</span>
+      </div>
+      <button class="timer-btn" id="timer-btn" onclick="toggleTimer()">▶ Iniciar</button>
+      <div class="metric">
+        <span class="metric-l">Tareas revisadas</span>
+        <span class="metric-v ok" id="tasks-count">0 / 0</span>
+      </div>
+      <div class="metric">
+        <span class="metric-l">Total horas/mes</span>
+        <span class="metric-v cyan" id="total-horas">0 h</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px;">
+        <span class="metric-l">H disponibles/mes</span>
+        <input class="hdr-inp" type="number" id="horas-disp" value="160" min="40" max="400" style="width:55px;text-align:center;" oninput="calcCoverage()">
+      </div>
+      <div class="cov-bar" id="cov-disp">Cobertura —</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── PAGE ─── -->
+<div class="page">
+
+  <!-- S0: Brief de encuesta -->
+  <div class="sec">
+    <div class="sec-hdr">
+      <div class="sec-icon">📄</div>
+      <div>
+        <div class="sec-ey">Antes de iniciar</div>
+        <div class="sec-t">Resumen de la encuesta del entrevistado</div>
+      </div>
+    </div>
+    <div class="sec-body">
+      <div class="note">
+        Este panel se pre-llenará automáticamente con los datos de la encuesta enviada.
+        Por ahora muestra <strong>datos de ejemplo</strong> para las 3 tareas iniciales —
+        en producción se conectará con las respuestas del empleado.
+        Usa esta sección para preparar tus preguntas antes de entrar a la sesión.
+      </div>
+      <div class="r3">
+        <div class="field">
+          <div class="lbl">Área declarada</div>
+          <div class="inp" style="cursor:default;background:var(--sf3)">Ventas / Comercial</div>
+        </div>
+        <div class="field">
+          <div class="lbl">Personas en el mismo rol</div>
+          <div class="inp" style="cursor:default;background:var(--sf3)">4</div>
+        </div>
+        <div class="field">
+          <div class="lbl">Antigüedad</div>
+          <div class="inp" style="cursor:default;background:var(--sf3)">1 a 3 años</div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="lbl">Software declarado en encuesta</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">
+          <span class="brief-chip sw">SAP</span>
+          <span class="brief-chip sw">Excel propio</span>
+          <span class="brief-chip sw">WhatsApp</span>
+          <span class="brief-chip sw">Correo</span>
+        </div>
+      </div>
+      <div class="field">
+        <div class="lbl">Dolor principal declarado</div>
+        <div class="inp" style="cursor:default;background:var(--sf3);font-size:12px;">"Tengo que copiar los pedidos del correo al SAP manualmente, varias veces al día. Se tarda mucho y a veces me equivoco."</div>
+      </div>
+      <div class="field">
+        <div class="lbl">Shadow IT declarado</div>
+        <div class="inp" style="cursor:default;background:var(--sf3);font-size:12px;">Un Excel personal con seguimiento de cotizaciones activas. Lo actualiza diario. No está en SAP.</div>
+      </div>
+      <div class="field">
+        <div class="lbl">Tareas declaradas en encuesta (5)</div>
+        <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px;">
+          <div class="brief-chip" style="padding:5px 10px;">1. Elaborar cotización para cliente → 60×/mes · 25 min</div>
+          <div class="brief-chip" style="padding:5px 10px;">2. Registrar pedido en SAP → 120×/mes · 15 min</div>
+          <div class="brief-chip" style="padding:5px 10px;">3. Reporte de avance semanal → 4×/mes · 90 min</div>
+          <div class="brief-chip" style="padding:5px 10px;">4. Seguimiento a cotizaciones → 80×/mes · 10 min</div>
+          <div class="brief-chip" style="padding:5px 10px;">5. Conciliación de pedidos vs. envíos → 20×/mes · 20 min</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S1: Tareas -->
+  <div class="sec">
+    <div class="sec-hdr">
+      <div class="sec-icon">📋</div>
+      <div>
+        <div class="sec-ey">Sección 1 — Captura principal</div>
+        <div class="sec-t">Revisión de tareas con el entrevistado</div>
+      </div>
+    </div>
+    <div class="sec-body">
+      <div class="note">
+        Recorre cada tarea de la encuesta. <strong>Corrige volumen, tiempo y personas</strong> en base a lo que el entrevistado dice ahora.
+        Marca <strong>Verificada</strong> cuando ya profundizaste. La fuente del dato determina la confianza:
+        si observas la tarea en pantalla o tienes telemetría → Alta. Si solo confirman verbalmente → Media.
+      </div>
+
+      <div class="task-wrap" id="task-list">
+
+        <!-- TAREA 1 ── pre-llenada de encuesta -->
+        <div class="task-card reviewing" id="task-1">
+          <div class="brief-band">
+            <span class="brief-ey">De la encuesta</span>
+            <span class="brief-chip">60×/mes</span>
+            <span class="brief-chip">25 min/vez</span>
+            <span class="brief-chip">4 personas</span>
+            <span class="brief-chip sw">SAP</span>
+            <span class="brief-chip sw">Excel propio</span>
+          </div>
+          <div class="task-head">
+            <div class="tnum">1</div>
+            <div class="tname" id="tname-disp-1">Elaborar cotización para cliente</div>
+            <span class="cfd-badge media" id="cfd-1">Media</span>
+            <button class="ver-btn" id="ver-1" onclick="toggleVerified('task-1','ver-1')">Verificar</button>
+            <button class="del" onclick="delTask('task-1')" title="Eliminar">×</button>
+          </div>
+          <div class="task-body">
+            <div class="field span2 full">
+              <label class="lbl">Nombre confirmado de la tarea <span class="req">*</span></label>
+              <input class="inp task-name" type="text" value="Elaborar cotización para cliente" oninput="updateTaskName(this,'tname-disp-1')">
+            </div>
+            <div class="field span2">
+              <label class="lbl">Flujo de valor confirmado</label>
+              <select class="sel">
+                <option selected>Ventas / Comercial</option>
+                <option>Cobranza</option>
+                <option>Compras / Proveedores</option>
+                <option>Producción / Manufactura</option>
+                <option>Logística / Distribución</option>
+                <option>Atención al cliente</option>
+                <option>RRHH</option>
+                <option>Contabilidad / Finanzas</option>
+                <option>Calidad</option>
+                <option>Otro</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="lbl">Etapa del flujo central</label>
+              <input class="inp f-etapa-flujo" type="text" placeholder="Ej. Pedido, Producción, Cobranza…">
+            </div>
+            <div class="field span2">
+              <label class="lbl">Tipo de flujo</label>
+              <div class="fuente-group" style="margin-top:4px;">
+                <label class="fuente-opt"><input type="radio" name="tipoflujo-1" value="Central" checked><span>Central</span></label>
+                <label class="fuente-opt"><input type="radio" name="tipoflujo-1" value="Secundario"><span>Secundario</span></label>
+                <label class="fuente-opt"><input type="radio" name="tipoflujo-1" value="Transversal"><span>Transversal</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label class="lbl">Veces / mes <span class="req">*</span></label>
+              <input class="inp f-vol" type="number" min="1" value="60" oninput="recalc('task-1')">
+            </div>
+            <div class="field">
+              <label class="lbl">Min / vez <span class="req">*</span></label>
+              <input class="inp f-min" type="number" min="1" value="25" oninput="recalc('task-1')">
+            </div>
+            <div class="field">
+              <label class="lbl">Personas que la hacen</label>
+              <input class="inp f-per" type="number" min="1" value="4" oninput="recalc('task-1')">
+            </div>
+            <div class="calc-box">
+              <span class="calc-l">horas_org/mes</span>
+              <span class="calc-v f-horas">100.0</span>
+              <span class="calc-u">h/mes</span>
+            </div>
+            <div class="field full">
+              <label class="lbl">Fuente del dato — determina la confianza</label>
+              <div class="fuente-group">
+                <label class="fuente-opt"><input type="radio" name="fuente-1" value="Autorreporte" checked onchange="updateCfd('task-1','cfd-1',this)"><span>Autorreporte</span></label>
+                <label class="fuente-opt"><input type="radio" name="fuente-1" value="Observación" onchange="updateCfd('task-1','cfd-1',this)"><span>Observación directa</span></label>
+                <label class="fuente-opt"><input type="radio" name="fuente-1" value="Telemetría" onchange="updateCfd('task-1','cfd-1',this)"><span>Telemetría / sistema</span></label>
+              </div>
+            </div>
+            <div class="field span2">
+              <label class="lbl">Excepciones — ¿cuándo tarda más o sale mal?</label>
+              <textarea class="txa" placeholder="Ej. Cuando el cliente pide algo especial, puede tardarse 2 horas. También cuando SAP está lento."></textarea>
+            </div>
+            <div class="field span2">
+              <label class="lbl">Criterios de decisión — ¿qué decide el entrevistado en esta tarea?</label>
+              <textarea class="txa" placeholder="Ej. Decide si aplica descuento, si pide validación al jefe, qué transportista usar."></textarea>
+            </div>
+            <div class="field span3">
+              <label class="lbl">Shadow IT confirmado o descubierto en esta tarea</label>
+              <input class="inp" type="text" placeholder="Ej. Excel propio con lista de precios actualizada manualmente cada semana">
+            </div>
+            <div class="field full">
+              <label class="lbl">Cubeta — primera impresión del asesor (no vinculante)</label>
+              <div class="cubeta-group">
+                <label class="cubeta-opt"><input type="radio" name="cubeta-1"><div class="cicon">⚙️</div><div class="clbl">Automatización determinística</div></label>
+                <label class="cubeta-opt"><input type="radio" name="cubeta-1"><div class="cicon">🤖</div><div class="clbl">Agente con contexto</div></label>
+                <label class="cubeta-opt"><input type="radio" name="cubeta-1"><div class="cicon">👁</div><div class="clbl">Copiloto — humano aprueba</div></label>
+                <label class="cubeta-opt"><input type="radio" name="cubeta-1"><div class="cicon">🤝</div><div class="clbl">Relación humana</div></label>
+              </div>
+            </div>
+            <div class="seq-block full">
+              <div class="seq-title">↳ Posición en el flujo de trabajo</div>
+              <div class="r3" style="margin-top:8px;">
+                <div class="field">
+                  <label class="lbl">Tarea que la precede</label>
+                  <input class="inp f-prev" type="text" placeholder="¿Qué llega o quién la dispara?">
+                </div>
+                <div class="field">
+                  <label class="lbl">Tarea que desencadena</label>
+                  <input class="inp f-next" type="text" placeholder="¿Qué sucede después con su output?">
+                </div>
+                <div class="field">
+                  <label class="lbl">Tiempo de espera del input</label>
+                  <input class="inp f-wait" type="text" placeholder="Ej. mismo día, 1–2 días…">
+                </div>
+              </div>
+            </div>
+            <div class="field full">
+              <label class="lbl">¿El volumen varía por temporada?</label>
+              <div class="fuente-group" style="margin-top:5px;">
+                <label class="fuente-opt"><input type="radio" name="estac-1" value="No" checked><span>No, es constante</span></label>
+                <label class="fuente-opt"><input type="radio" name="estac-1" value="Sí" onchange="this.closest('.field').querySelector('.estac-det').style.display='block'"><span>Sí, varía por temporada</span></label>
+              </div>
+              <input class="inp estac-det" type="text" placeholder="¿En qué meses es más alto? ¿Cuánto más?" style="margin-top:7px;display:none;">
+            </div>
+            <div class="eval-block full">
+              <div class="eval-title">Evaluación del asesor — score de priorización</div>
+              <div class="r4" style="margin-top:10px;">
+                <div class="field">
+                  <label class="lbl">Impacto en la cadena de valor (1–5) <span class="req">*</span></label>
+                  <div class="hint">1=auxiliar · 5=core del negocio</div>
+                  <input class="inp f-impacto" type="number" min="1" max="5" step="0.5" placeholder="1–5" oninput="calcScore(this.closest('.task-card'))">
+                </div>
+                <div class="field">
+                  <label class="lbl">Costo de error (1–5) <span class="req">*</span></label>
+                  <div class="hint">1=sin consecuencias · 5=pérdida grave</div>
+                  <input class="inp f-costerr" type="number" min="1" max="5" step="0.5" placeholder="1–5" oninput="calcScore(this.closest('.task-card'))">
+                </div>
+                <div class="field">
+                  <label class="lbl">Factibilidad de automatizar (1–5) <span class="req">*</span></label>
+                  <div class="hint">1=solo humano · 5=100% automatizable</div>
+                  <input class="inp f-fact" type="number" min="1" max="5" step="0.5" placeholder="1–5" oninput="calcScore(this.closest('.task-card'))">
+                </div>
+                <div class="field">
+                  <label class="lbl">¿Camino crítico?</label>
+                  <div class="hint">Su retraso bloquea a otras áreas</div>
+                  <select class="sel f-critico"><option value="">—</option><option>Sí</option><option>No</option></select>
+                </div>
+              </div>
+              <div class="score-display" id="score-1"><div class="score-empty">Completa las 3 evaluaciones para ver el score →</div></div>
+            </div>
+            <div class="field full">
+              <label class="lbl">Notas del asesor</label>
+              <textarea class="txa" placeholder="Observaciones, contexto relevante, señales de oportunidad…"></textarea>
+            </div>
+          </div>
+        </div>
+        <!-- /tarea 1 -->
+
+        <!-- TAREA 2 -->
+        <div class="task-card" id="task-2">
+          <div class="brief-band">
+            <span class="brief-ey">De la encuesta</span>
+            <span class="brief-chip">120×/mes</span>
+            <span class="brief-chip">15 min/vez</span>
+            <span class="brief-chip">4 personas</span>
+            <span class="brief-chip sw">SAP</span>
+            <span class="brief-chip sw">Correo</span>
+          </div>
+          <div class="task-head">
+            <div class="tnum">2</div>
+            <div class="tname" id="tname-disp-2">Registrar pedido en SAP</div>
+            <span class="cfd-badge media" id="cfd-2">Media</span>
+            <button class="ver-btn" id="ver-2" onclick="toggleVerified('task-2','ver-2')">Verificar</button>
+            <button class="del" onclick="delTask('task-2')" title="Eliminar">×</button>
+          </div>
+          <div class="task-body">
+            <div class="field span2 full">
+              <label class="lbl">Nombre confirmado <span class="req">*</span></label>
+              <input class="inp task-name" type="text" value="Registrar pedido en SAP" oninput="updateTaskName(this,'tname-disp-2')">
+            </div>
+            <div class="field span2">
+              <label class="lbl">Flujo de valor</label>
+              <select class="sel"><option selected>Ventas / Comercial</option><option>Cobranza</option><option>Compras / Proveedores</option><option>Producción / Manufactura</option><option>Logística / Distribución</option><option>Atención al cliente</option><option>RRHH</option><option>Contabilidad / Finanzas</option><option>Calidad</option><option>Otro</option></select>
+            </div>
+            <div class="field">
+              <label class="lbl">Etapa del flujo central</label>
+              <input class="inp f-etapa-flujo" type="text" placeholder="Ej. Pedido, Producción, Cobranza…">
+            </div>
+            <div class="field span2">
+              <label class="lbl">Tipo de flujo</label>
+              <div class="fuente-group" style="margin-top:4px;">
+                <label class="fuente-opt"><input type="radio" name="tipoflujo-2" value="Central" checked><span>Central</span></label>
+                <label class="fuente-opt"><input type="radio" name="tipoflujo-2" value="Secundario"><span>Secundario</span></label>
+                <label class="fuente-opt"><input type="radio" name="tipoflujo-2" value="Transversal"><span>Transversal</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label class="lbl">Veces / mes <span class="req">*</span></label>
+              <input class="inp f-vol" type="number" value="120" oninput="recalc('task-2')">
+            </div>
+            <div class="field">
+              <label class="lbl">Min / vez <span class="req">*</span></label>
+              <input class="inp f-min" type="number" value="15" oninput="recalc('task-2')">
+            </div>
+            <div class="field">
+              <label class="lbl">Personas</label>
+              <input class="inp f-per" type="number" value="4" oninput="recalc('task-2')">
+            </div>
+            <div class="calc-box">
+              <span class="calc-l">horas_org/mes</span>
+              <span class="calc-v f-horas">120.0</span>
+              <span class="calc-u">h/mes</span>
+            </div>
+            <div class="field full">
+              <label class="lbl">Fuente del dato</label>
+              <div class="fuente-group">
+                <label class="fuente-opt"><input type="radio" name="fuente-2" value="Autorreporte" checked onchange="updateCfd('task-2','cfd-2',this)"><span>Autorreporte</span></label>
+                <label class="fuente-opt"><input type="radio" name="fuente-2" value="Observación" onchange="updateCfd('task-2','cfd-2',this)"><span>Observación directa</span></label>
+                <label class="fuente-opt"><input type="radio" name="fuente-2" value="Telemetría" onchange="updateCfd('task-2','cfd-2',this)"><span>Telemetría / sistema</span></label>
+              </div>
+            </div>
+            <div class="field span2">
+              <label class="lbl">Excepciones</label>
+              <textarea class="txa" placeholder="¿Cuándo sale mal? ¿Cuándo tarda más?"></textarea>
+            </div>
+            <div class="field span2">
+              <label class="lbl">Criterios de decisión</label>
+              <textarea class="txa" placeholder="¿Qué decide el entrevistado aquí?"></textarea>
+            </div>
+            <div class="field span3">
+              <label class="lbl">Shadow IT en esta tarea</label>
+              <input class="inp" type="text" placeholder="Ej. Copia los datos del correo manualmente — no hay integración automática">
+            </div>
+            <div class="field full">
+              <label class="lbl">Cubeta (primera impresión)</label>
+              <div class="cubeta-group">
+                <label class="cubeta-opt"><input type="radio" name="cubeta-2"><div class="cicon">⚙️</div><div class="clbl">Automatización determinística</div></label>
+                <label class="cubeta-opt"><input type="radio" name="cubeta-2"><div class="cicon">🤖</div><div class="clbl">Agente con contexto</div></label>
+                <label class="cubeta-opt"><input type="radio" name="cubeta-2"><div class="cicon">👁</div><div class="clbl">Copiloto — humano aprueba</div></label>
+                <label class="cubeta-opt"><input type="radio" name="cubeta-2"><div class="cicon">🤝</div><div class="clbl">Relación humana</div></label>
+              </div>
+            </div>
+            <div class="seq-block full">
+              <div class="seq-title">↳ Posición en el flujo de trabajo</div>
+              <div class="r3" style="margin-top:8px;">
+                <div class="field">
+                  <label class="lbl">Tarea que la precede</label>
+                  <input class="inp f-prev" type="text" placeholder="¿Qué llega o quién la dispara?">
+                </div>
+                <div class="field">
+                  <label class="lbl">Tarea que desencadena</label>
+                  <input class="inp f-next" type="text" placeholder="¿Qué sucede después con su output?">
+                </div>
+                <div class="field">
+                  <label class="lbl">Tiempo de espera del input</label>
+                  <input class="inp f-wait" type="text" placeholder="Ej. mismo día, 1–2 días…">
+                </div>
+              </div>
+            </div>
+            <div class="field full">
+              <label class="lbl">¿El volumen varía por temporada?</label>
+              <div class="fuente-group" style="margin-top:5px;">
+                <label class="fuente-opt"><input type="radio" name="estac-2" value="No" checked><span>No, es constante</span></label>
+                <label class="fuente-opt"><input type="radio" name="estac-2" value="Sí" onchange="this.closest('.field').querySelector('.estac-det').style.display='block'"><span>Sí, varía por temporada</span></label>
+              </div>
+              <input class="inp estac-det" type="text" placeholder="¿En qué meses es más alto? ¿Cuánto más?" style="margin-top:7px;display:none;">
+            </div>
+            <div class="eval-block full">
+              <div class="eval-title">Evaluación del asesor — score de priorización</div>
+              <div class="r4" style="margin-top:10px;">
+                <div class="field">
+                  <label class="lbl">Impacto en la cadena de valor (1–5) <span class="req">*</span></label>
+                  <div class="hint">1=auxiliar · 5=core del negocio</div>
+                  <input class="inp f-impacto" type="number" min="1" max="5" step="0.5" placeholder="1–5" oninput="calcScore(this.closest('.task-card'))">
+                </div>
+                <div class="field">
+                  <label class="lbl">Costo de error (1–5) <span class="req">*</span></label>
+                  <div class="hint">1=sin consecuencias · 5=pérdida grave</div>
+                  <input class="inp f-costerr" type="number" min="1" max="5" step="0.5" placeholder="1–5" oninput="calcScore(this.closest('.task-card'))">
+                </div>
+                <div class="field">
+                  <label class="lbl">Factibilidad de automatizar (1–5) <span class="req">*</span></label>
+                  <div class="hint">1=solo humano · 5=100% automatizable</div>
+                  <input class="inp f-fact" type="number" min="1" max="5" step="0.5" placeholder="1–5" oninput="calcScore(this.closest('.task-card'))">
+                </div>
+                <div class="field">
+                  <label class="lbl">¿Camino crítico?</label>
+                  <div class="hint">Su retraso bloquea a otras áreas</div>
+                  <select class="sel f-critico"><option value="">—</option><option>Sí</option><option>No</option></select>
+                </div>
+              </div>
+              <div class="score-display" id="score-2"><div class="score-empty">Completa las 3 evaluaciones para ver el score →</div></div>
+            </div>
+            <div class="field full">
+              <label class="lbl">Notas del asesor</label>
+              <textarea class="txa" placeholder="Observaciones, contexto relevante…"></textarea>
+            </div>
+          </div>
+        </div>
+        <!-- /tarea 2 -->
+
+        <!-- TAREA 3 -->
+        <div class="task-card" id="task-3">
+          <div class="brief-band">
+            <span class="brief-ey">De la encuesta</span>
+            <span class="brief-chip">4×/mes</span>
+            <span class="brief-chip">90 min/vez</span>
+            <span class="brief-chip">1 persona</span>
+            <span class="brief-chip sw">Excel propio</span>
+            <span class="brief-chip sw">PowerPoint</span>
+          </div>
+          <div class="task-head">
+            <div class="tnum">3</div>
+            <div class="tname" id="tname-disp-3">Reporte de avance semanal</div>
+            <span class="cfd-badge media" id="cfd-3">Media</span>
+            <button class="ver-btn" id="ver-3" onclick="toggleVerified('task-3','ver-3')">Verificar</button>
+            <button class="del" onclick="delTask('task-3')" title="Eliminar">×</button>
+          </div>
+          <div class="task-body">
+            <div class="field span2 full">
+              <label class="lbl">Nombre confirmado <span class="req">*</span></label>
+              <input class="inp task-name" type="text" value="Reporte de avance semanal" oninput="updateTaskName(this,'tname-disp-3')">
+            </div>
+            <div class="field span2">
+              <label class="lbl">Flujo de valor</label>
+              <select class="sel"><option>Ventas / Comercial</option><option>Cobranza</option><option>Compras / Proveedores</option><option>Producción / Manufactura</option><option>Logística / Distribución</option><option>Atención al cliente</option><option>RRHH</option><option selected>Contabilidad / Finanzas</option><option>Calidad</option><option>Otro</option></select>
+            </div>
+            <div class="field">
+              <label class="lbl">Etapa del flujo central</label>
+              <input class="inp f-etapa-flujo" type="text" placeholder="Ej. Pedido, Producción, Cobranza…">
+            </div>
+            <div class="field span2">
+              <label class="lbl">Tipo de flujo</label>
+              <div class="fuente-group" style="margin-top:4px;">
+                <label class="fuente-opt"><input type="radio" name="tipoflujo-3" value="Central" checked><span>Central</span></label>
+                <label class="fuente-opt"><input type="radio" name="tipoflujo-3" value="Secundario"><span>Secundario</span></label>
+                <label class="fuente-opt"><input type="radio" name="tipoflujo-3" value="Transversal"><span>Transversal</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label class="lbl">Veces / mes <span class="req">*</span></label>
+              <input class="inp f-vol" type="number" value="4" oninput="recalc('task-3')">
+            </div>
+            <div class="field">
+              <label class="lbl">Min / vez <span class="req">*</span></label>
+              <input class="inp f-min" type="number" value="90" oninput="recalc('task-3')">
+            </div>
+            <div class="field">
+              <label class="lbl">Personas</label>
+              <input class="inp f-per" type="number" value="1" oninput="recalc('task-3')">
+            </div>
+            <div class="calc-box">
+              <span class="calc-l">horas_org/mes</span>
+              <span class="calc-v f-horas">6.0</span>
+              <span class="calc-u">h/mes</span>
+            </div>
+            <div class="field full">
+              <label class="lbl">Fuente del dato</label>
+              <div class="fuente-group">
+                <label class="fuente-opt"><input type="radio" name="fuente-3" value="Autorreporte" checked onchange="updateCfd('task-3','cfd-3',this)"><span>Autorreporte</span></label>
+                <label class="fuente-opt"><input type="radio" name="fuente-3" value="Observación" onchange="updateCfd('task-3','cfd-3',this)"><span>Observación directa</span></label>
+                <label class="fuente-opt"><input type="radio" name="fuente-3" value="Telemetría" onchange="updateCfd('task-3','cfd-3',this)"><span>Telemetría / sistema</span></label>
+              </div>
+            </div>
+            <div class="field span2">
+              <label class="lbl">Excepciones</label>
+              <textarea class="txa" placeholder="¿Cuándo sale mal? ¿Qué hace que tarde más?"></textarea>
+            </div>
+            <div class="field span2">
+              <label class="lbl">Criterios de decisión</label>
+              <textarea class="txa" placeholder="¿Qué decide el entrevistado en esta tarea?"></textarea>
+            </div>
+            <div class="field span3">
+              <label class="lbl">Shadow IT en esta tarea</label>
+              <input class="inp" type="text" placeholder="Ej. Excel propio con datos que consolida manualmente cada viernes">
+            </div>
+            <div class="field full">
+              <label class="lbl">Cubeta (primera impresión)</label>
+              <div class="cubeta-group">
+                <label class="cubeta-opt"><input type="radio" name="cubeta-3"><div class="cicon">⚙️</div><div class="clbl">Automatización determinística</div></label>
+                <label class="cubeta-opt"><input type="radio" name="cubeta-3"><div class="cicon">🤖</div><div class="clbl">Agente con contexto</div></label>
+                <label class="cubeta-opt"><input type="radio" name="cubeta-3"><div class="cicon">👁</div><div class="clbl">Copiloto — humano aprueba</div></label>
+                <label class="cubeta-opt"><input type="radio" name="cubeta-3"><div class="cicon">🤝</div><div class="clbl">Relación humana</div></label>
+              </div>
+            </div>
+            <div class="seq-block full">
+              <div class="seq-title">↳ Posición en el flujo de trabajo</div>
+              <div class="r3" style="margin-top:8px;">
+                <div class="field">
+                  <label class="lbl">Tarea que la precede</label>
+                  <input class="inp f-prev" type="text" placeholder="¿Qué llega o quién la dispara?">
+                </div>
+                <div class="field">
+                  <label class="lbl">Tarea que desencadena</label>
+                  <input class="inp f-next" type="text" placeholder="¿Qué sucede después con su output?">
+                </div>
+                <div class="field">
+                  <label class="lbl">Tiempo de espera del input</label>
+                  <input class="inp f-wait" type="text" placeholder="Ej. mismo día, 1–2 días…">
+                </div>
+              </div>
+            </div>
+            <div class="field full">
+              <label class="lbl">¿El volumen varía por temporada?</label>
+              <div class="fuente-group" style="margin-top:5px;">
+                <label class="fuente-opt"><input type="radio" name="estac-3" value="No" checked><span>No, es constante</span></label>
+                <label class="fuente-opt"><input type="radio" name="estac-3" value="Sí" onchange="this.closest('.field').querySelector('.estac-det').style.display='block'"><span>Sí, varía por temporada</span></label>
+              </div>
+              <input class="inp estac-det" type="text" placeholder="¿En qué meses es más alto? ¿Cuánto más?" style="margin-top:7px;display:none;">
+            </div>
+            <div class="eval-block full">
+              <div class="eval-title">Evaluación del asesor — score de priorización</div>
+              <div class="r4" style="margin-top:10px;">
+                <div class="field">
+                  <label class="lbl">Impacto en la cadena de valor (1–5) <span class="req">*</span></label>
+                  <div class="hint">1=auxiliar · 5=core del negocio</div>
+                  <input class="inp f-impacto" type="number" min="1" max="5" step="0.5" placeholder="1–5" oninput="calcScore(this.closest('.task-card'))">
+                </div>
+                <div class="field">
+                  <label class="lbl">Costo de error (1–5) <span class="req">*</span></label>
+                  <div class="hint">1=sin consecuencias · 5=pérdida grave</div>
+                  <input class="inp f-costerr" type="number" min="1" max="5" step="0.5" placeholder="1–5" oninput="calcScore(this.closest('.task-card'))">
+                </div>
+                <div class="field">
+                  <label class="lbl">Factibilidad de automatizar (1–5) <span class="req">*</span></label>
+                  <div class="hint">1=solo humano · 5=100% automatizable</div>
+                  <input class="inp f-fact" type="number" min="1" max="5" step="0.5" placeholder="1–5" oninput="calcScore(this.closest('.task-card'))">
+                </div>
+                <div class="field">
+                  <label class="lbl">¿Camino crítico?</label>
+                  <div class="hint">Su retraso bloquea a otras áreas</div>
+                  <select class="sel f-critico"><option value="">—</option><option>Sí</option><option>No</option></select>
+                </div>
+              </div>
+              <div class="score-display" id="score-3"><div class="score-empty">Completa las 3 evaluaciones para ver el score →</div></div>
+            </div>
+            <div class="field full">
+              <label class="lbl">Notas del asesor</label>
+              <textarea class="txa" placeholder="Observaciones, contexto relevante…"></textarea>
+            </div>
+          </div>
+        </div>
+        <!-- /tarea 3 -->
+
+      </div><!-- /task-list -->
+
+      <button class="add-btn" onclick="addTask()">
+        <span style="font-size:19px;line-height:1;margin-top:-1px">+</span>
+        Tarea descubierta en sesión (no estaba en la encuesta)
+      </button>
+    </div>
+  </div>
+
+  <!-- S2: Software audit -->
+  <div class="sec">
+    <div class="sec-hdr">
+      <div class="sec-icon">💾</div>
+      <div>
+        <div class="sec-ey">Sección 2</div>
+        <div class="sec-t">Auditoría de software y Shadow IT</div>
+      </div>
+    </div>
+    <div class="sec-body">
+      <div class="note">Confirma cada software de la encuesta. Marca si es <strong>oficial</strong> (visible para todos, en el sistema), <strong>shadow IT</strong> (uso informal, datos personales), o <strong>no encontrado</strong> (el entrevistado no lo reconoce). Agrega los que surjan en sesión.</div>
+      <div class="sw-grid">
+        <div class="sw-item">
+          <div class="sw-name">SAP</div>
+          <div class="sw-meta">Declarado en encuesta · Sistema principal</div>
+          <div class="sw-confirm">
+            <button class="sw-cbtn confirmed" onclick="toggleSwBtn(this,'confirmed')">✓ Oficial</button>
+            <button class="sw-cbtn" onclick="toggleSwBtn(this,'shadow')">Shadow IT</button>
+          </div>
+          <input class="inp" type="text" placeholder="Módulo / transacciones usadas…" style="font-size:11px;">
+        </div>
+        <div class="sw-item">
+          <div class="sw-name">Excel propio</div>
+          <div class="sw-meta">Declarado en encuesta · Archivo personal</div>
+          <div class="sw-confirm">
+            <button class="sw-cbtn" onclick="toggleSwBtn(this,'confirmed')">Oficial</button>
+            <button class="sw-cbtn shadow" onclick="toggleSwBtn(this,'shadow')">⚠ Shadow IT</button>
+          </div>
+          <input class="inp" type="text" placeholder="¿Qué datos viven ahí? ¿Quién más lo usa?" style="font-size:11px;">
+        </div>
+        <div class="sw-item">
+          <div class="sw-name">WhatsApp</div>
+          <div class="sw-meta">Declarado en encuesta · Mensajería</div>
+          <div class="sw-confirm">
+            <button class="sw-cbtn" onclick="toggleSwBtn(this,'confirmed')">Oficial</button>
+            <button class="sw-cbtn shadow" onclick="toggleSwBtn(this,'shadow')">⚠ Shadow IT</button>
+          </div>
+          <input class="inp" type="text" placeholder="¿Para qué lo usa en el trabajo?" style="font-size:11px;">
+        </div>
+      </div>
+      <button class="add-btn" onclick="addSw()">
+        <span style="font-size:19px;line-height:1;margin-top:-1px">+</span>
+        Software descubierto en sesión
+      </button>
+      <div id="sw-extra" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+  </div>
+
+  <!-- S3: Dependencias -->
+  <div class="sec">
+    <div class="sec-hdr">
+      <div class="sec-icon">🔗</div>
+      <div>
+        <div class="sec-ey">Sección 3</div>
+        <div class="sec-t">Dependencias, flujo y equipo</div>
+      </div>
+    </div>
+    <div class="sec-body">
+
+      <!-- Mapeo del gerente (solo sin personal a cargo) -->
+      <div class="op-only" style="background:var(--sf2);border:1px solid var(--br);border-radius:var(--rm);padding:16px;display:flex;flex-direction:column;gap:12px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--acc);">Gerente directo — quién lo coordina</div>
+        <div class="r3">
+          <div class="field">
+            <label class="lbl">Nombre del gerente directo</label>
+            <input class="inp" type="text" placeholder="Nombre o iniciales">
+          </div>
+          <div class="field">
+            <label class="lbl">Cargo / puesto</label>
+            <input class="inp" type="text" placeholder="Ej. Gerente de Ventas">
+          </div>
+          <div class="field">
+            <label class="lbl">¿Ya tiene sesión agendada?</label>
+            <select class="sel"><option value="">Selecciona…</option><option>Sí — ya tiene sesión</option><option>No — pendiente agendar</option><option>No aplica</option></select>
+          </div>
+        </div>
+        <div class="r2">
+          <div class="field">
+            <label class="lbl">¿Cómo se comunica con su gerente día a día?</label>
+            <input class="inp" type="text" placeholder="Ej. WhatsApp, reunión lunes, correo...">
+          </div>
+          <div class="field">
+            <label class="lbl">¿Qué le reporta y con qué frecuencia?</label>
+            <textarea class="txa" style="min-height:52px;" placeholder="Ej. Manda resumen de ventas por WhatsApp cada viernes al cierre."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mapeo del equipo (solo con personal a cargo) -->
+      <div class="ger-only" style="background:var(--sf2);border:1px solid var(--br);border-radius:var(--rm);padding:16px;display:flex;flex-direction:column;gap:12px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--acc);">Equipo coordinado — personas que reportan a este gerente</div>
+        <div class="note">Registra a cada persona que coordina directamente. Las que aún no tienen cédula son candidatos para la siguiente ronda de sesiones.</div>
+        <div id="team-list" style="display:flex;flex-direction:column;gap:8px;">
+          <div class="team-row" style="display:grid;grid-template-columns:2fr 2fr 1.2fr 1.2fr auto;gap:8px;align-items:center;">
+            <input class="inp" type="text" placeholder="Nombre / iniciales">
+            <input class="inp" type="text" placeholder="Puesto / cargo">
+            <select class="sel"><option value="">Antigüedad</option><option>Menos de 1 año</option><option>1 a 3 años</option><option>Más de 3 años</option></select>
+            <select class="sel"><option value="">Cédula</option><option>Enviada y recibida</option><option>Enviada, sin respuesta</option><option>Pendiente enviar</option><option>Sesión ya agendada</option></select>
+            <button class="del" onclick="this.closest('.team-row').remove()">×</button>
+          </div>
+        </div>
+        <button class="add-btn" style="padding:8px;" onclick="addTeamRow()">+ Agregar persona del equipo</button>
+        <div class="r2" style="margin-top:4px;">
+          <div class="field">
+            <label class="lbl">¿Quién de tu equipo tiene conocimiento crítico no documentado?</label>
+            <textarea class="txa" style="min-height:52px;" placeholder="Quién sabe algo que nadie más sabe y que sería difícil reemplazar..."></textarea>
+          </div>
+          <div class="field">
+            <label class="lbl">¿A quién de tu equipo deberíamos entrevistar primero?</label>
+            <textarea class="txa" style="min-height:52px;" placeholder="Quién tiene más tareas, más volumen, o más shadow IT..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Flujo y dependencias (todos) -->
+      <div class="r2">
+        <div class="field">
+          <label class="lbl">¿Quién le manda trabajo? — Aguas arriba</label>
+          <div class="hint">Personas, áreas o sistemas de los que depende para iniciar sus tareas</div>
+          <textarea class="txa" placeholder="Ej. El área de Marketing le manda los leads calificados. El cliente llega directo por correo."></textarea>
+        </div>
+        <div class="field">
+          <label class="lbl">¿A quién le entrega? — Aguas abajo</label>
+          <div class="hint">Personas, áreas o sistemas que reciben el output de sus tareas</div>
+          <textarea class="txa" placeholder="Ej. Entrega cotizaciones al cliente. Si se cierra, pasa el pedido al área de Operaciones."></textarea>
+        </div>
+      </div>
+      <div class="r2">
+        <div class="field">
+          <label class="lbl">Cuello de botella identificado</label>
+          <div class="hint">¿Dónde se acumula el trabajo o se genera la mayor espera?</div>
+          <textarea class="txa" placeholder="Ej. El proceso se detiene esperando validación del jefe, que puede tardar 2 días."></textarea>
+        </div>
+        <div class="field">
+          <label class="lbl">Conocimiento tácito — reglas que no están en ningún sistema</label>
+          <textarea class="txa" placeholder="Ej. Sabe de memoria qué clientes tienen condiciones especiales. No está documentado."></textarea>
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl">Cita clave del entrevistado — la frase que mejor describe el problema o la oportunidad</label>
+        <textarea class="txa" style="min-height:52px;" placeholder="La frase más valiosa de la sesión, textual y entre comillas…"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- S4: Bloque económico (solo Gerente) -->
+  <div class="sec ger-only">
+    <div class="sec-hdr">
+      <div class="sec-icon">💰</div>
+      <div>
+        <div class="sec-ey">Sección 4 · Aplica si tienes personal a cargo</div>
+        <div class="sec-t">Bloque económico — base del modelo de valor</div>
+      </div>
+    </div>
+    <div class="sec-body">
+      <div class="note"><strong>Esta sección es obligatoria en sesiones de Gerente.</strong> Los datos aquí alimentan directamente el modelo de valor en pesos — payback y ROI. Si el gerente no tiene el número exacto, una estimación honesta es suficiente para comenzar; el Director validará después.</div>
+      <div class="eco-grid">
+        <div class="field">
+          <label class="lbl">Nómina total del área ($ / mes) <span class="req">*</span></label>
+          <div class="hint">Suma de sueldos brutos del área coordinada</div>
+          <input class="inp" type="number" id="eco-nomina" placeholder="Ej. 480000" oninput="calcCostoHora()">
+        </div>
+        <div class="field">
+          <label class="lbl">Personas en el área <span class="req">*</span></label>
+          <input class="inp" type="number" id="eco-personas" placeholder="Ej. 6" oninput="calcCostoHora()">
+        </div>
+        <div class="eco-calc">
+          <span class="eco-calc-l">Costo por hora</span>
+          <span class="eco-calc-v" id="eco-costo-hora">—</span>
+          <span class="eco-calc-u">$ / hora · persona</span>
+        </div>
+      </div>
+      <div class="eco-grid">
+        <div class="field">
+          <label class="lbl">Volumen de negocio que pasa por esta área ($ / mes)</label>
+          <div class="hint">Ventas, compras, nómina que procesa… lo que sea relevante</div>
+          <input class="inp" type="number" placeholder="Ej. 5000000">
+        </div>
+        <div class="field">
+          <label class="lbl">Tipo de error más frecuente en el área</label>
+          <textarea class="txa" style="min-height:52px;" placeholder="Ej. Cotización con precio incorrecto — hay que rehacer el pedido"></textarea>
+        </div>
+        <div class="field">
+          <label class="lbl">Costo estimado por error ($) × frecuencia/mes</label>
+          <div class="r2" style="gap:8px;">
+            <input class="inp" type="number" id="eco-costo-err" placeholder="$ / ocurrencia" oninput="calcPerdidaErr()">
+            <input class="inp" type="number" id="eco-frec-err" placeholder="veces / mes" oninput="calcPerdidaErr()">
+          </div>
+          <div class="eco-calc" style="margin-top:6px;flex-direction:row;align-items:center;gap:8px;padding:8px 12px;">
+            <span class="eco-calc-l">Pérdida mensual por errores</span>
+            <span class="eco-calc-v" id="eco-perdida" style="font-size:16px;">—</span>
+            <span class="eco-calc-u">$/mes</span>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl">Palanca de valor principal <span class="req">*</span></label>
+        <div class="hint">¿Cómo se materializa principalmente el valor del proyecto para esta área?</div>
+        <div class="palanca-group">
+          <label class="palanca-opt"><input type="radio" name="palanca"><span><strong>Costo evitado</strong> — reducir horas o headcount que hoy se destinan a trabajo manual</span></label>
+          <label class="palanca-opt"><input type="radio" name="palanca"><span><strong>Ingreso habilitado</strong> — eliminar el cuello de botella que limita el volumen de ventas / facturación</span></label>
+          <label class="palanca-opt"><input type="radio" name="palanca"><span><strong>Error evitado</strong> — reducir costo por errores, re-trabajo, penalizaciones o devoluciones</span></label>
+          <label class="palanca-opt"><input type="radio" name="palanca"><span><strong>Riesgo / Continuidad</strong> — eliminar dependencia de personas clave o procesos no documentados</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl">¿El ahorro es materializable? — ¿habrá reducción real de headcount?</label>
+        <div class="hint">Si no → la liberación de capacidad cuenta como "capacidad recuperada", no como costo evitado en EBITDA (Invariante 6)</div>
+        <div class="fuente-group">
+          <label class="fuente-opt"><input type="radio" name="materializable"><span>Sí — habrá reducción de headcount</span></label>
+          <label class="fuente-opt"><input type="radio" name="materializable"><span>No — es capacidad recuperada para otras tareas</span></label>
+          <label class="fuente-opt"><input type="radio" name="materializable"><span>Por definir</span></label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S5: Cierre -->
+  <div class="sec">
+    <div class="sec-hdr">
+      <div class="sec-icon">✅</div>
+      <div>
+        <div class="sec-ey">Sección 5</div>
+        <div class="sec-t">Cierre de sesión</div>
+      </div>
+    </div>
+    <div class="sec-body">
+      <div class="r2">
+        <div class="field">
+          <label class="lbl">Principales oportunidades identificadas</label>
+          <textarea class="txa" style="min-height:90px;" placeholder="Las 2-3 tareas o patrones con mayor potencial de transformación, según el asesor…"></textarea>
+        </div>
+        <div class="field">
+          <label class="lbl">Next steps acordados con el entrevistado</label>
+          <textarea class="txa" style="min-height:90px;" placeholder="¿Qué le dijiste que pasará? ¿Qué necesita preparar o compartir?"></textarea>
+        </div>
+      </div>
+      <div class="r3">
+        <div class="field">
+          <label class="lbl">Nivel de adopción esperado</label>
+          <select class="sel">
+            <option value="">Selecciona…</option>
+            <option>Alto — abierto al cambio, ya lo pidió</option>
+            <option>Medio — neutral, seguirá si se le guía</option>
+            <option>Bajo — resistente o escéptico</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="lbl">¿Hay un aliado o resistor clave?</label>
+          <input class="inp" type="text" placeholder="Nombre / rol y por qué">
+        </div>
+        <div class="field">
+          <label class="lbl">Calidad general de los datos de esta sesión</label>
+          <select class="sel">
+            <option value="">Selecciona…</option>
+            <option>Alta — datos precisos, confirmados, observados</option>
+            <option>Media — estimaciones razonables, autorreporte sólido</option>
+            <option>Baja — estimaciones muy gruesas, requiere segunda sesión</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl">Notas finales del asesor — contexto, señales, cosas a investigar</label>
+        <textarea class="txa" style="min-height:72px;" placeholder="Cualquier cosa relevante que no quedó capturada en las secciones anteriores…"></textarea>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<!-- ─── BOTTOM BAR ─── -->
+<div class="bot">
+  <div class="bot-in">
+    <span class="bot-stat" id="bot-stat">3 tareas cargadas · 0 verificadas · 226 h/mes totales</span>
+    <button class="btn-outline" onclick="clearDraft()" style="color:var(--err);border-color:var(--err);">Borrar borrador</button>
+    <button class="btn-outline" onclick="exportJSON()">Exportar JSON</button>
+    <button class="btn-save" onclick="saveToStorage()">Guardar sesión ✓</button>
+  </div>
+</div>
+
+<script>
+/* ── Timer ── */
+let timerSec = 0, timerInt = null, timerOn = false;
+function toggleTimer() {
+  const btn = document.getElementById('timer-btn');
+  if (!timerOn) {
+    timerOn = true;
+    btn.textContent = '⏸ Pausar'; btn.classList.add('running');
+    timerInt = setInterval(() => {
+      timerSec++;
+      const m = String(Math.floor(timerSec/60)).padStart(2,'0');
+      const s = String(timerSec%60).padStart(2,'0');
+      document.getElementById('timer-disp').textContent = m+':'+s;
+    }, 1000);
+  } else {
+    timerOn = false;
+    btn.textContent = '▶ Reanudar'; btn.classList.remove('running');
+    clearInterval(timerInt);
+  }
+}
+
+/* ── Session type ── */
+function setMode(mode, btn) {
+  document.querySelectorAll('.stype-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  if (mode === 'ger') document.body.classList.add('ger-mode');
+  else document.body.classList.remove('ger-mode');
+}
+
+/* ── Task name update ── */
+function updateTaskName(inp, dispId) {
+  document.getElementById(dispId).textContent = inp.value.trim() || 'Sin nombre';
+}
+
+/* ── horas_org_mes = vol × min × per / 60 ── */
+function recalc(taskId) {
+  const card = document.getElementById(taskId);
+  if (!card) return;
+  const vol = parseFloat(card.querySelector('.f-vol')?.value) || 0;
+  const min = parseFloat(card.querySelector('.f-min')?.value) || 0;
+  const per = parseFloat(card.querySelector('.f-per')?.value) || 1;
+  const hrs = (vol * min * per / 60).toFixed(1);
+  const disp = card.querySelector('.f-horas');
+  if (disp) disp.textContent = hrs;
+  updateTotal();
+}
+
+function updateTotal() {
+  let total = 0;
+  document.querySelectorAll('.task-card').forEach(card => {
+    const vol = parseFloat(card.querySelector('.f-vol')?.value) || 0;
+    const min = parseFloat(card.querySelector('.f-min')?.value) || 0;
+    const per = parseFloat(card.querySelector('.f-per')?.value) || 1;
+    total += vol * min * per / 60;
+  });
+  const formatted = total >= 1000 ? (total/1000).toFixed(1)+'k' : total.toFixed(1);
+  document.getElementById('total-horas').textContent = formatted + ' h';
+  updateBotStat();
+  calcCoverage(total);
+}
+
+/* ── Score de priorización (domain_spec: score = ((I×0.6)+(C×0.4))×(F/5)) ── */
+function calcScore(card) {
+  if (!card) return;
+  const imp = parseFloat(card.querySelector('.f-impacto')?.value);
+  const cer = parseFloat(card.querySelector('.f-costerr')?.value);
+  const fac = parseFloat(card.querySelector('.f-fact')?.value);
+  const disp = card.querySelector('.score-display');
+  if (!disp) return;
+  if (!imp || !cer || !fac) {
+    disp.innerHTML = '<div class="score-empty">Completa las 3 evaluaciones para ver el score →</div>';
+    return;
+  }
+  const score = ((imp * 0.6) + (cer * 0.4)) * (fac / 5);
+  let ola, cls;
+  if (score >= 3.5) { ola = 'Ola 1 (0–90 días)'; cls = 'ola1'; }
+  else if (score >= 2.0) { ola = 'Ola 2 (90–180 días)'; cls = 'ola2'; }
+  else { ola = 'Ola 3 / Backlog'; cls = 'ola3'; }
+  disp.innerHTML = `<div class="score-result">
+    <div class="score-num" style="color:${cls==='ola1'?'var(--grn)':cls==='ola2'?'var(--acc)':'var(--ink4)'}">${score.toFixed(2)}</div>
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      <div style="font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink4);">Score</div>
+      <span class="ola-badge ${cls}">${ola}</span>
+    </div>
+    <div class="score-formula">((${imp}×0.6)+(${cer}×0.4))×(${fac}/5)</div>
+  </div>`;
+}
+
+/* ── Validador de cobertura ── */
+function calcCoverage(totalHoras) {
+  const disp = document.getElementById('cov-disp');
+  if (!disp) return;
+  let total = totalHoras;
+  if (total === undefined) {
+    total = 0;
+    document.querySelectorAll('.task-card').forEach(card => {
+      const vol = parseFloat(card.querySelector('.f-vol')?.value) || 0;
+      const min = parseFloat(card.querySelector('.f-min')?.value) || 0;
+      total += vol * min / 60;
+    });
+  }
+  const disp_val = parseFloat(document.getElementById('horas-disp')?.value) || 160;
+  if (total === 0) { disp.textContent = 'Cobertura —'; disp.style.color = ''; return; }
+  const pct = (total / disp_val * 100).toFixed(0);
+  disp.textContent = `${total.toFixed(0)} h declaradas · ${pct}% del mes`;
+  const p = parseFloat(pct);
+  disp.style.color = p < 60 ? 'var(--amb)' : p > 110 ? 'var(--err,#e53)' : 'var(--grn)';
+}
+
+/* ── Confianza badge ── */
+function updateCfd(cardId, badgeId, radio) {
+  const badge = document.getElementById(badgeId);
+  if (!badge) return;
+  const alta = radio.value === 'Observación' || radio.value === 'Telemetría';
+  badge.textContent = alta ? 'Alta' : 'Media';
+  badge.className = 'cfd-badge ' + (alta ? 'alta' : 'media');
+}
+
+/* ── Verified toggle ── */
+function toggleVerified(cardId, btnId) {
+  const card = document.getElementById(cardId);
+  const btn = document.getElementById(btnId);
+  const on = btn.classList.toggle('on');
+  btn.textContent = on ? '✓ Verificada' : 'Verificar';
+  card.classList.toggle('verified', on);
+  card.classList.toggle('reviewing', !on);
+  updateTaskCount();
+  updateBotStat();
+}
+
+function updateTaskCount() {
+  const total = document.querySelectorAll('.task-card').length;
+  const done = document.querySelectorAll('.ver-btn.on').length;
+  document.getElementById('tasks-count').textContent = done + ' / ' + total;
+}
+
+function updateBotStat() {
+  const total = document.querySelectorAll('.task-card').length;
+  const done = document.querySelectorAll('.ver-btn.on').length;
+  const horas = document.getElementById('total-horas').textContent;
+  document.getElementById('bot-stat').textContent = `${total} tareas · ${done} verificadas · ${horas} totales`;
+}
+
+/* ── Add task (discovered in session) ── */
+let extraN = 3;
+function addTask(preload = null) {
+  extraN++;
+  const id = 'task-' + extraN;
+  const nameId = 'tname-disp-' + extraN;
+  const cfdId = 'cfd-' + extraN;
+  const verId = 'ver-' + extraN;
+  const div = document.createElement('div');
+  div.className = 'task-card reviewing';
+  div.id = id;
+  div.innerHTML = `
+    <div class="brief-band"><span class="brief-ey">Descubierta en sesión</span><span class="brief-chip" style="background:var(--acc-bg);color:var(--acc);border-color:var(--acc-br)">No estaba en la encuesta</span></div>
+    <div class="task-head">
+      <div class="tnum">${extraN}</div>
+      <div class="tname" id="${nameId}">Nueva tarea</div>
+      <span class="cfd-badge media" id="${cfdId}">Media</span>
+      <button class="ver-btn" id="${verId}" onclick="toggleVerified('${id}','${verId}')">Verificar</button>
+      <button class="del" onclick="delTask('${id}')" title="Eliminar">×</button>
+    </div>
+    <div class="task-body">
+      <div class="field span2 full"><label class="lbl">Nombre de la tarea <span class="req">*</span></label><input class="inp task-name" type="text" placeholder="¿Qué hace? ¿Qué produce?" oninput="updateTaskName(this,'${nameId}')"></div>
+      <div class="field span2"><label class="lbl">Flujo de valor</label><select class="sel"><option value="">Selecciona…</option><option>Ventas / Comercial</option><option>Cobranza</option><option>Compras / Proveedores</option><option>Producción / Manufactura</option><option>Logística / Distribución</option><option>Atención al cliente</option><option>RRHH</option><option>Contabilidad / Finanzas</option><option>Calidad</option><option>Otro</option></select></div>
+      <div class="field"><label class="lbl">Etapa del flujo central</label><input class="inp f-etapa-flujo" type="text" placeholder="Ej. Pedido, Producción, Cobranza…"></div>
+      <div class="field span2"><label class="lbl">Tipo de flujo</label><div class="fuente-group" style="margin-top:4px;">
+        <label class="fuente-opt"><input type="radio" name="tipoflujo-${extraN}" value="Central" checked><span>Central</span></label>
+        <label class="fuente-opt"><input type="radio" name="tipoflujo-${extraN}" value="Secundario"><span>Secundario</span></label>
+        <label class="fuente-opt"><input type="radio" name="tipoflujo-${extraN}" value="Transversal"><span>Transversal</span></label>
+      </div></div>
+      <div class="field"><label class="lbl">Veces / mes <span class="req">*</span></label><input class="inp f-vol" type="number" placeholder="Ej. 30" oninput="recalc('${id}')"></div>
+      <div class="field"><label class="lbl">Min / vez <span class="req">*</span></label><input class="inp f-min" type="number" placeholder="Ej. 20" oninput="recalc('${id}')"></div>
+      <div class="field"><label class="lbl">Personas</label><input class="inp f-per" type="number" value="1" oninput="recalc('${id}')"></div>
+      <div class="calc-box"><span class="calc-l">horas_org/mes</span><span class="calc-v f-horas">—</span><span class="calc-u">h/mes</span></div>
+      <div class="field full"><label class="lbl">Fuente del dato</label><div class="fuente-group">
+        <label class="fuente-opt"><input type="radio" name="fuente-${extraN}" value="Autorreporte" checked onchange="updateCfd('${id}','${cfdId}',this)"><span>Autorreporte</span></label>
+        <label class="fuente-opt"><input type="radio" name="fuente-${extraN}" value="Observación" onchange="updateCfd('${id}','${cfdId}',this)"><span>Observación directa</span></label>
+        <label class="fuente-opt"><input type="radio" name="fuente-${extraN}" value="Telemetría" onchange="updateCfd('${id}','${cfdId}',this)"><span>Telemetría / sistema</span></label>
+      </div></div>
+      <div class="field span2"><label class="lbl">Excepciones</label><textarea class="txa" placeholder="¿Cuándo sale mal o tarda más?"></textarea></div>
+      <div class="field span2"><label class="lbl">Criterios de decisión</label><textarea class="txa" placeholder="¿Qué decide el entrevistado?"></textarea></div>
+      <div class="field span3"><label class="lbl">Shadow IT</label><input class="inp" type="text" placeholder="Archivos propios, WhatsApp, etc."></div>
+      <div class="field full"><label class="lbl">Cubeta (primera impresión)</label>
+        <div class="cubeta-group">
+          <label class="cubeta-opt"><input type="radio" name="cubeta-${extraN}"><div class="cicon">⚙️</div><div class="clbl">Automatización determinística</div></label>
+          <label class="cubeta-opt"><input type="radio" name="cubeta-${extraN}"><div class="cicon">🤖</div><div class="clbl">Agente con contexto</div></label>
+          <label class="cubeta-opt"><input type="radio" name="cubeta-${extraN}"><div class="cicon">👁</div><div class="clbl">Copiloto — humano aprueba</div></label>
+          <label class="cubeta-opt"><input type="radio" name="cubeta-${extraN}"><div class="cicon">🤝</div><div class="clbl">Relación humana</div></label>
+        </div></div>
+      <div class="seq-block full">
+        <div class="seq-title">↳ Posición en el flujo de trabajo</div>
+        <div class="r3" style="margin-top:8px;">
+          <div class="field"><label class="lbl">Tarea que la precede</label><input class="inp f-prev" type="text" placeholder="¿Qué llega o quién la dispara?"></div>
+          <div class="field"><label class="lbl">Tarea que desencadena</label><input class="inp f-next" type="text" placeholder="¿Qué sucede después con su output?"></div>
+          <div class="field"><label class="lbl">Tiempo de espera del input</label><input class="inp f-wait" type="text" placeholder="Ej. mismo día, 1–2 días…"></div>
+        </div>
+      </div>
+      <div class="field full">
+        <label class="lbl">¿El volumen varía por temporada?</label>
+        <div class="fuente-group" style="margin-top:5px;">
+          <label class="fuente-opt"><input type="radio" name="estac-${extraN}" value="No" checked><span>No, es constante</span></label>
+          <label class="fuente-opt"><input type="radio" name="estac-${extraN}" value="Sí" onchange="this.closest('.field').querySelector('.estac-det').style.display='block'"><span>Sí, varía por temporada</span></label>
+        </div>
+        <input class="inp estac-det" type="text" placeholder="¿En qué meses es más alto? ¿Cuánto más?" style="margin-top:7px;display:none;">
+      </div>
+      <div class="eval-block full">
+        <div class="eval-title">Evaluación del asesor — score de priorización</div>
+        <div class="r4" style="margin-top:10px;">
+          <div class="field">
+            <label class="lbl">Impacto en la cadena de valor (1–5) <span class="req">*</span></label>
+            <div class="hint">1=auxiliar · 5=core del negocio</div>
+            <input class="inp f-impacto" type="number" min="1" max="5" step="0.5" placeholder="1–5" oninput="calcScore(this.closest('.task-card'))">
+          </div>
+          <div class="field">
+            <label class="lbl">Costo de error (1–5) <span class="req">*</span></label>
+            <div class="hint">1=sin consecuencias · 5=pérdida grave</div>
+            <input class="inp f-costerr" type="number" min="1" max="5" step="0.5" placeholder="1–5" oninput="calcScore(this.closest('.task-card'))">
+          </div>
+          <div class="field">
+            <label class="lbl">Factibilidad de automatizar (1–5) <span class="req">*</span></label>
+            <div class="hint">1=solo humano · 5=100% automatizable</div>
+            <input class="inp f-fact" type="number" min="1" max="5" step="0.5" placeholder="1–5" oninput="calcScore(this.closest('.task-card'))">
+          </div>
+          <div class="field">
+            <label class="lbl">¿Camino crítico?</label>
+            <div class="hint">Su retraso bloquea a otras áreas</div>
+            <select class="sel f-critico"><option value="">—</option><option>Sí</option><option>No</option></select>
+          </div>
+        </div>
+        <div class="score-display" id="score-${extraN}"><div class="score-empty">Completa las 3 evaluaciones para ver el score →</div></div>
+      </div>
+      <div class="field full"><label class="lbl">Notas</label><textarea class="txa" placeholder="Observaciones, contexto…"></textarea></div>
+    </div>`;
+  document.getElementById('task-list').appendChild(div);
+  if (preload) populateCard(div, preload);
+  else div.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  updateTaskCount();
+  updateBotStat();
+}
+
+function delTask(id) {
+  if (!confirm('¿Eliminar esta tarea?')) return;
+  document.getElementById(id)?.remove();
+  document.querySelectorAll('.task-card .tnum').forEach((n, i) => n.textContent = i + 1);
+  updateTaskCount();
+  updateTotal();
+}
+
+/* ── Software buttons ── */
+function toggleSwBtn(btn, mode) {
+  const parent = btn.closest('.sw-confirm');
+  parent.querySelectorAll('.sw-cbtn').forEach(b => { b.className = 'sw-cbtn'; });
+  btn.classList.add(mode);
+}
+
+let swN = 0;
+function addSw() {
+  swN++;
+  const div = document.createElement('div');
+  div.className = 'sw-item';
+  div.innerHTML = `
+    <input class="inp" type="text" placeholder="Nombre del software o archivo descubierto" style="font-weight:600;">
+    <div class="sw-meta">Descubierto en sesión</div>
+    <div class="sw-confirm">
+      <button class="sw-cbtn" onclick="toggleSwBtn(this,'confirmed')">Oficial</button>
+      <button class="sw-cbtn" onclick="toggleSwBtn(this,'shadow')">Shadow IT</button>
+    </div>
+    <input class="inp" type="text" placeholder="¿Qué datos viven ahí? ¿Quién más lo usa?" style="font-size:11px;">`;
+  document.getElementById('sw-extra').appendChild(div);
+}
+
+/* ── Economic calcs ── */
+function calcCostoHora() {
+  const nom = parseFloat(document.getElementById('eco-nomina')?.value) || 0;
+  const per = parseFloat(document.getElementById('eco-personas')?.value) || 0;
+  const disp = document.getElementById('eco-costo-hora');
+  if (!disp) return;
+  if (nom > 0 && per > 0) {
+    const ch = (nom / (per * 160));
+    disp.textContent = '$' + ch.toLocaleString('es-MX', {maximumFractionDigits:0});
+  } else {
+    disp.textContent = '—';
+  }
+}
+
+function calcPerdidaErr() {
+  const ce = parseFloat(document.getElementById('eco-costo-err')?.value) || 0;
+  const fe = parseFloat(document.getElementById('eco-frec-err')?.value) || 0;
+  const disp = document.getElementById('eco-perdida');
+  if (!disp) return;
+  if (ce > 0 && fe > 0) {
+    disp.textContent = '$' + (ce * fe).toLocaleString('es-MX', {maximumFractionDigits:0});
+  } else {
+    disp.textContent = '—';
+  }
+}
+
+/* ── Persistence — localStorage autosave ── */
+let saveTimer = null;
+
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  setSaveStatus('saving');
+  saveTimer = setTimeout(saveToStorage, 900);
+}
+
+function setSaveStatus(s) {
+  const el = document.getElementById('save-status');
+  if (!el) return;
+  if (s === 'saving') { el.textContent = 'Guardando…'; el.style.color = 'var(--amb)'; }
+  else if (s === 'saved') { el.textContent = '✓ Guardado'; el.style.color = 'var(--grn)'; }
+  else { el.textContent = 'Sin datos guardados'; el.style.color = 'var(--ink4)'; }
+}
+
+function collectFormData() {
+  const tasks = [];
+  document.querySelectorAll('.task-card').forEach(card => {
+    const inpAll = [...card.querySelectorAll('.inp')];
+    const extras = inpAll.filter(i => !i.classList.contains('f-vol') && !i.classList.contains('f-min') && !i.classList.contains('f-per') && !i.classList.contains('task-name'));
+    const txas = [...card.querySelectorAll('textarea')];
+    const sels = [...card.querySelectorAll('select')];
+    const imp = parseFloat(card.querySelector('.f-impacto')?.value) || null;
+    const cer = parseFloat(card.querySelector('.f-costerr')?.value) || null;
+    const fac = parseFloat(card.querySelector('.f-fact')?.value) || null;
+    const score = (imp && cer && fac) ? parseFloat((((imp*0.6)+(cer*0.4))*(fac/5)).toFixed(2)) : null;
+    tasks.push({
+      nombre: card.querySelector('.task-name')?.value || '',
+      flujo: sels[0]?.value || '',
+      etapa_flujo_central: card.querySelector('.f-etapa-flujo')?.value || '',
+      tipo_flujo: card.querySelector('input[name^="tipoflujo"]:checked')?.value || 'Central',
+      vol: card.querySelector('.f-vol')?.value || '',
+      min: card.querySelector('.f-min')?.value || '',
+      per: card.querySelector('.f-per')?.value || '',
+      horas_org_mes: parseFloat(card.querySelector('.f-horas')?.textContent) || 0,
+      fuente_dato: card.querySelector('input[name^="fuente"]:checked')?.value || 'Autorreporte',
+      excepciones: txas[0]?.value || '',
+      criterios: txas[1]?.value || '',
+      shadow_it: card.querySelector('.f-shadow')?.value || '',
+      tarea_precedente: card.querySelector('.f-prev')?.value || '',
+      tarea_siguiente: card.querySelector('.f-next')?.value || '',
+      tiempo_espera: card.querySelector('.f-wait')?.value || '',
+      estacionalidad: card.querySelector('input[name^="estac"]:checked')?.value || 'No',
+      estacionalidad_detalle: card.querySelector('.estac-det')?.value || '',
+      impacto: imp,
+      costo_error_nivel: cer,
+      factibilidad: fac,
+      score,
+      camino_critico: card.querySelector('.f-critico')?.value || '',
+      notas: txas[txas.length - 1]?.value || '',
+      verificada: card.querySelector('.ver-btn')?.classList.contains('on') || false,
+      nueva: card.querySelector('.brief-band')?.textContent?.includes('Descubierta') || false
+    });
+  });
+
+  const hInps = [...document.querySelectorAll('.hdr-inp')];
+  const gv = id => document.getElementById(id)?.value || '';
+
+  // Team rows
+  const equipo = [];
+  document.querySelectorAll('#team-list .team-row').forEach(row => {
+    const ri = [...row.querySelectorAll('input,select')];
+    equipo.push({ nombre: ri[0]?.value, cargo: ri[1]?.value, antiguedad: ri[2]?.value, estado: ri[3]?.value });
+  });
+
+  // Grab textarea values from sections by their relative position
+  const allSecs = [...document.querySelectorAll('.sec')];
+  const s3Txas = allSecs[2] ? [...allSecs[2].querySelectorAll('textarea')] : [];
+  const s5Txas = allSecs[4] ? [...allSecs[4].querySelectorAll('textarea')] : [];
+
+  return {
+    _meta: { ts: new Date().toISOString(), v: '1.0' },
+    sesion: {
+      empresa: gv('hdr-empresa'),
+      entrevistado: hInps[1]?.value || '',
+      cargo: hInps[2]?.value || '',
+      asesor: hInps[3]?.value || '',
+      tipo: document.body.classList.contains('ger-mode') ? 'con_personal' : 'sin_personal',
+      duracion_seg: timerSec
+    },
+    tareas: tasks,
+    equipo,
+    dependencias: {
+      aguas_arriba: s3Txas[0]?.value || '',
+      aguas_abajo: s3Txas[1]?.value || '',
+      cuello: s3Txas[2]?.value || '',
+      conocimiento: s3Txas[3]?.value || '',
+      cita_clave: s3Txas[4]?.value || ''
+    },
+    economico: {
+      nomina_mes: gv('eco-nomina'),
+      personas: gv('eco-personas'),
+      costo_error: gv('eco-costo-err'),
+      frec_error: gv('eco-frec-err'),
+      palanca: document.querySelector('input[name=palanca]:checked')?.closest('.palanca-opt')?.querySelector('strong')?.textContent || '',
+      materializable: document.querySelector('input[name=materializable]:checked')?.value || ''
+    },
+    cierre: {
+      oportunidades: s5Txas[0]?.value || '',
+      next_steps: s5Txas[1]?.value || '',
+      adopcion: [...document.querySelectorAll('.sec:last-of-type select')][0]?.value || '',
+      aliado: [...document.querySelectorAll('.sec:last-of-type .inp')][0]?.value || '',
+      calidad: [...document.querySelectorAll('.sec:last-of-type select')][1]?.value || '',
+      notas: s5Txas[s5Txas.length - 1]?.value || ''
+    }
+  };
+}
+
+function saveToStorage() {
+  try {
+    localStorage.setItem('cedula_draft', JSON.stringify(collectFormData()));
+    setSaveStatus('saved');
+  } catch(e) { console.warn('Error al guardar:', e); }
+}
+
+function populateCard(card, d) {
+  if (!d || !card) return;
+  const tn = card.querySelector('.task-name');
+  if (tn && d.nombre) { tn.value = d.nombre; const p = card.querySelector('.tprev'); if (p) p.textContent = d.nombre; }
+  const sels = [...card.querySelectorAll('select')];
+  if (d.flujo && sels[0]) sels[0].value = d.flujo;
+  if (d.etapa_flujo_central) { const el = card.querySelector('.f-etapa-flujo'); if (el) el.value = d.etapa_flujo_central; }
+  if (d.tipo_flujo) { const r = card.querySelector(`input[name^="tipoflujo"][value="${d.tipo_flujo}"]`); if (r) r.checked = true; }
+  if (d.vol) { const el = card.querySelector('.f-vol'); if(el) el.value = d.vol; }
+  if (d.min) { const el = card.querySelector('.f-min'); if(el) el.value = d.min; }
+  if (d.per) { const el = card.querySelector('.f-per'); if(el) el.value = d.per; }
+  if (card.id) recalc(card.id);
+  if (d.fuente_dato) {
+    const r = card.querySelector(`input[type=radio][value="${d.fuente_dato}"]`);
+    if (r) { r.checked = true; r.dispatchEvent(new Event('change', {bubbles:true})); }
+  }
+  const setInp = (cls, val) => { if (val) { const el = card.querySelector(cls); if (el) el.value = val; } };
+  setInp('.f-shadow', d.shadow_it);
+  setInp('.f-prev', d.tarea_precedente);
+  setInp('.f-next', d.tarea_siguiente);
+  setInp('.f-wait', d.tiempo_espera);
+  setInp('.f-impacto', d.impacto);
+  setInp('.f-costerr', d.costo_error_nivel);
+  setInp('.f-fact', d.factibilidad);
+  if (d.camino_critico) { const el = card.querySelector('.f-critico'); if (el) el.value = d.camino_critico; }
+  if (d.estacionalidad === 'Sí') {
+    const r = card.querySelector('input[name^="estac"][value="Sí"]');
+    if (r) { r.checked = true; const det = card.querySelector('.estac-det'); if (det) { det.style.display='block'; if(d.estacionalidad_detalle) det.value = d.estacionalidad_detalle; } }
+  }
+  if (d.impacto && d.costo_error_nivel && d.factibilidad) calcScore(card);
+  const txas = [...card.querySelectorAll('textarea')];
+  if (d.excepciones && txas[0]) txas[0].value = d.excepciones;
+  if (d.criterios && txas[1]) txas[1].value = d.criterios;
+  if (d.notas && txas[txas.length-1]) txas[txas.length-1].value = d.notas;
+  if (d.verificada) {
+    const vb = card.querySelector('.ver-btn');
+    if (vb) { vb.classList.add('on'); vb.textContent = '✓ Verificada'; card.classList.add('verified'); card.classList.remove('reviewing'); }
+  }
+}
+
+function loadFromStorage() {
+  const raw = localStorage.getItem('cedula_draft');
+  if (!raw) return;
+  try {
+    const data = JSON.parse(raw);
+    const hInps = [...document.querySelectorAll('.hdr-inp')];
+    const sv = (id, v) => { const el = document.getElementById(id); if(el && v) el.value = v; };
+    sv('hdr-empresa', data.sesion?.empresa);
+    if (hInps[1] && data.sesion?.entrevistado) hInps[1].value = data.sesion.entrevistado;
+    if (hInps[2] && data.sesion?.cargo) hInps[2].value = data.sesion.cargo;
+    if (hInps[3] && data.sesion?.asesor) hInps[3].value = data.sesion.asesor;
+    if (data.sesion?.tipo === 'con_personal') {
+      document.body.classList.add('ger-mode');
+      const btns = [...document.querySelectorAll('.stype-btn')];
+      if (btns[0]) btns[0].classList.remove('on');
+      if (btns[1]) btns[1].classList.add('on');
+    }
+    if (data.sesion?.duracion_seg) timerSec = data.sesion.duracion_seg;
+
+    const staticCards = [...document.querySelectorAll('.task-card')];
+    (data.tareas || []).forEach((td, i) => {
+      if (i < staticCards.length) populateCard(staticCards[i], td);
+      else addTask(td);
+    });
+
+    sv('eco-nomina', data.economico?.nomina_mes);
+    sv('eco-personas', data.economico?.personas);
+    sv('eco-costo-err', data.economico?.costo_error);
+    sv('eco-frec-err', data.economico?.frec_error);
+    calcCostoHora(); calcPerdidaErr();
+
+    setSaveStatus('saved');
+    updateTotal(); updateTaskCount(); updateBotStat();
+  } catch(e) { console.warn('No se pudo restaurar sesión:', e); }
+}
+
+function exportJSON() {
+  const data = collectFormData();
+  const empresa = (data.sesion?.empresa || 'diagnostico').replace(/\s+/g,'-').replace(/[^a-zA-Z0-9-]/g,'');
+  const fecha = new Date().toISOString().split('T')[0];
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `cedula_${empresa}_${fecha}.json`;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+function clearDraft() {
+  if (!confirm('¿Borrar el borrador guardado y comenzar desde cero? Esta acción no se puede deshacer.')) return;
+  localStorage.removeItem('cedula_draft');
+  location.reload();
+}
+
+/* ── Autosave event delegation ── */
+document.addEventListener('input', scheduleSave);
+document.addEventListener('change', scheduleSave);
+
+/* ── Team rows (gerente) ── */
+function addTeamRow() {
+  const div = document.createElement('div');
+  div.className = 'team-row';
+  div.style = 'display:grid;grid-template-columns:2fr 2fr 1.2fr 1.2fr auto;gap:8px;align-items:center;';
+  div.innerHTML = `
+    <input class="inp" type="text" placeholder="Nombre / iniciales">
+    <input class="inp" type="text" placeholder="Puesto / cargo">
+    <select class="sel"><option value="">Antigüedad</option><option>Menos de 1 año</option><option>1 a 3 años</option><option>Más de 3 años</option></select>
+    <select class="sel"><option value="">Cédula</option><option>Enviada y recibida</option><option>Enviada, sin respuesta</option><option>Pendiente enviar</option><option>Sesión ya agendada</option></select>
+    <button class="del" onclick="this.closest('.team-row').remove()">×</button>`;
+  document.getElementById('team-list').appendChild(div);
+}
+
+/* ── Init ── */
+loadFromStorage();
+updateTotal();
+updateTaskCount();
+</script>

@@ -917,18 +917,20 @@ const inputSt: React.CSSProperties = { width: '100%', background: 'var(--bg)', b
 
 // ── Tab Cubo & Entregables ─────────────────────────────────────────────────────
 const CUESTIONARIOS_SRC = [
-  { id: 'dg',       label: 'Cuestionario DG',              icon: '👤', path: '/flowdesk/diagnosticos/cuestionario-dg.html',       color: '#6c4de6' },
-  { id: 'gerente',  label: 'Cuestionario Gerentes/Dirs.',  icon: '🏢', path: '/flowdesk/diagnosticos/cuestionario-gerente.html',  color: '#3b82f6' },
-  { id: 'operador', label: 'Cuestionario Operadores',      icon: '⚙️', path: '/flowdesk/diagnosticos/cuestionario-operador.html', color: '#f59e0b' },
+  { id: 'dg',        label: 'Sesión DG',                   icon: '👤', path: '/flowdesk/diagnosticos/cuestionario-dg.html',        color: '#6c4de6' },
+  { id: 'director',  label: 'Sesión Directores',           icon: '🏛️', path: '/flowdesk/diagnosticos/sesion-director.html',        color: '#8b5cf6' },
+  { id: 'gerente',   label: 'Cuestionario Gerentes',       icon: '🏢', path: '/flowdesk/diagnosticos/cuestionario-gerente.html',   color: '#3b82f6' },
+  { id: 'operador',  label: 'Cuestionario Operadores',     icon: '⚙️', path: '/flowdesk/diagnosticos/cuestionario-operador.html',  color: '#f59e0b' },
+  { id: 'encuestas', label: 'Encuestas Diagnóstico',       icon: '📋', path: '/flowdesk/diagnosticos/encuestas-diagnostico.html',  color: '#10b981' },
 ] as const;
 
 const ENTREGABLES = [
-  { id: 'flujo_asis',    num: 1, titulo: 'Flujo AS-IS',                 desc: 'Swimlane de procesos actuales',           fuente: 'Áreas + Procesos + Brechas',        icon: '🗺️',  path: '/flowdesk/diagnosticos/flujo-asis.html'     },
-  { id: 'org_actual',   num: 2, titulo: 'Organigrama actual',           desc: 'Roles, tareas y herramientas por cargo',  fuente: 'Áreas + Roles + Herramientas',      icon: '👥',  path: '/flowdesk/diagnosticos/organigrama.html'   },
-  { id: 'flujo_tobe',   num: 3, titulo: 'Flujo TO-BE por fases',        desc: 'Procesos optimizados con IA',             fuente: 'Procesos + Agentes IA + Fases',     icon: '✨',  path: '/flowdesk/diagnosticos/flujo-tobe.html'    },
-  { id: 'org_nuevo',    num: 4, titulo: 'Organigrama nuevo + costo $',  desc: 'Ahorro de headcount con agentes',         fuente: 'Roles + Agentes IA + Headcount',    icon: '💰',  path: '/flowdesk/diagnosticos/org-nuevo.html'     },
-  { id: 'propuesta',    num: 5, titulo: 'Propuesta agentes IA',         desc: 'Descripción y ROI de cada agente',        fuente: 'Agentes IA + ROI',                  icon: '🤖',  path: '/flowdesk/diagnosticos/propuesta-agentes.html' },
-  { id: 'roadmap',      num: 6, titulo: 'Roadmap 24 meses',             desc: 'Fases e hitos de implementación',         fuente: 'Fases + Hitos + Entregables',       icon: '🚀',  path: '/flowdesk/diagnosticos/roadmap.html'        },
+  { id: 'flujo_asis',  num: 1, titulo: 'Mapa de Procesos AS-IS',      desc: 'Swimlane + tabla de procesos actuales',     fuente: 'Áreas + Procesos + Brechas',      icon: '🗺️',  path: '/flowdesk/diagnosticos/mapa-procesos.html'        },
+  { id: 'org_actual',  num: 2, titulo: 'Organigrama actual',           desc: 'Roles, tareas y herramientas por cargo',   fuente: 'Áreas + Roles + Herramientas',    icon: '👥',  path: '/flowdesk/diagnosticos/organigrama-actual.html'   },
+  { id: 'flujo_tobe',  num: 3, titulo: 'Flujo TO-BE por fases',        desc: 'Procesos optimizados con IA',              fuente: 'Procesos + Agentes IA + Fases',   icon: '✨',  path: '/flowdesk/diagnosticos/flujo-tobe.html'           },
+  { id: 'org_nuevo',   num: 4, titulo: 'Organigrama nuevo + costo $',  desc: 'Ahorro de headcount con agentes IA',       fuente: 'Roles + Agentes IA + Headcount',  icon: '💰',  path: '/flowdesk/diagnosticos/organigrama-nuevo.html'    },
+  { id: 'propuesta',   num: 5, titulo: 'Propuesta agentes IA',         desc: 'Descripción, ROI y especificaciones',      fuente: 'Agentes IA + Costos + ROI',       icon: '🤖',  path: '/flowdesk/diagnosticos/propuesta-agentes.html'    },
+  { id: 'roadmap',     num: 6, titulo: 'Roadmap 24 meses',             desc: 'Fases e hitos de implementación',          fuente: 'Fases + Hitos + Entregables',     icon: '🚀',  path: '/flowdesk/diagnosticos/roadmap-24m.html'          },
 ] as const;
 
 type CuboKey = 'contexto' | 'areas_procesos' | 'organigrama' | 'sistemas' | 'brechas' | 'agentes';
@@ -1015,6 +1017,203 @@ function TabCubo({ clienteId, empresa, sesiones }: { clienteId: string; empresa:
     localStorage.setItem(cuboKey, JSON.stringify(next));
   }
 
+  function loadDemo() {
+    if (!confirm('Cargar datos de demostración (Textiles Anáhuac). Esto sobreescribirá el cubo actual.')) return;
+    const demo: Record<CuboKey, string> = {
+      contexto: `Empresa: Textiles Anáhuac — División 2–7 (sede Puebla / CDMX)
+Giro: Manufactura textil — hilatura, tejido, índigo, acabado y distribución de telas
+Empleados: ~350 (7 divisiones operativas)
+Facturación estimada: $80–120M MXN anuales
+ERP principal: SAP (módulos SD, MM; PP parcial sin digitalizar)
+
+Objetivos del DG (próximos 12 meses):
+1. Reducir tiempo de respuesta de cotización de 4–8 hrs a <30 min
+2. Mejorar cumplimiento de programa de producción de ~80% a >95%
+3. Digitalizar control de calidad e inventario en planta
+4. Reducir cartera vencida >30 días en 35%
+
+Prioridades urgentes:
+— Comercialización: cotización manual pierde pedidos ante competencia
+— Planeación: programa semanal en Excel + reuniones S&OP de 3+ hrs
+— Cobranza: seguimiento manual a deudores, DSO ~52 días`,
+
+      areas_procesos: `COMERCIALIZACIÓN (División 2)
+Función: captación → cotización → confirmación OV → seguimiento post-venta
+Procesos clave:
+  • Cotización al cliente: Coord. Comercial, Excel, 4–8 hrs/cot., Bajo demanda
+  • Confirmación de pedido: SAP OV, Diario
+  • Seguimiento post-venta: WhatsApp/teléfono, Semanal
+Problemas: Cotización lenta sin visibilidad de disponibilidad de producción en SAP
+
+PLANEACIÓN & LOGÍSTICA (División 4a)
+Función: programación → verif. inventario → lib. programa → recepción APT
+Procesos clave:
+  • Programación semanal (Excel, 1 día completo de trabajo)
+  • Verificación inventario PT/MP en SAP
+  • Coord. plantas (WhatsApp/verbal, Diario)
+Problemas: 1 día/semana en Excel de programación, cambios urgentes frecuentes no planeados
+
+COMPRAS (División 3 CxP)
+Función: requisición → OC → recepción MP → pago proveedor
+Sistemas: SAP MM, Excel, Email
+Problemas: ~40% OC sin trazabilidad en Excel; cotizaciones a proveedores por correo manual
+
+PRODUCCIÓN (División 4b)
+Función: hilatura OE/anillo → tejido/índigo → acabado → empaque/etiquetado
+Sistemas: Físico (papel), Excel ocasional
+Problemas: Control diario de producción en papel, comunicación entre turnos por verbal
+
+CALIDAD (División 5)
+Función: inspección → liberación → No Conformidades
+Sistemas: Excel rudimentario, papel
+Problemas: NC en Word/Excel 45 min c/u, sin trazabilidad digital por lote
+
+EMBARQUES (División 6)
+Función: APT → embarque nacional/exportación
+Problemas: Liberación depende de notificación manual de Calidad
+
+FINANZAS / CxC (División 7)
+Función: cobranza → estado cuenta → pago → conciliación SAP
+Problemas: Cartera vencida gestionada 100% manual por teléfono, DSO ~52 días`,
+
+      organigrama: `DG · Director General · $120,000/mes · SAP, Excel, WhatsApp
+
+COMERCIALIZACIÓN — 7 personas
+  Dir. Comercial · $60,000/mes
+  3 Ejecutivos de Ventas · $18,000/mes c/u · Excel, WhatsApp, teléfono
+  2 Soporte Comercial · $12,000/mes c/u · SAP, Excel
+  1 Coord. Export. · $20,000/mes · Excel, SAP
+
+PLANEACIÓN & LOGÍSTICA — 5 personas
+  Dir. Planeación · $55,000/mes
+  2 Planeadores · $18,000/mes c/u · Excel, SAP
+  2 Almacenistas · $8,000/mes c/u · SAP parcial, papel
+
+COMPRAS — 4 personas
+  Gerente Compras · $40,000/mes
+  2 Compradores · $20,000/mes c/u · SAP MM, Excel, Email
+  1 Asistente CxP · $10,000/mes
+
+PRODUCCIÓN — ~280 personas
+  Dir. Producción · $65,000/mes
+  4 Jefes de Planta · $30,000/mes c/u · Físico, Excel ocasional
+  ~270 Operarios · $5,500–7,000/mes prom.
+
+CALIDAD — 8 personas
+  Gerente Calidad · $45,000/mes
+  5 Inspectores · $10,000/mes c/u · Excel, papel
+  2 Anal. Aseg. Calidad · $15,000/mes c/u
+
+EMBARQUES — 6 personas
+  Gerente Embarques · $38,000/mes
+  5 Operativos · $9,000/mes c/u
+
+FINANZAS / CxC — 5 personas
+  Dir. Finanzas · $70,000/mes
+  2 Analistas CxC · $15,000/mes c/u · SAP, teléfono
+  1 Tesorero · $25,000/mes
+  1 Asistente · $9,000/mes
+
+⚠️ DATO PENDIENTE: confirmar sueldos con RRHH (Dir. Talento)`,
+
+      sistemas: `SAP ERP (SD, MM; PP parcial) · ERP · ~$45,000/mes · 25 usuarios activos
+Microsoft 365 (Excel/Outlook) · Ofimática · $150/usuario/mes · ~40 usuarios = $6,000/mes
+WhatsApp Business (sin API) · Comunicación · $0 · Toda la empresa
+Gmail (cuentas adicionales) · Email · $0
+Papel + formatos físicos · Control calidad en planta · $0 · Sin trazabilidad
+
+BRECHAS DE SISTEMAS:
+— Sin WMS: inventario en Excel y papel → diferencia fís./SAP ~5%
+— Sin CRM: seguimiento comercial en WhatsApp y Excel sin histórico
+— Sin trazabilidad de lotes digital en Calidad
+— SAP PP no implementado completamente → Producción sin visibilidad en tiempo real
+— Sin API WhatsApp Business → mensajería masiva imposible actualmente`,
+
+      brechas: `BRECHA CRÍTICA 1 — Cotización manual en Excel
+Área: Comercialización
+Impacto: 4–8 hrs por cotización → clientes se van con la competencia si no responden ese día
+Costo estimado: 3 personas × 4 hrs × $200/hr × 22 días = $52,800/mes perdido
+Quick fix: Agente Comercial Digital que responde en <5 min
+
+BRECHA CRÍTICA 2 — Programación de producción 100% manual
+Área: Planeación
+Impacto: 1 día completo/semana para 2 planeadores, cumplimiento ~80%, cambios urgentes constantes
+Costo estimado: 2 planeadores × 8 hrs/semana × $225/hr = $3,600/sem de coordinación reactiva
+Quick fix: Agente S&OP que genera el programa automáticamente cada lunes
+
+BRECHA CRÍTICA 3 — Inventario fís. vs SAP diverge ~5%
+Área: Planeación & Almacén
+Impacto: OC duplicadas, paros de producción por faltantes, conciliaciones 8+ hrs/semana
+Costo estimado: Paros de planta + 2 almacenistas × 8 hrs/sem = $2,400/sem
+
+BRECHA IMPORTANTE 4 — Cobranza 100% manual
+Área: Finanzas/CxC
+Impacto: DSO ~52 días, cartera vencida >30 días ≈ 15% de cartera
+Costo: 2 personas × 40 hrs/semana de seguimiento manual
+
+BRECHA IMPORTANTE 5 — Control de calidad en papel
+Área: Calidad
+Impacto: Sin trazabilidad digital, NC tardan 45 min c/u en Word/Excel
+
+OBSERVACIONES DEL ASESOR:
+— SAP subutilizado: funciona como repositorio, no como cerebro operativo
+— Comunicación inter-depto ~80% WhatsApp/verbal → riesgo alto de errores no registrados
+— Resistencia esperada en producción (270 operarios): mayor reto es cultural, no tecnológico
+— DG tiene visión clara de transformación pero necesita ROI concreto para convencer a su consejo`,
+
+      agentes: `AGENTE 1 · Agente Comercial Digital
+Función: Atiende cotizaciones y captura pedidos por WhatsApp Business 24/7
+Área: Comercialización — libera 3 personas en 60% del tiempo operativo
+Reemplaza: Cotización manual Excel (4–8 hrs → <5 min), captura OV en SAP, seguimiento tel.
+Ahorro: 450 hrs/mes × $200/hr = $90,000 MXN/mes
+Costo impl.: $20,000/mes · ROI neto: $70,000/mes
+Fase: Quick Win (Fase 1)
+
+AGENTE 2 · Bot de Cobranza
+Función: Monitorea cartera vencida en SAP, envía recordatorios WhatsApp/email, aplica pagos
+Área: Finanzas/CxC — libera 2 personas de 80% tiempo operativo
+Reemplaza: Llamadas manuales, estados de cuenta en Excel, aplicación manual de pagos
+Ahorro: DSO -10 días = $1.2M más liquidez + 80 hrs/mes × $200/hr = $16,000/mes
+Costo impl.: $5,500/mes · ROI neto: $10,500/mes + liquidez
+Fase: Quick Win (Fase 1)
+
+AGENTE 3 · Monitor de Almacén SAP
+Función: Digitaliza inventario en tiempo real con tablets + QR/barras en planta
+Área: Almacén — 4 personas eliminan conciliaciones (8 hrs → 0 hrs/semana)
+Reemplaza: Captura en papel, conciliaciones semanales, conteos físicos periódicos
+Ahorro: 32 hrs/sem × $150/hr = $19,200/mes + elimina diferencia fís/SAP
+Costo impl.: $7,000/mes · ROI neto: $12,200/mes
+Fase: Quick Win (Fase 1)
+
+AGENTE 4 · Planeación S&OP Automática
+Función: Genera programa semanal de producción automáticamente cada lunes a las 6am
+Área: Planeación — 2 planeadores recuperan 1 día/semana c/u
+Reemplaza: Excel de programación (1 día), reuniones S&OP 3+ hrs, actualizaciones urgentes
+Ahorro: 64 hrs/mes × $225/hr = $14,400/mes + cumplimiento programa de 80% a >95%
+Costo impl.: $14,000/mes · ROI neto: $400/mes + 15pts cumplimiento
+Fase: Expansión (Fase 2)
+
+AGENTE 5 · Agente de Compras
+Función: Genera OC automáticamente al detectar necesidades del programa de producción
+Área: Compras — 2 compradores liberan 50% del tiempo operativo
+Reemplaza: Cotizaciones manuales email, seguimiento OC en Excel, generación OC SAP
+Ahorro: 5–8% ahorro sobre precio spot + 80 hrs/mes administrativas
+Costo impl.: $12,000/mes
+Fase: Expansión (Fase 2)
+
+AGENTE 6 · Agente de Calidad
+Función: Inspección digital en tablet, NC automáticas con foto, predicción de fallo por lote
+Área: Calidad — 5 inspectores liberan 40% del tiempo en papelería
+Reemplaza: Registro manual papel, NC Word/Excel (45 min → <2 min), notificaciones manuales
+Ahorro: 5 × 16 hrs/mes × $150/hr = $12,000/mes + eliminación rechazos en cliente
+Costo impl.: $15,000/mes
+Fase: Expansión (Fase 2)`,
+    };
+    setCubo(demo);
+    localStorage.setItem(cuboKey, JSON.stringify(demo));
+    setOpenSection('contexto');
+  }
+
   function cycleStatus(id: string) {
     const order: Array<'borrador' | 'revision' | 'aprobado'> = ['borrador', 'revision', 'aprobado'];
     const cur = entStatus[id] ?? 'borrador';
@@ -1043,7 +1242,10 @@ function TabCubo({ clienteId, empresa, sesiones }: { clienteId: string; empresa:
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Cubo de información — {empresa}</div>
               <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>Fuente única para los 6 entregables. Edita durante la reunión de verificación.</div>
             </div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: pctCubo === 100 ? '#22c55e' : '#6c4de6' }}>{pctCubo}%</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button onClick={loadDemo} style={{ fontSize: 11, padding: '4px 10px', background: 'rgba(108,77,230,0.08)', border: '1px solid rgba(108,77,230,0.25)', borderRadius: 7, color: '#6c4de6', cursor: 'pointer', fontWeight: 600 }}>📥 Demo TAC</button>
+              <div style={{ fontSize: 22, fontWeight: 800, color: pctCubo === 100 ? '#22c55e' : '#6c4de6' }}>{pctCubo}%</div>
+            </div>
           </div>
           <div style={{ height: 5, background: 'var(--surface-2)', borderRadius: 99, overflow: 'hidden' }}>
             <div style={{ height: '100%', width: pctCubo + '%', background: 'linear-gradient(90deg,#6c4de6,#22c55e)', borderRadius: 99, transition: 'width 0.4s' }} />

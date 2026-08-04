@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sesión Estratégica Director — MentorIA Systems</title>
+<style>
+:root{
+  --bg:#0F0D1A;--sf:#1A1630;--sf2:#231E40;--sf3:#2D2855;
+  --acc:#6C4DE6;--acc-l:#9B7FF8;--acc-bg:rgba(108,77,230,.13);--acc-br:rgba(108,77,230,.32);
+  --ink:#F0EDF8;--ink2:#CCC8E4;--ink3:#9B95B8;--ink4:#6B6484;
+  --grn:#22C55E;--grn-bg:rgba(34,197,94,.10);--grn-br:rgba(34,197,94,.28);
+  --amb:#F59E0B;--amb-bg:rgba(245,158,11,.10);--amb-br:rgba(245,158,11,.28);
+  --red:#EF4444;--red-bg:rgba(239,68,68,.10);--red-br:rgba(239,68,68,.28);
+  --cyan:#22D3EE;--cyan-bg:rgba(34,211,238,.08);--cyan-br:rgba(34,211,238,.25);
+  --br:rgba(255,255,255,.07);--br2:rgba(255,255,255,.13);
+  --r:6px;--rm:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,sans-serif;font-size:13px;line-height:1.5;min-height:100vh;}
+
+/* ── Header ── */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--br2);gap:12px;flex-wrap:wrap;position:sticky;top:0;background:var(--bg);z-index:50;}
+.logo{width:28px;height:28px;background:var(--acc);border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:12px;flex-shrink:0;}
+.hdr-title{font-size:15px;font-weight:800;letter-spacing:-.02em;}
+.hdr-sub{font-size:10px;color:var(--ink4);}
+.hdr-right{display:flex;gap:8px;align-items:center;}
+.btn{padding:6px 14px;border-radius:var(--r);font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;border:1px solid;transition:all .12s;}
+.btn-pri{background:var(--acc);color:#fff;border-color:var(--acc);}
+.btn-pri:hover{opacity:.85;}
+.btn-sec{background:transparent;color:var(--ink3);border-color:var(--br2);}
+.btn-sec:hover{border-color:var(--acc-br);color:var(--acc-l);}
+.btn-grn{background:var(--grn-bg);color:var(--grn);border-color:var(--grn-br);}
+.btn-grn:hover{background:var(--grn);color:#fff;}
+.btn-sm{padding:4px 10px;font-size:11px;}
+.btn-danger{background:var(--red-bg);color:var(--red);border-color:var(--red-br);}
+
+/* ── Step nav ── */
+.step-nav{display:flex;align-items:center;padding:12px 20px;gap:0;overflow-x:auto;border-bottom:1px solid var(--br);}
+.step-item{display:flex;align-items:center;gap:0;flex-shrink:0;}
+.step-btn{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:99px;font-size:11px;font-weight:700;cursor:pointer;background:none;border:none;color:var(--ink4);transition:all .15s;white-space:nowrap;}
+.step-btn.active{background:var(--acc-bg);color:var(--acc-l);border:1px solid var(--acc-br);}
+.step-btn.done{color:var(--grn);}
+.step-btn:hover:not(.active){color:var(--ink2);}
+.step-num{width:18px;height:18px;border-radius:99px;background:var(--sf3);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0;}
+.step-btn.active .step-num{background:var(--acc);color:#fff;}
+.step-btn.done .step-num{background:var(--grn);color:#fff;}
+.step-arr{color:var(--ink4);padding:0 4px;font-size:10px;}
+
+/* ── Content ── */
+.content{padding:20px;max-width:960px;margin:0 auto;}
+.step-panel{display:none;}
+.step-panel.active{display:block;}
+
+/* ── Sections ── */
+.sec{margin-bottom:24px;}
+.sec-hdr{margin-bottom:10px;}
+.sec-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:var(--acc-l);}
+.sec-sub{font-size:11px;color:var(--ink4);margin-top:2px;}
+
+/* ── Script box ── */
+.script-box{background:var(--sf2);border:1px solid var(--acc-br);border-left:3px solid var(--acc);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;}
+.script-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--acc-l);margin-bottom:4px;}
+.script-q{font-size:12.5px;color:var(--ink2);font-style:italic;line-height:1.5;}
+
+/* ── Inputs ── */
+.field{display:flex;flex-direction:column;gap:4px;}
+.lbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--ink4);}
+.inp{background:var(--sf2);border:1px solid var(--br2);border-radius:var(--r);padding:7px 10px;font-size:12.5px;color:var(--ink2);font-family:inherit;outline:none;width:100%;}
+.inp:focus{border-color:var(--acc-br);color:var(--ink);}
+.inp::placeholder{color:var(--ink4);}
+.ta{resize:vertical;min-height:80px;line-height:1.6;}
+.sel{background:var(--sf2);border:1px solid var(--br2);border-radius:var(--r);padding:7px 10px;font-size:12px;color:var(--ink3);font-family:inherit;outline:none;width:100%;}
+.sel:focus{border-color:var(--acc-br);}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+
+/* ── Radio group ── */
+.radio-group{display:flex;gap:8px;flex-wrap:wrap;}
+.radio-opt{display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--sf2);border:1px solid var(--br2);border-radius:99px;cursor:pointer;transition:all .12s;font-size:11.5px;color:var(--ink3);}
+.radio-opt input{accent-color:var(--acc);}
+.radio-opt:has(input:checked){background:var(--acc-bg);border-color:var(--acc-br);color:var(--acc-l);}
+
+/* ── Pipeline (Flujo Central) ── */
+.pipeline-wrap{overflow-x:auto;padding:4px 0 12px;}
+.pipeline{display:flex;align-items:flex-start;gap:0;min-width:max-content;}
+.stage-card{width:175px;flex-shrink:0;background:var(--sf2);border:1px solid var(--br2);border-radius:var(--rm);padding:10px;position:relative;transition:border-color .15s;}
+.stage-card:hover{border-color:var(--acc-br);}
+.stage-badge{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;background:var(--acc);border-radius:99px;font-size:9px;font-weight:800;color:#fff;margin-bottom:7px;}
+.stage-inp{background:var(--sf3);border:1px solid var(--br2);border-radius:4px;padding:5px 7px;font-size:11.5px;color:var(--ink2);font-family:inherit;outline:none;width:100%;margin-bottom:5px;}
+.stage-inp:focus{border-color:var(--acc-br);}
+.stage-inp.stage-name{font-weight:700;font-size:12.5px;}
+.stage-lbl{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);margin-bottom:2px;margin-top:5px;}
+.stage-del{position:absolute;top:6px;right:6px;background:none;border:none;color:var(--ink4);font-size:14px;cursor:pointer;padding:2px 4px;border-radius:3px;}
+.stage-del:hover{color:var(--red);background:var(--red-bg);}
+.pipe-arrow{display:flex;align-items:center;justify-content:center;width:32px;flex-shrink:0;color:var(--ink4);font-size:16px;padding-top:12px;}
+.add-stage-btn{width:130px;flex-shrink:0;border:1.5px dashed var(--br2);border-radius:var(--rm);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:16px 10px;cursor:pointer;color:var(--ink4);background:none;font-family:inherit;transition:all .15s;min-height:100px;}
+.add-stage-btn:hover{border-color:var(--acc-br);color:var(--acc-l);}
+
+/* ── Secondary flows table ── */
+.flow-table{width:100%;border-collapse:collapse;font-size:12px;}
+.flow-table th{padding:6px 10px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);border-bottom:1px solid var(--br2);text-align:left;white-space:nowrap;}
+.flow-table td{padding:4px 6px;border-bottom:1px solid var(--br);}
+.flow-table tr:last-child td{border-bottom:none;}
+.td-inp{background:var(--sf3);border:1px solid var(--br2);border-radius:4px;padding:4px 7px;font-size:11.5px;color:var(--ink2);font-family:inherit;outline:none;width:100%;}
+.td-inp:focus{border-color:var(--acc-br);}
+.td-sel{background:var(--sf3);border:1px solid var(--br2);border-radius:4px;padding:4px 6px;font-size:11px;color:var(--ink3);font-family:inherit;outline:none;width:100%;}
+.td-del{background:none;border:none;color:var(--ink4);cursor:pointer;font-size:14px;padding:2px 5px;}
+.td-del:hover{color:var(--red);}
+
+/* ── Transversal checkboxes ── */
+.trans-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;}
+.trans-card{background:var(--sf2);border:1px solid var(--br2);border-radius:var(--r);padding:8px 10px;cursor:pointer;transition:all .12s;}
+.trans-card.selected{background:var(--sf3);border-color:var(--acc-br);}
+.trans-card-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.trans-check{width:15px;height:15px;accent-color:var(--acc);}
+.trans-name{font-size:12px;font-weight:700;color:var(--ink2);}
+.trans-inp{background:var(--sf3);border:1px solid var(--br2);border-radius:4px;padding:4px 7px;font-size:11px;color:var(--ink3);font-family:inherit;outline:none;width:100%;display:none;}
+.trans-card.selected .trans-inp{display:block;}
+
+/* ── Friction ── */
+.friction-q{background:var(--sf2);border-left:3px solid var(--amb);border-radius:var(--r);padding:10px 13px;margin-bottom:8px;}
+.friction-q-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amb);margin-bottom:4px;}
+.friction-q-text{font-size:12px;color:var(--ink2);font-style:italic;margin-bottom:6px;}
+
+.friction-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;font-size:9.5px;font-weight:700;}
+.fc-manual{background:var(--acc-bg);border:1px solid var(--acc-br);color:var(--acc-l);}
+.fc-cabeza{background:var(--cyan-bg);border:1px solid var(--cyan-br);color:var(--cyan);}
+.fc-cuello{background:var(--red-bg);border:1px solid var(--red-br);color:var(--red);}
+.fc-retrab{background:var(--amb-bg);border:1px solid var(--amb-br);color:var(--amb);}
+.fc-dep{background:var(--sf3);border:1px solid var(--br2);color:var(--ink3);}
+
+/* ── Team table ── */
+.team-row{display:grid;grid-template-columns:1fr 1fr 1.5fr 1fr 80px 100px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--br);}
+.team-row.hdr-row{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);padding-bottom:6px;}
+.send-btn{padding:4px 8px;border-radius:4px;font-size:10px;font-weight:700;background:var(--grn-bg);color:var(--grn);border:1px solid var(--grn-br);cursor:pointer;font-family:inherit;white-space:nowrap;}
+.send-btn:hover{background:var(--grn);color:#fff;}
+.send-btn.sent{background:var(--sf3);color:var(--ink4);border-color:var(--br);cursor:default;}
+
+/* ── Mermaid output ── */
+.mermaid-wrap{background:var(--sf2);border:1px solid var(--br2);border-radius:var(--rm);padding:16px;overflow-x:auto;}
+.mermaid-code{font-family:monospace;font-size:11px;color:var(--ink3);white-space:pre;line-height:1.6;}
+.output-preview{background:#fff;border-radius:var(--rm);padding:16px;margin-top:10px;overflow-x:auto;}
+
+/* ── Friction flag on stage ── */
+.stage-friction{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px;}
+.sf-dot{width:8px;height:8px;border-radius:99px;flex-shrink:0;}
+
+/* ── Bottom nav ── */
+.bottom-nav{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-top:1px solid var(--br);position:sticky;bottom:0;background:var(--bg);}
+.step-progress{font-size:10.5px;color:var(--ink4);}
+.step-progress strong{color:var(--ink2);}
+
+/* ── Misc ── */
+.hint{font-size:10.5px;color:var(--ink4);margin-top:2px;line-height:1.5;}
+.chip{display:inline-block;padding:2px 8px;border-radius:99px;font-size:9.5px;font-weight:700;}
+.divider{height:1px;background:var(--br2);margin:16px 0;}
+.saved-badge{font-size:10px;color:var(--grn);opacity:0;transition:opacity .3s;}
+.saved-badge.show{opacity:1;}
+
+/* modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--sf);border:1px solid var(--br2);border-radius:var(--rm);padding:20px;width:680px;max-width:95vw;max-height:85vh;overflow-y:auto;}
+.modal h3{font-size:13px;font-weight:800;margin-bottom:12px;color:var(--ink);}
+pre.mermaid{background:#fff;padding:16px;border-radius:var(--r);}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div style="display:flex;align-items:center;gap:9px;">
+    <div class="logo">M</div>
+    <div>
+      <div class="hdr-title">Sesión Estratégica Director</div>
+      <div class="hdr-sub">Levantamiento de flujos · MentorIA Systems</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <span class="saved-badge" id="saved-badge">✓ Guardado</span>
+    <button class="btn btn-sec btn-sm" onclick="exportJSON()">⬇ Exportar JSON</button>
+    <button class="btn btn-sec btn-sm" onclick="openMermaid()">🔗 Ver diagrama</button>
+  </div>
+</div>
+
+<!-- STEP NAV -->
+<div class="step-nav">
+  <div class="step-item">
+    <button class="step-btn active" onclick="goStep(1)" id="sn1">
+      <span class="step-num">1</span> Datos y contexto
+    </button>
+    <span class="step-arr">›</span>
+  </div>
+  <div class="step-item">
+    <button class="step-btn" onclick="goStep(2)" id="sn2">
+      <span class="step-num">2</span> Flujo central
+    </button>
+    <span class="step-arr">›</span>
+  </div>
+  <div class="step-item">
+    <button class="step-btn" onclick="goStep(3)" id="sn3">
+      <span class="step-num">3</span> Flujos de soporte
+    </button>
+    <span class="step-arr">›</span>
+  </div>
+  <div class="step-item">
+    <button class="step-btn" onclick="goStep(4)" id="sn4">
+      <span class="step-num">4</span> Fricción
+    </button>
+    <span class="step-arr">›</span>
+  </div>
+  <div class="step-item">
+    <button class="step-btn" onclick="goStep(5)" id="sn5">
+      <span class="step-num">5</span> Equipo y cascade
+    </button>
+    <span class="step-arr">›</span>
+  </div>
+  <div class="step-item">
+    <button class="step-btn" onclick="goStep(6)" id="sn6">
+      <span class="step-num">6</span> Mapa y exportar
+    </button>
+  </div>
+</div>
+
+<!-- ══════ STEP 1: DATOS Y CONTEXTO ══════ -->
+<div class="step-panel active content" id="step1">
+  <div class="sec">
+    <div class="sec-hdr"><div class="sec-title">Datos del director</div></div>
+    <div class="grid3" style="margin-bottom:10px;">
+      <div class="field"><label class="lbl">Nombre completo</label><input class="inp" id="dir-nombre" placeholder="Ej. Guillermo Morett" oninput="save()"></div>
+      <div class="field"><label class="lbl">Cargo</label><input class="inp" id="dir-cargo" placeholder="Ej. Director General" oninput="save()"></div>
+      <div class="field"><label class="lbl">Correo electrónico</label><input class="inp" id="dir-email" type="email" placeholder="director@empresa.com" oninput="save()"></div>
+    </div>
+    <div class="grid4">
+      <div class="field"><label class="lbl">Empresa</label><input class="inp" id="emp-nombre" placeholder="Nombre comercial" oninput="save()"></div>
+      <div class="field"><label class="lbl">Sector</label><input class="inp" id="emp-sector" placeholder="Ej. Textil, Alimentos…" oninput="save()"></div>
+      <div class="field"><label class="lbl">Empleados aprox.</label><input class="inp" id="emp-size" type="number" placeholder="700" oninput="save()"></div>
+      <div class="field"><label class="lbl">Fecha de la sesión</label><input class="inp" id="ses-fecha" type="date" oninput="save()"></div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sec">
+    <div class="sec-hdr">
+      <div class="sec-title">Contexto operativo</div>
+      <div class="sec-sub">Define la estructura del flujo central antes de dibujarlo</div>
+    </div>
+
+    <div class="script-box" style="margin-bottom:14px;">
+      <div class="script-label">Pregunta 2 — Modelo de operación</div>
+      <div class="script-q">"¿Fabrican / trabajan contra pedido del cliente, o tienen inventario listo para vender?"</div>
+    </div>
+
+    <div class="field" style="margin-bottom:14px;">
+      <label class="lbl">Modelo de producción / servicio</label>
+      <div class="radio-group">
+        <label class="radio-opt"><input type="radio" name="tipo-prod" value="pedido" checked oninput="save()"><span>Contra pedido</span></label>
+        <label class="radio-opt"><input type="radio" name="tipo-prod" value="inventario" oninput="save()"><span>Contra inventario</span></label>
+        <label class="radio-opt"><input type="radio" name="tipo-prod" value="mixto" oninput="save()"><span>Mixto</span></label>
+        <label class="radio-opt"><input type="radio" name="tipo-prod" value="servicio" oninput="save()"><span>Servicio recurrente</span></label>
+      </div>
+      <div class="hint">Esto determina si el flujo central empieza con "Pedido → Producción" o con "Mercadeo → Venta → Entrega inmediata"</div>
+    </div>
+
+    <div class="field">
+      <label class="lbl">Notas de contexto</label>
+      <textarea class="inp ta" id="ctx-notas" rows="3" placeholder="Temporadas, clientes principales, particularidades del negocio…" oninput="save()"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ STEP 2: FLUJO CENTRAL ══════ -->
+<div class="step-panel content" id="step2">
+  <div class="sec">
+    <div class="sec-hdr">
+      <div class="sec-title">Narrativa del cliente típico</div>
+      <div class="sec-sub">Deja que el director hable sin interrumpir — registra sus palabras</div>
+    </div>
+    <div class="script-box">
+      <div class="script-label">Pregunta 1 — Narrativa (abrir la sesión con esta pregunta)</div>
+      <div class="script-q">"Cuéntame la vida de un pedido o cliente típico, de principio a fin. Desde que aparece hasta que se va."</div>
+    </div>
+    <div class="field">
+      <textarea class="inp ta" id="narrativa" rows="6" placeholder="Registra aquí lo que dice el director, en sus propias palabras…" oninput="save()"></textarea>
+    </div>
+    <div class="hint" style="margin-top:4px;">
+      Mientras habla, identifica mentalmente: ¿cuándo aparece el cliente? ¿cuándo se hace el primer compromiso? ¿cuándo se produce o entrega? ¿cuándo se cobra?
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sec">
+    <div class="sec-hdr" style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div class="sec-title">Flujo central — cadena de valor</div>
+        <div class="sec-sub">Convierte la narrativa en 4–6 etapas. Usa el lenguaje del cliente, no términos genéricos.</div>
+      </div>
+      <button class="btn btn-sec btn-sm" onclick="addStage()">+ Etapa</button>
+    </div>
+    <div class="hint" style="margin-bottom:10px;">
+      <strong>Prueba de pertenencia:</strong> ¿Si esta etapa se detiene, se detiene la facturación? Si sí → es central.
+    </div>
+    <div class="pipeline-wrap">
+      <div class="pipeline" id="pipeline"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ STEP 3: FLUJOS DE SOPORTE ══════ -->
+<div class="step-panel content" id="step3">
+
+  <div class="sec">
+    <div class="sec-hdr" style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div class="sec-title">Flujos secundarios</div>
+        <div class="sec-sub">Lo que cada etapa central necesita para funcionar — va etapa por etapa</div>
+      </div>
+      <button class="btn btn-sec btn-sm" onclick="addSecundario()">+ Flujo</button>
+    </div>
+    <div class="script-box">
+      <div class="script-label">Pregunta por cada etapa del flujo central</div>
+      <div class="script-q">"¿Qué necesita [etapa X] para arrancar? ¿Qué tiene que estar listo antes?" · "¿Dónde vive esa información hoy?"</div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="flow-table">
+        <thead>
+          <tr>
+            <th>Flujo secundario</th>
+            <th>Soporta a la etapa</th>
+            <th>Responsable</th>
+            <th>Herramienta actual</th>
+            <th>Frecuencia</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="sec-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sec">
+    <div class="sec-hdr">
+      <div class="sec-title">Flujos transversales</div>
+      <div class="sec-sub">Sostienen toda la operación — no pertenecen a una etapa específica</div>
+    </div>
+    <div class="script-box">
+      <div class="script-label">Pregunta de descubrimiento</div>
+      <div class="script-q">"¿Qué procesos te ayudan a operar todo lo demás pero no venden ni producen directamente?"</div>
+    </div>
+    <div class="trans-grid" id="trans-grid"></div>
+  </div>
+</div>
+
+<!-- ══════ STEP 4: FRICCIÓN ══════ -->
+<div class="step-panel content" id="step4">
+  <div class="sec">
+    <div class="sec-hdr"><div class="sec-title">Preguntas de fricción</div><div class="sec-sub">Estas 4 preguntas revelan dónde están las oportunidades de automatización</div></div>
+
+    <div class="friction-q">
+      <div class="friction-q-label">P4 · Cuello de botella</div>
+      <div class="friction-q-text">"¿Qué etapa detiene a las demás con más frecuencia? ¿Por qué?"</div>
+      <textarea class="inp ta" id="fq-cuello" rows="2" placeholder="Respuesta del director…" oninput="save()"></textarea>
+    </div>
+    <div class="friction-q">
+      <div class="friction-q-label">P5 · Dependencia crítica</div>
+      <div class="friction-q-text">"¿Qué haces tú personalmente que nadie más puede hacer hoy?"</div>
+      <textarea class="inp ta" id="fq-dep" rows="2" placeholder="Respuesta del director…" oninput="save()"></textarea>
+    </div>
+    <div class="friction-q">
+      <div class="friction-q-label">P6 · Conocimiento tácito</div>
+      <div class="friction-q-text">"Si mañana faltara una persona clave de tu equipo, ¿qué se detiene?"</div>
+      <textarea class="inp ta" id="fq-clave" rows="2" placeholder="Respuesta del director…" oninput="save()"></textarea>
+    </div>
+    <div class="friction-q">
+      <div class="friction-q-label">P3 · Shadow IT</div>
+      <div class="friction-q-text">"¿Dónde vive la información de cada etapa hoy? ¿Hay procesos que corren en WhatsApp personal, Excel o en la cabeza de alguien en lugar del sistema?"</div>
+      <textarea class="inp ta" id="fq-shadow" rows="2" placeholder="Respuesta del director…" oninput="save()"></textarea>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sec">
+    <div class="sec-hdr" style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div class="sec-title">Puntos de fricción identificados</div>
+        <div class="sec-sub">Registra uno por uno — serán las oportunidades en la Cédula</div>
+      </div>
+      <button class="btn btn-sec btn-sm" onclick="addFriccion()">+ Fricción</button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="flow-table">
+        <thead>
+          <tr>
+            <th>Etapa del flujo</th>
+            <th>Tipo</th>
+            <th>Descripción de la fricción</th>
+            <th>Impacto en el negocio</th>
+            <th>Oportunidad IA</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="fric-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ STEP 5: EQUIPO Y CASCADE ══════ -->
+<div class="step-panel content" id="step5">
+  <div class="sec">
+    <div class="sec-hdr">
+      <div class="sec-title">Equipo gerencial y cascade de encuestas</div>
+      <div class="sec-sub">Captura los emails del equipo que depende del director — se envían encuestas automáticamente</div>
+    </div>
+    <div class="script-box">
+      <div class="script-label">Pregunta de mapeo de equipo</div>
+      <div class="script-q">"¿Quiénes son los gerentes o líderes de área que dependen de ti directamente? Dame su nombre, cargo y correo para poder enviarles el cuestionario de diagnóstico."</div>
+    </div>
+
+    <div class="team-row hdr-row">
+      <span>Nombre</span><span>Cargo / Área</span><span>Correo</span><span>Etapa del flujo</span><span>N° operadores</span><span>Encuesta</span>
+    </div>
+    <div id="team-rows"></div>
+    <button class="btn btn-sec btn-sm" style="margin-top:10px;" onclick="addTeamMember()">+ Agregar gerente</button>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sec">
+    <div class="sec-hdr"><div class="sec-title">Notas de estructura organizacional</div></div>
+    <textarea class="inp ta" id="org-notas" rows="4" placeholder="Observaciones sobre la estructura, quién reporta a quién, áreas que comparten personal, etc." oninput="save()"></textarea>
+  </div>
+</div>
+
+<!-- ══════ STEP 6: MAPA Y EXPORTAR ══════ -->
+<div class="step-panel content" id="step6">
+  <div class="sec">
+    <div class="sec-hdr"><div class="sec-title">Mapa de flujos generado</div><div class="sec-sub">Generado automáticamente desde los datos capturados</div></div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button class="btn btn-pri btn-sm" onclick="renderMermaidInline()">↺ Actualizar mapa</button>
+      <button class="btn btn-sec btn-sm" onclick="copyMermaid()">📋 Copiar Mermaid</button>
+      <button class="btn btn-grn btn-sm" onclick="exportJSON()">⬇ Exportar JSON completo</button>
+    </div>
+    <div class="mermaid-wrap" id="mermaid-output-wrap">
+      <div style="font-size:11px;color:var(--ink4);margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;">Mermaid — copia y pega en /generar-bpmn</div>
+      <div class="mermaid-code" id="mermaid-code-display"></div>
+    </div>
+    <div style="margin-top:12px;" id="mermaid-preview-area">
+      <div style="font-size:10px;color:var(--ink4);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;">Vista previa del diagrama</div>
+      <div style="background:#fff;border-radius:var(--rm);padding:16px;overflow-x:auto;" id="mermaid-preview"></div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sec">
+    <div class="sec-hdr"><div class="sec-title">Resumen de la sesión</div></div>
+    <div id="resumen-sesion" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;"></div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button class="btn btn-sec" id="btn-prev" onclick="prevStep()" style="visibility:hidden;">← Anterior</button>
+  <span class="step-progress">Paso <strong id="step-current">1</strong> de 6</span>
+  <button class="btn btn-pri" id="btn-next" onclick="nextStep()">Siguiente →</button>
+</div>
+
+<!-- Mermaid modal -->
+<div class="modal-bg" id="mermaid-modal">
+  <div class="modal">
+    <h3>🔗 Diagrama de flujos</h3>
+    <div id="modal-mermaid-preview"></div>
+    <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:8px;">
+      <button class="btn btn-sec btn-sm" onclick="copyMermaid()">📋 Copiar Mermaid</button>
+      <button class="btn btn-sec btn-sm" onclick="document.getElementById('mermaid-modal').classList.remove('open')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ─── STATE ─── */
+let currentStep = 1;
+let stageCounter = 1;
+let secCounter = 1;
+let fricCounter = 1;
+let teamCounter = 1;
+
+let STAGES = [
+  {id:'e1', nombre:'Pedido / Cotización', responsable:'Dir. Comercial', herramienta:'WhatsApp + Excel', entregable:'Cotización aprobada'},
+  {id:'e2', nombre:'Planeación', responsable:'Dir. Operaciones', herramienta:'ERP / correo', entregable:'Orden de producción'},
+  {id:'e3', nombre:'Producción', responsable:'Ger. Producción', herramienta:'ERP + papel', entregable:'Lote terminado'},
+  {id:'e4', nombre:'Entrega y Cobranza', responsable:'Ger. Ventas / Admin', herramienta:'SAE + WhatsApp', entregable:'Factura cobrada'},
+];
+
+let SECUNDARIOS = [
+  {id:'s1', nombre:'Compras de materia prima', soporta:'e2', responsable:'Almacén', herramienta:'Excel / proveedor', frecuencia:'Semanal'},
+  {id:'s2', nombre:'Control de inventario', soporta:'e3', responsable:'Almacenista', herramienta:'BETA', frecuencia:'Diario'},
+  {id:'s3', nombre:'Lista de precios / catálogo', soporta:'e1', responsable:'Dir. Comercial', herramienta:'Excel', frecuencia:'Por temporada'},
+];
+
+let TRANSVERSALES = [
+  {id:'t1', nombre:'Contabilidad y finanzas', herramienta:'SAE / Contador externo', activo:true},
+  {id:'t2', nombre:'Nómina y RRHH', herramienta:'', activo:true},
+  {id:'t3', nombre:'TI / Sistemas', herramienta:'TEXPLUS ERP', activo:true},
+  {id:'t4', nombre:'Dirección general', herramienta:'', activo:true},
+  {id:'t5', nombre:'Mantenimiento', herramienta:'', activo:false},
+  {id:'t6', nombre:'Legal / Fiscal', herramienta:'', activo:false},
+];
+
+let FRICCIONES = [
+  {id:'f1', etapa:'e1', tipo:'cabeza', desc:'Cotizaciones dependen de que el director las apruebe personalmente', impacto:'Retraso de 1-2 días por pedido', oportunidad:'Agente que cotiza con reglas fijas'},
+  {id:'f2', etapa:'e3', tipo:'cuello', desc:'Producción para cuando falta un operador clave — el proceso no está documentado', impacto:'Paradas no planificadas', oportunidad:'SOP digital + alertas de producción'},
+];
+
+let TEAM = [
+  {id:'g1', nombre:'', cargo:'', email:'', etapa:'', n_ops:'', sent:false},
+];
+
+/* ─── STEP NAVIGATION ─── */
+function goStep(n){
+  document.getElementById('step'+currentStep)?.classList.remove('active');
+  document.getElementById('sn'+currentStep)?.classList.remove('active');
+  currentStep = n;
+  document.getElementById('step'+n)?.classList.add('active');
+  document.getElementById('sn'+n)?.classList.add('active');
+  document.getElementById('step-current').textContent = n;
+  document.getElementById('btn-prev').style.visibility = n===1?'hidden':'visible';
+  document.getElementById('btn-next').textContent = n===6 ? '✓ Sesión completada' : 'Siguiente →';
+  document.getElementById('btn-next').disabled = n===6;
+  if(n===6) renderMermaidInline();
+  window.scrollTo(0,0);
+}
+function nextStep(){ if(currentStep<6) goStep(currentStep+1); }
+function prevStep(){ if(currentStep>1) goStep(currentStep-1); }
+
+/* ─── PIPELINE RENDER ─── */
+function renderPipeline(){
+  const wrap = document.getElementById('pipeline');
+  if(!wrap) return;
+  let html = '';
+  STAGES.forEach((s,i)=>{
+    html += `<div class="stage-card" id="sc-${s.id}">
+      <div class="stage-badge">${i+1}</div>
+      <button class="stage-del" onclick="delStage('${s.id}')" title="Eliminar etapa">×</button>
+      <input class="stage-inp stage-name" placeholder="Nombre de la etapa" value="${s.nombre}"
+        oninput="updateStage('${s.id}','nombre',this.value)">
+      <div class="stage-lbl">Responsable</div>
+      <input class="stage-inp" placeholder="Cargo o persona" value="${s.responsable}"
+        oninput="updateStage('${s.id}','responsable',this.value)">
+      <div class="stage-lbl">Herramienta hoy</div>
+      <input class="stage-inp" placeholder="ERP, Excel, WhatsApp…" value="${s.herramienta}"
+        oninput="updateStage('${s.id}','herramienta',this.value)">
+      <div class="stage-lbl">Entregable</div>
+      <input class="stage-inp" placeholder="¿Qué produce esta etapa?" value="${s.entregable}"
+        oninput="updateStage('${s.id}','entregable',this.value)">
+    </div>`;
+    if(i < STAGES.length-1) html += `<div class="pipe-arrow">→</div>`;
+  });
+  html += `<div class="pipe-arrow" style="padding-top:30px;">›</div>
+  <button class="add-stage-btn" onclick="addStage()">
+    <span style="font-size:20px;opacity:.4;">+</span>
+    <span style="font-size:10px;font-weight:700;">Agregar etapa</span>
+  </button>`;
+  wrap.innerHTML = html;
+}
+
+function addStage(){
+  const id = 'e'+(++stageCounter+10);
+  STAGES.push({id, nombre:'', responsable:'', herramienta:'', entregable:''});
+  renderPipeline(); save();
+}
+function delStage(id){
+  if(STAGES.length<=1) return;
+  STAGES = STAGES.filter(s=>s.id!==id);
+  renderPipeline(); save();
+}
+function updateStage(id,field,val){
+  const s = STAGES.find(s=>s.id===id); if(s) s[field]=val; save();
+  renderSecBody(); renderFricBody(); // refresh dropdowns
+}
+
+/* ─── SECONDARY FLOWS ─── */
+function stageOptions(sel=''){
+  return STAGES.map(s=>`<option value="${s.id}"${s.id===sel?' selected':''}>${s.nombre||s.id}</option>`).join('');
+}
+
+function renderSecBody(){
+  const body = document.getElementById('sec-body'); if(!body) return;
+  body.innerHTML = SECUNDARIOS.map((s,i)=>`<tr>
+    <td><input class="td-inp" style="width:180px;" value="${s.nombre}" placeholder="Nombre del flujo" oninput="SECUNDARIOS[${i}].nombre=this.value;save()"></td>
+    <td>
+      <select class="td-sel" style="width:140px;" onchange="SECUNDARIOS[${i}].soporta=this.value;save()">
+        <option value="">— etapa —</option>${stageOptions(s.soporta)}
+      </select>
+    </td>
+    <td><input class="td-inp" style="width:120px;" value="${s.responsable}" placeholder="Responsable" oninput="SECUNDARIOS[${i}].responsable=this.value;save()"></td>
+    <td><input class="td-inp" style="width:140px;" value="${s.herramienta}" placeholder="Excel, ERP, papel…" oninput="SECUNDARIOS[${i}].herramienta=this.value;save()"></td>
+    <td>
+      <select class="td-sel" style="width:110px;" onchange="SECUNDARIOS[${i}].frecuencia=this.value;save()">
+        <option value="Por pedido"${s.frecuencia==='Por pedido'?' selected':''}>Por pedido</option>
+        <option value="Diario"${s.frecuencia==='Diario'?' selected':''}>Diario</option>
+        <option value="Semanal"${s.frecuencia==='Semanal'?' selected':''}>Semanal</option>
+        <option value="Mensual"${s.frecuencia==='Mensual'?' selected':''}>Mensual</option>
+        <option value="Por temporada"${s.frecuencia==='Por temporada'?' selected':''}>Por temporada</option>
+      </select>
+    </td>
+    <td><button class="td-del" onclick="delSecundario(${i})">×</button></td>
+  </tr>`).join('');
+}
+function addSecundario(){
+  SECUNDARIOS.push({id:'s'+(++secCounter+10), nombre:'', soporta:STAGES[0]?.id||'', responsable:'', herramienta:'', frecuencia:'Diario'});
+  renderSecBody(); save();
+}
+function delSecundario(i){ SECUNDARIOS.splice(i,1); renderSecBody(); save(); }
+
+/* ─── TRANSVERSALES ─── */
+function renderTransGrid(){
+  const g = document.getElementById('trans-grid'); if(!g) return;
+  g.innerHTML = TRANSVERSALES.map((t,i)=>`
+    <div class="trans-card${t.activo?' selected':''}" onclick="toggleTrans(${i})">
+      <div class="trans-card-top">
+        <input type="checkbox" class="trans-check" ${t.activo?'checked':''} onclick="event.stopPropagation();toggleTrans(${i})">
+        <span class="trans-name">${t.nombre}</span>
+      </div>
+      <input class="td-inp trans-inp" placeholder="Herramienta actual…" value="${t.herramienta}"
+        onclick="event.stopPropagation()" oninput="TRANSVERSALES[${i}].herramienta=this.value;save()">
+    </div>`).join('') +
+    `<div class="trans-card" style="border-style:dashed;cursor:pointer;" onclick="addTransversal()">
+      <div style="font-size:11px;color:var(--ink4);text-align:center;padding:8px;">+ Agregar flujo transversal</div>
+    </div>`;
+}
+function toggleTrans(i){ TRANSVERSALES[i].activo=!TRANSVERSALES[i].activo; renderTransGrid(); save(); }
+function addTransversal(){
+  const nombre = prompt('Nombre del flujo transversal:'); if(!nombre) return;
+  TRANSVERSALES.push({id:'t'+(TRANSVERSALES.length+10), nombre, herramienta:'', activo:true});
+  renderTransGrid(); save();
+}
+
+/* ─── FRICTION ─── */
+const TIPO_FRIC = {
+  manual:  {label:'Manual repetitivo', cls:'fc-manual'},
+  cabeza:  {label:'Info en la cabeza',  cls:'fc-cabeza'},
+  cuello:  {label:'Cuello de botella', cls:'fc-cuello'},
+  retrab:  {label:'Retrabajo',         cls:'fc-retrab'},
+  dep:     {label:'Dep. del dueño',    cls:'fc-dep'},
+};
+
+function renderFricBody(){
+  const body = document.getElementById('fric-body'); if(!body) return;
+  body.innerHTML = FRICCIONES.map((f,i)=>`<tr>
+    <td>
+      <select class="td-sel" style="width:130px;" onchange="FRICCIONES[${i}].etapa=this.value;save()">
+        <option value="">— etapa —</option>${stageOptions(f.etapa)}
+      </select>
+    </td>
+    <td>
+      <select class="td-sel" style="width:130px;" onchange="FRICCIONES[${i}].tipo=this.value;save()">
+        ${Object.entries(TIPO_FRIC).map(([k,v])=>`<option value="${k}"${k===f.tipo?' selected':''}>${v.label}</option>`).join('')}
+      </select>
+    </td>
+    <td><input class="td-inp" style="width:200px;" value="${f.desc}" placeholder="Descripción…" oninput="FRICCIONES[${i}].desc=this.value;save()"></td>
+    <td><input class="td-inp" style="width:160px;" value="${f.impacto}" placeholder="Impacto en el negocio…" oninput="FRICCIONES[${i}].impacto=this.value;save()"></td>
+    <td><input class="td-inp" style="width:180px;" value="${f.oportunidad}" placeholder="¿Qué podría hacer la IA aquí?" oninput="FRICCIONES[${i}].oportunidad=this.value;save()"></td>
+    <td><button class="td-del" onclick="delFriccion(${i})">×</button></td>
+  </tr>`).join('');
+}
+function addFriccion(){
+  FRICCIONES.push({id:'f'+(++fricCounter+10), etapa:STAGES[0]?.id||'', tipo:'manual', desc:'', impacto:'', oportunidad:''});
+  renderFricBody(); save();
+}
+function delFriccion(i){ FRICCIONES.splice(i,1); renderFricBody(); save(); }
+
+/* ─── TEAM ─── */
+function renderTeam(){
+  const wrap = document.getElementById('team-rows'); if(!wrap) return;
+  wrap.innerHTML = TEAM.map((m,i)=>`
+    <div class="team-row">
+      <input class="inp" style="font-size:11.5px;padding:5px 8px;" value="${m.nombre}" placeholder="Nombre" oninput="TEAM[${i}].nombre=this.value;save()">
+      <input class="inp" style="font-size:11.5px;padding:5px 8px;" value="${m.cargo}" placeholder="Cargo / Área" oninput="TEAM[${i}].cargo=this.value;save()">
+      <input class="inp" style="font-size:11.5px;padding:5px 8px;" type="email" value="${m.email}" placeholder="correo@empresa.com" oninput="TEAM[${i}].email=this.value;save()">
+      <select class="sel" style="font-size:11px;padding:5px 8px;" onchange="TEAM[${i}].etapa=this.value;save()">
+        <option value="">— etapa —</option>${stageOptions(m.etapa)}
+      </select>
+      <input class="inp" style="font-size:11.5px;padding:5px 8px;" type="number" value="${m.n_ops}" placeholder="N°" oninput="TEAM[${i}].n_ops=this.value;save()">
+      <div style="display:flex;gap:4px;">
+        <button class="send-btn${m.sent?' sent':''}" onclick="markSent(${i})">${m.sent?'✓ Enviada':'Enviar encuesta'}</button>
+        <button class="td-del" onclick="delTeam(${i})">×</button>
+      </div>
+    </div>`).join('');
+}
+function addTeamMember(){
+  TEAM.push({id:'g'+(++teamCounter+10), nombre:'', cargo:'', email:'', etapa:'', n_ops:'', sent:false});
+  renderTeam(); save();
+}
+function delTeam(i){ TEAM.splice(i,1); renderTeam(); save(); }
+function markSent(i){ TEAM[i].sent=true; renderTeam(); save(); }
+
+/* ─── MERMAID GENERATION ─── */
+function buildMermaid(){
+  const lines = ['flowchart TB',''];
+  // Central flow
+  lines.push('    subgraph central["🔵 Flujo Central — Cadena de Valor"]');
+  lines.push('        direction LR');
+  STAGES.forEach((s,i)=>{
+    const lbl = `${s.nombre||'Etapa '+(i+1)}<br/>${s.responsable||'—'}`;
+    const next = STAGES[i+1];
+    if(next) lines.push(`        ${s.id}["${lbl}"] --> ${next.id}["${next.nombre||'Etapa '+(i+2)}<br/>${next.responsable||'—'}"]`);
+    else if(i===0 && STAGES.length===1) lines.push(`        ${s.id}["${lbl}"]`);
+  });
+  lines.push('    end','');
+  // Secondary
+  SECUNDARIOS.forEach(s=>{
+    const label = `${s.nombre}<br/>${s.frecuencia}`;
+    if(s.soporta) lines.push(`    ${s.id}["${label}"] --> ${s.soporta}`);
+    else lines.push(`    ${s.id}["${label}"]`);
+  });
+  // Transversal
+  const activas = TRANSVERSALES.filter(t=>t.activo);
+  if(activas.length){
+    lines.push('');
+    lines.push('    subgraph trans["⚪ Flujos Transversales"]');
+    activas.forEach((t,i)=>{
+      const next = activas[i+1];
+      if(next) lines.push(`        ${t.id}["${t.nombre}"] ~~~ ${next.id}["${next.nombre}"]`);
+      else if(i===0) lines.push(`        ${t.id}["${t.nombre}"]`);
+    });
+    lines.push('    end');
+    lines.push('    trans -. sostiene toda la operación .-> central');
+  }
+  return lines.join('\n');
+}
+
+function renderMermaidInline(){
+  const code = buildMermaid();
+  const disp = document.getElementById('mermaid-code-display');
+  if(disp) disp.textContent = code;
+
+  const preview = document.getElementById('mermaid-preview');
+  if(preview){
+    preview.innerHTML = `<pre class="mermaid">${code}</pre>`;
+    if(window.mermaid) window.mermaid.init(undefined, preview.querySelectorAll('.mermaid'));
+  }
+
+  // Resumen
+  const res = document.getElementById('resumen-sesion');
+  if(res){
+    const cliente = document.getElementById('emp-nombre')?.value||'—';
+    const director = document.getElementById('dir-nombre')?.value||'—';
+    const totalOps = TEAM.reduce((s,m)=>s+(parseInt(m.n_ops)||0),0);
+    res.innerHTML = [
+      ['Empresa', cliente],['Director', director],
+      ['Etapas del flujo central', STAGES.length],
+      ['Flujos secundarios', SECUNDARIOS.length],
+      ['Flujos transversales', TRANSVERSALES.filter(t=>t.activo).length],
+      ['Puntos de fricción', FRICCIONES.length],
+      ['Gerentes mapeados', TEAM.filter(m=>m.nombre).length],
+      ['Operadores estimados', totalOps],
+    ].map(([k,v])=>`<div style="background:var(--sf2);border:1px solid var(--br);border-radius:var(--r);padding:10px 12px;">
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);margin-bottom:3px;">${k}</div>
+      <div style="font-size:18px;font-weight:800;color:var(--ink2);">${v}</div>
+    </div>`).join('');
+  }
+}
+
+function openMermaid(){
+  const code = buildMermaid();
+  const mp = document.getElementById('modal-mermaid-preview');
+  if(mp){
+    mp.innerHTML = `<pre class="mermaid">${code}</pre>`;
+    if(window.mermaid) window.mermaid.init(undefined, mp.querySelectorAll('.mermaid'));
+  }
+  document.getElementById('mermaid-modal').classList.add('open');
+}
+document.getElementById('mermaid-modal').addEventListener('click', e=>{
+  if(e.target===e.currentTarget) e.currentTarget.classList.remove('open');
+});
+
+function copyMermaid(){
+  const code = buildMermaid();
+  navigator.clipboard?.writeText(code).then(()=>showSaved('¡Copiado!')).catch(()=>{});
+}
+
+/* ─── EXPORT JSON ─── */
+function collectData(){
+  return {
+    meta:{
+      cliente: document.getElementById('emp-nombre')?.value||'',
+      sector:  document.getElementById('emp-sector')?.value||'',
+      empleados: document.getElementById('emp-size')?.value||'',
+      fecha:   document.getElementById('ses-fecha')?.value||'',
+      tipo_produccion: document.querySelector('input[name="tipo-prod"]:checked')?.value||'pedido',
+    },
+    director:{
+      nombre: document.getElementById('dir-nombre')?.value||'',
+      cargo:  document.getElementById('dir-cargo')?.value||'',
+      email:  document.getElementById('dir-email')?.value||'',
+    },
+    narrativa: document.getElementById('narrativa')?.value||'',
+    contexto_notas: document.getElementById('ctx-notas')?.value||'',
+    flujo_central: STAGES,
+    flujos_secundarios: SECUNDARIOS,
+    flujos_transversales: TRANSVERSALES.filter(t=>t.activo),
+    fricciones: FRICCIONES,
+    respuestas_friccion:{
+      cuello: document.getElementById('fq-cuello')?.value||'',
+      dependencia: document.getElementById('fq-dep')?.value||'',
+      conocimiento_tacito: document.getElementById('fq-clave')?.value||'',
+      shadow_it: document.getElementById('fq-shadow')?.value||'',
+    },
+    equipo: TEAM,
+    mermaid: buildMermaid(),
+  };
+}
+
+function exportJSON(){
+  const data = collectData();
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url;
+  a.download=`sesion-director-${(data.meta.cliente||'cliente').replace(/\s+/g,'-').toLowerCase()}-${data.meta.fecha||'sin-fecha'}.json`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+/* ─── AUTOSAVE ─── */
+let saveTimer;
+function save(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{
+    try{
+      const data = collectData();
+      localStorage.setItem('sesion-director', JSON.stringify(data));
+      showSaved();
+    }catch(e){}
+  }, 800);
+}
+
+function showSaved(msg='✓ Guardado'){
+  const el = document.getElementById('saved-badge');
+  if(el){ el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'), 2000); }
+}
+
+function loadSaved(){
+  try{
+    const raw = localStorage.getItem('sesion-director');
+    if(!raw) return;
+    const d = JSON.parse(raw);
+    if(d.meta){
+      const set = (id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+      set('emp-nombre',d.meta.cliente); set('emp-sector',d.meta.sector);
+      set('emp-size',d.meta.empleados); set('ses-fecha',d.meta.fecha);
+      const tp = document.querySelector(`input[name="tipo-prod"][value="${d.meta.tipo_produccion}"]`);
+      if(tp) tp.checked=true;
+    }
+    if(d.director){
+      const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+      set('dir-nombre',d.director.nombre); set('dir-cargo',d.director.cargo); set('dir-email',d.director.email);
+    }
+    const setTA=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+    setTA('narrativa',d.narrativa); setTA('ctx-notas',d.contexto_notas);
+    setTA('fq-cuello',d.respuestas_friccion?.cuello);
+    setTA('fq-dep',d.respuestas_friccion?.dependencia);
+    setTA('fq-clave',d.respuestas_friccion?.conocimiento_tacito);
+    setTA('fq-shadow',d.respuestas_friccion?.shadow_it);
+    setTA('org-notas',d.org_notas);
+    if(d.flujo_central?.length) STAGES=d.flujo_central;
+    if(d.flujos_secundarios?.length) SECUNDARIOS=d.flujos_secundarios;
+    if(d.flujos_transversales?.length){
+      d.flujos_transversales.forEach(dt=>{ const t=TRANSVERSALES.find(x=>x.id===dt.id); if(t){t.activo=true;t.herramienta=dt.herramienta||'';} else TRANSVERSALES.push({...dt,activo:true}); });
+    }
+    if(d.fricciones?.length) FRICCIONES=d.fricciones;
+    if(d.equipo?.length) TEAM=d.equipo;
+  }catch(e){}
+}
+
+/* ─── INIT ─── */
+loadSaved();
+renderPipeline();
+renderSecBody();
+renderTransGrid();
+renderFricBody();
+renderTeam();
+</script>
+</body>
+</html>
