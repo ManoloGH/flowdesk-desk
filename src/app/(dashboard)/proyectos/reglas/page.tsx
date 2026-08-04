@@ -1,183 +1,185 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { api } from '@/lib/api';
-import { Plus, Upload, BookOpen, ToggleLeft, ToggleRight, Trash2, Loader2, Search } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, BookOpen, Loader2 } from 'lucide-react';
+import { socFetch } from '@/lib/soc-api';
 
-interface BusinessRule {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  affected_areas: string[] | null;
-  related_systems: string[] | null;
-  source: string;
-  source_file_name: string | null;
-  is_active: boolean;
-  created_at: string;
+interface ReglaDeNegocio {
+  Id: string;
+  Descripcion: string;
+  PreguntaVerificacion: string | null;
+  AplicaATipo: number | null;
+  AplicaAArea: string | null;
+  EsObligatoria: boolean;
+  Activa: boolean;
 }
-
-const CATEGORY_LABEL: Record<string, string> = {
-  REGLA_NEGOCIO: 'Regla de Negocio', POLITICA_OPERATIVA: 'Política Operativa',
-  CALCULO: 'Cálculo', VALIDACION_DATOS: 'Validación de Datos',
-  RESTRICCION_SISTEMA: 'Restricción Sistema', CUMPLIMIENTO: 'Cumplimiento', OTRO: 'Otro',
-};
-const CATEGORY_COLOR: Record<string, string> = {
-  REGLA_NEGOCIO: 'var(--fd-blue)', POLITICA_OPERATIVA: '#d97706',
-  CALCULO: 'var(--fd-purple)', VALIDACION_DATOS: '#059669',
-  RESTRICCION_SISTEMA: '#dc2626', CUMPLIMIENTO: '#6b7280', OTRO: 'var(--text-3)',
-};
 
 export default function ReglasPage() {
   const router = useRouter();
-  const [rules, setRules]   = useState<BusinessRule[]>([]);
+  const [reglas, setReglas] = useState<ReglaDeNegocio[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [catFilter, setCatFilter] = useState('');
-  const [toggling, setToggling] = useState<string | null>(null);
+  const [creando, setCreando] = useState(false);
+  const [form, setForm] = useState({
+    Descripcion: '',
+    PreguntaVerificacion: '',
+    AplicaATipo: '',
+    AplicaAArea: '',
+    EsObligatoria: true,
+  });
 
-  useEffect(() => { load(); }, [catFilter]);
-
-  async function load() {
+  const cargar = useCallback(async () => {
     setLoading(true);
     try {
-      const qs = catFilter ? `?category=${catFilter}` : '';
-      const data = await api.get<BusinessRule[]>(`/proyectos-soc/business-rules${qs}`);
-      setRules(Array.isArray(data) ? data : []);
-    } catch { setRules([]); }
-    finally { setLoading(false); }
-  }
+      const res = await socFetch(`/api/entrenamiento/reglas`);
+      if (res.ok) setReglas(await res.json());
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  async function toggleRule(id: string) {
-    setToggling(id);
+  useEffect(() => { cargar(); }, [cargar]);
+
+  async function crear() {
+    if (!form.Descripcion.trim()) return;
+    setCreando(true);
     try {
-      const updated = await api.patch<BusinessRule>(`/proyectos-soc/business-rules/${id}/toggle`, {});
-      setRules((prev) => prev.map((r) => r.id === id ? { ...r, is_active: updated.is_active } : r));
-    } finally { setToggling(null); }
+      const res = await socFetch(`/api/entrenamiento/reglas`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          Descripcion: form.Descripcion,
+          PreguntaVerificacion: form.PreguntaVerificacion || null,
+          AplicaATipo: form.AplicaATipo || null,
+          AplicaAArea: form.AplicaAArea || null,
+          EsObligatoria: form.EsObligatoria,
+        }),
+      });
+      if (res.ok) {
+        setForm({ Descripcion: '', PreguntaVerificacion: '', AplicaATipo: '', AplicaAArea: '', EsObligatoria: true });
+        await cargar();
+      }
+    } finally {
+      setCreando(false);
+    }
   }
 
-  async function deleteRule(id: string, name: string) {
-    if (!confirm(`¿Eliminar la regla "${name}"?`)) return;
-    try {
-      await api.delete(`/proyectos-soc/business-rules/${id}`);
-      setRules((prev) => prev.filter((r) => r.id !== id));
-    } catch { alert('Error al eliminar'); }
+  async function eliminar(id: string) {
+    await socFetch(`/api/entrenamiento/reglas/${id}`, { method: 'DELETE' });
+    setReglas(prev => prev.filter(r => r.Id !== id));
   }
 
-  const filtered = rules.filter((r) =>
-    !search || r.name.toLowerCase().includes(search.toLowerCase()) || r.description.toLowerCase().includes(search.toLowerCase()),
-  );
-
-  const activeCount   = rules.filter((r) => r.is_active).length;
-  const inactiveCount = rules.filter((r) => !r.is_active).length;
+  const tipoLabel = (t: number | null) => t === 1 ? 'Mejora' : t === 2 ? 'Sistema Nuevo' : 'Ambos';
 
   return (
-    <div style={{ padding: '28px 32px' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.02em' }}>Reglas de Negocio</h1>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-2)' }}>
-            Base de conocimiento del agente IA — {activeCount} activas · {inactiveCount} inactivas
-          </p>
+    <div className="h-full flex flex-col gap-6 p-6 overflow-y-auto">
+
+      <div className="flex items-center gap-3">
+        <button onClick={() => router.push('/proyectos')} className="p-1.5 rounded-lg hover:bg-white/10">
+          <ArrowLeft className="w-4 h-4 text-slate-400" />
+        </button>
+        <div className="flex items-center gap-2">
+          <BookOpen className="w-5 h-5 text-[#00614E]" />
+          <h1 className="text-lg font-semibold text-white">Reglas de negocio</h1>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button
-            onClick={() => router.push('/proyectos/reglas/importar')}
-            style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 14px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-2)', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
-          >
-            <Upload size={14} /> Importar con IA
-          </button>
-          <button
-            onClick={() => router.push('/proyectos/reglas/nueva')}
-            style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 16px', borderRadius: 9, border: 'none', background: 'linear-gradient(135deg, var(--fd-cyan), var(--fd-blue))', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-          >
-            <Plus size={14} /> Nueva regla
-          </button>
-        </div>
+        <span className="text-xs text-slate-500 bg-white/5 px-2 py-0.5 rounded-full">
+          Panel de entrenamiento
+        </span>
       </div>
 
-      {/* Filters */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 20, alignItems: 'center' }}>
-        <div style={{ position: 'relative', flex: 1, maxWidth: 320 }}>
-          <Search size={14} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-3)' }} />
+      <p className="text-sm text-slate-400 -mt-2">
+        El agente carga estas reglas como checklist en cada sesión. Agrega aquí cualquier política o validación que debe verificar antes de generar el documento.
+      </p>
+
+      {/* Formulario */}
+      <div className="bg-white/5 rounded-xl p-5 border border-white/10 space-y-3">
+        <p className="text-sm font-medium text-white">Nueva regla</p>
+        <textarea
+          value={form.Descripcion}
+          onChange={e => setForm(p => ({ ...p, Descripcion: e.target.value }))}
+          placeholder="Descripción de la regla (ej: Toda mejora debe incluir el nombre del campo afectado)"
+          rows={2}
+          className="w-full resize-none bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#00614E]/50"
+        />
+        <input
+          value={form.PreguntaVerificacion}
+          onChange={e => setForm(p => ({ ...p, PreguntaVerificacion: e.target.value }))}
+          placeholder="Pregunta de verificación para el agente (opcional)"
+          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#00614E]/50"
+        />
+        <div className="flex gap-3">
+          <select
+            value={form.AplicaATipo}
+            onChange={e => setForm(p => ({ ...p, AplicaATipo: e.target.value }))}
+            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none"
+          >
+            <option value="">Aplica a todos los tipos</option>
+            <option value="Mejora">Solo R-ISO-147 (Mejora)</option>
+            <option value="SistemaNuevo">Solo R-ISO-81 (Sistema Nuevo)</option>
+          </select>
           <input
-            value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar reglas…"
-            style={{ width: '100%', padding: '8px 12px 8px 32px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: 13, boxSizing: 'border-box', outline: 'none' }}
+            value={form.AplicaAArea}
+            onChange={e => setForm(p => ({ ...p, AplicaAArea: e.target.value }))}
+            placeholder="Área específica (opcional)"
+            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none"
           />
         </div>
-        <select
-          value={catFilter}
-          onChange={(e) => setCatFilter(e.target.value)}
-          style={{ padding: '8px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: 13, outline: 'none' }}
-        >
-          <option value="">Todas las categorías</option>
-          {Object.entries(CATEGORY_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </select>
+        <div className="flex items-center justify-between">
+          <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.EsObligatoria}
+              onChange={e => setForm(p => ({ ...p, EsObligatoria: e.target.checked }))}
+              className="accent-[#00614E]"
+            />
+            Obligatoria
+          </label>
+          <button
+            onClick={crear}
+            disabled={!form.Descripcion.trim() || creando}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-[#00614E] hover:bg-[#00614E]/80 text-white disabled:opacity-40"
+          >
+            {creando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+            Agregar
+          </button>
+        </div>
       </div>
 
-      {/* List */}
+      {/* Lista */}
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
-          <Loader2 size={24} style={{ animation: 'spin 1s linear infinite', color: 'var(--text-3)' }} />
-        </div>
-      ) : filtered.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 24px', color: 'var(--text-3)' }}>
-          <BookOpen size={36} style={{ opacity: 0.3, marginBottom: 12 }} />
-          <p style={{ fontSize: 14, margin: '0 0 10px' }}>No hay reglas de negocio aún.</p>
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-            <button onClick={() => router.push('/proyectos/reglas/importar')} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#7c3aed', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Importar con IA</button>
-            <button onClick={() => router.push('/proyectos/reglas/nueva')} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>Crear manualmente</button>
-          </div>
-        </div>
+        <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-slate-500" /></div>
+      ) : reglas.length === 0 ? (
+        <p className="text-center text-slate-500 text-sm py-8">No hay reglas registradas todavía</p>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {filtered.map((r) => {
-            const catColor = CATEGORY_COLOR[r.category] ?? 'var(--text-3)';
-            return (
-              <div
-                key={r.id}
-                style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: '14px 18px', borderRadius: 11, border: `1px solid ${r.is_active ? 'var(--border)' : 'rgba(107,114,128,0.2)'}`, background: r.is_active ? 'var(--surface)' : 'var(--surface-2)', opacity: r.is_active ? 1 : 0.65 }}
-              >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ padding: '2px 7px', borderRadius: 5, fontSize: 10, fontWeight: 700, background: `${catColor}18`, color: catColor }}>{CATEGORY_LABEL[r.category] ?? r.category}</span>
-                    {r.source === 'ARCHIVO_IMPORTADO' && <span style={{ padding: '2px 7px', borderRadius: 5, fontSize: 10, background: 'rgba(124,58,237,0.12)', color: '#7c3aed' }}>IA — {r.source_file_name ?? 'importada'}</span>}
-                  </div>
-                  <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{r.name}</p>
-                  <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{r.description}</p>
-                  {r.affected_areas && r.affected_areas.length > 0 && (
-                    <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                      {r.affected_areas.slice(0, 5).map((a) => (
-                        <span key={a} style={{ padding: '1px 6px', borderRadius: 4, fontSize: 10, background: 'var(--surface-2)', color: 'var(--text-3)' }}>{a}</span>
-                      ))}
-                    </div>
+        <div className="space-y-2">
+          {reglas.map(r => (
+            <div key={r.Id} className="flex items-start gap-3 bg-white/5 rounded-xl p-4 border border-white/10">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-slate-200">{r.Descripcion}</p>
+                {r.PreguntaVerificacion && (
+                  <p className="text-xs text-slate-500 mt-1 italic">"{r.PreguntaVerificacion}"</p>
+                )}
+                <div className="flex gap-2 mt-2">
+                  <span className="text-xs text-slate-500 bg-white/5 px-2 py-0.5 rounded-full">
+                    {tipoLabel(r.AplicaATipo)}
+                  </span>
+                  {r.AplicaAArea && (
+                    <span className="text-xs text-slate-500 bg-white/5 px-2 py-0.5 rounded-full">{r.AplicaAArea}</span>
+                  )}
+                  {r.EsObligatoria && (
+                    <span className="text-xs text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full">Obligatoria</span>
                   )}
                 </div>
-                <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
-                  <button
-                    onClick={() => toggleRule(r.id)}
-                    disabled={toggling === r.id}
-                    title={r.is_active ? 'Desactivar' : 'Activar'}
-                    style={{ padding: '5px 8px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', color: r.is_active ? 'var(--fd-cyan)' : 'var(--text-3)' }}
-                  >
-                    {toggling === r.id ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : r.is_active ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
-                  </button>
-                  <button
-                    onClick={() => deleteRule(r.id, r.name)}
-                    title="Eliminar"
-                    style={{ padding: '5px 8px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', color: '#dc2626' }}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
               </div>
-            );
-          })}
+              <button
+                onClick={() => eliminar(r.Id)}
+                className="p-1.5 rounded-lg hover:bg-red-500/10 text-slate-500 hover:text-red-400 transition-colors shrink-0"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
         </div>
       )}
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

@@ -1,0 +1,22 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:3000",
+      "localStorage": [
+        {
+          "name": "fd_refresh",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbXB3djQxcmQwMDAyMDFwZDEwZ3g0M2RsIiwidGVuYW50X2lkIjoiY21wd3Y0MXI2MDAwMTAxcGRvamk0YzlpZyIsInJvbGUiOiJvd25lciIsInR5cGUiOiJIVU1BTiIsImVtYWlsIjoibWFub2xvQG1lbnRvcmlhc3lzdGVtcy5jb20iLCJ0ZW5hbnRfdHlwZSI6Ik5FVFdPUksiLCJwbGF0Zm9ybV9hZG1pbiI6ZmFsc2UsImlhdCI6MTc4NDczNjQ2OSwiZXhwIjoxNzg3MzI4NDY5fQ.v_mdQ98azVwRTWp9D5WSfIx-JOUHX3l1UU_8UjDHUPg"
+        },
+        {
+          "name": "fd_user",
+          "value": "{\"slot_id\":\"cmpwv41rd000201pd10gx43dl\",\"tenant_id\":\"cmpwv41r6000101pdoji4c9ig\",\"role\":\"owner\",\"type\":\"HUMAN\",\"email\":\"manolo@mentoriasystems.com\",\"name\":\"Manuel Gómez Haro\",\"tenant_type\":\"NETWORK\",\"platform_admin\":false}"
+        },
+        {
+          "name": "fd_access",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbXB3djQxcmQwMDAyMDFwZDEwZ3g0M2RsIiwidGVuYW50X2lkIjoiY21wd3Y0MXI2MDAwMTAxcGRvamk0YzlpZyIsInJvbGUiOiJvd25lciIsInR5cGUiOiJIVU1BTiIsImVtYWlsIjoibWFub2xvQG1lbnRvcmlhc3lzdGVtcy5jb20iLCJ0ZW5hbnRfdHlwZSI6Ik5FVFdPUksiLCJwbGF0Zm9ybV9hZG1pbiI6ZmFsc2UsImlhdCI6MTc4NDczNjQ2OSwiZXhwIjoxNzg0NzY1MjY5fQ.JfBN-KnyhhjldznsEyVHedeqqRnko09ANIxK9avB2SI"
+        }
+      ]
+    }
+  ]
+}
