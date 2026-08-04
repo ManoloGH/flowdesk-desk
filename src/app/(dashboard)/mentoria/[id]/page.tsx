@@ -518,7 +518,7 @@ export default function ClienteWorkspace() {
         )}
 
         {tab === 'cubo' && (
-          <TabCubo clienteId={id} empresa={cliente.empresa} sesiones={sesiones} />
+          <TabCubo clienteId={id} empresa={cliente.empresa} sesiones={sesiones} cubo={(cliente as any).cubo ?? {}} />
         )}
 
         {tab === 'hallazgos' && (
@@ -995,12 +995,11 @@ const CUBO_SECTIONS: CuboSection[] = [
   },
 ];
 
-function TabCubo({ clienteId, empresa, sesiones }: { clienteId: string; empresa: string; sesiones: Sesion[] }) {
-  const cuboKey = `mentoria_cubo_${clienteId}`;
+function TabCubo({ clienteId, empresa, sesiones, cubo: initialCubo }: { clienteId: string; empresa: string; sesiones: Sesion[]; cubo?: Record<string, string> }) {
   const entKey  = `mentoria_ent_${clienteId}`;
 
   const [cubo, setCubo] = React.useState<Record<CuboKey, string>>(() => {
-    try { return JSON.parse(localStorage.getItem(cuboKey) || '{}') as Record<CuboKey, string>; } catch { return {} as Record<CuboKey, string>; }
+    return (initialCubo ?? {}) as Record<CuboKey, string>;
   });
   const [entStatus, setEntStatus] = React.useState<Record<string, 'borrador' | 'revision' | 'aprobado'>>(() => {
     try { return JSON.parse(localStorage.getItem(entKey) || '{}'); } catch { return {}; }
@@ -1011,13 +1010,13 @@ function TabCubo({ clienteId, empresa, sesiones }: { clienteId: string; empresa:
   const totalFilled = CUBO_SECTIONS.filter(s => cubo[s.key]?.trim()).length;
   const pctCubo = Math.round(totalFilled / CUBO_SECTIONS.length * 100);
 
-  function saveSection(key: CuboKey, value: string) {
+  async function saveSection(key: CuboKey, value: string) {
     const next = { ...cubo, [key]: value };
     setCubo(next);
-    localStorage.setItem(cuboKey, JSON.stringify(next));
+    try { await api.patch(`/mentoria/clientes/${clienteId}/cubo`, { cubo: next }); } catch {}
   }
 
-  function loadDemo() {
+  async function loadDemo() {
     if (!confirm('Cargar datos de demostración (Textiles Anáhuac). Esto sobreescribirá el cubo actual.')) return;
     const demo: Record<CuboKey, string> = {
       contexto: `Empresa: Textiles Anáhuac — División 2–7 (sede Puebla / CDMX)
@@ -1210,7 +1209,7 @@ Costo impl.: $15,000/mes
 Fase: Expansión (Fase 2)`,
     };
     setCubo(demo);
-    localStorage.setItem(cuboKey, JSON.stringify(demo));
+    try { await api.patch(`/mentoria/clientes/${clienteId}/cubo`, { cubo: demo }); } catch {}
     setOpenSection('contexto');
   }
 

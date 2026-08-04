@@ -319,6 +319,22 @@ function exportJSON(){
   var u=URL.createObjectURL(b);var a=document.createElement("a");
   a.href=u;a.download="dg-"+(gv("diagid")||"ses")+"--"+(data.fecha||"sin-fecha")+".json";
   document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u);
+  // Auto-submit al API si hay clienteId en la URL
+  var _clienteId = new URLSearchParams(window.location.search).get('clienteId');
+  if (_clienteId) {
+    fetch('https://api.flowdesk.mx/mentoria/webhook/diagnostico', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clienteId: _clienteId, area: 'dg', datos: data }),
+    }).then(function(r) {
+      if (r.ok) {
+        var msg = document.getElementById('_sync-msg');
+        if (!msg) { msg = document.createElement('div'); msg.id = '_sync-msg'; msg.style.cssText='position:fixed;bottom:20px;right:20px;background:#22c55e;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999'; document.body.appendChild(msg); }
+        msg.textContent = '✓ Datos sincronizados con FlowDesk';
+        setTimeout(function(){ msg.remove(); }, 4000);
+      }
+    }).catch(function(){});
+  }
 }
 function upd(){
   var f=0;
