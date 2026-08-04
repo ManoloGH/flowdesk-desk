@@ -1,335 +1,177 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import { api } from '@/lib/api';
-import { ArrowLeft, Sparkles, RefreshCw, Loader2, Clock, CheckCircle2, FileDown, Edit3, Save, X, FileText } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { ArrowLeft, Download, CheckCircle2, Loader2, FileText, MessageSquare } from 'lucide-react';
+import { socFetch } from '@/lib/soc-api';
 
-interface Requirement {
-  id: string;
-  folio: string;
-  title: string;
-  status: string;
-  doc_type: string;
-  doc_version: string;
-  intake_source: string;
-  requested_by: string | null;
-  requested_by_email: string | null;
-  responsible_systems: string | null;
-  responsible_business: string | null;
-  current_situation: string | null;
-  problem_statement: string | null;
-  objective: string | null;
-  business_policies: string | null;
-  related_systems: string | null;
-  sisec_integrations: any[] | null;
-  event_triggers: any[] | null;
-  libreta_notes: string | null;
-  committed_dates: string | null;
-  scope: string | null;
-  out_of_scope: string | null;
-  assumptions: string | null;
-  constraints: string | null;
-  estimated_effort_days: number | null;
-  estimated_duration: string | null;
-  created_at: string;
-  ai_generated_doc: any;
-  pm_slot: { name: string } | null;
-  history: { id: string; action: string; to_value: string | null; notes: string | null; created_at: string; slot: { name: string } | null }[];
+interface RequerimientoDetalle {
+  Id: string;
+  Folio: { Completo: string };
+  Tipo: number;
+  Estado: number;
+  NombreProyecto: string | null;
+  Area: string | null;
+  Introduccion: string | null;
+  ObjetivoGeneral: string | null;
+  Beneficios: string | null;
+  CreadoEn: string;
+  DocumentoWordPath: string | null;
+  NotionPageId: string | null;
 }
 
-const STATUS_OPTIONS = ['BORRADOR','EN_REVISION','APROBADO','EN_DESARROLLO','EN_PRUEBAS','LISTO','CANCELADO'];
-const STATUS_LABEL: Record<string, string> = {
-  BORRADOR: 'Borrador', EN_REVISION: 'En revisión', APROBADO: 'Aprobado',
-  EN_DESARROLLO: 'En desarrollo', EN_PRUEBAS: 'En pruebas', LISTO: 'Listo', CANCELADO: 'Cancelado',
-};
-const STATUS_COLOR: Record<string, string> = {
-  BORRADOR: '#6b7280', EN_REVISION: '#d97706', APROBADO: '#059669',
-  EN_DESARROLLO: '#2566e8', EN_PRUEBAS: '#7c3aed', LISTO: '#059669', CANCELADO: '#dc2626',
-};
-const ACTION_LABEL: Record<string, string> = {
-  created: 'Creado', status_changed: 'Estado cambiado', ai_generated: 'IA generó documento',
-  edited: 'Editado', doc_exported: 'Exportado',
+const ESTADOS: Record<number, string> = {
+  0: 'Borrador', 1: 'En Revisión PM', 2: 'Aprobado PM',
+  3: 'En Revisión Sistemas', 4: 'Con Observaciones', 5: 'Aprobado Sistemas',
+  6: 'En Desarrollo', 7: 'En QA', 8: 'Liberado', 9: 'Cancelado',
 };
 
-function Section({ title, content, empty = '(vacío)' }: { title: string; content: string | null | undefined; empty?: string }) {
-  return (
-    <div style={{ marginBottom: 24 }}>
-      <h3 style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{title}</h3>
-      {content ? (
-        <p style={{ margin: 0, fontSize: 14, color: 'var(--text)', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>{content}</p>
-      ) : (
-        <p style={{ margin: 0, fontSize: 13, color: 'var(--text-3)', fontStyle: 'italic' }}>{empty}</p>
-      )}
-    </div>
-  );
-}
-
-export default function RequirementDetailPage() {
-  const router = useRouter();
+export default function RequerimientoPage() {
   const { id } = useParams<{ id: string }>();
-  const searchParams = useSearchParams();
-  const [req, setReq]       = useState<Requirement | null>(null);
+  const router = useRouter();
+  const [req, setReq] = useState<RequerimientoDetalle | null>(null);
   const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
-  const [statusLoading, setStatusLoading] = useState(false);
-  const [genDone, setGenDone] = useState(false);
-  const [tab, setTab] = useState<'doc' | 'datos' | 'historial'>('doc');
+  const [aprobando, setAprobando] = useState(false);
+  const [descargando, setDescargando] = useState(false);
 
-  useEffect(() => { load(); }, [id]);
-
-  // Auto-generar si viene de un intake (?generate=true)
-  useEffect(() => {
-    if (!req || generating) return;
-    if (searchParams.get('generate') === 'true') {
-      router.replace(`/proyectos/${id}`);
-      generate();
-    }
-  }, [req]);
-
-  async function load() {
+  const cargar = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await api.get<Requirement>(`/proyectos-soc/requirements/${id}`);
-      setReq(data);
-    } catch { router.push('/proyectos'); }
-    finally { setLoading(false); }
-  }
+      const res = await socFetch(`/api/requerimientos/${id}`);
+      if (!res.ok) throw new Error();
+      setReq(await res.json());
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
 
-  async function generate() {
-    setGenerating(true);
+  useEffect(() => { cargar(); }, [cargar]);
+
+  async function aprobar() {
+    if (!req || aprobando) return;
+    setAprobando(true);
     try {
-      const data = await api.post<Requirement>(`/proyectos-soc/requirements/${id}/generate`, { include_rules: true });
-      setReq((prev) => ({ ...prev!, ...data }));
-      setGenDone(true);
-      setTimeout(() => setGenDone(false), 3000);
-    } finally { setGenerating(false); }
+      const res = await socFetch(`/api/requerimientos/${id}/aprobar`, { method: 'POST' });
+      if (!res.ok) throw new Error();
+      await cargar();
+    } catch {
+      alert('No se pudo aprobar el requerimiento.');
+    } finally {
+      setAprobando(false);
+    }
   }
 
-  async function changeStatus(status: string) {
-    setStatusLoading(true);
+  async function descargarWord() {
+    setDescargando(true);
     try {
-      await api.patch(`/proyectos-soc/requirements/${id}/status`, { status });
-      setReq((prev) => prev ? { ...prev, status } : prev);
-    } finally { setStatusLoading(false); }
+      const res = await socFetch(`/api/requerimientos/${id}/word`);
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${req?.Folio.Completo ?? id}.docx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('No se pudo descargar el Word.');
+    } finally {
+      setDescargando(false);
+    }
   }
 
-  function openDocument() {
-    const html = (req as any)?.ai_generated_doc?.html;
-    if (!html) return;
-    const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+      </div>
+    );
   }
 
-  if (loading) return (
-    <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}>
-      <Loader2 size={28} style={{ animation: 'spin 1s linear infinite', color: 'var(--text-3)' }} />
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
-  );
-  if (!req) return null;
+  if (!req) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center gap-4 text-slate-400">
+        <FileText className="w-10 h-10 opacity-30" />
+        <p>Requerimiento no encontrado</p>
+        <button onClick={() => router.push('/proyectos')} className="text-sm text-[#00614E] hover:underline">
+          Volver a la lista
+        </button>
+      </div>
+    );
+  }
 
-  const sc = STATUS_COLOR[req.status] ?? '#6b7280';
+  const estado = ESTADOS[req.Estado] ?? 'Desconocido';
+  const esAprobable = req.Estado === 0 || req.Estado === 1;
 
   return (
-    <div style={{ padding: '28px 32px' }}>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    <div className="h-full flex flex-col gap-6 p-6 overflow-y-auto">
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 24 }}>
-        <button onClick={() => router.push('/proyectos')} style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', color: 'var(--text-2)', display: 'flex', alignItems: 'center', marginTop: 2 }}>
-          <ArrowLeft size={14} />
-        </button>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-            <span style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--text-3)', fontWeight: 700 }}>{req.folio}</span>
-            <span style={{ padding: '2px 8px', borderRadius: 5, fontSize: 11, fontWeight: 700, background: `${sc}20`, color: sc }}>{STATUS_LABEL[req.status]}</span>
-            <span style={{ fontSize: 11, color: 'var(--text-3)' }}>v{req.doc_version}</span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button onClick={() => router.push('/proyectos')} className="p-1.5 rounded-lg hover:bg-white/10">
+            <ArrowLeft className="w-4 h-4 text-slate-400" />
+          </button>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-lg font-semibold text-[#00614E]">{req.Folio.Completo}</span>
+              <span className="text-xs text-slate-500 bg-white/5 px-2 py-0.5 rounded-full">{estado}</span>
+            </div>
+            <p className="text-sm text-slate-400">{req.NombreProyecto ?? 'Sin nombre de proyecto'}</p>
           </div>
-          <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.02em', lineHeight: 1.3 }}>{req.title}</h1>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-          <select
-            value={req.status}
-            onChange={(e) => changeStatus(e.target.value)}
-            disabled={statusLoading}
-            style={{ padding: '7px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: 13, cursor: 'pointer' }}
-          >
-            {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
-          </select>
-
+        <div className="flex gap-2">
           <button
-            onClick={generate}
-            disabled={generating}
-            style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 14px', borderRadius: 9, border: 'none', background: genDone ? '#059669' : 'linear-gradient(135deg, #7c3aed, #4f46e5)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: generating ? 'wait' : 'pointer', opacity: generating ? 0.8 : 1 }}
+            onClick={() => router.push(`/proyectos/nuevo?continuar=${id}`)}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-white/5"
           >
-            {generating ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> : genDone ? <CheckCircle2 size={13} /> : <Sparkles size={13} />}
-            {generating ? 'Generando…' : genDone ? '¡Listo!' : 'Generar con IA'}
+            <MessageSquare className="w-4 h-4" />
+            Continuar chat
           </button>
-
-          {req?.ai_generated_doc?.html && (
+          <button
+            onClick={descargarWord}
+            disabled={descargando}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-white/5 disabled:opacity-40"
+          >
+            {descargando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            Word
+          </button>
+          {esAprobable && (
             <button
-              onClick={openDocument}
-              style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 14px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              onClick={aprobar}
+              disabled={aprobando}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-[#00614E] hover:bg-[#00614E]/80 text-white disabled:opacity-40"
             >
-              <FileText size={13} />
-              Ver Documento
+              {aprobando ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+              Aprobar
             </button>
           )}
         </div>
       </div>
 
-      {/* Meta strip */}
-      <div style={{ display: 'flex', gap: 20, marginBottom: 24, fontSize: 12, color: 'var(--text-2)', flexWrap: 'wrap' }}>
-        {req.requested_by && <span>Solicitado por: <strong style={{ color: 'var(--text)' }}>{req.requested_by}</strong></span>}
-        {req.pm_slot && <span>PM: <strong style={{ color: 'var(--text)' }}>{req.pm_slot.name}</strong></span>}
-        {req.responsible_systems && <span>Sistemas: <strong style={{ color: 'var(--text)' }}>{req.responsible_systems}</strong></span>}
-        {req.responsible_business && <span>Negocio: <strong style={{ color: 'var(--text)' }}>{req.responsible_business}</strong></span>}
-        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={11} /> {new Date(req.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-      </div>
-
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '1px solid var(--border)', paddingBottom: 0 }}>
-        {(['doc', 'datos', 'historial'] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            style={{ padding: '8px 16px', borderRadius: '8px 8px 0 0', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t ? 700 : 500, background: tab === t ? 'var(--surface)' : 'transparent', color: tab === t ? 'var(--fd-cyan)' : 'var(--text-2)', borderBottom: tab === t ? '2px solid var(--fd-cyan)' : '2px solid transparent', marginBottom: -1 }}
-          >
-            {t === 'doc' ? 'Documento ISO' : t === 'datos' ? 'Datos SISEC' : 'Historial'}
-          </button>
+      {/* Detalle del documento */}
+      <div className="grid gap-4">
+        {[
+          { label: 'Área', value: req.Area },
+          { label: 'Introducción', value: req.Introduccion },
+          { label: 'Objetivo General', value: req.ObjetivoGeneral },
+          { label: 'Beneficios', value: req.Beneficios },
+        ].map(campo => (
+          <div key={campo.label} className="bg-white/5 rounded-xl p-4 border border-white/10">
+            <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">{campo.label}</p>
+            <p className="text-sm text-slate-200 whitespace-pre-wrap">
+              {campo.value ?? <span className="text-slate-500 italic">Pendiente</span>}
+            </p>
+          </div>
         ))}
+
+        {req.NotionPageId && (
+          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+            <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Notion</p>
+            <p className="text-sm text-emerald-400">Registrado en Notion ✓</p>
+          </div>
+        )}
       </div>
-
-      {/* Generando banner */}
-      {generating && (
-        <div style={{ marginBottom: 20, padding: '14px 20px', borderRadius: 10, background: 'linear-gradient(135deg, rgba(124,58,237,0.08), rgba(79,70,229,0.05))', border: '1px solid rgba(124,58,237,0.25)', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Loader2 size={18} style={{ animation: 'spin 1s linear infinite', color: '#7c3aed', flexShrink: 0 }} />
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>El agente IA está completando el documento R-ISO…</div>
-            <div style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 2 }}>Usa las respuestas del paquete de confirmación para rellenar todas las secciones. Toma ~30 segundos.</div>
-          </div>
-        </div>
-      )}
-
-      {/* Doc tab */}
-      {tab === 'doc' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20, alignItems: 'start' }}>
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 28 }}>
-            <Section title="1. Situación Actual" content={req.current_situation} />
-            <Section title="Planteamiento del Problema" content={req.problem_statement} />
-            <div style={{ height: 1, background: 'var(--border)', margin: '20px 0' }} />
-            <Section title="3. Objetivo" content={req.objective} />
-            <div style={{ height: 1, background: 'var(--border)', margin: '20px 0' }} />
-            <Section title="4. Políticas y Reglas de Negocio" content={req.business_policies} />
-            <div style={{ height: 1, background: 'var(--border)', margin: '20px 0' }} />
-            <Section title="5. Sistemas Relacionados" content={req.related_systems} />
-            <div style={{ height: 1, background: 'var(--border)', margin: '20px 0' }} />
-            <Section title="Libreta Digital (datos del asesor)" content={req.libreta_notes} />
-            <div style={{ height: 1, background: 'var(--border)', margin: '20px 0' }} />
-            <Section title="7. Compromisos y Fechas" content={req.committed_dates} />
-            <div style={{ height: 1, background: 'var(--border)', margin: '20px 0' }} />
-            <Section title="Alcance" content={req.scope} />
-            <Section title="Fuera de Alcance" content={req.out_of_scope} />
-            <Section title="Supuestos" content={req.assumptions} />
-            <Section title="Restricciones" content={req.constraints} />
-          </div>
-
-          {/* Sidebar */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 18 }}>
-              <h3 style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Planeación</h3>
-              <div style={{ fontSize: 13, color: 'var(--text-2)' }}>
-                {req.estimated_duration && <p style={{ margin: '0 0 6px' }}>Duración: <strong style={{ color: 'var(--text)' }}>{req.estimated_duration}</strong></p>}
-                {req.estimated_effort_days && <p style={{ margin: '0 0 6px' }}>Esfuerzo: <strong style={{ color: 'var(--text)' }}>{req.estimated_effort_days} días</strong></p>}
-                {!req.estimated_duration && !req.estimated_effort_days && <p style={{ margin: 0, fontStyle: 'italic', color: 'var(--text-3)', fontSize: 12 }}>No estimado aún</p>}
-              </div>
-            </div>
-
-            <div style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.08), rgba(79,70,229,0.05))', border: '1px solid rgba(124,58,237,0.2)', borderRadius: 12, padding: 18 }}>
-              <h3 style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 700, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Agente IA</h3>
-              <p style={{ margin: '0 0 12px', fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
-                Completa automáticamente todas las secciones usando las reglas de negocio activas de SOC como contexto.
-              </p>
-              <button
-                onClick={generate}
-                disabled={generating}
-                style={{ width: '100%', padding: '8px', borderRadius: 8, border: 'none', background: '#7c3aed', color: '#fff', fontSize: 13, fontWeight: 600, cursor: generating ? 'wait' : 'pointer' }}
-              >
-                {generating ? 'Generando…' : 'Generar con IA'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Datos SISEC tab */}
-      {tab === 'datos' && (
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 24 }}>
-          <h2 style={{ margin: '0 0 20px', fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>Integración SISEC</h2>
-          {req.sisec_integrations && req.sisec_integrations.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {req.sisec_integrations.map((item: any, i: number) => (
-                <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 2fr', gap: 12, padding: 14, borderRadius: 9, background: 'var(--surface-2)', fontSize: 13 }}>
-                  <div><strong>{item.data_name}</strong></div>
-                  <div><span style={{ padding: '2px 7px', borderRadius: 5, fontSize: 11, background: 'rgba(29,189,240,0.12)', color: 'var(--fd-cyan)' }}>{item.direction}</span></div>
-                  <div style={{ color: 'var(--text-2)' }}>{item.sync_frequency}</div>
-                  <div style={{ color: 'var(--text-2)', fontSize: 12 }}>{item.fallback_behavior ?? '—'}</div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '40px 24px', color: 'var(--text-3)' }}>
-              <p style={{ fontSize: 14, margin: '0 0 10px' }}>Sin datos SISEC definidos aún.</p>
-              <p style={{ fontSize: 12, margin: 0 }}>Usa "Generar con IA" para que el agente identifique qué datos provienen de SISEC.</p>
-            </div>
-          )}
-
-          {req.event_triggers && req.event_triggers.length > 0 && (
-            <>
-              <h2 style={{ margin: '24px 0 16px', fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>Disparadores de Evento</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {req.event_triggers.map((ev: any, i: number) => (
-                  <div key={i} style={{ padding: 14, borderRadius: 9, background: 'var(--surface-2)', fontSize: 13 }}>
-                    <strong>{ev.action}</strong>
-                    {ev.condition && <span style={{ color: 'var(--text-2)', marginLeft: 8 }}>cuando {ev.condition}</span>}
-                    {ev.target_field && <div style={{ marginTop: 4, fontSize: 12, color: 'var(--text-3)' }}>Actualiza: {ev.target_field} → {ev.new_value}</div>}
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Historial tab */}
-      {tab === 'historial' && (
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 24 }}>
-          {req.history.length === 0 ? (
-            <p style={{ color: 'var(--text-3)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>Sin historial aún.</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {req.history.map((h) => (
-                <div key={h.id} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--fd-cyan)', marginTop: 6, flexShrink: 0 }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600 }}>
-                      {ACTION_LABEL[h.action] ?? h.action}
-                      {h.to_value && <span style={{ fontWeight: 400, color: 'var(--text-2)' }}> → {STATUS_LABEL[h.to_value] ?? h.to_value}</span>}
-                    </div>
-                    {h.notes && <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-2)' }}>{h.notes}</p>}
-                    <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 3 }}>
-                      {h.slot?.name ?? 'Sistema'} · {new Date(h.created_at).toLocaleString('es-MX')}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
