@@ -390,7 +390,14 @@ export default function ClienteWorkspace() {
             { key: 'sesiones',     label: `💬 Sesiones (${sesiones.length})` },
             { key: 'facturacion',  label: '💰 Facturación' },
           ] as const).map(t => (
-            <button key={t.key} onClick={() => setTab(t.key)} style={{ padding: '9px 18px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: tab === t.key ? 'var(--text)' : 'var(--text-3)', borderBottom: tab === t.key ? '2px solid #6c4de6' : '2px solid transparent', marginBottom: -1, transition: 'color 0.15s' }}>
+            <button key={t.key} onClick={() => {
+              setTab(t.key);
+              if (t.key === 'cubo') {
+                api.get<any>(`/mentoria/clientes/${id}`)
+                  .then(data => setCliente(data))
+                  .catch(() => {});
+              }
+            }} style={{ padding: '9px 18px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: tab === t.key ? 'var(--text)' : 'var(--text-3)', borderBottom: tab === t.key ? '2px solid #6c4de6' : '2px solid transparent', marginBottom: -1, transition: 'color 0.15s' }}>
               {t.label}
             </button>
           ))}
@@ -1001,6 +1008,12 @@ function TabCubo({ clienteId, empresa, sesiones, cubo: initialCubo }: { clienteI
   const [cubo, setCubo] = React.useState<Record<CuboKey, string>>(() => {
     return (initialCubo ?? {}) as Record<CuboKey, string>;
   });
+
+  React.useEffect(() => {
+    if (initialCubo && Object.keys(initialCubo).length > 0) {
+      setCubo(initialCubo as Record<CuboKey, string>);
+    }
+  }, [initialCubo]);
   const [entStatus, setEntStatus] = React.useState<Record<string, 'borrador' | 'revision' | 'aprobado'>>(() => {
     try { return JSON.parse(localStorage.getItem(entKey) || '{}'); } catch { return {}; }
   });
