@@ -77,7 +77,7 @@ textarea{resize:vertical;min-height:80px}
   <div class="hsub">Captura de situación estratégica, estructura directiva e inicio de la cadena de diagnóstico</div>
 </div>
 <div class="toolbar np">
-  <button class="btn btn-grn" onclick="exportJSON()">⬇ Exportar JSON</button>
+  <button class="btn btn-grn" id="btn-save" onclick="exportJSON()">✅ Guardar en FlowDesk</button>
   <button class="btn btn-sec" onclick="window.print()">🖨 Imprimir</button>
   <div class="prog"><span id="ptxt">0 / 5</span><div class="pbar"><div class="pfill" id="pfill" style="width:0%"></div></div></div>
 </div>
@@ -330,14 +330,22 @@ function exportJSON(){
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ clienteId: _clienteId, area: 'dg', datos: data }),
     }).then(function(r) {
+      var btn = document.getElementById('btn-save');
       if (r.ok) {
-        var msg = document.getElementById('_sync-msg');
-        if (!msg) { msg = document.createElement('div'); msg.id = '_sync-msg'; msg.style.cssText='position:fixed;bottom:20px;right:20px;background:#22c55e;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999'; document.body.appendChild(msg); }
-        msg.textContent = '✓ Datos sincronizados con FlowDesk';
-        setTimeout(function(){ msg.remove(); }, 4000);
+        showToast('✅ Datos guardados en FlowDesk correctamente', '#22c55e');
+        if (btn) { btn.textContent = '✅ Guardado'; setTimeout(function(){ btn.textContent = '✅ Guardar en FlowDesk'; }, 3000); }
+      } else {
+        showToast('Se descargó el JSON pero no se sincronizó (revisa conexión)', '#f59e0b');
       }
-    }).catch(function(){});
+    }).catch(function(){ showToast('Se descargó el JSON pero no se sincronizó (revisa conexión)', '#f59e0b'); });
   }
+}
+function showToast(msg, color) {
+  var t = document.getElementById('_toast');
+  if (!t) { t = document.createElement('div'); t.id = '_toast'; t.style.cssText = 'position:fixed;bottom:20px;right:20px;padding:11px 20px;border-radius:9px;font-size:13px;font-weight:600;color:#fff;z-index:9999;transition:opacity .3s'; document.body.appendChild(t); }
+  t.textContent = msg; t.style.background = color; t.style.opacity = '1';
+  clearTimeout(t._tid);
+  t._tid = setTimeout(function(){ t.style.opacity = '0'; }, 4000);
 }
 function upd(){
   var f=0;
