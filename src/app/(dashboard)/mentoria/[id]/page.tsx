@@ -654,8 +654,8 @@ export default function ClienteWorkspace() {
       {/* Modals */}
       {showSesion    && <NuevaSesionModal onClose={() => setShowSesion(false)} onSave={addSesion} />}
       {showPago      && <NuevoPagoModal onClose={() => setShowPago(false)} onSave={addPago} precio={cliente.precio} />}
-      {showHallazgo  && <NuevoHallazgoModal onClose={() => setShowHallazgo(false)} onSave={addHallazgo} />}
-      {showAccion    && <NuevaAccionModal onClose={() => setShowAccion(false)} onSave={addAccion} hallazgos={hallazgos} />}
+      {showHallazgo  && <NuevoHallazgoModal onClose={() => setShowHallazgo(false)} onSave={addHallazgo} areasCliente={[...new Set([...hallazgos.map(h => h.area), ...(cliente.areas_diagnosticadas ?? [])].filter(Boolean))]} />}
+      {showAccion    && <NuevaAccionModal onClose={() => setShowAccion(false)} onSave={addAccion} hallazgos={hallazgos} areasCliente={[...new Set([...hallazgos.map(h => h.area), ...(cliente.areas_diagnosticadas ?? [])].filter(Boolean))]} />}
     </div>
   );
 }
@@ -1603,7 +1603,7 @@ function TabPlan({ plan, filter, onFilterChange, onAdd, onStatusChange, onDelete
 }
 
 // ── Modal: Nuevo Hallazgo ──────────────────────────────────────────────────────
-function NuevoHallazgoModal({ onClose, onSave }: { onClose: () => void; onSave: (h: Omit<Hallazgo, 'id'>) => void }) {
+function NuevoHallazgoModal({ onClose, onSave, areasCliente }: { onClose: () => void; onSave: (h: Omit<Hallazgo, 'id'>) => void; areasCliente: string[] }) {
   const [f, setF] = useState<Omit<Hallazgo, 'id'>>({ area: '', tipo: 'critico', titulo: '', descripcion: '', impacto: '' });
   const u = (k: keyof typeof f, v: string) => setF(p => ({ ...p, [k]: v }));
   return (
@@ -1617,10 +1617,8 @@ function NuevoHallazgoModal({ onClose, onSave }: { onClose: () => void; onSave: 
         </div>
         <div>
           <label style={labelSt}>Área *</label>
-          <select value={f.area} onChange={e => u('area', e.target.value)} style={{ ...inputSt, width: '100%' } as any}>
-            <option value="">Seleccionar…</option>
-            {['Marketing', 'Ventas', 'Operaciones', 'Administración', 'Tecnología', 'RRHH', 'General'].map(a => <option key={a} value={a}>{a}</option>)}
-          </select>
+          <input list="areas-hall" value={f.area} onChange={e => u('area', e.target.value)} placeholder="Ej. Ventas, Operaciones…" style={{ ...inputSt, width: '100%' }} />
+          <datalist id="areas-hall">{areasCliente.map(a => <option key={a} value={a} />)}</datalist>
         </div>
       </div>
       <div style={{ marginTop: 12 }}>
@@ -1640,7 +1638,7 @@ function NuevoHallazgoModal({ onClose, onSave }: { onClose: () => void; onSave: 
 }
 
 // ── Modal: Nueva Acción ────────────────────────────────────────────────────────
-function NuevaAccionModal({ onClose, onSave, hallazgos }: { onClose: () => void; onSave: (a: Omit<AccionPlan, 'id'>) => void; hallazgos: Hallazgo[] }) {
+function NuevaAccionModal({ onClose, onSave, hallazgos, areasCliente }: { onClose: () => void; onSave: (a: Omit<AccionPlan, 'id'>) => void; hallazgos: Hallazgo[]; areasCliente: string[] }) {
   const [f, setF] = useState<Omit<AccionPlan, 'id'>>({ titulo: '', area: '', prioridad: 'alta', status: 'pendiente', responsable: '', fecha_estimada: '', hallazgo_ref: '', notas: '' });
   const u = (k: keyof typeof f, v: string) => setF(p => ({ ...p, [k]: v }));
   return (
@@ -1652,10 +1650,8 @@ function NuevaAccionModal({ onClose, onSave, hallazgos }: { onClose: () => void;
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div>
           <label style={labelSt}>Área *</label>
-          <select value={f.area} onChange={e => u('area', e.target.value)} style={{ ...inputSt, width: '100%' } as any}>
-            <option value="">Seleccionar…</option>
-            {['Marketing', 'Ventas', 'Operaciones', 'Administración', 'Tecnología', 'RRHH', 'General'].map(a => <option key={a} value={a}>{a}</option>)}
-          </select>
+          <input list="areas-acc" value={f.area} onChange={e => u('area', e.target.value)} placeholder="Ej. Ventas, Operaciones…" style={{ ...inputSt, width: '100%' }} />
+          <datalist id="areas-acc">{areasCliente.map(a => <option key={a} value={a} />)}</datalist>
         </div>
         <div>
           <label style={labelSt}>Prioridad</label>
