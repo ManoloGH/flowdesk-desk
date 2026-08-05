@@ -171,9 +171,11 @@ export default function ClienteWorkspace() {
         setHallazgos(data.hallazgos || []);
         setPlan(data.plan || []);
       } catch {
-        const c = id === 'c-primer' ? MOCK_CLIENTE : { ...MOCK_CLIENTE, id, empresa: 'Cliente', contacto_nombre: '', contacto_cargo: '', industria: '', status: 'activo' as const };
-        setCliente(c);
-        setNotas(c.notas || '');
+        if (id === 'c-primer') {
+          setCliente(MOCK_CLIENTE);
+          setNotas(MOCK_CLIENTE.notas || '');
+        }
+        // Para clientes reales: no mostrar datos mock — dejar cliente null y que el spinner muestre error
       } finally { setLoading(false); }
     }
     load();
@@ -290,7 +292,12 @@ export default function ClienteWorkspace() {
       <div style={{ width: 22, height: 22, borderRadius: '50%', border: '2px solid #6c4de6', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
     </div>
   );
-  if (!cliente) return null;
+  if (!cliente) return (
+    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
+      <div style={{ fontSize: 14, color: 'var(--text-3)' }}>No se pudo cargar el cliente</div>
+      <button onClick={() => window.location.reload()} style={{ fontSize: 12, padding: '6px 14px', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, cursor: 'pointer', color: 'var(--text)' }}>Reintentar</button>
+    </div>
+  );
 
   const fase = PHASES[cliente.fase_actual];
   const faseItemsDone = PHASES[cliente.fase_actual].items.filter(i => checks[i.id]).length;
@@ -1030,7 +1037,8 @@ function TabCubo({ clienteId, empresa, sesiones, cubo: initialCubo }: { clienteI
   }
 
   async function loadDemo() {
-    if (!confirm('Cargar datos de demostración (Textiles Anáhuac). Esto sobreescribirá el cubo actual.')) return;
+    // Función de demo eliminada — no exponer datos de clientes reales en producción
+    return;
     const demo: Record<CuboKey, string> = {
       contexto: `Empresa: Textiles Anáhuac — División 2–7 (sede Puebla / CDMX)
 Giro: Manufactura textil — hilatura, tejido, índigo, acabado y distribución de telas
@@ -1255,7 +1263,6 @@ Fase: Expansión (Fase 2)`,
               <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>Fuente única para los 6 entregables. Edita durante la reunión de verificación.</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <button onClick={loadDemo} style={{ fontSize: 11, padding: '4px 10px', background: 'rgba(108,77,230,0.08)', border: '1px solid rgba(108,77,230,0.25)', borderRadius: 7, color: '#6c4de6', cursor: 'pointer', fontWeight: 600 }}>📥 Demo TAC</button>
               <div style={{ fontSize: 22, fontWeight: 800, color: pctCubo === 100 ? '#22c55e' : '#6c4de6' }}>{pctCubo}%</div>
             </div>
           </div>
