@@ -306,8 +306,12 @@ function enviarInvitacionDG(nombre, cargo, whatsapp, email) {
   }).then(function(r) {
     return r.json().then(function(d) { return { ok: r.ok, data: d }; });
   }).then(function(res) {
-    if (res.ok) { showToast('✓ Cuestionario enviado a ' + nombre, '#22c55e'); }
-    else { showToast('Error: ' + (res.data?.message || 'no se pudo enviar'), '#ef4444'); }
+    if (!res.ok) { showToast('Error: ' + (res.data?.message || 'no se pudo enviar'), '#ef4444'); return; }
+    var d = res.data;
+    if (d.wa_enviado) { showToast('✅ WhatsApp enviado a ' + nombre, '#22c55e'); }
+    else if (d.email_enviado) { showToast('✅ Email enviado a ' + nombre, '#22c55e'); }
+    else if (d.wa_error) { showToast('⚠️ No se envió WA: ' + d.wa_error + '\nLiga: ' + d.url, '#f59e0b'); }
+    else { showToast('✓ Liga lista: ' + d.url, '#6c4de6'); }
   }).catch(function(e) {
     showToast('Error de red: ' + (e.message || 'revisa la conexión'), '#ef4444');
   });
