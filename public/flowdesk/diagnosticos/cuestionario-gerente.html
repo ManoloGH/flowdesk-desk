@@ -372,14 +372,14 @@ function enviarInvitacion(nombre, cargo, whatsapp, email, tipo) {
   fetch('https://api.flowdesk.mx/mentoria/clientes/' + _clienteId + '/enviar-cuestionario', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-    body: JSON.stringify({ nombre: nombre, cargo: cargo, whatsapp: whatsapp, email: email, tipo: tipo || 'operador' }),
+    body: JSON.stringify({ nombre: nombre, cargo: cargo, whatsapp: whatsapp, email: email, tipo: tipo || 'operador', empresa: _EMP }),
   }).then(function(r) {
-    if (!r.ok) throw new Error('Error ' + r.status);
-    return r.json();
-  }).then(function(d) {
-    showToast('✓ Cuestionario enviado a ' + nombre, '#22c55e');
+    return r.json().then(function(d) { return { ok: r.ok, data: d }; });
+  }).then(function(res) {
+    if (res.ok) { showToast('✓ Cuestionario enviado a ' + nombre, '#22c55e'); }
+    else { showToast('Error: ' + (res.data?.message || 'no se pudo enviar'), '#ef4444'); }
   }).catch(function(e) {
-    showToast('Error al enviar: ' + (e.message || 'revisa la conexión'), '#ef4444');
+    showToast('Error de red: ' + (e.message || 'revisa la conexión'), '#ef4444');
   });
 }
 function showToast(msg, color) {
