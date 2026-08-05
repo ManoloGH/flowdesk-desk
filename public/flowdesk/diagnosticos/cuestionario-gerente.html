@@ -422,21 +422,18 @@ function genInv(){
       +"\nGracias,\n"+from;
     var card=document.createElement("div");
     card.className="inv-card";
+    var typeForApi=(tipo&&tipo.value==="gerente")?"gerente":"operador";
+    var waForApi=tpv==="wa"?contacto:"";
+    var emForApi=tpv==="em"?contacto:"";
     var waBtn="",emBtn="";
     if(tpv==="wa"){
       var phone=contacto.replace(/\D/g,"");
       if(phone.length===10)phone="52"+phone;
       var waUrl="https://wa.me/"+phone+"?text="+encodeURIComponent(msg);
       waBtn="<a href='"+waUrl+"' target='_blank' style='text-decoration:none'><button class='btn btn-grn'>📱 Abrir WhatsApp</button></a>";
-    } else {
-      var sub="Diagnóstico MentorIA — "+_EMP;
-      var mailUrl="mailto:"+contacto+"?subject="+encodeURIComponent(sub)+"&body="+encodeURIComponent(msg);
-      emBtn="<a href='"+mailUrl+"' style='text-decoration:none'><button class='btn btn-pri'>✉ Abrir Correo</button></a>";
     }
-    var typeForApi=(tipo&&tipo.value==="gerente")?"gerente":"operador";
-    var waForApi=tpv==="wa"?contacto:"";
-    var emForApi=tpv==="em"?contacto:"";
-    var apiBtn="<button class='btn btn-sec' onclick='enviarInvitacion("+JSON.stringify(nombre)+","+JSON.stringify(cargo)+","+JSON.stringify(waForApi)+","+JSON.stringify(emForApi)+","+JSON.stringify(typeForApi)+")'> Enviar cuestionario</button>";
+    var sendLabel=tpv==="wa"?" Enviar por WhatsApp API":"📧 Enviar Email";
+    var apiBtn="<button class='btn btn-pri' onclick='enviarInvitacion("+JSON.stringify(nombre)+","+JSON.stringify(cargo)+","+JSON.stringify(waForApi)+","+JSON.stringify(emForApi)+","+JSON.stringify(typeForApi)+")'>"+sendLabel+"</button>";
     var msgId="msg-"+n;
     card.innerHTML="<div class='inv-card-hd'>"
       +"<div class='inv-name'>"+nombre+"</div>"

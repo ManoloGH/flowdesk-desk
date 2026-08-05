@@ -266,17 +266,17 @@ function genInv(){
       +"⏱ Tiempo estimado: 20-30 minutos\n\n"
       +"Cualquier duda, contáctame directamente.\n\n"+from;
     var card=document.createElement("div");card.className="inv-card";
-    var waBtn="",emBtn="";
+    var waBtn="";
     if(tpv==="wa"){
       var phone=contacto.replace(/\D/g,"");
       if(phone.length===10)phone="52"+phone;
       var waUrl="https://wa.me/"+phone+"?text="+encodeURIComponent(msg);
       waBtn="<a href='"+waUrl+"' target='_blank' style='text-decoration:none'><button class='btn btn-grn'>📱 Abrir WhatsApp</button></a>";
-    } else {
-      var sub="Diagnóstico Organizacional — "+EMPRESA+" | MentorIA Systems";
-      var mailUrl="mailto:"+contacto+"?subject="+encodeURIComponent(sub)+"&body="+encodeURIComponent(msg);
-      emBtn="<a href='"+mailUrl+"' style='text-decoration:none'><button class='btn btn-pri'>✉ Abrir Correo</button></a>";
     }
+    var waForDg=tpv==="wa"?contacto:"";
+    var emForDg=tpv==="em"?contacto:"";
+    var sendLabel=tpv==="wa"?" Enviar por WhatsApp API":"📧 Enviar Email";
+    var apiBtn="<button class='btn btn-pri' onclick='enviarInvitacionDG("+JSON.stringify(nombre)+","+JSON.stringify(cargo)+","+JSON.stringify(waForDg)+","+JSON.stringify(emForDg)+")'>"+sendLabel+"</button>";
     var msgId="msg-"+n;
     card.innerHTML="<div class='inv-card-hd'>"
       +"<div class='inv-name'>"+nombre+"</div>"
@@ -284,7 +284,7 @@ function genInv(){
       +"<div class='inv-contact'>"+contacto+"</div>"
       +"</div>"
       +"<div class='inv-actions'>"
-      +(waBtn||emBtn)
+      +waBtn+apiBtn
       +"<button class='btn btn-sec' onclick='copyMsg(this,\""+msgId+"\")'>📋 Copiar mensaje</button>"
       +"<button class='btn btn-sec' style='font-size:11px' onclick='toggleMsg(\""+msgId+"\")'>Ver mensaje</button>"
       +"</div>"
@@ -292,6 +292,32 @@ function genInv(){
     cards.appendChild(card);
   });
   if(!count){cards.innerHTML="<p style='color:var(--ink4);font-size:12px;padding:8px 0'>Agrega al menos un director con nombre y número/correo.</p>";}
+}
+function enviarInvitacionDG(nombre, cargo, whatsapp, email) {
+  var _clienteId = new URLSearchParams(window.location.search).get('clienteId');
+  if (!_clienteId) { alert('Falta el clienteId en la URL'); return; }
+  if (!whatsapp && !email) { alert('Ingresa WhatsApp o email'); return; }
+  var token = localStorage.getItem('fd_access') || '';
+  showToast('Enviando cuestionario a ' + nombre + '…', '#6c4de6');
+  fetch('https://api.flowdesk.mx/mentoria/clientes/' + _clienteId + '/enviar-cuestionario', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: JSON.stringify({ nombre: nombre, cargo: cargo, whatsapp: whatsapp, email: email, tipo: 'gerente' }),
+  }).then(function(r) {
+    if (!r.ok) throw new Error('Error ' + r.status);
+    return r.json();
+  }).then(function() {
+    showToast('✓ Cuestionario enviado a ' + nombre, '#22c55e');
+  }).catch(function(e) {
+    showToast('Error al enviar: ' + (e.message || 'revisa la conexión'), '#ef4444');
+  });
+}
+function showToast(msg, color) {
+  var t = document.getElementById('_toast');
+  if (!t) { t = document.createElement('div'); t.id = '_toast'; t.style.cssText = 'position:fixed;bottom:20px;right:20px;padding:11px 20px;border-radius:9px;font-size:13px;font-weight:600;color:#fff;z-index:9999;transition:opacity .3s'; document.body.appendChild(t); }
+  t.textContent = msg; t.style.background = color; t.style.opacity = '1';
+  clearTimeout(t._tid);
+  t._tid = setTimeout(function(){ t.style.opacity = '0'; }, 4000);
 }
 function toggleMsg(id){var el=document.getElementById(id);if(el)el.classList.toggle("show");}
 function copyMsg(btn,id){
