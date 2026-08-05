@@ -310,7 +310,7 @@ function exportJSON(){
   var _clienteId = new URLSearchParams(window.location.search).get('clienteId');
   if (_clienteId) {
     var _area = 'operador-' + (data.puesto?.area_id || data.seccion?.area_id || aid || 'sin-area');
-    fetch('https://api.flowdesk.mx/mentoria/webhook/diagnostico', {
+    fetch('https://api.flowdesk.mx/api/v1/mentoria/webhook/diagnostico', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ clienteId: _clienteId, area: _area, datos: data }),

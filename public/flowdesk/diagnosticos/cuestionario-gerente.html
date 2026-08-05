@@ -369,7 +369,7 @@ function enviarInvitacion(nombre, cargo, whatsapp, email, tipo) {
   if (!whatsapp && !email) { alert('Ingresa WhatsApp o email del colaborador'); return; }
   var token = localStorage.getItem('fd_access') || '';
   showToast('Enviando cuestionario a ' + nombre + '…', '#6c4de6');
-  fetch('https://api.flowdesk.mx/mentoria/clientes/' + _clienteId + '/enviar-cuestionario', {
+  fetch('https://api.flowdesk.mx/api/v1/mentoria/clientes/' + _clienteId + '/enviar-cuestionario', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
     body: JSON.stringify({ nombre: nombre, cargo: cargo, whatsapp: whatsapp, email: email, tipo: tipo || 'operador', empresa: _EMP }),
@@ -525,7 +525,7 @@ function exportJSON(){
   var _clienteId = new URLSearchParams(window.location.search).get('clienteId');
   if (_clienteId) {
     var _area = 'gerente-' + (data.area?.id || aid || 'sin-area');
-    fetch('https://api.flowdesk.mx/mentoria/webhook/diagnostico', {
+    fetch('https://api.flowdesk.mx/api/v1/mentoria/webhook/diagnostico', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ clienteId: _clienteId, area: _area, datos: data }),
