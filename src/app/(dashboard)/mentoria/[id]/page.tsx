@@ -474,6 +474,27 @@ export default function ClienteWorkspace() {
 
         {tab === 'diagnosticos' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+            {/* ── Sesiones IA ── */}
+            <div style={{ background: 'var(--surface)', border: '1px solid rgba(108,77,230,0.3)', borderRadius: 12, padding: '16px 20px' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>🤖 Sesión de diagnóstico con IA</div>
+              <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 12 }}>El agente guía la conversación y documenta el cubo en tiempo real. Úsalo en sesión presencial o envía el link al colaborador.</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button onClick={() => router.push(`/mentoria/${id}/sesion?tipo=dg`)} style={{ fontSize: 12, padding: '7px 14px', background: 'rgba(108,77,230,0.1)', color: '#6c4de6', border: '1px solid rgba(108,77,230,0.3)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+                  👔 Sesión Director General
+                </button>
+                <button onClick={() => router.push(`/mentoria/${id}/sesion?tipo=gerente`)} style={{ fontSize: 12, padding: '7px 14px', background: 'rgba(59,130,246,0.1)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+                  🏢 Sesión Gerente
+                </button>
+                <button onClick={() => router.push(`/mentoria/${id}/sesion?tipo=operador`)} style={{ fontSize: 12, padding: '7px 14px', background: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+                  ⚙️ Sesión Operador
+                </button>
+                <button onClick={() => router.push(`/mentoria/${id}/sesion?tipo=levantamiento`)} style={{ fontSize: 12, padding: '7px 14px', background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+                  📋 Levantamiento completo
+                </button>
+              </div>
+            </div>
+
             <PipelineDiagnostico clienteId={id} empresa={cliente.empresa} ejecutivo={cliente.ejecutivo_asignado} driveUrl={cliente.drive_url} whatsapp={cliente.whatsapp} />
             <div style={{ background: 'rgba(108,77,230,0.05)', border: '1px solid rgba(108,77,230,0.2)', borderRadius: 10, padding: '12px 16px', fontSize: 13, color: 'var(--text-2)', marginBottom: 4 }}>
               Los formularios guardan los datos en el navegador donde se abren. Usa el mismo equipo para mantener consistencia entre sesiones.
