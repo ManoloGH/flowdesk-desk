@@ -870,6 +870,24 @@ const CUBO_SECTIONS: CuboSection[] = [
   },
 ];
 
+const CUBO_SHORT: Record<CuboKey, string> = {
+  contexto:       'Contexto',
+  areas_procesos: 'Áreas',
+  organigrama:    'Organigrama',
+  sistemas:       'Sistemas',
+  brechas:        'Brechas',
+  agentes:        'Agentes IA',
+};
+
+const ENTREGABLE_NEEDS: Record<string, CuboKey[]> = {
+  flujo_asis: ['areas_procesos', 'brechas', 'sistemas'],
+  org_actual: ['organigrama', 'contexto'],
+  flujo_tobe: ['agentes', 'areas_procesos'],
+  org_nuevo:  ['agentes', 'organigrama'],
+  propuesta:  ['agentes', 'brechas', 'contexto'],
+  roadmap:    ['contexto', 'areas_procesos', 'organigrama', 'sistemas', 'brechas', 'agentes'],
+};
+
 function TabCubo({ clienteId, empresa, sesiones, cubo: initialCubo }: { clienteId: string; empresa: string; sesiones: Sesion[]; cubo?: Record<string, string> }) {
   const entKey  = `mentoria_ent_${clienteId}`;
 
@@ -1174,51 +1192,87 @@ Fase: Expansión (Fase 2)`,
         })}
       </div>
 
-      {/* ── Entregables ── */}
+      {/* ── Cobertura de entregables ── */}
       <div style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', padding: '4px 0' }}>
-          6 Entregables Parte 1
-        </div>
-        {ENTREGABLES.map(e => {
-          const st = entStatus[e.id] ?? 'borrador';
-          const cfg = statusCfg[st];
-          return (
-            <div key={e.id} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 11, padding: '14px 16px' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 8 }}>
-                <div style={{ width: 28, height: 28, borderRadius: 7, background: 'rgba(108,77,230,0.1)', border: '1px solid rgba(108,77,230,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>{e.icon}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', lineHeight: 1.3 }}>{e.num}. {e.titulo}</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>{e.desc}</div>
-                </div>
-              </div>
-              <div style={{ fontSize: 9, color: 'var(--text-3)', marginBottom: 8 }}>Fuente: {e.fuente}</div>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                <button onClick={() => cycleStatus(e.id)} style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.color}40`, cursor: 'pointer' }}>
-                  {cfg.label}
+
+        {/* Secciones del cubo — estado rápido */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 11, padding: '14px 16px' }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Secciones del cubo</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {CUBO_SECTIONS.map(s => {
+              const filled = !!(cubo[s.key]?.trim());
+              return (
+                <button key={s.key} onClick={() => setOpenSection(s.key)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: '3px 0' }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: filled ? '#22c55e' : 'var(--line)' }} />
+                  <span style={{ fontSize: 12, flex: 1, color: filled ? 'var(--text)' : 'var(--text-3)', fontWeight: filled ? 600 : 400 }}>
+                    {CUBO_SHORT[s.key]}
+                  </span>
+                  {filled
+                    ? <span style={{ fontSize: 9, color: '#22c55e', fontWeight: 700 }}>✓</span>
+                    : <span style={{ fontSize: 9, color: '#ef4444', fontWeight: 700 }}>Falta</span>
+                  }
                 </button>
-                <a href={`${e.path}?empresa=${encodeURIComponent(empresa)}&clienteId=${clienteId}`} target="_blank" rel="noreferrer"
-                  style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: 'var(--text-3)', textDecoration: 'none', marginLeft: 'auto' }}>
-                  <ExternalLink size={9} /> Ver HTML
-                </a>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Por entregable — cobertura visual */}
+        <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', padding: '4px 0' }}>
+          Listo para generar
+        </div>
+
+        {ENTREGABLES.map(e => {
+          const needed  = ENTREGABLE_NEEDS[e.id] ?? [];
+          const filledK = needed.filter(k => !!(cubo[k]?.trim()));
+          const missing = needed.filter(k => !(cubo[k]?.trim()));
+          const ready   = missing.length === 0;
+          return (
+            <div key={e.id} style={{
+              background: 'var(--surface)',
+              border: `1px solid ${ready ? 'rgba(34,197,94,0.35)' : missing.length === needed.length ? 'rgba(239,68,68,0.25)' : 'rgba(245,158,11,0.3)'}`,
+              borderRadius: 11, padding: '12px 14px',
+            }}>
+              {/* Título + badge */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7, marginBottom: 8 }}>
+                <span style={{ fontSize: 16, flexShrink: 0, lineHeight: 1 }}>{e.icon}</span>
+                <div style={{ flex: 1, fontSize: 11, fontWeight: 700, color: 'var(--text)', lineHeight: 1.3 }}>{e.titulo}</div>
+                <span style={{
+                  fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 99, flexShrink: 0,
+                  background: ready ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.08)',
+                  color: ready ? '#22c55e' : '#ef4444',
+                  border: `1px solid ${ready ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.2)'}`,
+                }}>
+                  {ready ? '✓ Listo' : `${filledK.length}/${needed.length}`}
+                </span>
               </div>
+
+              {/* Chips de secciones necesarias */}
+              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                {needed.map(k => {
+                  const ok = !!(cubo[k]?.trim());
+                  return (
+                    <button key={k} onClick={() => setOpenSection(k)} style={{
+                      fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 99, cursor: 'pointer',
+                      background: ok ? 'rgba(34,197,94,0.1)'  : 'rgba(239,68,68,0.07)',
+                      color:      ok ? '#22c55e'               : '#ef4444',
+                      border:     `1px solid ${ok ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.25)'}`,
+                    }}>
+                      {ok ? '✓' : '○'} {CUBO_SHORT[k]}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Link abrir */}
+              <a href={`${e.path}?empresa=${encodeURIComponent(empresa)}&clienteId=${clienteId}`} target="_blank" rel="noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 3, marginTop: 9, fontSize: 10, textDecoration: 'none', fontWeight: ready ? 700 : 400, color: ready ? '#22c55e' : 'var(--text-3)' }}>
+                <ExternalLink size={9} /> {ready ? 'Abrir entregable →' : 'Ver HTML (parcial)'}
+              </a>
             </div>
           );
         })}
-
-        {/* Resumen estado */}
-        <div style={{ background: 'rgba(108,77,230,0.05)', border: '1px solid rgba(108,77,230,0.2)', borderRadius: 10, padding: '12px 14px', marginTop: 4 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#8b6ef5', marginBottom: 6 }}>Estado de entregables</div>
-          {(['borrador', 'revision', 'aprobado'] as const).map(s => {
-            const count = Object.values(entStatus).filter(v => v === s).length + (s === 'borrador' ? Math.max(0, 6 - Object.keys(entStatus).length) : 0);
-            const cfg = statusCfg[s];
-            return count > 0 ? (
-              <div key={s} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, padding: '3px 0', color: 'var(--text-2)' }}>
-                <span style={{ color: cfg.color }}>{cfg.label}</span>
-                <span style={{ fontWeight: 700 }}>{count}</span>
-              </div>
-            ) : null;
-          })}
-        </div>
       </div>
     </div>
   );
