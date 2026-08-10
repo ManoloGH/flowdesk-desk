@@ -556,6 +556,39 @@ function showTab(id,btn){
 buildOrg();
 buildCost();
 </script>
+<script>
+/* ── Carga automática desde Cubo MentorIA ────────────────────────────── */
+(function(){
+  var SECCIONES=[
+    {key:'agentes',label:'Agentes IA propuestos'},
+    {key:'organigrama',label:'Organigrama actual (base)'},
+  ];
+  var params=new URLSearchParams(window.location.search);
+  var clienteId=params.get('clienteId');
+  var empresa=params.get('empresa')?decodeURIComponent(params.get('empresa')):null;
+  if(!clienteId)return;
+  var token=localStorage.getItem('fd_access');
+  if(!token)return;
+  fetch('https://api.flowdesk.mx/api/v1/mentoria/clientes/'+clienteId,{headers:{'Authorization':'Bearer '+token}})
+  .then(function(r){return r.ok?r.json():null;})
+  .then(function(d){
+    if(!d)return;
+    var nombre=d.empresa||empresa;
+    if(nombre){
+      document.querySelectorAll('.hmeta').forEach(function(el){el.innerHTML=el.innerHTML.replace(/Textiles\s+Aná[^<·]*/g,nombre+' ');});
+      document.title=document.title.replace(/Textiles\s+Aná[^\s|—]*/g,nombre);
+    }
+    var cubo=d.cubo||{};
+    var rows=SECCIONES.map(function(s){var t=cubo[s.key]||'';return t?'<div style="margin-bottom:10px"><div style="font-size:9.5px;font-weight:800;color:#6C4DE6;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">'+s.label+'</div><div style="font-size:11.5px;color:#334155;line-height:1.55;white-space:pre-wrap;background:#F5F3FF;padding:8px 10px;border-radius:6px;border:1px solid rgba(108,77,230,.18);max-height:110px;overflow-y:auto">'+(t.length>500?t.slice(0,500)+'…':t)+'</div></div>':'';}).join('');
+    if(!rows)return;
+    var banner=document.createElement('div');
+    banner.style.cssText='background:#F5F3FF;border-bottom:2px solid #6C4DE6;padding:12px 20px';
+    banner.innerHTML='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="background:#6C4DE6;color:#fff;font-size:9px;font-weight:800;padding:2px 9px;border-radius:99px;letter-spacing:.06em">📊 CUBO · '+(nombre||'').toUpperCase()+'</span><span style="font-size:10px;color:#64748B">Datos cargados automáticamente desde tu cuenta MentorIA</span></div>'+rows;
+    var ref=document.querySelector('.kpi-bar')||document.querySelector('.proto-banner')||document.body.firstElementChild.nextElementSibling;
+    if(ref)ref.parentNode.insertBefore(banner,ref);else document.body.insertBefore(banner,document.body.firstChild.nextSibling);
+  }).catch(function(){});
+})();
+</script>
 </body>
 </html>
 

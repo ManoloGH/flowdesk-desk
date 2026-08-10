@@ -135,7 +135,7 @@ export default function ClienteWorkspace() {
 
   const [cliente, setCliente]   = useState<Cliente | null>(null);
   const [loading, setLoading]   = useState(true);
-  const [tab, setTab]           = useState<'proyecto' | 'diagnosticos' | 'hallazgos' | 'plan' | 'sesiones' | 'facturacion' | 'cubo'>('proyecto');
+  const [tab, setTab]           = useState<'sesiones_cuestionarios' | 'cubo' | 'entregables'>('sesiones_cuestionarios');
   const [editing, setEditing]   = useState(false);
   const [checks, setChecks]     = useState<Record<string, boolean>>({});
   const [sesiones, setSesiones] = useState<Sesion[]>([]);
@@ -389,13 +389,9 @@ export default function ClienteWorkspace() {
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--line)', marginTop: 16 }}>
           {([
-            { key: 'proyecto',     label: '📋 Proyecto' },
-            { key: 'diagnosticos', label: '🔬 Diagnósticos' },
-            { key: 'cubo',         label: '🎯 Cubo & Entregables' },
-            { key: 'hallazgos',    label: `🚦 Hallazgos${hallazgos.length ? ` (${hallazgos.length})` : ''}` },
-            { key: 'plan',         label: `⚡ Plan de Acción${plan.length ? ` (${plan.filter(a=>a.status==='completado').length}/${plan.length})` : ''}` },
-            { key: 'sesiones',     label: `💬 Sesiones (${sesiones.length})` },
-            { key: 'facturacion',  label: '💰 Facturación' },
+            { key: 'sesiones_cuestionarios', label: '🎙️ Sesiones y cuestionarios' },
+            { key: 'cubo',                   label: '🎯 Cubo de información' },
+            { key: 'entregables',            label: '📦 Entregables' },
           ] as const).map(t => (
             <button key={t.key} onClick={() => {
               setTab(t.key);
@@ -404,7 +400,7 @@ export default function ClienteWorkspace() {
                   .then(data => setCliente(data))
                   .catch(() => {});
               }
-            }} style={{ padding: '9px 18px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: tab === t.key ? 'var(--text)' : 'var(--text-3)', borderBottom: tab === t.key ? '2px solid #6c4de6' : '2px solid transparent', marginBottom: -1, transition: 'color 0.15s' }}>
+            }} style={{ padding: '9px 20px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: tab === t.key ? 'var(--text)' : 'var(--text-3)', borderBottom: tab === t.key ? '2px solid #6c4de6' : '2px solid transparent', marginBottom: -1, transition: 'color 0.15s' }}>
               {t.label}
             </button>
           ))}
@@ -414,258 +410,102 @@ export default function ClienteWorkspace() {
       {/* ── Tab content ── */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px' }}>
 
-        {tab === 'proyecto' && (
+        {/* ── SESIONES Y CUESTIONARIOS ── */}
+        {tab === 'sesiones_cuestionarios' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {PHASES.map(phase => {
-              const done = phase.items.filter(i => checks[i.id]).length;
-              const pct = Math.round(done / phase.items.length * 100);
-              const isCurrent = phase.num === cliente.fase_actual;
-              const isPast = phase.num < cliente.fase_actual;
-              return (
-                <div key={phase.num} style={{ background: 'var(--surface)', border: `1px solid ${isCurrent ? phase.color + '50' : 'var(--line)'}`, borderRadius: 12, overflow: 'hidden', opacity: phase.num > cliente.fase_actual ? 0.55 : 1 }}>
-                  <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14, borderBottom: '1px solid var(--line)' }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 8, background: isPast ? 'rgba(34,197,94,0.12)' : `${phase.color}18`, border: `1px solid ${isPast ? 'rgba(34,197,94,0.3)' : phase.color + '40'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: isPast ? '#22c55e' : phase.color, flexShrink: 0 }}>
-                      {isPast ? '✓' : phase.num}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Fase {phase.num} · {phase.label}</span>
-                        {isCurrent && <span style={{ fontSize: 10, fontWeight: 700, background: `${phase.color}18`, color: phase.color, border: `1px solid ${phase.color}40`, padding: '2px 8px', borderRadius: 99 }}>Actual</span>}
-                        <span style={{ fontSize: 10, color: 'var(--text-3)' }}>{phase.duracion}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
-                        <div style={{ flex: 1, height: 4, background: 'var(--surface-2)', borderRadius: 99, overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: pct + '%', background: isPast ? '#22c55e' : phase.color, borderRadius: 99, transition: 'width 0.4s' }} />
-                        </div>
-                        <span style={{ fontSize: 10, color: 'var(--text-3)', flexShrink: 0 }}>{done}/{phase.items.length}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ padding: '4px 0' }}>
-                    {phase.items.map(item => (
-                      <label key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 18px', cursor: 'pointer', transition: 'background 0.12s' }}
-                        onMouseEnter={e => (e.currentTarget as HTMLLabelElement).style.background = 'var(--surface-2)'}
-                        onMouseLeave={e => (e.currentTarget as HTMLLabelElement).style.background = 'transparent'}
-                      >
-                        <div style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${checks[item.id] ? (isPast ? '#22c55e' : phase.color) : 'var(--line)'}`, background: checks[item.id] ? (isPast ? '#22c55e' : phase.color) : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>
-                          {checks[item.id] && <Check size={10} color="white" strokeWidth={3} />}
-                        </div>
-                        <input type="checkbox" checked={!!checks[item.id]} onChange={() => toggleCheck(item.id)} style={{ display: 'none' }} />
-                        <span style={{ fontSize: 13, color: checks[item.id] ? 'var(--text-3)' : 'var(--text)', textDecoration: checks[item.id] ? 'line-through' : 'none', lineHeight: 1.4 }}>
-                          {item.label}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
 
-            {/* Notas generales */}
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '18px' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Notas del proyecto</div>
-              <textarea value={notas} onChange={e => setNotas(e.target.value)} placeholder="Notas generales del cliente, contexto importante, restricciones, preferencias del equipo…" style={{ width: '100%', minHeight: 100, background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8, padding: '10px 12px', color: 'var(--text)', fontSize: 13, lineHeight: 1.6, fontFamily: 'inherit', outline: 'none', resize: 'vertical' }} />
-              <button onClick={saveNotas} disabled={savingNotas} style={{ ...btnPrimary, marginTop: 10, fontSize: 12 }}>
-                <Save size={12} /> {savingNotas ? 'Guardando…' : 'Guardar notas'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {tab === 'diagnosticos' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-
-            {/* ── Sesiones IA ── */}
-            <div style={{ background: 'var(--surface)', border: '1px solid rgba(108,77,230,0.3)', borderRadius: 12, padding: '16px 20px' }}>
+            {/* Sesiones IA */}
+            <div style={{ background: 'var(--surface)', border: '1px solid rgba(108,77,230,0.3)', borderRadius: 12, padding: '18px 20px' }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>🤖 Sesión de diagnóstico con IA</div>
-              <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 12 }}>El agente guía la conversación y documenta el cubo en tiempo real. Úsalo en sesión presencial o envía el link al colaborador.</div>
+              <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 14 }}>El agente guía la conversación y documenta el cubo en tiempo real.</div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <button onClick={() => router.push(`/mentoria/${id}/sesion?tipo=dg`)} style={{ fontSize: 12, padding: '7px 14px', background: 'rgba(108,77,230,0.1)', color: '#6c4de6', border: '1px solid rgba(108,77,230,0.3)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
-                  👔 Sesión Director General
+                <button onClick={() => router.push(`/mentoria/${id}/sesion?tipo=dg`)} style={{ fontSize: 12, padding: '8px 16px', background: 'rgba(108,77,230,0.1)', color: '#6c4de6', border: '1px solid rgba(108,77,230,0.3)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+                  👔 Director General
                 </button>
-                <button onClick={() => router.push(`/mentoria/${id}/sesion?tipo=gerente`)} style={{ fontSize: 12, padding: '7px 14px', background: 'rgba(59,130,246,0.1)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
-                  🏢 Sesión Gerente
+                <button onClick={() => router.push(`/mentoria/${id}/sesion?tipo=gerente`)} style={{ fontSize: 12, padding: '8px 16px', background: 'rgba(59,130,246,0.1)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+                  🏢 Gerente de área
                 </button>
-                <button onClick={() => router.push(`/mentoria/${id}/sesion?tipo=operador`)} style={{ fontSize: 12, padding: '7px 14px', background: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
-                  ⚙️ Sesión Operador
+                <button onClick={() => router.push(`/mentoria/${id}/sesion?tipo=operador`)} style={{ fontSize: 12, padding: '8px 16px', background: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+                  ⚙️ Operador
                 </button>
-                <button onClick={() => router.push(`/mentoria/${id}/sesion?tipo=levantamiento`)} style={{ fontSize: 12, padding: '7px 14px', background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+                <button onClick={() => router.push(`/mentoria/${id}/sesion?tipo=levantamiento`)} style={{ fontSize: 12, padding: '8px 16px', background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
                   📋 Levantamiento completo
                 </button>
               </div>
             </div>
 
+            {/* Cuestionarios colaboradores */}
             <PipelineDiagnostico clienteId={id} empresa={cliente.empresa} ejecutivo={cliente.ejecutivo_asignado} driveUrl={cliente.drive_url} whatsapp={cliente.whatsapp} />
-            <div style={{ background: 'rgba(108,77,230,0.05)', border: '1px solid rgba(108,77,230,0.2)', borderRadius: 10, padding: '12px 16px', fontSize: 13, color: 'var(--text-2)', marginBottom: 4 }}>
-              Los formularios guardan los datos en el navegador donde se abren. Usa el mismo equipo para mantener consistencia entre sesiones.
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              {DIAG_FORMS.map(form => {
-                const isDone = cliente.areas_diagnosticadas.includes(form.key);
-                return (
-                  <div key={form.key} style={{ background: 'var(--surface)', border: `1px solid ${isDone ? 'rgba(34,197,94,0.3)' : 'var(--line)'}`, borderRadius: 11, padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
-                    <span style={{ fontSize: 22, flexShrink: 0 }}>{form.icon}</span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 3 }}>{form.label}</div>
-                      <div style={{ fontSize: 11, color: isDone ? '#22c55e' : 'var(--text-3)' }}>{isDone ? '✅ Completado' : '⬜ Pendiente'}</div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                      {!isDone && (
-                        <button onClick={() => { setCliente(prev => prev ? { ...prev, areas_diagnosticadas: [...prev.areas_diagnosticadas, form.key] } : prev); api.patch(`/mentoria/clientes/${id}/areas`, { area: form.key }).catch(() => {}); }} style={{ ...btnGhost, fontSize: 10, padding: '5px 9px' }}>✓ Marcar</button>
-                      )}
-                      <a href={`${form.path}?clienteId=${id}`} target="_blank" rel="noreferrer" style={{ ...btnPrimary, fontSize: 11, padding: '6px 12px', textDecoration: 'none' }}>
-                        <ExternalLink size={11} /> Abrir
-                      </a>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
 
-            {/* Procesamiento automático con IA */}
-            <div style={{ background: 'var(--surface)', border: '1px solid rgba(108,77,230,0.3)', borderRadius: 11, padding: '20px 22px' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
-                    🤖 Procesar diagnósticos con IA
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6 }}>
-                    Analiza todos los formularios guardados y genera automáticamente los hallazgos con semáforo y el plan de acción priorizado.
-                  </div>
-                  {resumenIA && (
-                    <div style={{ marginTop: 12, padding: '10px 14px', background: 'rgba(108,77,230,0.06)', border: '1px solid rgba(108,77,230,0.2)', borderRadius: 8 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: '#8b6ef5', marginBottom: 4 }}>RESUMEN EJECUTIVO</div>
-                      <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6 }}>{resumenIA}</div>
-                      {roiIA && <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: '#22c55e' }}>💰 ROI estimado: {roiIA}</div>}
-                    </div>
-                  )}
+            {/* Historial de sesiones */}
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
+              <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                  💬 Historial de sesiones {sesiones.length > 0 && <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 400 }}>({sesiones.length})</span>}
                 </div>
-                <button
-                  onClick={procesarConIA}
-                  disabled={procesando}
-                  style={{ ...btnPrimary, padding: '12px 22px', fontSize: 13, flexShrink: 0, opacity: procesando ? 0.7 : 1 }}
-                >
-                  {procesando ? '⏳ Analizando…' : '✨ Generar hallazgos y plan'}
-                </button>
+                <button onClick={() => setShowSesion(true)} style={btnPrimary}><Plus size={12} /> Nueva sesión</button>
               </div>
+              {!sesiones.length ? (
+                <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-3)', fontSize: 13 }}>Sin sesiones registradas todavía</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  {sesiones.map(s => (
+                    <div key={s.id} style={{ padding: '14px 20px', borderBottom: '1px solid var(--line)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{s.titulo}</span>
+                        <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 99, background: 'rgba(108,77,230,0.1)', color: '#8b6ef5' }}>{TIPO_SESION_LABEL[s.tipo]}</span>
+                        <span style={{ fontSize: 11, color: 'var(--text-3)', marginLeft: 'auto' }}>{fmtDate(s.fecha)}</span>
+                      </div>
+                      {s.notas && <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5, marginBottom: s.acciones ? 6 : 0 }}>{s.notas}</div>}
+                      {s.acciones && (
+                        <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>
+                          <span style={{ fontWeight: 600 }}>Próximos pasos: </span>{s.acciones}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
 
+        {/* ── CUBO DE INFORMACIÓN ── */}
         {tab === 'cubo' && (
           <TabCubo clienteId={id} empresa={cliente.empresa} sesiones={sesiones} cubo={(cliente as any).cubo ?? {}} />
         )}
 
-        {tab === 'hallazgos' && (
-          <TabHallazgos
-            hallazgos={hallazgos}
-            onAdd={() => setShowHallazgo(true)}
-            onDelete={deleteHallazgo}
-            onAddToPlan={(h) => { setShowAccion(true); }}
-          />
-        )}
-
-        {tab === 'plan' && (
-          <TabPlan
-            plan={plan}
-            filter={planFilter}
-            onFilterChange={setPlanFilter}
-            onAdd={() => setShowAccion(true)}
-            onStatusChange={updateAccionStatus}
-            onDelete={deleteAccion}
-          />
-        )}
-
-        {tab === 'sesiones' && (
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
-              <button onClick={() => setShowSesion(true)} style={btnPrimary}><Plus size={13} /> Nueva sesión</button>
+        {/* ── ENTREGABLES ── */}
+        {tab === 'entregables' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div style={{ fontSize: 12, color: 'var(--text-3)', padding: '2px 0' }}>
+              Cada entregable se genera desde el cubo de información. Ábrelos y revísalos con el cliente.
             </div>
-            {!sesiones.length ? (
-              <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-3)', fontSize: 13 }}>Sin sesiones registradas — agrega la primera reunión</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {sesiones.map(s => (
-                  <div key={s.id} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 11, padding: '16px 20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
-                      <div>
-                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 3 }}>
-                          <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{s.titulo}</span>
-                          <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 99, background: 'rgba(108,77,230,0.1)', color: '#8b6ef5' }}>{TIPO_SESION_LABEL[s.tipo]}</span>
-                        </div>
-                        <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{fmtDate(s.fecha)}</div>
-                      </div>
-                    </div>
-                    {s.notas && <div style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, marginBottom: s.acciones ? 8 : 0 }}>{s.notas}</div>}
-                    {s.acciones && (
-                      <div style={{ background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 7, padding: '8px 12px', fontSize: 12, color: 'var(--text-2)' }}>
-                        <span style={{ fontWeight: 600, color: 'var(--text-3)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Próximos pasos: </span>
-                        {s.acciones}
-                      </div>
-                    )}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+              {ENTREGABLES.map(e => (
+                <a
+                  key={e.id}
+                  href={`${e.path}?clienteId=${id}&empresa=${encodeURIComponent(cliente.empresa)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    display: 'flex', flexDirection: 'column', gap: 8,
+                    background: 'var(--surface)', border: '1px solid var(--line)',
+                    borderRadius: 12, padding: '18px 20px', textDecoration: 'none',
+                    transition: 'border-color 0.15s, box-shadow 0.15s',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = '#6c4de650'; (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 4px 16px rgba(108,77,230,0.1)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--line)'; (e.currentTarget as HTMLAnchorElement).style.boxShadow = 'none'; }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 26 }}>{e.icon}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-3)', background: 'var(--bg)', padding: '2px 7px', borderRadius: 99, border: '1px solid var(--line)' }}>#{e.num}</span>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {tab === 'facturacion' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {/* Resumen contrato */}
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '20px 22px' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Contrato</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
-                {[
-                  { l: 'Empresa', v: cliente.empresa },
-                  { l: 'Monto total', v: fmt$(cliente.precio) + ' + IVA' },
-                  { l: 'Inicio', v: fmtDate(cliente.fecha_inicio) },
-                  { l: 'Fin / Renovación', v: cliente.fecha_fin ? fmtDate(cliente.fecha_fin) : 'Indefinido' },
-                  { l: 'Ejecutivo', v: cliente.ejecutivo_asignado || '—' },
-                  { l: 'Tamaño empresa', v: cliente.tamano === '<10' ? '<10 empleados' : cliente.tamano === '10-100' ? '10-100 empleados' : '>100 empleados' },
-                ].map(r => (
-                  <div key={r.l}>
-                    <div style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 3 }}>{r.l}</div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{r.v}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Pagos */}
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Pagos</div>
-                  {pagos.length > 0 && <div style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 2 }}>
-                    {fmt$(pagos.filter(p => p.status === 'pagado').reduce((a, p) => a + p.monto, 0))} cobrados de {fmt$(cliente.precio)}
-                  </div>}
-                </div>
-                <button onClick={() => setShowPago(true)} style={btnPrimary}><Plus size={12} /> Registrar pago</button>
-              </div>
-              {!pagos.length ? (
-                <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-3)', fontSize: 13 }}>Sin pagos registrados</div>
-              ) : (
-                <table style={{ width: '100%' }}>
-                  <thead><tr>
-                    {['Fecha', 'Concepto', 'Monto', 'Status'].map(h => <th key={h} style={{ textAlign: 'left', fontSize: 10, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '10px 20px' }}>{h}</th>)}
-                  </tr></thead>
-                  <tbody>
-                    {pagos.map(p => (
-                      <tr key={p.id} style={{ borderTop: '1px solid var(--line)' }}>
-                        <td style={{ padding: '12px 20px', fontSize: 12, color: 'var(--text-2)' }}>{fmtDate(p.fecha)}</td>
-                        <td style={{ padding: '12px 20px', fontSize: 13, color: 'var(--text)' }}>{p.concepto}</td>
-                        <td style={{ padding: '12px 20px', fontSize: 13, fontWeight: 700, color: '#f59e0b' }}>{fmt$(p.monto)}</td>
-                        <td style={{ padding: '12px 20px' }}>
-                          <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 99, background: p.status === 'pagado' ? 'rgba(34,197,94,0.1)' : p.status === 'parcial' ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)', color: p.status === 'pagado' ? '#22c55e' : p.status === 'parcial' ? '#f59e0b' : '#ef4444' }}>
-                            {p.status === 'pagado' ? 'Pagado' : p.status === 'parcial' ? 'Parcial' : 'Pendiente'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', lineHeight: 1.3 }}>{e.titulo}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5 }}>{e.desc}</div>
+                  <div style={{ fontSize: 10, color: '#8b6ef5', marginTop: 2 }}>📥 {e.fuente}</div>
+                </a>
+              ))}
             </div>
           </div>
         )}
