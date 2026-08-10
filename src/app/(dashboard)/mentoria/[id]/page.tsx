@@ -1131,20 +1131,11 @@ Fase: Expansión (Fase 2)`,
             <div style={{ height: '100%', width: pctCubo + '%', background: 'linear-gradient(90deg,#6c4de6,#22c55e)', borderRadius: 99, transition: 'width 0.4s' }} />
           </div>
 
-          {/* Fuentes de datos */}
-          <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-            {CUESTIONARIOS_SRC.map(q => (
-              <a key={q.id} href={`${q.path}?empresa=${encodeURIComponent(empresa)}&clienteId=${clienteId}`} target="_blank" rel="noreferrer"
-                style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: q.color, background: `${q.color}10`, border: `1px solid ${q.color}30`, borderRadius: 7, padding: '4px 10px', textDecoration: 'none', fontWeight: 600 }}>
-                <ExternalLink size={10} /> {q.icon} {q.label}
-              </a>
-            ))}
-            {sesiones.length > 0 && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#ef4444', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 7, padding: '4px 10px', fontWeight: 600 }}>
-                💬 {sesiones.length} sesión{sesiones.length > 1 ? 'es' : ''} registrada{sesiones.length > 1 ? 's' : ''}
-              </span>
-            )}
-          </div>
+          {sesiones.length > 0 && (
+            <div style={{ marginTop: 10, fontSize: 11, color: 'var(--text-3)' }}>
+              💬 {sesiones.length} sesión{sesiones.length > 1 ? 'es' : ''} registrada{sesiones.length > 1 ? 's' : ''} · datos sincronizados automáticamente
+            </div>
+          )}
         </div>
 
         {/* Secciones del cubo */}
