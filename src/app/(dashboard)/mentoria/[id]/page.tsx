@@ -272,7 +272,7 @@ export default function ClienteWorkspace() {
       setPlan(prev => [...prev, ...result.plan]);
       setResumenIA(result.resumen || '');
       setRoiIA(result.roi || '');
-      setTab('hallazgos');
+      setTab('cubo');
     } catch (e: any) {
       alert(e.message || 'Error al procesar. Verifica que hay diagnósticos guardados.');
     } finally {
