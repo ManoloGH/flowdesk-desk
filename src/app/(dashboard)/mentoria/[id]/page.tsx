@@ -414,25 +414,32 @@ export default function ClienteWorkspace() {
         {tab === 'sesiones_cuestionarios' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-            {/* Sesiones IA */}
-            <div style={{ background: 'var(--surface)', border: '1px solid rgba(108,77,230,0.3)', borderRadius: 12, padding: '18px 20px' }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>🤖 Sesión de diagnóstico con IA</div>
-              <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 14 }}>El agente guía la conversación y documenta el cubo en tiempo real.</div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <button onClick={() => router.push(`/mentoria/${id}/sesion?tipo=dg`)} style={{ fontSize: 12, padding: '8px 16px', background: 'rgba(108,77,230,0.1)', color: '#6c4de6', border: '1px solid rgba(108,77,230,0.3)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
-                  👔 Director General
-                </button>
-                <button onClick={() => router.push(`/mentoria/${id}/sesion?tipo=gerente`)} style={{ fontSize: 12, padding: '8px 16px', background: 'rgba(59,130,246,0.1)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
-                  🏢 Gerente de área
-                </button>
-                <button onClick={() => router.push(`/mentoria/${id}/sesion?tipo=operador`)} style={{ fontSize: 12, padding: '8px 16px', background: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
-                  ⚙️ Operador
-                </button>
-                <button onClick={() => router.push(`/mentoria/${id}/sesion?tipo=levantamiento`)} style={{ fontSize: 12, padding: '8px 16px', background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
-                  📋 Levantamiento completo
-                </button>
-              </div>
-            </div>
+            {/* Sesión IA — hilo único continuo */}
+            {(() => {
+              const chatHistory = (cliente as any).chat_history as Array<{ role: string }> | null;
+              const msgCount = chatHistory ? chatHistory.filter((m: any) => m.role === 'user').length : 0;
+              return (
+                <div style={{ background: 'var(--surface)', border: '1px solid rgba(108,77,230,0.3)', borderRadius: 12, padding: '18px 20px' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>🤖 Sesión de diagnóstico con IA</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 14 }}>
+                    El agente guía la conversación y documenta el cubo en tiempo real. El hilo es continuo — puedes pausar y retomar cuando quieras.
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                    <button
+                      onClick={() => router.push(`/mentoria/${id}/sesion`)}
+                      style={{ fontSize: 12, padding: '8px 20px', background: 'rgba(108,77,230,0.1)', color: '#6c4de6', border: '1px solid rgba(108,77,230,0.3)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}
+                    >
+                      🎙️ {msgCount > 0 ? 'Continuar sesión' : 'Iniciar sesión'}
+                    </button>
+                    {msgCount > 0 && (
+                      <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                        {msgCount} intercambio{msgCount !== 1 ? 's' : ''} registrado{msgCount !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Cuestionarios colaboradores */}
             <PipelineDiagnostico clienteId={id} empresa={cliente.empresa} ejecutivo={cliente.ejecutivo_asignado} driveUrl={cliente.drive_url} whatsapp={cliente.whatsapp} />

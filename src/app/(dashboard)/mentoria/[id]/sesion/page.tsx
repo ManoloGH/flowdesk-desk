@@ -1,10 +1,14 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { ChevronLeft, ChevronDown, ChevronRight, Send, Loader2, ExternalLink, Zap } from 'lucide-react';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
+const ACCENT = '#6c4de6';
+
+const DEFAULT_GREETING =
+  `Hola, soy tu consultor de MentorIA Systems. Estoy aquí para guiar el diagnóstico de transformación digital.\n\n¿Por dónde quieres empezar? Cuéntame sobre la empresa y cuál es el mayor reto que están enfrentando hoy.`;
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -17,25 +21,11 @@ interface Message {
 
 // ── Config ─────────────────────────────────────────────────────────────────────
 
-const TIPO_LABELS: Record<string, { label: string; icon: string; color: string }> = {
-  dg:           { label: 'Director General',  icon: '👔', color: '#6c4de6' },
-  gerente:      { label: 'Sesión Gerente',     icon: '🏢', color: '#3b82f6' },
-  operador:     { label: 'Sesión Operador',    icon: '⚙️', color: '#f59e0b' },
-  levantamiento:{ label: 'Levantamiento',      icon: '📋', color: '#22c55e' },
-};
-
-const OPENING: Record<string, string> = {
-  dg: `Hola, soy tu consultor de MentorIA Systems. Empecemos la sesión de diagnóstico.\n\n¿Qué es lo que más te preocupa ahorita en la operación de la empresa?`,
-  gerente: `Hola, gracias por tu tiempo. Quiero entender a fondo tu área.\n\n¿Puedes contarme cuál es tu rol y cuál es la función principal de tu área en la empresa?`,
-  operador: `Hola, gracias por participar. Quiero entender cómo es tu trabajo día a día.\n\n¿Cuál es tu puesto y en qué área de la empresa trabajas?`,
-  levantamiento: `Sesión de levantamiento iniciada. Estoy listo para documentar la conversación en tiempo real.\n\nPuedes comenzar la sesión con el cliente.`,
-};
-
 const CUBO_SECTIONS: { key: CuboKey; titulo: string; color: string; placeholder: string }[] = [
   {
     key: 'contexto',
     titulo: 'Empresa & Contexto',
-    color: '#6c4de6',
+    color: ACCENT,
     placeholder: 'Empresa: ___\nActividad: ___\nEmpleados: ___\nFacturación: ___\n\nObjetivos DG:\n—\n\nPrioridades urgentes:\n—',
   },
   {
@@ -75,28 +65,23 @@ const CUBO_SECTIONS: { key: CuboKey; titulo: string; color: string; placeholder:
 export default function SesionPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const sp = useSearchParams();
-  const tipo = sp.get('tipo') ?? 'dg';
-  const tipoInfo = TIPO_LABELS[tipo] ?? TIPO_LABELS.dg;
 
-  const [empresa, setEmpresa]     = useState('');
-  const [cubo, setCubo]           = useState<Partial<Record<CuboKey, string>>>({});
-  const [messages, setMessages]   = useState<Message[]>([
-    { role: 'assistant', content: OPENING[tipo] ?? OPENING.dg },
-  ]);
-  const [input, setInput]         = useState('');
-  const [streaming, setStreaming] = useState(false);
-  const [streamText, setStreamText] = useState('');
+  const [empresa, setEmpresa]         = useState('');
+  const [cubo, setCubo]               = useState<Partial<Record<CuboKey, string>>>({});
+  const [messages, setMessages]       = useState<Message[]>([]);
+  const [input, setInput]             = useState('');
+  const [streaming, setStreaming]     = useState(false);
+  const [streamText, setStreamText]   = useState('');
   const [openSection, setOpenSection] = useState<CuboKey | null>('contexto');
   const [flashSection, setFlashSection] = useState<CuboKey | null>(null);
   const [editingSection, setEditingSection] = useState<CuboKey | null>(null);
-  const [editText, setEditText]   = useState('');
+  const [editText, setEditText]       = useState('');
   const [savingSection, setSavingSection] = useState(false);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef   = useRef<HTMLTextAreaElement>(null);
 
-  // Load cliente
+  // Load cliente + history from DB
   useEffect(() => {
     api.get<any>(`/mentoria/clientes/${id}`)
       .then(c => {
@@ -104,8 +89,16 @@ export default function SesionPage() {
         if (c.cubo && Object.keys(c.cubo).length > 0) {
           setCubo(c.cubo);
         }
+        const history = (c.chat_history ?? []) as Array<{ role: 'user' | 'assistant'; content: string }>;
+        if (history.length > 0) {
+          setMessages(history.map(m => ({ role: m.role, content: m.content })));
+        } else {
+          setMessages([{ role: 'assistant', content: DEFAULT_GREETING }]);
+        }
       })
-      .catch(() => {});
+      .catch(() => {
+        setMessages([{ role: 'assistant', content: DEFAULT_GREETING }]);
+      });
   }, [id]);
 
   // Scroll to bottom on new messages
@@ -117,8 +110,7 @@ export default function SesionPage() {
     const text = input.trim();
     if (!text || streaming) return;
 
-    const newMessages: Message[] = [...messages, { role: 'user', content: text }];
-    setMessages(newMessages);
+    setMessages(prev => [...prev, { role: 'user', content: text }]);
     setInput('');
     setStreaming(true);
     setStreamText('');
@@ -133,7 +125,7 @@ export default function SesionPage() {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ messages: newMessages, tipo }),
+        body: JSON.stringify({ message: text }),
       });
 
       if (!res.ok || !res.body) throw new Error('Error en el servidor');
@@ -210,6 +202,7 @@ export default function SesionPage() {
 
   const filledCount = CUBO_SECTIONS.filter(s => cubo[s.key]?.trim()).length;
   const pct = Math.round(filledCount / CUBO_SECTIONS.length * 100);
+  const userMsgCount = messages.filter(m => m.role === 'user').length;
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg)' }}>
@@ -230,14 +223,20 @@ export default function SesionPage() {
 
         <div style={{ width: 1, height: 16, background: 'var(--line)' }} />
 
-        <span style={{ fontSize: 13, color: tipoInfo.color, fontWeight: 600 }}>
-          {tipoInfo.icon} {tipoInfo.label}
+        <span style={{ fontSize: 13, color: ACCENT, fontWeight: 600 }}>
+          🎙️ Sesión de diagnóstico
         </span>
+
+        {userMsgCount > 0 && (
+          <span style={{ fontSize: 11, color: 'var(--text-3)', marginLeft: 4 }}>
+            · {userMsgCount} intercambio{userMsgCount !== 1 ? 's' : ''}
+          </span>
+        )}
 
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Cubo {pct}%</span>
           <div style={{ width: 80, height: 4, background: 'var(--line)', borderRadius: 2, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${pct}%`, background: tipoInfo.color, borderRadius: 2, transition: 'width 0.4s' }} />
+            <div style={{ height: '100%', width: `${pct}%`, background: ACCENT, borderRadius: 2, transition: 'width 0.4s' }} />
           </div>
         </div>
       </div>
@@ -254,7 +253,6 @@ export default function SesionPage() {
               <ChatBubble key={i} role={m.role} content={m.content} />
             ))}
 
-            {/* Streaming in progress */}
             {streaming && streamText && (
               <ChatBubble role="assistant" content={streamText} streaming />
             )}
@@ -290,7 +288,7 @@ export default function SesionPage() {
                 disabled={streaming || !input.trim()}
                 style={{
                   flexShrink: 0, width: 32, height: 32, borderRadius: 8,
-                  background: tipoInfo.color, border: 'none', cursor: 'pointer',
+                  background: ACCENT, border: 'none', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   opacity: streaming || !input.trim() ? 0.4 : 1, transition: 'opacity 0.2s',
                 }}
@@ -332,7 +330,6 @@ export default function SesionPage() {
                     background: isFlash ? `${section.color}18` : 'transparent',
                   }}
                 >
-                  {/* Section header */}
                   <button
                     onClick={() => setOpenSection(isOpen ? null : section.key)}
                     style={{
@@ -352,10 +349,11 @@ export default function SesionPage() {
                     {isFlash && (
                       <span style={{ fontSize: 10, color: section.color, fontWeight: 600 }}>actualizado</span>
                     )}
-                    {isOpen ? <ChevronDown size={12} style={{ color: 'var(--text-3)', flexShrink: 0 }} /> : <ChevronRight size={12} style={{ color: 'var(--text-3)', flexShrink: 0 }} />}
+                    {isOpen
+                      ? <ChevronDown size={12} style={{ color: 'var(--text-3)', flexShrink: 0 }} />
+                      : <ChevronRight size={12} style={{ color: 'var(--text-3)', flexShrink: 0 }} />}
                   </button>
 
-                  {/* Section body */}
                   {isOpen && (
                     <div style={{ padding: '0 20px 14px' }}>
                       {isEditing ? (
@@ -398,14 +396,8 @@ export default function SesionPage() {
                             {value || section.placeholder}
                           </pre>
                           <button
-                            onClick={() => {
-                              setEditText(value);
-                              setEditingSection(section.key);
-                            }}
-                            style={{
-                              marginTop: 8, fontSize: 11, color: section.color,
-                              background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                            }}
+                            onClick={() => { setEditText(value); setEditingSection(section.key); }}
+                            style={{ marginTop: 8, fontSize: 11, color: section.color, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                           >
                             ✏️ Editar manualmente
                           </button>
@@ -432,8 +424,8 @@ export default function SesionPage() {
               <EntregableBtn
                 label="Analizar con IA"
                 icon={<Zap size={11} />}
-                onClick={() => router.push(`/mentoria/${id}?tab=hallazgos&analizar=1`)}
-                color="#6c4de6"
+                onClick={() => router.push(`/mentoria/${id}?tab=cubo&analizar=1`)}
+                color={ACCENT}
               />
               <EntregableBtn
                 label="Propuesta comercial"
@@ -458,6 +450,7 @@ export default function SesionPage() {
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes blink { 0%, 100% { opacity: 1 } 50% { opacity: 0 } }
       `}</style>
     </div>
   );
@@ -474,13 +467,13 @@ function ChatBubble({ role, content, streaming }: { role: 'user' | 'assistant'; 
       </div>
       <div style={{
         maxWidth: '85%', padding: '10px 14px', borderRadius: isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-        background: isUser ? '#6c4de6' : 'var(--surface)',
+        background: isUser ? ACCENT : 'var(--surface)',
         color: isUser ? '#fff' : 'var(--text)',
         border: isUser ? 'none' : '1px solid var(--line)',
         fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
       }}>
         {content}
-        {streaming && <span style={{ display: 'inline-block', width: 8, height: 14, background: '#6c4de6', marginLeft: 2, borderRadius: 1, animation: 'blink 0.8s step-end infinite', verticalAlign: 'text-bottom' }} />}
+        {streaming && <span style={{ display: 'inline-block', width: 8, height: 14, background: ACCENT, marginLeft: 2, borderRadius: 1, animation: 'blink 0.8s step-end infinite', verticalAlign: 'text-bottom' }} />}
       </div>
     </div>
   );
@@ -499,7 +492,7 @@ function EntregableBtn({ label, icon, onClick, color }: { label: string; icon: R
         borderRadius: 6, cursor: 'pointer',
         color: color ?? 'var(--text-2)', transition: 'border-color 0.15s',
       }}
-      onMouseEnter={e => (e.currentTarget.style.borderColor = color ?? '#6c4de6')}
+      onMouseEnter={e => (e.currentTarget.style.borderColor = color ?? ACCENT)}
       onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--line)')}
     >
       {icon} {label}
