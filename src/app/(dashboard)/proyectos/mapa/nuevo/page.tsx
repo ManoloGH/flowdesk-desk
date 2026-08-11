@@ -1,34 +1,46 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Building2, Loader2 } from 'lucide-react';
 import { socFetch } from '@/lib/soc-api';
 
-const TIPOS = [
-  { value: 'Contabilidad', label: 'Contabilidad', desc: 'Cierres, pólizas, conciliaciones, reportes financieros' },
-  { value: 'Auditoria', label: 'Auditoría', desc: 'Papeles de trabajo, hallazgos, evidencias, reportes al consejo' },
-  { value: 'RecursosHumanos', label: 'Recursos Humanos', desc: 'Nómina, altas, bajas, vacaciones, evaluaciones' },
-  { value: 'Legal', label: 'Legal / Jurídico', desc: 'Contratos, litigios, cumplimiento regulatorio' },
-  { value: 'TI', label: 'Tecnologías de Información', desc: 'Soporte, usuarios, cambios, respaldos, incidentes' },
-  { value: 'Compras', label: 'Compras / Abastecimiento', desc: 'Proceso de compra, proveedores, autorizaciones, órdenes' },
-  { value: 'Ventas', label: 'Ventas / Comercial', desc: 'Ciclo de venta, cotizaciones, descuentos, clientes' },
-  { value: 'Direccion', label: 'Dirección General', desc: 'Decisiones estratégicas, aprobaciones, reportes ejecutivos' },
-  { value: 'Operaciones', label: 'Operaciones', desc: 'Producción, logística, almacén, calidad' },
-  { value: 'Otro', label: 'Otro', desc: 'Área no listada o transversal' },
-];
+interface Depto { id: string; nombre: string; descripcion: string; orden: number; }
 
 export default function NuevoMapeoPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const tipoParam = searchParams.get('tipo'); // legacy: nombre del depto pre-seleccionado
+
+  const [deptos, setDeptos] = useState<Depto[]>([]);
+  const [cargando, setCargando] = useState(true);
+
   const [form, setForm] = useState({
-    nombreDepartamento: '',
-    tipo: '',
+    nombreDepartamento: tipoParam ?? '',
+    tipo: 'Otro', // el enum en backend — siempre Otro para deptos personalizados
     responsableNombre: '',
   });
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    socFetch('/api/departamentos')
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then((list: Depto[]) => {
+        setDeptos(list);
+        // Si viene con ?tipo=NombreDepto, buscar el departamento por nombre y pre-llenar
+        if (tipoParam) {
+          const match = list.find(d => d.nombre.toLowerCase() === tipoParam.toLowerCase()
+            || d.nombre.toLowerCase().includes(tipoParam.toLowerCase()));
+          if (match) setForm(p => ({ ...p, nombreDepartamento: match.nombre }));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setCargando(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function iniciar() {
-    if (!form.nombreDepartamento.trim() || !form.tipo || !form.responsableNombre.trim()) {
+    if (!form.nombreDepartamento.trim() || !form.responsableNombre.trim()) {
       setError('Completa todos los campos antes de continuar.');
       return;
     }
@@ -42,7 +54,13 @@ export default function NuevoMapeoPage() {
       });
       if (!res.ok) throw new Error('Error al iniciar el mapeo');
       const data = await res.json();
-      router.push(`/proyectos/mapa/${data.id}?q=${encodeURIComponent(data.primeraPregunta)}`);
+
+      const returnTo = searchParams.get('returnTo');
+      const destino = returnTo
+        ? `/proyectos/mapa/${data.id}?q=${encodeURIComponent(data.primeraPregunta)}&returnTo=${encodeURIComponent(returnTo)}`
+        : `/proyectos/mapa/${data.id}?q=${encodeURIComponent(data.primeraPregunta)}`;
+
+      router.push(destino);
     } catch {
       setError('No se pudo iniciar el mapeo. Verifica la conexión con el servicio SOC.');
       setGuardando(false);
@@ -53,10 +71,7 @@ export default function NuevoMapeoPage() {
     <div className="h-full flex flex-col gap-6 p-6 overflow-y-auto">
 
       <div className="flex items-center gap-3">
-        <button
-          onClick={() => router.push('/proyectos/mapa')}
-          className="p-1.5 rounded-lg hover:bg-white/10"
-        >
+        <button onClick={() => router.back()} className="p-1.5 rounded-lg hover:bg-white/10">
           <ArrowLeft className="w-4 h-4 text-slate-400" />
         </button>
         <div className="flex items-center gap-2">
@@ -66,7 +81,7 @@ export default function NuevoMapeoPage() {
       </div>
 
       <p className="text-sm text-slate-400 -mt-2 max-w-lg">
-        El agente hará preguntas adaptadas al tipo de departamento para descubrir cómo toman decisiones,
+        El agente hará preguntas adaptadas al departamento para descubrir cómo toman decisiones,
         qué reglas aplican y qué información utilizan.
       </p>
 
@@ -75,35 +90,45 @@ export default function NuevoMapeoPage() {
         {/* Nombre */}
         <div className="space-y-1.5">
           <label className="text-sm text-slate-300 font-medium">Nombre del departamento</label>
-          <input
-            value={form.nombreDepartamento}
-            onChange={e => setForm(p => ({ ...p, nombreDepartamento: e.target.value }))}
-            placeholder="ej. Contabilidad, Compras CDMX, Auditoría Interna…"
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50"
-          />
-        </div>
-
-        {/* Tipo */}
-        <div className="space-y-2">
-          <label className="text-sm text-slate-300 font-medium">Tipo de departamento</label>
-          <div className="grid grid-cols-2 gap-2">
-            {TIPOS.map(t => (
-              <button
-                key={t.value}
-                onClick={() => setForm(p => ({ ...p, tipo: t.value }))}
-                className={`text-left px-4 py-3 rounded-xl border transition-colors ${
-                  form.tipo === t.value
-                    ? 'border-violet-500 bg-violet-500/10'
-                    : 'border-white/10 bg-white/5 hover:border-white/20'
-                }`}
-              >
-                <p className={`text-sm font-medium ${form.tipo === t.value ? 'text-violet-300' : 'text-slate-200'}`}>
-                  {t.label}
-                </p>
-                <p className="text-xs text-slate-500 mt-0.5 leading-tight">{t.desc}</p>
-              </button>
-            ))}
-          </div>
+          {cargando ? (
+            <div className="h-10 bg-white/5 rounded-lg animate-pulse" />
+          ) : deptos.length > 0 ? (
+            <>
+              <div className="grid grid-cols-2 gap-2">
+                {deptos.map(d => (
+                  <button
+                    key={d.id}
+                    onClick={() => setForm(p => ({ ...p, nombreDepartamento: d.nombre }))}
+                    className={`text-left px-4 py-3 rounded-xl border transition-colors ${
+                      form.nombreDepartamento === d.nombre
+                        ? 'border-violet-500 bg-violet-500/10'
+                        : 'border-white/10 bg-white/5 hover:border-white/20'
+                    }`}
+                  >
+                    <p className={`text-sm font-medium ${form.nombreDepartamento === d.nombre ? 'text-violet-300' : 'text-slate-200'}`}>
+                      {d.nombre}
+                    </p>
+                    {d.descripcion && (
+                      <p className="text-xs text-slate-500 mt-0.5 leading-tight">{d.descripcion}</p>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <input
+                value={form.nombreDepartamento}
+                onChange={e => setForm(p => ({ ...p, nombreDepartamento: e.target.value }))}
+                placeholder="O escribe un nombre personalizado…"
+                className="w-full mt-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50"
+              />
+            </>
+          ) : (
+            <input
+              value={form.nombreDepartamento}
+              onChange={e => setForm(p => ({ ...p, nombreDepartamento: e.target.value }))}
+              placeholder="ej. Contabilidad, Compras CDMX, Auditoría Interna…"
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50"
+            />
+          )}
         </div>
 
         {/* Responsable */}

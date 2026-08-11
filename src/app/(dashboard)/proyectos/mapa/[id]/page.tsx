@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Send, Loader2, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, Sparkles, CheckCircle2, AlertCircle, FileText } from 'lucide-react';
 import { socFetch } from '@/lib/soc-api';
 
 interface Turno {
@@ -181,6 +181,13 @@ export default function MapeoSessionPage() {
                 <div className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
                   {resumenFinal}
                 </div>
+                <button
+                  onClick={() => router.push(`/proyectos/nuevo?mapeoId=${id}`)}
+                  className="mt-4 flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 text-xs font-medium transition-colors"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  Crear requerimiento con este mapeo →
+                </button>
               </div>
             </div>
           )}

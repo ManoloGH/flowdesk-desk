@@ -43,10 +43,16 @@ async function makeSocToken(tenantId: string): Promise<string> {
 
 async function proxy(req: NextRequest, pathParts: string[]): Promise<NextResponse> {
   const fdToken = (req.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '');
-  const tenantId = extractTenantId(fdToken);
+  let tenantId = extractTenantId(fdToken);
 
+  // En desarrollo sin token real → usar tenant de prueba configurado en .env.local
   if (!tenantId) {
-    return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    const devTenant = process.env.SOC_DEV_TENANT_ID;
+    if (process.env.NODE_ENV !== 'production' && devTenant) {
+      tenantId = devTenant;
+    } else {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    }
   }
 
   const socToken = await makeSocToken(tenantId);

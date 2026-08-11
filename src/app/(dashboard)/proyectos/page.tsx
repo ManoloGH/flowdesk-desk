@@ -3,17 +3,17 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Plus, FileText, CheckCircle2, Clock, AlertCircle,
-  FolderKanban, ChevronRight, BookOpen, Map,
+  FolderKanban, ChevronRight, BookOpen, Map, Trash2,
 } from 'lucide-react';
 import { socFetch as rawFetch } from '@/lib/soc-api';
 
 interface Requerimiento {
   id: string;
-  Folio: string;
-  NombreProyecto: string | null;
-  Area: string | null;
-  Estado: string;
-  CreadoEn: string;
+  folio: string;
+  nombreProyecto: string | null;
+  area: string | null;
+  estado: string;
+  creadoEn: string;
 }
 
 async function socFetch<T>(path: string, opts?: RequestInit): Promise<T> {
@@ -42,6 +42,8 @@ export default function ProyectosPage() {
   const [reqs, setReqs] = useState<Requerimiento[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [busqueda, setBusqueda] = useState('');
+  const [eliminando, setEliminando] = useState<string | null>(null);
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -58,8 +60,30 @@ export default function ProyectosPage() {
 
   useEffect(() => { cargar(); }, [cargar]);
 
-  const borradores = reqs.filter(r => r.Estado.includes('Borrador') || r.Estado.includes('Revisión')).length;
-  const aprobados = reqs.filter(r => r.Estado.includes('Aprobado') || r.Estado.includes('Liberado')).length;
+  async function eliminar(e: React.MouseEvent, id: string, folio: string) {
+    e.stopPropagation();
+    if (!confirm(`¿Eliminar ${folio}? Esta acción no se puede deshacer.`)) return;
+    setEliminando(id);
+    try {
+      const res = await rawFetch(`/api/requerimientos/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error();
+      setReqs(prev => prev.filter(r => r.id !== id));
+    } catch {
+      alert('No se pudo eliminar. Intenta de nuevo.');
+    } finally {
+      setEliminando(null);
+    }
+  }
+
+  const borradores = reqs.filter(r => r.estado.includes('Borrador') || r.estado.includes('Revisión')).length;
+  const aprobados = reqs.filter(r => r.estado.includes('Aprobado') || r.estado.includes('Liberado')).length;
+  const filtrados = busqueda.trim()
+    ? reqs.filter(r =>
+        r.folio.toLowerCase().includes(busqueda.toLowerCase()) ||
+        (r.nombreProyecto ?? '').toLowerCase().includes(busqueda.toLowerCase()) ||
+        (r.area ?? '').toLowerCase().includes(busqueda.toLowerCase())
+      )
+    : reqs;
 
   return (
     <div className="h-full flex flex-col gap-6 p-6 overflow-y-auto">
@@ -114,6 +138,14 @@ export default function ProyectosPage() {
         ))}
       </div>
 
+      {/* Buscador */}
+      <input
+        value={busqueda}
+        onChange={e => setBusqueda(e.target.value)}
+        placeholder="Buscar por folio o nombre de proyecto…"
+        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50"
+      />
+
       {/* Lista */}
       <div className="flex-1 bg-white/5 rounded-xl border border-white/10 overflow-hidden">
         {loading ? (
@@ -138,39 +170,47 @@ export default function ProyectosPage() {
           </div>
         ) : (
           <div className="divide-y divide-white/5">
-            {reqs.map(req => {
-              const Icon = estadoIcon(req.Estado);
+            {filtrados.map(req => {
+              const Icon = estadoIcon(req.estado);
               return (
-                <button
+                <div
                   key={req.id}
                   onClick={() => router.push(`/proyectos/${req.id}`)}
-                  className="w-full flex items-center gap-4 px-5 py-4 hover:bg-white/5 transition-colors text-left"
+                  className="w-full flex items-center gap-4 px-5 py-4 hover:bg-white/5 transition-colors cursor-pointer"
                 >
                   <FileText className="w-5 h-5 text-slate-500 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm text-[#00614E] font-medium">{req.Folio}</span>
-                      {req.Area && (
+                      <span className="font-mono text-sm text-[#00614E] font-medium">{req.folio}</span>
+                      {req.area && (
                         <span className="text-xs text-slate-500 bg-white/5 px-2 py-0.5 rounded-full">
-                          {req.Area}
+                          {req.area}
                         </span>
                       )}
                     </div>
                     <p className="text-sm text-slate-300 truncate mt-0.5">
-                      {req.NombreProyecto ?? 'Sin nombre de proyecto'}
+                      {req.nombreProyecto ?? 'Sin nombre de proyecto'}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${estadoColor(req.Estado)}`}>
+                    <span className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${estadoColor(req.estado)}`}>
                       <Icon className="w-3 h-3" />
-                      {req.Estado}
+                      {req.estado}
                     </span>
                     <span className="text-xs text-slate-500">
-                      {new Date(req.CreadoEn).toLocaleDateString('es-MX')}
+                      {new Date(req.creadoEn).toLocaleDateString('es-MX')}
                     </span>
+                    <button
+                      onClick={e => eliminar(e, req.id, req.folio)}
+                      disabled={eliminando === req.id}
+                      className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-400/10 transition-colors disabled:opacity-40"
+                      title="Eliminar"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                     <ChevronRight className="w-4 h-4 text-slate-600" />
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
