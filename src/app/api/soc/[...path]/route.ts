@@ -71,6 +71,11 @@ async function proxy(req: NextRequest, pathParts: string[]): Promise<NextRespons
     body,
   });
 
+  // 204 / 205 — no body
+  if (upstream.status === 204 || upstream.status === 205) {
+    return new NextResponse(null, { status: upstream.status });
+  }
+
   const contentType = upstream.headers.get('content-type') ?? '';
 
   if (contentType.includes('application/json')) {
