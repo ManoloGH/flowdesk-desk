@@ -8,7 +8,7 @@ const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 const ACCENT = '#6c4de6';
 
 const DEFAULT_GREETING =
-  `Hola, soy tu consultor de MentorIA Systems. Estoy aquí para guiar el diagnóstico de transformación digital.\n\n¿Por dónde quieres empezar? Cuéntame sobre la empresa y cuál es el mayor reto que están enfrentando hoy.`;
+  `Hola, soy tu asistente de diagnóstico. Estoy aquí para ayudarte a documentar el cubo de información mientras avanzas con el cliente.\n\nPuedes contarme lo que te dijo el cliente en la sesión, dictar notas en tiempo real, o pedirme que te sugiera qué explorar a continuación.`;
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -276,7 +276,7 @@ export default function SesionPage() {
                 onKeyDown={handleKey}
                 disabled={streaming}
                 rows={1}
-                placeholder="Escribe aquí… (Enter para enviar, Shift+Enter para nueva línea)"
+                placeholder="Cuéntame lo que dijo el cliente, dicta notas o pide preguntas de seguimiento… (Enter para enviar)"
                 style={{
                   flex: 1, resize: 'none', border: 'none', background: 'transparent',
                   fontSize: 13, color: 'var(--text)', outline: 'none', fontFamily: 'inherit',
@@ -463,7 +463,7 @@ function ChatBubble({ role, content, streaming }: { role: 'user' | 'assistant'; 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: isUser ? 'flex-end' : 'flex-start', gap: 4 }}>
       <div style={{ fontSize: 10, color: 'var(--text-3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-        {isUser ? 'Tú' : 'Agente IA'}
+        {isUser ? 'Asesor' : 'Asistente IA'}
       </div>
       <div style={{
         maxWidth: '85%', padding: '10px 14px', borderRadius: isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
