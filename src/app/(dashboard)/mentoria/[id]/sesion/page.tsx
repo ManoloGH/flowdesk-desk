@@ -122,11 +122,14 @@ export default function SesionPage() {
     const controller = new AbortController();
     abortRef.current = controller;
 
-    // Reactive timeout: cancel if no data received for 40s (backend sends keepalive every 10s)
+    // Two-phase stall timer:
+    //   • 90s waiting for first text chunk (Anthropic processing large context)
+    //   • 30s between subsequent chunks (detect mid-stream hang)
+    let firstTextReceived = false;
     let stallTimer: ReturnType<typeof setTimeout> | null = null;
     function resetStall() {
       if (stallTimer) clearTimeout(stallTimer);
-      stallTimer = setTimeout(() => controller.abort(), 40_000);
+      stallTimer = setTimeout(() => controller.abort(), firstTextReceived ? 30_000 : 90_000);
     }
     resetStall();
 
@@ -161,7 +164,12 @@ export default function SesionPage() {
           try {
             const event = JSON.parse(line.slice(6));
 
+            if (event.type === 'start') {
+              resetStall(); // connection confirmed alive
+            }
+
             if (event.type === 'text') {
+              if (!firstTextReceived) { firstTextReceived = true; resetStall(); }
               assistantText += event.text;
               setStreamText(assistantText);
             }
@@ -191,10 +199,15 @@ export default function SesionPage() {
         setMessages(prev => [...prev, { role: 'assistant', content: assistantText }]);
       }
     } catch (e: any) {
-      const msg = e?.name === 'AbortError'
-        ? '⏱️ La respuesta tardó demasiado y se canceló. Puedes intentar de nuevo.'
-        : `⚠️ ${e?.message ?? 'No se pudo conectar con el agente.'}`;
-      setMessages(prev => [...prev, { role: 'assistant', content: msg }]);
+      if (assistantText) {
+        // Got partial/full response before abort — commit it instead of showing error
+        setMessages(prev => [...prev, { role: 'assistant', content: assistantText }]);
+      } else {
+        const msg = e?.name === 'AbortError'
+          ? '⏱️ El agente tardó demasiado en responder. Intenta con un mensaje más corto o espera un momento.'
+          : `⚠️ ${e?.message ?? 'No se pudo conectar con el agente.'}`;
+        setMessages(prev => [...prev, { role: 'assistant', content: msg }]);
+      }
     } finally {
       if (stallTimer) clearTimeout(stallTimer);
       abortRef.current = null;
