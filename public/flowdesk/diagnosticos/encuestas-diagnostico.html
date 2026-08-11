@@ -1,0 +1,1073 @@
+<title>Encuestas de Diagnóstico — MentorIA Systems</title>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#F8FAFC;
+  --sf:#FFFFFF;
+  --sf2:#F1F5F9;
+  --sf3:#E8EEF6;
+  --br:#E2E8F0;
+  --br-s:#CBD5E1;
+  --ink:#0F172A;
+  --ink2:#334155;
+  --ink3:#64748B;
+  --ink4:#94A3B8;
+  --acc:#6C4DE6;
+  --acc2:#8B6EF5;
+  --acc-bg:rgba(108,77,230,0.09);
+  --acc-br:rgba(108,77,230,0.25);
+  --ok:#16A34A;
+  --ok-bg:rgba(22,163,74,0.09);
+  --ok-br:rgba(22,163,74,0.28);
+  --warn:#D97706;
+  --err:#DC2626;
+  --err-bg:rgba(220,38,38,0.09);
+  --r:5px;
+  --rm:10px;
+  --sh:0 1px 3px rgba(15,23,42,0.07),0 1px 2px rgba(15,23,42,0.05);
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#07101F;--sf:#0C1628;--sf2:#111E33;--sf3:#192844;
+  --br:#1A2A42;--br-s:#223254;
+  --ink:#E4EDF8;--ink2:#C0D0E6;--ink3:#7A96BA;--ink4:#465E7C;
+  --acc:#8B6EF5;--acc2:#A992FF;
+  --acc-bg:rgba(139,110,245,0.12);--acc-br:rgba(139,110,245,0.3);
+  --ok:#22C55E;--ok-bg:rgba(34,197,94,0.1);--ok-br:rgba(34,197,94,0.3);
+  --err:#F87171;--err-bg:rgba(248,113,113,0.1);
+}}
+:root[data-theme=light]{
+  --bg:#F8FAFC;--sf:#FFFFFF;--sf2:#F1F5F9;--sf3:#E8EEF6;
+  --br:#E2E8F0;--br-s:#CBD5E1;
+  --ink:#0F172A;--ink2:#334155;--ink3:#64748B;--ink4:#94A3B8;
+  --acc:#6C4DE6;--acc2:#8B6EF5;
+  --acc-bg:rgba(108,77,230,0.09);--acc-br:rgba(108,77,230,0.25);
+  --ok:#16A34A;--ok-bg:rgba(22,163,74,0.09);--ok-br:rgba(22,163,74,0.28);
+  --err:#DC2626;--err-bg:rgba(220,38,38,0.09);
+}
+:root[data-theme=dark]{
+  --bg:#07101F;--sf:#0C1628;--sf2:#111E33;--sf3:#192844;
+  --br:#1A2A42;--br-s:#223254;
+  --ink:#E4EDF8;--ink2:#C0D0E6;--ink3:#7A96BA;--ink4:#465E7C;
+  --acc:#8B6EF5;--acc2:#A992FF;
+  --acc-bg:rgba(139,110,245,0.12);--acc-br:rgba(139,110,245,0.3);
+  --ok:#22C55E;--ok-bg:rgba(34,197,94,0.1);--ok-br:rgba(34,197,94,0.3);
+  --err:#F87171;--err-bg:rgba(248,113,113,0.1);
+}
+
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── Header ── */
+.hdr{
+  position:sticky;top:0;z-index:200;
+  background:var(--sf);border-bottom:1px solid var(--br);
+  padding:0 20px;box-shadow:var(--sh);
+}
+.hdr-in{
+  max-width:720px;margin:0 auto;
+  display:flex;align-items:center;gap:14px;height:52px;
+}
+.logo{
+  width:28px;height:28px;border-radius:7px;flex-shrink:0;
+  background:linear-gradient(135deg,#6C4DE6,#00D4FF);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:12px;font-weight:800;letter-spacing:-.02em;
+}
+.hdr-label{font-size:12px;font-weight:600;color:var(--ink3);white-space:nowrap;}
+.hdr-company{
+  font-size:12px;font-weight:700;color:var(--ink2);
+  background:var(--sf2);border:1px solid var(--br);
+  padding:3px 10px;border-radius:99px;
+  white-space:nowrap;
+}
+.tabs{
+  margin-left:auto;display:flex;gap:2px;
+  background:var(--sf2);border:1px solid var(--br);
+  border-radius:8px;padding:3px;
+}
+.tab{
+  padding:5px 18px;border:none;border-radius:6px;
+  font-size:12px;font-weight:600;font-family:inherit;
+  cursor:pointer;background:transparent;color:var(--ink3);
+  transition:all .12s;
+}
+.tab.on{background:var(--sf);color:var(--ink);box-shadow:var(--sh);}
+
+/* ── Page ── */
+.page{max-width:720px;margin:0 auto;padding:28px 20px 100px;}
+.panel{display:none;}
+.panel.on{display:block;}
+
+/* ── Intro ── */
+.intro{
+  background:var(--sf);border:1px solid var(--br);
+  border-radius:var(--rm);padding:24px;margin-bottom:18px;
+}
+.role-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
+  color:var(--acc);background:var(--acc-bg);border:1px solid var(--acc-br);
+  padding:3px 10px;border-radius:99px;margin-bottom:12px;
+}
+.intro-t{
+  font-size:22px;font-weight:700;letter-spacing:-.03em;
+  color:var(--ink);margin-bottom:8px;text-wrap:balance;
+}
+.intro-d{font-size:13.5px;color:var(--ink3);line-height:1.65;max-width:540px;}
+.intro-chips{
+  display:flex;gap:18px;margin-top:14px;padding-top:14px;
+  border-top:1px solid var(--br);flex-wrap:wrap;
+}
+.chip{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink3);}
+.chip-dot{width:5px;height:5px;border-radius:50%;background:var(--acc);flex-shrink:0;}
+
+/* ── Section ── */
+.sec{
+  background:var(--sf);border:1px solid var(--br);
+  border-radius:var(--rm);margin-bottom:14px;overflow:hidden;
+}
+.sec-hdr{
+  display:flex;align-items:center;gap:12px;
+  padding:16px 20px;border-bottom:1px solid var(--br);
+}
+.sec-icon{
+  width:34px;height:34px;border-radius:8px;
+  background:var(--acc-bg);display:flex;align-items:center;
+  justify-content:center;font-size:15px;flex-shrink:0;
+}
+.sec-ey{
+  font-size:9.5px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.12em;color:var(--acc);margin-bottom:2px;
+}
+.sec-t{font-size:14.5px;font-weight:700;color:var(--ink);letter-spacing:-.01em;}
+.sec-body{padding:20px;display:flex;flex-direction:column;gap:14px;}
+
+/* ── Fields ── */
+.field{display:flex;flex-direction:column;gap:5px;}
+.lbl{font-size:12px;font-weight:600;color:var(--ink2);}
+.req{color:var(--acc);}
+.hint{font-size:11px;color:var(--ink4);margin-top:-2px;}
+.inp,.sel,.txa{
+  background:var(--sf2);border:1px solid var(--br-s);
+  border-radius:var(--r);padding:9px 11px;
+  color:var(--ink);font-size:13px;font-family:inherit;
+  outline:none;width:100%;transition:border-color .12s,box-shadow .12s;
+}
+.inp:focus,.sel:focus,.txa:focus{
+  border-color:var(--acc);
+  box-shadow:0 0 0 3px var(--acc-bg);
+}
+.txa{resize:vertical;min-height:76px;line-height:1.55;}
+.sel{
+  appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' fill='none'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%2364748B' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 11px center;padding-right:30px;
+}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;}
+.r4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:11px;}
+
+/* ── Task block ── */
+.task-list{display:flex;flex-direction:column;gap:10px;}
+.task{border:1px solid var(--br);border-radius:var(--rm);overflow:hidden;background:var(--sf2);}
+.task-bar{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;background:var(--sf3);border-bottom:1px solid var(--br);
+}
+.tnum{
+  width:20px;height:20px;border-radius:50%;
+  background:var(--acc);color:#fff;
+  font-size:10px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-variant-numeric:tabular-nums;
+}
+.tprev{
+  font-size:12.5px;font-weight:600;color:var(--ink3);
+  flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.del{
+  border:none;background:none;font-size:18px;line-height:1;
+  color:var(--ink4);cursor:pointer;padding:1px 5px;border-radius:4px;
+  transition:all .12s;
+}
+.del:hover{color:var(--err);background:var(--err-bg);}
+.task-fields{padding:14px;display:flex;flex-direction:column;gap:11px;}
+.add-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;padding:11px;
+  border:1.5px dashed var(--br-s);border-radius:var(--rm);
+  background:transparent;color:var(--ink3);
+  font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;
+  transition:all .12s;
+}
+.add-btn:hover{border-color:var(--acc);color:var(--acc);background:var(--acc-bg);}
+
+/* ── Checkboxes ── */
+.ck-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:6px;}
+.ck{
+  display:flex;align-items:flex-start;gap:8px;
+  padding:9px 10px;border:1px solid var(--br);
+  border-radius:var(--r);cursor:pointer;transition:all .12s;
+}
+.ck:has(input:checked){border-color:var(--acc-br);background:var(--acc-bg);}
+.ck input{accent-color:var(--acc);margin-top:1px;flex-shrink:0;cursor:pointer;}
+.ck span{font-size:12.5px;color:var(--ink2);line-height:1.35;cursor:pointer;}
+
+/* ── Radio ── */
+.rg{display:flex;flex-direction:column;gap:7px;margin-top:6px;}
+.ri{
+  display:flex;align-items:flex-start;gap:9px;
+  padding:10px 12px;border:1px solid var(--br);
+  border-radius:var(--r);cursor:pointer;transition:all .12s;
+}
+.ri:has(input:checked){border-color:var(--acc-br);background:var(--acc-bg);}
+.ri input{accent-color:var(--acc);margin-top:2px;flex-shrink:0;cursor:pointer;}
+.ri span{font-size:13px;color:var(--ink2);cursor:pointer;}
+
+/* ── Week table ── */
+.wk-wrap{overflow-x:auto;}
+.wk{width:100%;border-collapse:separate;border-spacing:0;min-width:460px;}
+.wk thead th{
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--ink4);padding:8px 10px;text-align:left;
+  background:var(--sf2);border:1px solid var(--br);
+}
+.wk thead th:first-child{border-radius:var(--r) 0 0 0;}
+.wk thead th:last-child{border-radius:0 var(--r) 0 0;}
+.wk tbody td{padding:7px 10px;border:1px solid var(--br);border-top:none;vertical-align:middle;}
+.wk tbody tr:last-child td:first-child{border-radius:0 0 0 var(--r);}
+.wk tbody tr:last-child td:last-child{border-radius:0 0 var(--r) 0;}
+.wk-cat{font-size:13px;color:var(--ink2);}
+.wk-cat small{display:block;font-size:11px;color:var(--ink4);margin-top:1px;}
+.wk-pct{
+  width:60px;background:var(--sf2);border:1px solid var(--br-s);
+  border-radius:var(--r);padding:5px 7px;color:var(--ink);
+  font-size:13px;font-family:inherit;font-variant-numeric:tabular-nums;
+  outline:none;text-align:right;transition:border-color .12s;
+}
+.wk-pct:focus{border-color:var(--acc);}
+.wk-sw{
+  width:100%;background:var(--sf2);border:1px solid var(--br-s);
+  border-radius:var(--r);padding:5px 8px;color:var(--ink);
+  font-size:12px;font-family:inherit;outline:none;
+  transition:border-color .12s;
+}
+.wk-sw:focus{border-color:var(--acc);}
+.wk-total{
+  display:flex;align-items:center;gap:10px;
+  margin-top:10px;padding:9px 13px;
+  border-radius:var(--r);border:1px solid var(--br);
+  background:var(--sf2);color:var(--ink3);
+  font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;
+  transition:all .2s;
+}
+.wk-total.ok{background:var(--ok-bg);border-color:var(--ok-br);color:var(--ok);}
+.wk-total.over{background:var(--err-bg);border-color:rgba(220,38,38,.3);color:var(--err);}
+
+/* ── Report cards ── */
+.rep-list{display:flex;flex-direction:column;gap:10px;}
+.rep{border:1px solid var(--br);border-radius:var(--rm);overflow:hidden;background:var(--sf2);}
+.rep-bar{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 14px;background:var(--sf3);border-bottom:1px solid var(--br);
+}
+.rep-lbl{
+  font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--ink4);flex:1;
+}
+.rep-fields{padding:14px;display:flex;flex-direction:column;gap:11px;}
+
+/* ── Bottom bar ── */
+.bot{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--sf);border-top:1px solid var(--br);
+  padding:12px 20px;z-index:100;
+  box-shadow:0 -4px 20px rgba(15,23,42,0.08);
+}
+.bot-in{
+  max-width:720px;margin:0 auto;
+  display:flex;align-items:center;gap:12px;
+}
+.bot-note{font-size:11.5px;color:var(--ink3);margin-right:auto;}
+.btn-send{
+  background:var(--acc);color:#fff;border:none;
+  border-radius:var(--r);padding:10px 28px;
+  font-size:13.5px;font-weight:700;font-family:inherit;
+  cursor:pointer;transition:opacity .12s;
+}
+.btn-send:hover{opacity:.88;}
+
+/* ── Divider note ── */
+.field-note{
+  display:flex;gap:8px;align-items:flex-start;
+  background:var(--sf2);border:1px solid var(--br);
+  border-radius:var(--r);padding:10px 12px;
+  font-size:12.5px;color:var(--ink3);line-height:1.55;
+}
+.field-note strong{color:var(--ink2);}
+
+/* ── Responsive ── */
+@media(max-width:560px){
+  .r2,.r3,.r4{grid-template-columns:1fr;}
+  .ck-grid{grid-template-columns:1fr;}
+  .hdr-company{display:none;}
+}
+</style>
+
+<!-- ─────────────── HEADER ─────────────── -->
+<div class="hdr">
+  <div class="hdr-in">
+    <div class="logo">M</div>
+    <span class="hdr-label">MentorIA Systems · Diagnóstico operativo</span>
+    <span class="hdr-company" id="company-name">Empresa cliente</span>
+    <div class="tabs">
+      <button class="tab on" onclick="show('op',this)">Operador</button>
+      <button class="tab" onclick="show('ger',this)">Gerente</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────── PAGE ─────────────── -->
+<div class="page">
+
+  <!-- ══════════════ OPERADOR ══════════════ -->
+  <div id="panel-op" class="panel on">
+
+    <div class="intro">
+      <div class="role-tag">Encuesta · Operador / Ejecutivo</div>
+      <div class="intro-t">Cuéntanos cómo funciona tu trabajo</div>
+      <div class="intro-d">
+        Esta encuesta es parte de un diagnóstico operativo de tu empresa.
+        Tus respuestas nos ayudan a entender en qué inviertes tu tiempo y qué herramientas usas —
+        <strong>no es una evaluación de desempeño</strong>. Responde con honestidad:
+        lo que más nos interesa es la realidad del día a día, no el proceso ideal.
+      </div>
+      <div class="intro-chips">
+        <div class="chip"><div class="chip-dot"></div>~15 minutos</div>
+        <div class="chip"><div class="chip-dot"></div>Puedes responder con solo tus iniciales</div>
+        <div class="chip"><div class="chip-dot"></div>Tus respuestas son confidenciales</div>
+      </div>
+    </div>
+
+    <!-- S1: Tu puesto -->
+    <div class="sec">
+      <div class="sec-hdr">
+        <div class="sec-icon">👤</div>
+        <div>
+          <div class="sec-ey">Sección 1</div>
+          <div class="sec-t">Tu puesto</div>
+        </div>
+      </div>
+      <div class="sec-body">
+        <div class="r2">
+          <div class="field">
+            <label class="lbl">Nombre o iniciales</label>
+            <div class="hint">Opcional — puedes poner solo tus iniciales</div>
+            <input class="inp" type="text" placeholder="Ej. J.L.R.">
+          </div>
+          <div class="field">
+            <label class="lbl">Puesto / cargo <span class="req">*</span></label>
+            <input class="inp" type="text" placeholder="Ej. Ejecutivo de ventas">
+          </div>
+        </div>
+        <div class="r2">
+          <div class="field">
+            <label class="lbl">Área o departamento <span class="req">*</span></label>
+            <input class="inp" type="text" placeholder="Ej. Ventas, Operaciones…">
+          </div>
+          <div class="field">
+            <label class="lbl">¿Cuántas personas hacen el mismo trabajo que tú?</label>
+            <div class="hint">Incluyéndote a ti</div>
+            <input class="inp" type="number" min="1" placeholder="Ej. 4">
+          </div>
+        </div>
+        <div class="field" style="max-width:260px">
+          <label class="lbl">Antigüedad en este puesto</label>
+          <select class="sel">
+            <option value="">Selecciona…</option>
+            <option>Menos de 1 año</option>
+            <option>1 a 3 años</option>
+            <option>Más de 3 años</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- S2: Tareas -->
+    <div class="sec">
+      <div class="sec-hdr">
+        <div class="sec-icon">📋</div>
+        <div>
+          <div class="sec-ey">Sección 2</div>
+          <div class="sec-t">Tus tareas frecuentes</div>
+        </div>
+      </div>
+      <div class="sec-body">
+        <div class="field-note">
+          Registra las tareas que haces con regularidad — mínimo 5, hasta 10.
+          Incluye cualquier cosa que hagas más de una vez al mes, aunque te parezca pequeña.
+          <strong>El tiempo no tiene que ser exacto</strong> — una estimación honesta es suficiente.
+        </div>
+
+        <div class="task-list" id="op-tasks">
+
+          <!-- Tarea 1 (plantilla visible) -->
+          <div class="task">
+            <div class="task-bar">
+              <div class="tnum">1</div>
+              <div class="tprev">Tarea 1</div>
+            </div>
+            <div class="task-fields">
+              <div class="field">
+                <label class="lbl">¿Qué tarea es? ¿Qué produces o entregas? <span class="req">*</span></label>
+                <input class="inp op-tname" type="text" placeholder="Ej. Elaborar cotización para cliente recurrente">
+              </div>
+              <div class="r2">
+                <div class="field">
+                  <label class="lbl">¿Para qué proceso o flujo?</label>
+                  <select class="sel">
+                    <option value="">Selecciona…</option>
+                    <option>Ventas / Comercial</option>
+                    <option>Cobranza / Cuentas por cobrar</option>
+                    <option>Compras / Proveedores</option>
+                    <option>Producción / Manufactura</option>
+                    <option>Logística / Distribución</option>
+                    <option>Atención al cliente / Postventa</option>
+                    <option>Recursos Humanos</option>
+                    <option>Contabilidad / Finanzas</option>
+                    <option>Calidad</option>
+                    <option>Administrativo / General</option>
+                    <option>Otro</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="lbl">¿Qué lo dispara? ¿Qué llega primero?</label>
+                  <input class="inp" type="text" placeholder="Ej. Solicitud por correo del cliente">
+                </div>
+              </div>
+              <div class="r3">
+                <div class="field">
+                  <label class="lbl">¿Cuántas veces al mes? <span class="req">*</span></label>
+                  <input class="inp" type="number" min="1" placeholder="Ej. 60">
+                </div>
+                <div class="field">
+                  <label class="lbl">¿Cuántos minutos cada vez? <span class="req">*</span></label>
+                  <div class="hint">Aproximado está bien</div>
+                  <input class="inp" type="number" min="1" placeholder="Ej. 25">
+                </div>
+                <div class="field">
+                  <label class="lbl">¿Cuántas personas la hacen igual?</label>
+                  <input class="inp" type="number" min="1" placeholder="Ej. 4">
+                </div>
+              </div>
+              <div class="r2">
+                <div class="field">
+                  <label class="lbl">Software principal que usas</label>
+                  <input class="inp" type="text" placeholder="Ej. SAP, Excel, CRM…">
+                </div>
+                <div class="field">
+                  <label class="lbl">Otros programas o archivos que abres</label>
+                  <div class="hint">Incluye Excel personal, WhatsApp, etc.</div>
+                  <input class="inp" type="text" placeholder="Ej. Excel propio, Correo, WhatsApp…">
+                </div>
+              </div>
+              <div class="field">
+                <label class="lbl">¿Qué entregas al final y a quién?</label>
+                <input class="inp" type="text" placeholder="Ej. Una cotización en PDF que envío al cliente por correo">
+              </div>
+            </div>
+          </div>
+          <!-- Fin tarea 1 -->
+
+        </div><!-- /op-tasks -->
+
+        <button class="add-btn" onclick="addTask()">
+          <span style="font-size:19px;line-height:1;margin-top:-1px">+</span>
+          Agregar otra tarea
+        </button>
+      </div>
+    </div>
+
+    <!-- S3: Software y shadow IT -->
+    <div class="sec">
+      <div class="sec-hdr">
+        <div class="sec-icon">💾</div>
+        <div>
+          <div class="sec-ey">Sección 3</div>
+          <div class="sec-t">Herramientas y archivos propios</div>
+        </div>
+      </div>
+      <div class="sec-body">
+        <div class="field">
+          <label class="lbl">¿Cuáles de estas herramientas usas en tu trabajo? Marca todas las que apliquen:</label>
+          <div class="ck-grid">
+            <label class="ck"><input type="checkbox"><span>Sistema ERP o sistema oficial de la empresa</span></label>
+            <label class="ck"><input type="checkbox"><span>CRM (Salesforce, HubSpot, otro)</span></label>
+            <label class="ck"><input type="checkbox"><span>Excel del sistema o carpeta oficial</span></label>
+            <label class="ck"><input type="checkbox"><span>Excel personal (tuyo, en tu computadora)</span></label>
+            <label class="ck"><input type="checkbox"><span>WhatsApp / mensajería (Teams, Telegram…)</span></label>
+            <label class="ck"><input type="checkbox"><span>Correo electrónico</span></label>
+            <label class="ck"><input type="checkbox"><span>Google Sheets o Drive personal</span></label>
+            <label class="ck"><input type="checkbox"><span>Papel o libreta física</span></label>
+            <label class="ck"><input type="checkbox"><span>Base de datos propia (Access, etc.)</span></label>
+            <label class="ck"><input type="checkbox"><span>Otro (especifica abajo)</span></label>
+          </div>
+        </div>
+        <div class="field">
+          <label class="lbl">¿Llevas información importante en algún archivo o nota propia que no está en ningún sistema oficial?</label>
+          <div class="hint">Ej. un Excel con seguimiento de clientes, una libreta con contraseñas, una carpeta de fotos en el celular…</div>
+          <textarea class="txa" placeholder="Describe qué información guardas y dónde. Si no llevas nada, escribe 'No'."></textarea>
+        </div>
+        <div class="field">
+          <label class="lbl">¿Tienes que copiar datos manualmente de un sistema a otro?</label>
+          <div class="hint">Ej. copias pedidos del correo al Excel, o de SAP a un archivo de seguimiento propio…</div>
+          <textarea class="txa" placeholder="¿Entre cuáles sistemas o archivos? ¿Qué tan seguido?"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- S4: Dolores -->
+    <div class="sec">
+      <div class="sec-hdr">
+        <div class="sec-icon">⏱</div>
+        <div>
+          <div class="sec-ey">Sección 4</div>
+          <div class="sec-t">Lo que más te quita tiempo</div>
+        </div>
+      </div>
+      <div class="sec-body">
+        <div class="field">
+          <label class="lbl">¿Cuál es la tarea más tediosa o repetitiva de tu día?</label>
+          <textarea class="txa" placeholder="La que más te pesa hacer, aunque sepas hacerla bien…"></textarea>
+        </div>
+        <div class="field">
+          <label class="lbl">Si pudieras quitarte una cosa de encima mañana, ¿qué sería?</label>
+          <textarea class="txa" placeholder="Una tarea, un proceso, un archivo… lo que sea que quisieras que ya no existiera."></textarea>
+        </div>
+        <div class="field">
+          <label class="lbl">Si faltaras dos semanas, ¿qué trabajo se detendría o atrasaría porque depende de ti?</label>
+          <textarea class="txa" placeholder="¿Qué tareas o información solo tú puedes dar o resolver?"></textarea>
+        </div>
+        <div class="field">
+          <label class="lbl">¿Tienes algún archivo o documento propio que sería muy difícil de reemplazar si lo perdieras?</label>
+          <div class="hint">Algo que tardaste tiempo en construir y que el resto del equipo no tiene</div>
+          <textarea class="txa" placeholder="¿Qué es y qué contiene?"></textarea>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /panel-op -->
+
+
+  <!-- ══════════════ GERENTE ══════════════ -->
+  <div id="panel-ger" class="panel">
+
+    <div class="intro">
+      <div class="role-tag">Encuesta · Gerente / Coordinador</div>
+      <div class="intro-t">Cómo funciona tu área y cómo inviertes tu semana</div>
+      <div class="intro-d">
+        Esta encuesta es parte de un diagnóstico operativo. Nos interesa entender cómo
+        distribuyes tu tiempo, qué reportes produces y qué conocimiento vive solo en la cabeza
+        de alguien de tu equipo — <strong>no es una evaluación de desempeño</strong>,
+        es un mapa honesto de cómo funciona hoy tu área.
+      </div>
+      <div class="intro-chips">
+        <div class="chip"><div class="chip-dot"></div>~20 minutos</div>
+        <div class="chip"><div class="chip-dot"></div>Puedes responder con solo tus iniciales</div>
+        <div class="chip"><div class="chip-dot"></div>Tus respuestas son confidenciales</div>
+      </div>
+    </div>
+
+    <!-- G1: Tu rol -->
+    <div class="sec">
+      <div class="sec-hdr">
+        <div class="sec-icon">👤</div>
+        <div>
+          <div class="sec-ey">Sección 1</div>
+          <div class="sec-t">Tu rol</div>
+        </div>
+      </div>
+      <div class="sec-body">
+        <div class="r2">
+          <div class="field">
+            <label class="lbl">Nombre o iniciales</label>
+            <div class="hint">Opcional</div>
+            <input class="inp" type="text" placeholder="Ej. L.M.T.">
+          </div>
+          <div class="field">
+            <label class="lbl">Puesto / cargo <span class="req">*</span></label>
+            <input class="inp" type="text" placeholder="Ej. Gerente de Ventas">
+          </div>
+        </div>
+        <div class="r3">
+          <div class="field">
+            <label class="lbl">Área que coordinas <span class="req">*</span></label>
+            <input class="inp" type="text" placeholder="Ej. Ventas Zona Norte">
+          </div>
+          <div class="field">
+            <label class="lbl">¿A cuántas personas coordinas directamente?</label>
+            <input class="inp" type="number" min="1" placeholder="Ej. 6">
+          </div>
+          <div class="field">
+            <label class="lbl">Antigüedad en el puesto</label>
+            <select class="sel">
+              <option value="">Selecciona…</option>
+              <option>Menos de 1 año</option>
+              <option>1 a 3 años</option>
+              <option>Más de 3 años</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label class="lbl">¿Qué flujos o procesos son responsabilidad tuya?</label>
+          <div class="hint">Ej. Cotización→Cobro, Compra→Pago, Reclutamiento→Alta de empleado</div>
+          <input class="inp" type="text" placeholder="Ej. Proceso de cotización a cierre y atención postventa">
+        </div>
+      </div>
+    </div>
+
+    <!-- G2: Semana -->
+    <div class="sec">
+      <div class="sec-hdr">
+        <div class="sec-icon">📊</div>
+        <div>
+          <div class="sec-ey">Sección 2</div>
+          <div class="sec-t">Cómo se reparte tu semana</div>
+        </div>
+      </div>
+      <div class="sec-body">
+        <div class="field-note">
+          Estima cómo se reparte una semana típica tuya entre estas categorías.
+          El total debe sumar <strong>aproximadamente 100%</strong>.
+          No tiene que ser exacto — una estimación honesta es lo que necesitamos.
+        </div>
+        <div class="wk-wrap">
+          <table class="wk">
+            <thead>
+              <tr>
+                <th style="width:46%">Categoría</th>
+                <th style="width:18%">% semana</th>
+                <th>Software que más usas aquí</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="wk-cat">Ejecución transaccional<small>Hacer trabajo operativo con tus propias manos</small></td>
+                <td><input class="wk-pct" type="number" min="0" max="100" placeholder="0" oninput="wkTotal()"> %</td>
+                <td><input class="wk-sw" type="text" placeholder="Ej. SAP, Excel…"></td>
+              </tr>
+              <tr>
+                <td class="wk-cat">Coordinación de equipo<small>Reuniones, seguimientos, asignar trabajo</small></td>
+                <td><input class="wk-pct" type="number" min="0" max="100" placeholder="0" oninput="wkTotal()"> %</td>
+                <td><input class="wk-sw" type="text" placeholder="Ej. Teams, WhatsApp…"></td>
+              </tr>
+              <tr>
+                <td class="wk-cat">Reportes y análisis<small>Preparar información, dashboards, presentaciones</small></td>
+                <td><input class="wk-pct" type="number" min="0" max="100" placeholder="0" oninput="wkTotal()"> %</td>
+                <td><input class="wk-sw" type="text" placeholder="Ej. Excel, PowerBI…"></td>
+              </tr>
+              <tr>
+                <td class="wk-cat">Aprobaciones y revisiones<small>Revisar y autorizar trabajo de tu equipo</small></td>
+                <td><input class="wk-pct" type="number" min="0" max="100" placeholder="0" oninput="wkTotal()"> %</td>
+                <td><input class="wk-sw" type="text" placeholder="Ej. ERP, correo…"></td>
+              </tr>
+              <tr>
+                <td class="wk-cat">Atención a clientes o áreas internas<small>Llamadas, visitas, escalaciones directas</small></td>
+                <td><input class="wk-pct" type="number" min="0" max="100" placeholder="0" oninput="wkTotal()"> %</td>
+                <td><input class="wk-sw" type="text" placeholder="Ej. WhatsApp, correo…"></td>
+              </tr>
+              <tr>
+                <td class="wk-cat">Apagar incendios<small>Resolver problemas urgentes e imprevistos</small></td>
+                <td><input class="wk-pct" type="number" min="0" max="100" placeholder="0" oninput="wkTotal()"> %</td>
+                <td><input class="wk-sw" type="text" placeholder="Ej. WhatsApp, teléfono…"></td>
+              </tr>
+              <tr>
+                <td class="wk-cat">Desarrollo de personas<small>1:1s, retroalimentación, capacitación</small></td>
+                <td><input class="wk-pct" type="number" min="0" max="100" placeholder="0" oninput="wkTotal()"> %</td>
+                <td><input class="wk-sw" type="text" placeholder="Ej. Teams, presencial…"></td>
+              </tr>
+              <tr>
+                <td class="wk-cat">Administrativo<small>Correos generales, agenda, trámites internos</small></td>
+                <td><input class="wk-pct" type="number" min="0" max="100" placeholder="0" oninput="wkTotal()"> %</td>
+                <td><input class="wk-sw" type="text" placeholder="Ej. Outlook, SAP…"></td>
+              </tr>
+              <tr>
+                <td class="wk-cat">Esperar o estar bloqueado<small>Esperando información, aprobaciones o respuestas</small></td>
+                <td><input class="wk-pct" type="number" min="0" max="100" placeholder="0" oninput="wkTotal()"> %</td>
+                <td><input class="wk-sw" type="text" placeholder="—"></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="wk-total" id="wk-total">Total: 0 % — distribuye hasta completar ~100%</div>
+        </div>
+        <div class="field">
+          <label class="lbl">¿Qué categoría te roba más tiempo del que debería? ¿Por qué crees que pasa?</label>
+          <textarea class="txa" placeholder="Ej. Apagar incendios — porque el equipo escala cosas que debería resolver solo, pero no tiene un criterio claro…"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- G3: Reportes -->
+    <div class="sec">
+      <div class="sec-hdr">
+        <div class="sec-icon">📈</div>
+        <div>
+          <div class="sec-ey">Sección 3</div>
+          <div class="sec-t">Reportes que produces</div>
+        </div>
+      </div>
+      <div class="sec-body">
+        <div class="field-note">
+          Lista los reportes, análisis o actualizaciones que preparas regularmente —
+          para tu jefe, para otras áreas, o para tomar tus propias decisiones.
+          <strong>Incluye los informales</strong>: aunque sea un WhatsApp con un resumen semanal.
+        </div>
+        <div class="rep-list" id="ger-reps">
+          <div class="rep">
+            <div class="rep-bar">
+              <span class="rep-lbl">Reporte 1</span>
+              <button class="del" onclick="delRep(this)" title="Eliminar">×</button>
+            </div>
+            <div class="rep-fields">
+              <div class="r2">
+                <div class="field">
+                  <label class="lbl">Nombre del reporte</label>
+                  <input class="inp" type="text" placeholder="Ej. Reporte de ventas semanal">
+                </div>
+                <div class="field">
+                  <label class="lbl">Frecuencia</label>
+                  <select class="sel">
+                    <option value="">Selecciona…</option>
+                    <option>Diario</option>
+                    <option>Semanal</option>
+                    <option>Quincenal</option>
+                    <option>Mensual</option>
+                    <option>Ad hoc (cuando lo piden)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="r3">
+                <div class="field">
+                  <label class="lbl">¿Cuánto tiempo te toma prepararlo?</label>
+                  <input class="inp" type="text" placeholder="Ej. 2 horas, 30 min…">
+                </div>
+                <div class="field">
+                  <label class="lbl">Software donde lo preparas</label>
+                  <input class="inp" type="text" placeholder="Ej. Excel, PowerBI…">
+                </div>
+                <div class="field">
+                  <label class="lbl">¿De dónde sacas los datos?</label>
+                  <select class="sel">
+                    <option value="">Selecciona…</option>
+                    <option>Del sistema directamente</option>
+                    <option>De un Excel o archivo mío</option>
+                    <option>Me los mandan otras personas</option>
+                    <option>Los recolecto yo manualmente</option>
+                    <option>Mezcla de varias fuentes</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="add-btn" onclick="addRep()">
+          <span style="font-size:19px;line-height:1;margin-top:-1px">+</span>
+          Agregar otro reporte
+        </button>
+      </div>
+    </div>
+
+    <!-- G4: Dato real -->
+    <div class="sec">
+      <div class="sec-hdr">
+        <div class="sec-icon">🗂</div>
+        <div>
+          <div class="sec-ey">Sección 4</div>
+          <div class="sec-t">Dónde vive el dato real de tu área</div>
+        </div>
+      </div>
+      <div class="sec-body">
+        <div class="field">
+          <label class="lbl">El dato real de tu área — avance, pipeline, estatus, resultados — vive principalmente en…</label>
+          <div class="rg">
+            <label class="ri"><input type="radio" name="dato"><span>En el sistema oficial que todos pueden ver</span></label>
+            <label class="ri"><input type="radio" name="dato"><span>En un Excel o archivo que yo mantengo</span></label>
+            <label class="ri"><input type="radio" name="dato"><span>Mitad en el sistema, mitad en archivos míos</span></label>
+            <label class="ri"><input type="radio" name="dato"><span>No hay un lugar único — cada quien lleva lo suyo</span></label>
+          </div>
+        </div>
+        <div class="field">
+          <label class="lbl">¿Cuál es ese archivo o sistema? ¿Qué información contiene exactamente?</label>
+          <textarea class="txa" placeholder="Ej. Un Excel mío con seguimiento de cotizaciones activas. Lo actualizo cada lunes con el equipo de ventas."></textarea>
+        </div>
+        <div class="field">
+          <label class="lbl">¿Tienes que consolidar información de varias fuentes para armar ese reporte o dato de tu área?</label>
+          <textarea class="txa" placeholder="Ej. Sí — junto el Excel de producción, el reporte de SAP y los mensajes del equipo en WhatsApp."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- G5: Conocimiento y dependencias -->
+    <div class="sec">
+      <div class="sec-hdr">
+        <div class="sec-icon">🧠</div>
+        <div>
+          <div class="sec-ey">Sección 5</div>
+          <div class="sec-t">Conocimiento y dependencias del equipo</div>
+        </div>
+      </div>
+      <div class="sec-body">
+        <div class="field">
+          <label class="lbl">¿Qué proceso o conocimiento de tu equipo vive solo en la cabeza de una persona? ¿De quién?</label>
+          <div class="hint">No es para señalar a nadie — queremos entender qué conocimiento es difícil de transferir</div>
+          <textarea class="txa" placeholder="Ej. El proceso de conciliación bancaria lo sabe solo Ramírez porque él lo armó hace 4 años. Si él sale, se paraliza."></textarea>
+        </div>
+        <div class="field">
+          <label class="lbl">¿Qué se detiene en tu área si tú no estás dos semanas?</label>
+          <textarea class="txa" placeholder="¿Qué decisiones o información solo tú puedes dar? ¿Quién lo cubriría?"></textarea>
+        </div>
+        <div class="field">
+          <label class="lbl">¿Quién de tu equipo sería el más difícil de reemplazar, y exactamente por qué?</label>
+          <div class="hint">¿Qué sabe o hace esa persona que nadie más podría hacer igual de inmediato?</div>
+          <textarea class="txa" placeholder="No es una evaluación — queremos saber qué tipo de conocimiento es difícil de transferir."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- G6: Sobre el cambio -->
+    <div class="sec">
+      <div class="sec-hdr">
+        <div class="sec-icon">🔄</div>
+        <div>
+          <div class="sec-ey">Sección 6</div>
+          <div class="sec-t">Sobre el proyecto de transformación</div>
+        </div>
+      </div>
+      <div class="sec-body">
+        <div class="field">
+          <label class="lbl">¿Qué te preocuparía que cambiara en tu trabajo o en el de tu equipo?</label>
+          <div class="hint">Sé honesto — estas preocupaciones son información valiosa para diseñar bien el cambio</div>
+          <textarea class="txa" placeholder="Ej. Que el equipo no lo adopte, que se pierda el contexto que tenemos, que haya errores al principio…"></textarea>
+        </div>
+        <div class="field">
+          <label class="lbl">¿Intentaron implementar algún sistema o proceso nuevo antes que no funcionó? ¿Qué pasó?</label>
+          <textarea class="txa" placeholder="¿Qué se intentó y por qué no pegó?"></textarea>
+        </div>
+        <div class="field">
+          <label class="lbl">¿Quién de tu equipo sería el aliado natural de un cambio así?</label>
+          <div class="hint">Quién abraza los cambios en lugar de resistirlos</div>
+          <input class="inp" type="text" placeholder="Nombre o rol de esa persona">
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /panel-ger -->
+
+</div><!-- /page -->
+
+<!-- ─────────────── BOTTOM BAR ─────────────── -->
+<div class="bot">
+  <div class="bot-in">
+    <span class="bot-note">Tus respuestas son confidenciales y se usan solo para el diagnóstico.</span>
+    <button class="btn-send">Enviar encuesta →</button>
+  </div>
+</div>
+
+<script>
+let opN = 1, gerN = 1;
+
+function show(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.getElementById('panel-' + id).classList.add('on');
+  btn.classList.add('on');
+}
+
+/* ── Task block (operador) ── */
+function taskHTML(n) {
+  return `<div class="task">
+    <div class="task-bar">
+      <div class="tnum">${n}</div>
+      <div class="tprev">Tarea ${n}</div>
+      <button class="del" onclick="delTask(this)" title="Eliminar">×</button>
+    </div>
+    <div class="task-fields">
+      <div class="field">
+        <label class="lbl">¿Qué tarea es? ¿Qué produces o entregas? <span class="req">*</span></label>
+        <input class="inp op-tname" type="text" placeholder="Ej. Registrar pedido en el sistema">
+      </div>
+      <div class="r2">
+        <div class="field">
+          <label class="lbl">¿Para qué proceso o flujo?</label>
+          <select class="sel">
+            <option value="">Selecciona…</option>
+            <option>Ventas / Comercial</option>
+            <option>Cobranza / Cuentas por cobrar</option>
+            <option>Compras / Proveedores</option>
+            <option>Producción / Manufactura</option>
+            <option>Logística / Distribución</option>
+            <option>Atención al cliente / Postventa</option>
+            <option>Recursos Humanos</option>
+            <option>Contabilidad / Finanzas</option>
+            <option>Calidad</option>
+            <option>Administrativo / General</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="lbl">¿Qué lo dispara? ¿Qué llega primero?</label>
+          <input class="inp" type="text" placeholder="Ej. Solicitud por correo del cliente">
+        </div>
+      </div>
+      <div class="r3">
+        <div class="field">
+          <label class="lbl">¿Cuántas veces al mes? <span class="req">*</span></label>
+          <input class="inp" type="number" min="1" placeholder="Ej. 60">
+        </div>
+        <div class="field">
+          <label class="lbl">¿Cuántos minutos cada vez? <span class="req">*</span></label>
+          <div class="hint">Aproximado está bien</div>
+          <input class="inp" type="number" min="1" placeholder="Ej. 25">
+        </div>
+        <div class="field">
+          <label class="lbl">¿Cuántas personas la hacen igual?</label>
+          <input class="inp" type="number" min="1" placeholder="Ej. 4">
+        </div>
+      </div>
+      <div class="r2">
+        <div class="field">
+          <label class="lbl">Software principal que usas</label>
+          <input class="inp" type="text" placeholder="Ej. SAP, Excel, CRM…">
+        </div>
+        <div class="field">
+          <label class="lbl">Otros programas o archivos que abres</label>
+          <div class="hint">Incluye Excel personal, WhatsApp, etc.</div>
+          <input class="inp" type="text" placeholder="Ej. Excel propio, Correo…">
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl">¿Qué entregas al final y a quién?</label>
+        <input class="inp" type="text" placeholder="Ej. Un PDF que envío al cliente por correo">
+      </div>
+    </div>
+  </div>`;
+}
+
+function addTask() {
+  opN++;
+  const list = document.getElementById('op-tasks');
+  const wrap = document.createElement('div');
+  wrap.innerHTML = taskHTML(opN);
+  const task = wrap.firstElementChild;
+  list.appendChild(task);
+  wireTaskPreview(task, opN);
+  task.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function delTask(btn) {
+  if (!confirm('¿Eliminar esta tarea?')) return;
+  btn.closest('.task').remove();
+  document.querySelectorAll('#op-tasks .tnum').forEach((el, i) => el.textContent = i + 1);
+}
+
+function wireTaskPreview(task, n) {
+  const inp = task.querySelector('.op-tname');
+  const prev = task.querySelector('.tprev');
+  if (!inp || !prev) return;
+  inp.addEventListener('input', () => { prev.textContent = inp.value.trim() || `Tarea ${n}`; });
+}
+
+// Wire task 1 preview
+(function() {
+  const first = document.querySelector('#op-tasks .task');
+  if (first) wireTaskPreview(first, 1);
+})();
+
+/* ── Report block (gerente) ── */
+function repHTML(n) {
+  return `<div class="rep">
+    <div class="rep-bar">
+      <span class="rep-lbl">Reporte ${n}</span>
+      <button class="del" onclick="delRep(this)" title="Eliminar">×</button>
+    </div>
+    <div class="rep-fields">
+      <div class="r2">
+        <div class="field">
+          <label class="lbl">Nombre del reporte</label>
+          <input class="inp" type="text" placeholder="Ej. Resumen de producción diaria">
+        </div>
+        <div class="field">
+          <label class="lbl">Frecuencia</label>
+          <select class="sel">
+            <option value="">Selecciona…</option>
+            <option>Diario</option>
+            <option>Semanal</option>
+            <option>Quincenal</option>
+            <option>Mensual</option>
+            <option>Ad hoc (cuando lo piden)</option>
+          </select>
+        </div>
+      </div>
+      <div class="r3">
+        <div class="field">
+          <label class="lbl">¿Cuánto tiempo te toma?</label>
+          <input class="inp" type="text" placeholder="Ej. 1 hora">
+        </div>
+        <div class="field">
+          <label class="lbl">Software donde lo preparas</label>
+          <input class="inp" type="text" placeholder="Ej. Excel…">
+        </div>
+        <div class="field">
+          <label class="lbl">¿De dónde sacas los datos?</label>
+          <select class="sel">
+            <option value="">Selecciona…</option>
+            <option>Del sistema directamente</option>
+            <option>De un Excel o archivo mío</option>
+            <option>Me los mandan otras personas</option>
+            <option>Los recolecto yo manualmente</option>
+            <option>Mezcla de varias fuentes</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function addRep() {
+  gerN++;
+  const list = document.getElementById('ger-reps');
+  const wrap = document.createElement('div');
+  wrap.innerHTML = repHTML(gerN);
+  list.appendChild(wrap.firstElementChild);
+  list.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function delRep(btn) {
+  if (!confirm('¿Eliminar este reporte?')) return;
+  btn.closest('.rep').remove();
+  document.querySelectorAll('#ger-reps .rep-lbl').forEach((el, i) => el.textContent = `Reporte ${i + 1}`);
+}
+
+/* ── Week total ── */
+function wkTotal() {
+  const inputs = document.querySelectorAll('.wk-pct');
+  let total = 0;
+  inputs.forEach(i => { total += parseInt(i.value) || 0; });
+  const bar = document.getElementById('wk-total');
+  bar.className = 'wk-total';
+  if (total >= 95 && total <= 105) {
+    bar.classList.add('ok');
+    bar.textContent = `Total: ${total}% ✓`;
+  } else if (total > 105) {
+    bar.classList.add('over');
+    bar.textContent = `Total: ${total}% — supera el 100%, revisa los valores`;
+  } else {
+    bar.textContent = `Total: ${total}% — faltan ${100 - total}% por distribuir`;
+  }
+}
+</script>

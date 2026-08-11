@@ -135,9 +135,8 @@ export default function ClienteWorkspace() {
 
   const [cliente, setCliente]   = useState<Cliente | null>(null);
   const [loading, setLoading]   = useState(true);
-  const [tab, setTab]           = useState<'proyecto' | 'diagnosticos' | 'hallazgos' | 'plan' | 'sesiones' | 'facturacion'>('proyecto');
+  const [tab, setTab]           = useState<'sesiones_cuestionarios' | 'cubo' | 'entregables'>('sesiones_cuestionarios');
   const [editing, setEditing]   = useState(false);
-  const [editForm, setEditForm] = useState<Partial<Cliente>>({});
   const [checks, setChecks]     = useState<Record<string, boolean>>({});
   const [sesiones, setSesiones] = useState<Sesion[]>([]);
   const [pagos, setPagos]       = useState<Pago[]>([]);
@@ -172,9 +171,11 @@ export default function ClienteWorkspace() {
         setHallazgos(data.hallazgos || []);
         setPlan(data.plan || []);
       } catch {
-        const c = id === 'c-primer' ? MOCK_CLIENTE : { ...MOCK_CLIENTE, id, empresa: 'Cliente', contacto_nombre: '', contacto_cargo: '', industria: '', status: 'activo' as const };
-        setCliente(c);
-        setNotas(c.notas || '');
+        if (id === 'c-primer') {
+          setCliente(MOCK_CLIENTE);
+          setNotas(MOCK_CLIENTE.notas || '');
+        }
+        // Para clientes reales: no mostrar datos mock — dejar cliente null y que el spinner muestre error
       } finally { setLoading(false); }
     }
     load();
@@ -201,9 +202,9 @@ export default function ClienteWorkspace() {
     setSavingNotas(false);
   }
 
-  async function saveEdit() {
-    const updated = { ...cliente, ...editForm } as Cliente;
-    try { await api.patch(`/mentoria/clientes/${id}`, editForm); } catch {}
+  async function saveEdit(datos: Partial<Cliente>) {
+    const updated = { ...cliente, ...datos } as Cliente;
+    try { await api.patch(`/mentoria/clientes/${id}`, datos); } catch {}
     setCliente(updated);
     setEditing(false);
   }
@@ -271,7 +272,7 @@ export default function ClienteWorkspace() {
       setPlan(prev => [...prev, ...result.plan]);
       setResumenIA(result.resumen || '');
       setRoiIA(result.roi || '');
-      setTab('hallazgos');
+      setTab('cubo');
     } catch (e: any) {
       alert(e.message || 'Error al procesar. Verifica que hay diagnósticos guardados.');
     } finally {
@@ -291,7 +292,12 @@ export default function ClienteWorkspace() {
       <div style={{ width: 22, height: 22, borderRadius: '50%', border: '2px solid #6c4de6', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
     </div>
   );
-  if (!cliente) return null;
+  if (!cliente) return (
+    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
+      <div style={{ fontSize: 14, color: 'var(--text-3)' }}>No se pudo cargar el cliente</div>
+      <button onClick={() => window.location.reload()} style={{ fontSize: 12, padding: '6px 14px', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, cursor: 'pointer', color: 'var(--text)' }}>Reintentar</button>
+    </div>
+  );
 
   const fase = PHASES[cliente.fase_actual];
   const faseItemsDone = PHASES[cliente.fase_actual].items.filter(i => checks[i.id]).length;
@@ -365,7 +371,7 @@ export default function ClienteWorkspace() {
                     📁 Drive del cliente
                   </a>
                 )}
-                <button onClick={() => { setEditForm({}); setEditing(true); }} style={btnGhost}><Edit2 size={12} /> Editar</button>
+                <button onClick={() => setEditing(true)} style={btnGhost}><Edit2 size={12} /> Editar</button>
                 {cliente.fase_actual < 3 && fasePct === 100 && (
                   <button onClick={advanceFase} style={btnPrimary}>Avanzar a Fase {cliente.fase_actual + 1} →</button>
                 )}
@@ -383,14 +389,18 @@ export default function ClienteWorkspace() {
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--line)', marginTop: 16 }}>
           {([
-            { key: 'proyecto',     label: '📋 Proyecto' },
-            { key: 'diagnosticos', label: '🔬 Diagnósticos' },
-            { key: 'hallazgos',    label: `🚦 Hallazgos${hallazgos.length ? ` (${hallazgos.length})` : ''}` },
-            { key: 'plan',         label: `⚡ Plan de Acción${plan.length ? ` (${plan.filter(a=>a.status==='completado').length}/${plan.length})` : ''}` },
-            { key: 'sesiones',     label: `💬 Sesiones (${sesiones.length})` },
-            { key: 'facturacion',  label: '💰 Facturación' },
+            { key: 'sesiones_cuestionarios', label: '🎙️ Sesiones y cuestionarios' },
+            { key: 'cubo',                   label: '🎯 Cubo de información' },
+            { key: 'entregables',            label: '📦 Entregables' },
           ] as const).map(t => (
-            <button key={t.key} onClick={() => setTab(t.key)} style={{ padding: '9px 18px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: tab === t.key ? 'var(--text)' : 'var(--text-3)', borderBottom: tab === t.key ? '2px solid #6c4de6' : '2px solid transparent', marginBottom: -1, transition: 'color 0.15s' }}>
+            <button key={t.key} onClick={() => {
+              setTab(t.key);
+              if (t.key === 'cubo') {
+                api.get<any>(`/mentoria/clientes/${id}`)
+                  .then(data => setCliente(data))
+                  .catch(() => {});
+              }
+            }} style={{ padding: '9px 20px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: tab === t.key ? 'var(--text)' : 'var(--text-3)', borderBottom: tab === t.key ? '2px solid #6c4de6' : '2px solid transparent', marginBottom: -1, transition: 'color 0.15s' }}>
               {t.label}
             </button>
           ))}
@@ -400,233 +410,109 @@ export default function ClienteWorkspace() {
       {/* ── Tab content ── */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px' }}>
 
-        {tab === 'proyecto' && (
+        {/* ── SESIONES Y CUESTIONARIOS ── */}
+        {tab === 'sesiones_cuestionarios' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {PHASES.map(phase => {
-              const done = phase.items.filter(i => checks[i.id]).length;
-              const pct = Math.round(done / phase.items.length * 100);
-              const isCurrent = phase.num === cliente.fase_actual;
-              const isPast = phase.num < cliente.fase_actual;
+
+            {/* Sesión IA — hilo único continuo */}
+            {(() => {
+              const chatHistory = (cliente as any).chat_history as Array<{ role: string }> | null;
+              const msgCount = chatHistory ? chatHistory.filter((m: any) => m.role === 'user').length : 0;
               return (
-                <div key={phase.num} style={{ background: 'var(--surface)', border: `1px solid ${isCurrent ? phase.color + '50' : 'var(--line)'}`, borderRadius: 12, overflow: 'hidden', opacity: phase.num > cliente.fase_actual ? 0.55 : 1 }}>
-                  <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14, borderBottom: '1px solid var(--line)' }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 8, background: isPast ? 'rgba(34,197,94,0.12)' : `${phase.color}18`, border: `1px solid ${isPast ? 'rgba(34,197,94,0.3)' : phase.color + '40'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: isPast ? '#22c55e' : phase.color, flexShrink: 0 }}>
-                      {isPast ? '✓' : phase.num}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Fase {phase.num} · {phase.label}</span>
-                        {isCurrent && <span style={{ fontSize: 10, fontWeight: 700, background: `${phase.color}18`, color: phase.color, border: `1px solid ${phase.color}40`, padding: '2px 8px', borderRadius: 99 }}>Actual</span>}
-                        <span style={{ fontSize: 10, color: 'var(--text-3)' }}>{phase.duracion}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
-                        <div style={{ flex: 1, height: 4, background: 'var(--surface-2)', borderRadius: 99, overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: pct + '%', background: isPast ? '#22c55e' : phase.color, borderRadius: 99, transition: 'width 0.4s' }} />
-                        </div>
-                        <span style={{ fontSize: 10, color: 'var(--text-3)', flexShrink: 0 }}>{done}/{phase.items.length}</span>
-                      </div>
-                    </div>
+                <div style={{ background: 'var(--surface)', border: '1px solid rgba(108,77,230,0.3)', borderRadius: 12, padding: '18px 20px' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>🤖 Sesión de diagnóstico con IA</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 14 }}>
+                    El agente guía la conversación y documenta el cubo en tiempo real. El hilo es continuo — puedes pausar y retomar cuando quieras.
                   </div>
-                  <div style={{ padding: '4px 0' }}>
-                    {phase.items.map(item => (
-                      <label key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 18px', cursor: 'pointer', transition: 'background 0.12s' }}
-                        onMouseEnter={e => (e.currentTarget as HTMLLabelElement).style.background = 'var(--surface-2)'}
-                        onMouseLeave={e => (e.currentTarget as HTMLLabelElement).style.background = 'transparent'}
-                      >
-                        <div style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${checks[item.id] ? (isPast ? '#22c55e' : phase.color) : 'var(--line)'}`, background: checks[item.id] ? (isPast ? '#22c55e' : phase.color) : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>
-                          {checks[item.id] && <Check size={10} color="white" strokeWidth={3} />}
-                        </div>
-                        <input type="checkbox" checked={!!checks[item.id]} onChange={() => toggleCheck(item.id)} style={{ display: 'none' }} />
-                        <span style={{ fontSize: 13, color: checks[item.id] ? 'var(--text-3)' : 'var(--text)', textDecoration: checks[item.id] ? 'line-through' : 'none', lineHeight: 1.4 }}>
-                          {item.label}
-                        </span>
-                      </label>
-                    ))}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                    <button
+                      onClick={() => router.push(`/mentoria/${id}/sesion`)}
+                      style={{ fontSize: 12, padding: '8px 20px', background: 'rgba(108,77,230,0.1)', color: '#6c4de6', border: '1px solid rgba(108,77,230,0.3)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}
+                    >
+                      🎙️ {msgCount > 0 ? 'Continuar sesión' : 'Iniciar sesión'}
+                    </button>
+                    {msgCount > 0 && (
+                      <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                        {msgCount} intercambio{msgCount !== 1 ? 's' : ''} registrado{msgCount !== 1 ? 's' : ''}
+                      </span>
+                    )}
                   </div>
                 </div>
               );
-            })}
+            })()}
 
-            {/* Notas generales */}
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '18px' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Notas del proyecto</div>
-              <textarea value={notas} onChange={e => setNotas(e.target.value)} placeholder="Notas generales del cliente, contexto importante, restricciones, preferencias del equipo…" style={{ width: '100%', minHeight: 100, background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8, padding: '10px 12px', color: 'var(--text)', fontSize: 13, lineHeight: 1.6, fontFamily: 'inherit', outline: 'none', resize: 'vertical' }} />
-              <button onClick={saveNotas} disabled={savingNotas} style={{ ...btnPrimary, marginTop: 10, fontSize: 12 }}>
-                <Save size={12} /> {savingNotas ? 'Guardando…' : 'Guardar notas'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {tab === 'diagnosticos' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {/* Cuestionarios colaboradores */}
             <PipelineDiagnostico clienteId={id} empresa={cliente.empresa} ejecutivo={cliente.ejecutivo_asignado} driveUrl={cliente.drive_url} whatsapp={cliente.whatsapp} />
-            <div style={{ background: 'rgba(108,77,230,0.05)', border: '1px solid rgba(108,77,230,0.2)', borderRadius: 10, padding: '12px 16px', fontSize: 13, color: 'var(--text-2)', marginBottom: 4 }}>
-              Los formularios guardan los datos en el navegador donde se abren. Usa el mismo equipo para mantener consistencia entre sesiones.
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              {DIAG_FORMS.map(form => {
-                const isDone = cliente.areas_diagnosticadas.includes(form.key);
-                return (
-                  <div key={form.key} style={{ background: 'var(--surface)', border: `1px solid ${isDone ? 'rgba(34,197,94,0.3)' : 'var(--line)'}`, borderRadius: 11, padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
-                    <span style={{ fontSize: 22, flexShrink: 0 }}>{form.icon}</span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 3 }}>{form.label}</div>
-                      <div style={{ fontSize: 11, color: isDone ? '#22c55e' : 'var(--text-3)' }}>{isDone ? '✅ Completado' : '⬜ Pendiente'}</div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                      {!isDone && (
-                        <button onClick={() => { setCliente(prev => prev ? { ...prev, areas_diagnosticadas: [...prev.areas_diagnosticadas, form.key] } : prev); api.patch(`/mentoria/clientes/${id}/areas`, { area: form.key }).catch(() => {}); }} style={{ ...btnGhost, fontSize: 10, padding: '5px 9px' }}>✓ Marcar</button>
-                      )}
-                      <a href={`${form.path}?clienteId=${id}`} target="_blank" rel="noreferrer" style={{ ...btnPrimary, fontSize: 11, padding: '6px 12px', textDecoration: 'none' }}>
-                        <ExternalLink size={11} /> Abrir
-                      </a>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
 
-            {/* Procesamiento automático con IA */}
-            <div style={{ background: 'var(--surface)', border: '1px solid rgba(108,77,230,0.3)', borderRadius: 11, padding: '20px 22px' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
-                    🤖 Procesar diagnósticos con IA
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6 }}>
-                    Analiza todos los formularios guardados y genera automáticamente los hallazgos con semáforo y el plan de acción priorizado.
-                  </div>
-                  {resumenIA && (
-                    <div style={{ marginTop: 12, padding: '10px 14px', background: 'rgba(108,77,230,0.06)', border: '1px solid rgba(108,77,230,0.2)', borderRadius: 8 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: '#8b6ef5', marginBottom: 4 }}>RESUMEN EJECUTIVO</div>
-                      <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6 }}>{resumenIA}</div>
-                      {roiIA && <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: '#22c55e' }}>💰 ROI estimado: {roiIA}</div>}
-                    </div>
-                  )}
-                </div>
-                <button
-                  onClick={procesarConIA}
-                  disabled={procesando}
-                  style={{ ...btnPrimary, padding: '12px 22px', fontSize: 13, flexShrink: 0, opacity: procesando ? 0.7 : 1 }}
-                >
-                  {procesando ? '⏳ Analizando…' : '✨ Generar hallazgos y plan'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {tab === 'hallazgos' && (
-          <TabHallazgos
-            hallazgos={hallazgos}
-            onAdd={() => setShowHallazgo(true)}
-            onDelete={deleteHallazgo}
-            onAddToPlan={(h) => { setShowAccion(true); }}
-          />
-        )}
-
-        {tab === 'plan' && (
-          <TabPlan
-            plan={plan}
-            filter={planFilter}
-            onFilterChange={setPlanFilter}
-            onAdd={() => setShowAccion(true)}
-            onStatusChange={updateAccionStatus}
-            onDelete={deleteAccion}
-          />
-        )}
-
-        {tab === 'sesiones' && (
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
-              <button onClick={() => setShowSesion(true)} style={btnPrimary}><Plus size={13} /> Nueva sesión</button>
-            </div>
-            {!sesiones.length ? (
-              <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-3)', fontSize: 13 }}>Sin sesiones registradas — agrega la primera reunión</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {sesiones.map(s => (
-                  <div key={s.id} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 11, padding: '16px 20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
-                      <div>
-                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 3 }}>
-                          <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{s.titulo}</span>
-                          <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 99, background: 'rgba(108,77,230,0.1)', color: '#8b6ef5' }}>{TIPO_SESION_LABEL[s.tipo]}</span>
-                        </div>
-                        <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{fmtDate(s.fecha)}</div>
-                      </div>
-                    </div>
-                    {s.notas && <div style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, marginBottom: s.acciones ? 8 : 0 }}>{s.notas}</div>}
-                    {s.acciones && (
-                      <div style={{ background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 7, padding: '8px 12px', fontSize: 12, color: 'var(--text-2)' }}>
-                        <span style={{ fontWeight: 600, color: 'var(--text-3)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Próximos pasos: </span>
-                        {s.acciones}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {tab === 'facturacion' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {/* Resumen contrato */}
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '20px 22px' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Contrato</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
-                {[
-                  { l: 'Empresa', v: cliente.empresa },
-                  { l: 'Monto total', v: fmt$(cliente.precio) + ' + IVA' },
-                  { l: 'Inicio', v: fmtDate(cliente.fecha_inicio) },
-                  { l: 'Fin / Renovación', v: cliente.fecha_fin ? fmtDate(cliente.fecha_fin) : 'Indefinido' },
-                  { l: 'Ejecutivo', v: cliente.ejecutivo_asignado || '—' },
-                  { l: 'Tamaño empresa', v: cliente.tamano === '<10' ? '<10 empleados' : cliente.tamano === '10-100' ? '10-100 empleados' : '>100 empleados' },
-                ].map(r => (
-                  <div key={r.l}>
-                    <div style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 3 }}>{r.l}</div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{r.v}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Pagos */}
+            {/* Historial de sesiones */}
             <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Pagos</div>
-                  {pagos.length > 0 && <div style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 2 }}>
-                    {fmt$(pagos.filter(p => p.status === 'pagado').reduce((a, p) => a + p.monto, 0))} cobrados de {fmt$(cliente.precio)}
-                  </div>}
+              <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                  💬 Historial de sesiones {sesiones.length > 0 && <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 400 }}>({sesiones.length})</span>}
                 </div>
-                <button onClick={() => setShowPago(true)} style={btnPrimary}><Plus size={12} /> Registrar pago</button>
+                <button onClick={() => setShowSesion(true)} style={btnPrimary}><Plus size={12} /> Nueva sesión</button>
               </div>
-              {!pagos.length ? (
-                <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-3)', fontSize: 13 }}>Sin pagos registrados</div>
+              {!sesiones.length ? (
+                <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-3)', fontSize: 13 }}>Sin sesiones registradas todavía</div>
               ) : (
-                <table style={{ width: '100%' }}>
-                  <thead><tr>
-                    {['Fecha', 'Concepto', 'Monto', 'Status'].map(h => <th key={h} style={{ textAlign: 'left', fontSize: 10, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '10px 20px' }}>{h}</th>)}
-                  </tr></thead>
-                  <tbody>
-                    {pagos.map(p => (
-                      <tr key={p.id} style={{ borderTop: '1px solid var(--line)' }}>
-                        <td style={{ padding: '12px 20px', fontSize: 12, color: 'var(--text-2)' }}>{fmtDate(p.fecha)}</td>
-                        <td style={{ padding: '12px 20px', fontSize: 13, color: 'var(--text)' }}>{p.concepto}</td>
-                        <td style={{ padding: '12px 20px', fontSize: 13, fontWeight: 700, color: '#f59e0b' }}>{fmt$(p.monto)}</td>
-                        <td style={{ padding: '12px 20px' }}>
-                          <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 99, background: p.status === 'pagado' ? 'rgba(34,197,94,0.1)' : p.status === 'parcial' ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)', color: p.status === 'pagado' ? '#22c55e' : p.status === 'parcial' ? '#f59e0b' : '#ef4444' }}>
-                            {p.status === 'pagado' ? 'Pagado' : p.status === 'parcial' ? 'Parcial' : 'Pendiente'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  {sesiones.map(s => (
+                    <div key={s.id} style={{ padding: '14px 20px', borderBottom: '1px solid var(--line)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{s.titulo}</span>
+                        <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 99, background: 'rgba(108,77,230,0.1)', color: '#8b6ef5' }}>{TIPO_SESION_LABEL[s.tipo]}</span>
+                        <span style={{ fontSize: 11, color: 'var(--text-3)', marginLeft: 'auto' }}>{fmtDate(s.fecha)}</span>
+                      </div>
+                      {s.notas && <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5, marginBottom: s.acciones ? 6 : 0 }}>{s.notas}</div>}
+                      {s.acciones && (
+                        <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>
+                          <span style={{ fontWeight: 600 }}>Próximos pasos: </span>{s.acciones}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* ── CUBO DE INFORMACIÓN ── */}
+        {tab === 'cubo' && (
+          <TabCubo clienteId={id} empresa={cliente.empresa} sesiones={sesiones} cubo={(cliente as any).cubo ?? {}} />
+        )}
+
+        {/* ── ENTREGABLES ── */}
+        {tab === 'entregables' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div style={{ fontSize: 12, color: 'var(--text-3)', padding: '2px 0' }}>
+              Cada entregable se genera desde el cubo de información. Ábrelos y revísalos con el cliente.
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+              {ENTREGABLES.map(e => (
+                <a
+                  key={e.id}
+                  href={`${e.path}?clienteId=${id}&empresa=${encodeURIComponent(cliente.empresa)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    display: 'flex', flexDirection: 'column', gap: 8,
+                    background: 'var(--surface)', border: '1px solid var(--line)',
+                    borderRadius: 12, padding: '18px 20px', textDecoration: 'none',
+                    transition: 'border-color 0.15s, box-shadow 0.15s',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = '#6c4de650'; (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 4px 16px rgba(108,77,230,0.1)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--line)'; (e.currentTarget as HTMLAnchorElement).style.boxShadow = 'none'; }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 26 }}>{e.icon}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-3)', background: 'var(--bg)', padding: '2px 7px', borderRadius: 99, border: '1px solid var(--line)' }}>#{e.num}</span>
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', lineHeight: 1.3 }}>{e.titulo}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5 }}>{e.desc}</div>
+                  <div style={{ fontSize: 10, color: '#8b6ef5', marginTop: 2 }}>📥 {e.fuente}</div>
+                </a>
+              ))}
             </div>
           </div>
         )}
@@ -636,8 +522,8 @@ export default function ClienteWorkspace() {
       {/* Modals */}
       {showSesion    && <NuevaSesionModal onClose={() => setShowSesion(false)} onSave={addSesion} />}
       {showPago      && <NuevoPagoModal onClose={() => setShowPago(false)} onSave={addPago} precio={cliente.precio} />}
-      {showHallazgo  && <NuevoHallazgoModal onClose={() => setShowHallazgo(false)} onSave={addHallazgo} />}
-      {showAccion    && <NuevaAccionModal onClose={() => setShowAccion(false)} onSave={addAccion} hallazgos={hallazgos} />}
+      {showHallazgo  && <NuevoHallazgoModal onClose={() => setShowHallazgo(false)} onSave={addHallazgo} areasCliente={[...new Set([...hallazgos.map(h => h.area), ...(cliente.areas_diagnosticadas ?? [])].filter(Boolean))]} />}
+      {showAccion    && <NuevaAccionModal onClose={() => setShowAccion(false)} onSave={addAccion} hallazgos={hallazgos} areasCliente={[...new Set([...hallazgos.map(h => h.area), ...(cliente.areas_diagnosticadas ?? [])].filter(Boolean))]} />}
     </div>
   );
 }
@@ -668,12 +554,83 @@ function PhaseTracker({ current }: { current: number }) {
 }
 
 // ── Edit Form ──────────────────────────────────────────────────────────────────
-function EditForm({ cliente, onSave, onCancel }: { cliente: Cliente; onSave: () => void; onCancel: () => void }) {
+function EditForm({ cliente, onSave, onCancel }: {
+  cliente: Cliente;
+  onSave: (datos: Partial<Cliente>) => void;
+  onCancel: () => void;
+}) {
+  const [f, setF] = useState({
+    empresa:             cliente.empresa,
+    contacto_nombre:     cliente.contacto_nombre,
+    contacto_cargo:      cliente.contacto_cargo,
+    email:               cliente.email ?? '',
+    whatsapp:            cliente.whatsapp ?? '',
+    industria:           cliente.industria,
+    tamano:              cliente.tamano,
+    ejecutivo_asignado:  cliente.ejecutivo_asignado,
+    precio:              String(cliente.precio),
+    fecha_inicio:        cliente.fecha_inicio,
+    fecha_fin:           cliente.fecha_fin ?? '',
+    drive_url:           cliente.drive_url ?? '',
+  });
+  const u = (k: keyof typeof f, v: string) => setF(p => ({ ...p, [k]: v }));
+
+  function handleSave() {
+    onSave({
+      empresa:            f.empresa,
+      contacto_nombre:    f.contacto_nombre,
+      contacto_cargo:     f.contacto_cargo,
+      email:              f.email || null,
+      whatsapp:           f.whatsapp || null,
+      industria:          f.industria,
+      tamano:             f.tamano,
+      ejecutivo_asignado: f.ejecutivo_asignado,
+      precio:             parseInt(f.precio) || cliente.precio,
+      fecha_inicio:       f.fecha_inicio,
+      fecha_fin:          f.fecha_fin || null,
+      drive_url:          f.drive_url || undefined,
+    });
+  }
+
   return (
-    <div>
-      <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 12 }}>Edición inline — guarda los cambios directamente</p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#8b6ef5', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        Editando datos del cliente
+      </div>
+
+      {/* Empresa */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 10 }}>
+        <div><label style={labelSt}>Empresa *</label><input value={f.empresa} onChange={e => u('empresa', e.target.value)} style={inputSt} /></div>
+        <div><label style={labelSt}>Industria</label><input value={f.industria} onChange={e => u('industria', e.target.value)} placeholder="Logística, Salud…" style={inputSt} /></div>
+        <div><label style={labelSt}>Tamaño empresa</label>
+          <select value={f.tamano} onChange={e => u('tamano', e.target.value)} style={{ ...inputSt, cursor: 'pointer' } as any}>
+            <option value="<10">Menos de 10</option>
+            <option value="10-100">10 – 100 empleados</option>
+            <option value=">100">Más de 100</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Contacto */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 10 }}>
+        <div><label style={labelSt}>Nombre contacto</label><input value={f.contacto_nombre} onChange={e => u('contacto_nombre', e.target.value)} style={inputSt} /></div>
+        <div><label style={labelSt}>Cargo</label><input value={f.contacto_cargo} onChange={e => u('contacto_cargo', e.target.value)} placeholder="CEO, Director…" style={inputSt} /></div>
+        <div><label style={labelSt}>Email</label><input value={f.email} onChange={e => u('email', e.target.value)} type="email" placeholder="correo@empresa.mx" style={inputSt} /></div>
+        <div><label style={labelSt}>WhatsApp</label><input value={f.whatsapp} onChange={e => u('whatsapp', e.target.value)} placeholder="+52 55 0000 0000" style={inputSt} /></div>
+      </div>
+
+      {/* Contrato */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 2fr', gap: 10 }}>
+        <div><label style={labelSt}>Precio MXN</label><input value={f.precio} onChange={e => u('precio', e.target.value)} type="number" style={inputSt} /></div>
+        <div><label style={labelSt}>Fecha inicio</label><input value={f.fecha_inicio} onChange={e => u('fecha_inicio', e.target.value)} type="date" style={inputSt} /></div>
+        <div><label style={labelSt}>Fecha fin</label><input value={f.fecha_fin} onChange={e => u('fecha_fin', e.target.value)} type="date" style={inputSt} /></div>
+        <div><label style={labelSt}>Ejecutivo</label><input value={f.ejecutivo_asignado} onChange={e => u('ejecutivo_asignado', e.target.value)} style={inputSt} /></div>
+        <div><label style={labelSt}>Google Drive del cliente</label><input value={f.drive_url} onChange={e => u('drive_url', e.target.value)} placeholder="https://drive.google.com/…" style={inputSt} /></div>
+      </div>
+
+      {/* Botones */}
       <div style={{ display: 'flex', gap: 8 }}>
-        <button onClick={onSave} style={btnPrimary}><Check size={12} /> Guardar</button>
+        <button onClick={handleSave} style={btnPrimary}><Check size={12} /> Guardar cambios</button>
         <button onClick={onCancel} style={btnGhost}><X size={12} /> Cancelar</button>
       </div>
     </div>
@@ -839,6 +796,494 @@ const btnPrimary: React.CSSProperties = { display: 'flex', alignItems: 'center',
 const btnGhost: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: '1px solid var(--line)', background: 'transparent', color: 'var(--text-2)', fontSize: 13, cursor: 'pointer' };
 const labelSt: React.CSSProperties = { fontSize: 11, fontWeight: 500, color: 'var(--text-2)', display: 'block', marginBottom: 4 };
 const inputSt: React.CSSProperties = { width: '100%', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 7, padding: '8px 10px', color: 'var(--text)', fontSize: 13, fontFamily: 'inherit', outline: 'none' };
+
+// ── Tab Cubo & Entregables ─────────────────────────────────────────────────────
+const CUESTIONARIOS_SRC = [
+  { id: 'dg',        label: 'Sesión DG',                   icon: '👤', path: '/flowdesk/diagnosticos/cuestionario-dg.html',        color: '#6c4de6' },
+  { id: 'director',  label: 'Sesión Directores',           icon: '🏛️', path: '/flowdesk/diagnosticos/sesion-director.html',        color: '#8b5cf6' },
+  { id: 'gerente',   label: 'Cuestionario Gerentes',       icon: '🏢', path: '/flowdesk/diagnosticos/cuestionario-gerente.html',   color: '#3b82f6' },
+  { id: 'operador',  label: 'Cuestionario Operadores',     icon: '⚙️', path: '/flowdesk/diagnosticos/cuestionario-operador.html',  color: '#f59e0b' },
+  { id: 'encuestas', label: 'Encuestas Diagnóstico',       icon: '📋', path: '/flowdesk/diagnosticos/encuestas-diagnostico.html',  color: '#10b981' },
+] as const;
+
+const ENTREGABLES = [
+  { id: 'flujo_asis',  num: 1, titulo: 'Mapa de Procesos AS-IS',      desc: 'Swimlane + tabla de procesos actuales',     fuente: 'Áreas + Procesos + Brechas',      icon: '🗺️',  path: '/flowdesk/diagnosticos/mapa-procesos.html'        },
+  { id: 'org_actual',  num: 2, titulo: 'Organigrama actual',           desc: 'Roles, tareas y herramientas por cargo',   fuente: 'Áreas + Roles + Herramientas',    icon: '👥',  path: '/flowdesk/diagnosticos/organigrama-actual.html'   },
+  { id: 'flujo_tobe',  num: 3, titulo: 'Flujo TO-BE por fases',        desc: 'Procesos optimizados con IA',              fuente: 'Procesos + Agentes IA + Fases',   icon: '✨',  path: '/flowdesk/diagnosticos/flujo-tobe.html'           },
+  { id: 'org_nuevo',   num: 4, titulo: 'Organigrama nuevo + costo $',  desc: 'Ahorro de headcount con agentes IA',       fuente: 'Roles + Agentes IA + Headcount',  icon: '💰',  path: '/flowdesk/diagnosticos/organigrama-nuevo.html'    },
+  { id: 'propuesta',   num: 5, titulo: 'Propuesta agentes IA',         desc: 'Descripción, ROI y especificaciones',      fuente: 'Agentes IA + Costos + ROI',       icon: '🤖',  path: '/flowdesk/diagnosticos/propuesta-agentes.html'    },
+  { id: 'roadmap',     num: 6, titulo: 'Roadmap 24 meses',             desc: 'Fases e hitos de implementación',          fuente: 'Fases + Hitos + Entregables',     icon: '🚀',  path: '/flowdesk/diagnosticos/roadmap-24m.html'          },
+] as const;
+
+type CuboKey = 'contexto' | 'areas_procesos' | 'organigrama' | 'sistemas' | 'brechas' | 'agentes';
+
+interface CuboSection {
+  key: CuboKey;
+  titulo: string;
+  desc: string;
+  fuente: string;
+  fuenteColor: string;
+  placeholder: string;
+}
+
+const CUBO_SECTIONS: CuboSection[] = [
+  {
+    key: 'contexto',
+    titulo: 'Empresa & Contexto estratégico',
+    desc: 'Descripción del negocio, objetivos del DG, prioridades 12 meses',
+    fuente: 'Cuestionario DG',
+    fuenteColor: '#6c4de6',
+    placeholder: 'Empresa: ___\nActividad principal: ___\n# Empleados: ___\nFacturación estimada: ___\n\nObjetivos del DG para los próximos 12 meses:\n—\n\nPrioridades más urgentes:\n—',
+  },
+  {
+    key: 'areas_procesos',
+    titulo: 'Áreas & Procesos principales',
+    desc: 'Por cada área: función, procesos clave, problemas actuales',
+    fuente: 'Cuestionario Gerentes',
+    fuenteColor: '#3b82f6',
+    placeholder: 'VENTAS\nFunción: ___\nProcesos: captación → calificación → propuesta → cierre\nProblemas: ___\n\nOPERACIONES\nFunción: ___\nProcesos: ___\nProblemas: ___\n\nADMINISTRACIÓN\n...',
+  },
+  {
+    key: 'organigrama',
+    titulo: 'Organigrama & Roles',
+    desc: 'Personas por área, cargo, sueldo estimado, herramientas que usan',
+    fuente: 'Cuestionario Gerentes + Operadores',
+    fuenteColor: '#f59e0b',
+    placeholder: 'NOMBRE · Cargo · Área · $sueldo/mes\nHerramientas: Excel, WhatsApp, Contpaq…\nPrincipal tarea repetitiva: ___\n\n...',
+  },
+  {
+    key: 'sistemas',
+    titulo: 'Sistemas & Herramientas actuales',
+    desc: 'Software, plataformas, licencias y costos mensuales',
+    fuente: 'Cuestionario Operadores',
+    fuenteColor: '#f59e0b',
+    placeholder: 'SISTEMA · Tipo · Licencia/mes · # usuarios\n\nEjemplo:\nContpaq · ERP/Contabilidad · $2,500/mes · 3 usuarios\nWhatsApp Business · Comunicación · Gratis · todos\nExcel · Gestión · O365 $150/usuario · 8 usuarios\n\n...',
+  },
+  {
+    key: 'brechas',
+    titulo: 'Brechas & Diagnóstico del asesor',
+    desc: 'Gaps detectados, ineficiencias, observaciones de sesión',
+    fuente: 'Sesión asesor',
+    fuenteColor: '#ef4444',
+    placeholder: 'BRECHA CRÍTICA\nDescripción: ___\nÁrea afectada: ___\nImpacto estimado: ___ horas/semana · $___ pérdida\n\nBRECHA IMPORTANTE\n...\n\nOBSERVACIONES DEL ASESOR\n—',
+  },
+  {
+    key: 'agentes',
+    titulo: 'Agentes IA propuestos',
+    desc: 'Automatizaciones identificadas, ROI estimado por agente',
+    fuente: 'Sesión asesor + análisis',
+    fuenteColor: '#8b5cf6',
+    placeholder: 'AGENTE 1 · Nombre descriptivo\nFunción: ___\nÁrea que libera: ___\nTareas que reemplaza: ___\nAhorro estimado: ___ horas/semana = $___ MXN/mes\nFase de implementación: Quick Win / Expansión\n\nAGENTE 2\n...',
+  },
+];
+
+const CUBO_SHORT: Record<CuboKey, string> = {
+  contexto:       'Contexto',
+  areas_procesos: 'Áreas',
+  organigrama:    'Organigrama',
+  sistemas:       'Sistemas',
+  brechas:        'Brechas',
+  agentes:        'Agentes IA',
+};
+
+const ENTREGABLE_NEEDS: Record<string, CuboKey[]> = {
+  flujo_asis: ['areas_procesos', 'brechas', 'sistemas'],
+  org_actual: ['organigrama', 'contexto'],
+  flujo_tobe: ['agentes', 'areas_procesos'],
+  org_nuevo:  ['agentes', 'organigrama'],
+  propuesta:  ['agentes', 'brechas', 'contexto'],
+  roadmap:    ['contexto', 'areas_procesos', 'organigrama', 'sistemas', 'brechas', 'agentes'],
+};
+
+function TabCubo({ clienteId, empresa, sesiones, cubo: initialCubo }: { clienteId: string; empresa: string; sesiones: Sesion[]; cubo?: Record<string, string> }) {
+  const entKey  = `mentoria_ent_${clienteId}`;
+
+  const [cubo, setCubo] = React.useState<Record<CuboKey, string>>(() => {
+    return (initialCubo ?? {}) as Record<CuboKey, string>;
+  });
+
+  React.useEffect(() => {
+    if (initialCubo && Object.keys(initialCubo).length > 0) {
+      setCubo(initialCubo as Record<CuboKey, string>);
+    }
+  }, [initialCubo]);
+  const [entStatus, setEntStatus] = React.useState<Record<string, 'borrador' | 'revision' | 'aprobado'>>(() => {
+    try { return JSON.parse(localStorage.getItem(entKey) || '{}'); } catch { return {}; }
+  });
+  const [saving, setSaving] = React.useState(false);
+  const [openSection, setOpenSection] = React.useState<CuboKey | null>('contexto');
+
+  const totalFilled = CUBO_SECTIONS.filter(s => cubo[s.key]?.trim()).length;
+  const pctCubo = Math.round(totalFilled / CUBO_SECTIONS.length * 100);
+
+  async function saveSection(key: CuboKey, value: string) {
+    const next = { ...cubo, [key]: value };
+    setCubo(next);
+    try { await api.patch(`/mentoria/clientes/${clienteId}/cubo`, { cubo: next }); } catch {}
+  }
+
+  async function loadDemo() {
+    // Función de demo eliminada — no exponer datos de clientes reales en producción
+    return;
+    const demo: Record<CuboKey, string> = {
+      contexto: `Empresa: Textiles Anáhuac — División 2–7 (sede Puebla / CDMX)
+Giro: Manufactura textil — hilatura, tejido, índigo, acabado y distribución de telas
+Empleados: ~350 (7 divisiones operativas)
+Facturación estimada: $80–120M MXN anuales
+ERP principal: SAP (módulos SD, MM; PP parcial sin digitalizar)
+
+Objetivos del DG (próximos 12 meses):
+1. Reducir tiempo de respuesta de cotización de 4–8 hrs a <30 min
+2. Mejorar cumplimiento de programa de producción de ~80% a >95%
+3. Digitalizar control de calidad e inventario en planta
+4. Reducir cartera vencida >30 días en 35%
+
+Prioridades urgentes:
+— Comercialización: cotización manual pierde pedidos ante competencia
+— Planeación: programa semanal en Excel + reuniones S&OP de 3+ hrs
+— Cobranza: seguimiento manual a deudores, DSO ~52 días`,
+
+      areas_procesos: `COMERCIALIZACIÓN (División 2)
+Función: captación → cotización → confirmación OV → seguimiento post-venta
+Procesos clave:
+  • Cotización al cliente: Coord. Comercial, Excel, 4–8 hrs/cot., Bajo demanda
+  • Confirmación de pedido: SAP OV, Diario
+  • Seguimiento post-venta: WhatsApp/teléfono, Semanal
+Problemas: Cotización lenta sin visibilidad de disponibilidad de producción en SAP
+
+PLANEACIÓN & LOGÍSTICA (División 4a)
+Función: programación → verif. inventario → lib. programa → recepción APT
+Procesos clave:
+  • Programación semanal (Excel, 1 día completo de trabajo)
+  • Verificación inventario PT/MP en SAP
+  • Coord. plantas (WhatsApp/verbal, Diario)
+Problemas: 1 día/semana en Excel de programación, cambios urgentes frecuentes no planeados
+
+COMPRAS (División 3 CxP)
+Función: requisición → OC → recepción MP → pago proveedor
+Sistemas: SAP MM, Excel, Email
+Problemas: ~40% OC sin trazabilidad en Excel; cotizaciones a proveedores por correo manual
+
+PRODUCCIÓN (División 4b)
+Función: hilatura OE/anillo → tejido/índigo → acabado → empaque/etiquetado
+Sistemas: Físico (papel), Excel ocasional
+Problemas: Control diario de producción en papel, comunicación entre turnos por verbal
+
+CALIDAD (División 5)
+Función: inspección → liberación → No Conformidades
+Sistemas: Excel rudimentario, papel
+Problemas: NC en Word/Excel 45 min c/u, sin trazabilidad digital por lote
+
+EMBARQUES (División 6)
+Función: APT → embarque nacional/exportación
+Problemas: Liberación depende de notificación manual de Calidad
+
+FINANZAS / CxC (División 7)
+Función: cobranza → estado cuenta → pago → conciliación SAP
+Problemas: Cartera vencida gestionada 100% manual por teléfono, DSO ~52 días`,
+
+      organigrama: `DG · Director General · $120,000/mes · SAP, Excel, WhatsApp
+
+COMERCIALIZACIÓN — 7 personas
+  Dir. Comercial · $60,000/mes
+  3 Ejecutivos de Ventas · $18,000/mes c/u · Excel, WhatsApp, teléfono
+  2 Soporte Comercial · $12,000/mes c/u · SAP, Excel
+  1 Coord. Export. · $20,000/mes · Excel, SAP
+
+PLANEACIÓN & LOGÍSTICA — 5 personas
+  Dir. Planeación · $55,000/mes
+  2 Planeadores · $18,000/mes c/u · Excel, SAP
+  2 Almacenistas · $8,000/mes c/u · SAP parcial, papel
+
+COMPRAS — 4 personas
+  Gerente Compras · $40,000/mes
+  2 Compradores · $20,000/mes c/u · SAP MM, Excel, Email
+  1 Asistente CxP · $10,000/mes
+
+PRODUCCIÓN — ~280 personas
+  Dir. Producción · $65,000/mes
+  4 Jefes de Planta · $30,000/mes c/u · Físico, Excel ocasional
+  ~270 Operarios · $5,500–7,000/mes prom.
+
+CALIDAD — 8 personas
+  Gerente Calidad · $45,000/mes
+  5 Inspectores · $10,000/mes c/u · Excel, papel
+  2 Anal. Aseg. Calidad · $15,000/mes c/u
+
+EMBARQUES — 6 personas
+  Gerente Embarques · $38,000/mes
+  5 Operativos · $9,000/mes c/u
+
+FINANZAS / CxC — 5 personas
+  Dir. Finanzas · $70,000/mes
+  2 Analistas CxC · $15,000/mes c/u · SAP, teléfono
+  1 Tesorero · $25,000/mes
+  1 Asistente · $9,000/mes
+
+⚠️ DATO PENDIENTE: confirmar sueldos con RRHH (Dir. Talento)`,
+
+      sistemas: `SAP ERP (SD, MM; PP parcial) · ERP · ~$45,000/mes · 25 usuarios activos
+Microsoft 365 (Excel/Outlook) · Ofimática · $150/usuario/mes · ~40 usuarios = $6,000/mes
+WhatsApp Business (sin API) · Comunicación · $0 · Toda la empresa
+Gmail (cuentas adicionales) · Email · $0
+Papel + formatos físicos · Control calidad en planta · $0 · Sin trazabilidad
+
+BRECHAS DE SISTEMAS:
+— Sin WMS: inventario en Excel y papel → diferencia fís./SAP ~5%
+— Sin CRM: seguimiento comercial en WhatsApp y Excel sin histórico
+— Sin trazabilidad de lotes digital en Calidad
+— SAP PP no implementado completamente → Producción sin visibilidad en tiempo real
+— Sin API WhatsApp Business → mensajería masiva imposible actualmente`,
+
+      brechas: `BRECHA CRÍTICA 1 — Cotización manual en Excel
+Área: Comercialización
+Impacto: 4–8 hrs por cotización → clientes se van con la competencia si no responden ese día
+Costo estimado: 3 personas × 4 hrs × $200/hr × 22 días = $52,800/mes perdido
+Quick fix: Agente Comercial Digital que responde en <5 min
+
+BRECHA CRÍTICA 2 — Programación de producción 100% manual
+Área: Planeación
+Impacto: 1 día completo/semana para 2 planeadores, cumplimiento ~80%, cambios urgentes constantes
+Costo estimado: 2 planeadores × 8 hrs/semana × $225/hr = $3,600/sem de coordinación reactiva
+Quick fix: Agente S&OP que genera el programa automáticamente cada lunes
+
+BRECHA CRÍTICA 3 — Inventario fís. vs SAP diverge ~5%
+Área: Planeación & Almacén
+Impacto: OC duplicadas, paros de producción por faltantes, conciliaciones 8+ hrs/semana
+Costo estimado: Paros de planta + 2 almacenistas × 8 hrs/sem = $2,400/sem
+
+BRECHA IMPORTANTE 4 — Cobranza 100% manual
+Área: Finanzas/CxC
+Impacto: DSO ~52 días, cartera vencida >30 días ≈ 15% de cartera
+Costo: 2 personas × 40 hrs/semana de seguimiento manual
+
+BRECHA IMPORTANTE 5 — Control de calidad en papel
+Área: Calidad
+Impacto: Sin trazabilidad digital, NC tardan 45 min c/u en Word/Excel
+
+OBSERVACIONES DEL ASESOR:
+— SAP subutilizado: funciona como repositorio, no como cerebro operativo
+— Comunicación inter-depto ~80% WhatsApp/verbal → riesgo alto de errores no registrados
+— Resistencia esperada en producción (270 operarios): mayor reto es cultural, no tecnológico
+— DG tiene visión clara de transformación pero necesita ROI concreto para convencer a su consejo`,
+
+      agentes: `AGENTE 1 · Agente Comercial Digital
+Función: Atiende cotizaciones y captura pedidos por WhatsApp Business 24/7
+Área: Comercialización — libera 3 personas en 60% del tiempo operativo
+Reemplaza: Cotización manual Excel (4–8 hrs → <5 min), captura OV en SAP, seguimiento tel.
+Ahorro: 450 hrs/mes × $200/hr = $90,000 MXN/mes
+Costo impl.: $20,000/mes · ROI neto: $70,000/mes
+Fase: Quick Win (Fase 1)
+
+AGENTE 2 · Bot de Cobranza
+Función: Monitorea cartera vencida en SAP, envía recordatorios WhatsApp/email, aplica pagos
+Área: Finanzas/CxC — libera 2 personas de 80% tiempo operativo
+Reemplaza: Llamadas manuales, estados de cuenta en Excel, aplicación manual de pagos
+Ahorro: DSO -10 días = $1.2M más liquidez + 80 hrs/mes × $200/hr = $16,000/mes
+Costo impl.: $5,500/mes · ROI neto: $10,500/mes + liquidez
+Fase: Quick Win (Fase 1)
+
+AGENTE 3 · Monitor de Almacén SAP
+Función: Digitaliza inventario en tiempo real con tablets + QR/barras en planta
+Área: Almacén — 4 personas eliminan conciliaciones (8 hrs → 0 hrs/semana)
+Reemplaza: Captura en papel, conciliaciones semanales, conteos físicos periódicos
+Ahorro: 32 hrs/sem × $150/hr = $19,200/mes + elimina diferencia fís/SAP
+Costo impl.: $7,000/mes · ROI neto: $12,200/mes
+Fase: Quick Win (Fase 1)
+
+AGENTE 4 · Planeación S&OP Automática
+Función: Genera programa semanal de producción automáticamente cada lunes a las 6am
+Área: Planeación — 2 planeadores recuperan 1 día/semana c/u
+Reemplaza: Excel de programación (1 día), reuniones S&OP 3+ hrs, actualizaciones urgentes
+Ahorro: 64 hrs/mes × $225/hr = $14,400/mes + cumplimiento programa de 80% a >95%
+Costo impl.: $14,000/mes · ROI neto: $400/mes + 15pts cumplimiento
+Fase: Expansión (Fase 2)
+
+AGENTE 5 · Agente de Compras
+Función: Genera OC automáticamente al detectar necesidades del programa de producción
+Área: Compras — 2 compradores liberan 50% del tiempo operativo
+Reemplaza: Cotizaciones manuales email, seguimiento OC en Excel, generación OC SAP
+Ahorro: 5–8% ahorro sobre precio spot + 80 hrs/mes administrativas
+Costo impl.: $12,000/mes
+Fase: Expansión (Fase 2)
+
+AGENTE 6 · Agente de Calidad
+Función: Inspección digital en tablet, NC automáticas con foto, predicción de fallo por lote
+Área: Calidad — 5 inspectores liberan 40% del tiempo en papelería
+Reemplaza: Registro manual papel, NC Word/Excel (45 min → <2 min), notificaciones manuales
+Ahorro: 5 × 16 hrs/mes × $150/hr = $12,000/mes + eliminación rechazos en cliente
+Costo impl.: $15,000/mes
+Fase: Expansión (Fase 2)`,
+    };
+    setCubo(demo);
+    try { await api.patch(`/mentoria/clientes/${clienteId}/cubo`, { cubo: demo }); } catch {}
+    setOpenSection('contexto');
+  }
+
+  function cycleStatus(id: string) {
+    const order: Array<'borrador' | 'revision' | 'aprobado'> = ['borrador', 'revision', 'aprobado'];
+    const cur = entStatus[id] ?? 'borrador';
+    const next = order[(order.indexOf(cur) + 1) % order.length];
+    const updated = { ...entStatus, [id]: next };
+    setEntStatus(updated);
+    localStorage.setItem(entKey, JSON.stringify(updated));
+  }
+
+  const statusCfg = {
+    borrador:  { label: 'Borrador',      color: '#6b7280', bg: 'rgba(107,114,128,0.1)' },
+    revision:  { label: 'En revisión',   color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
+    aprobado:  { label: 'Aprobado ✓',   color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
+  };
+
+  return (
+    <div style={{ display: 'flex', gap: 18 }}>
+
+      {/* ── Cubo de información ── */}
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+        {/* Header cubo */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '16px 20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Cubo de información — {empresa}</div>
+              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>Fuente única para los 6 entregables. Edita durante la reunión de verificación.</div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: pctCubo === 100 ? '#22c55e' : '#6c4de6' }}>{pctCubo}%</div>
+            </div>
+          </div>
+          <div style={{ height: 5, background: 'var(--surface-2)', borderRadius: 99, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: pctCubo + '%', background: 'linear-gradient(90deg,#6c4de6,#22c55e)', borderRadius: 99, transition: 'width 0.4s' }} />
+          </div>
+
+          {sesiones.length > 0 && (
+            <div style={{ marginTop: 10, fontSize: 11, color: 'var(--text-3)' }}>
+              💬 {sesiones.length} sesión{sesiones.length > 1 ? 'es' : ''} registrada{sesiones.length > 1 ? 's' : ''} · datos sincronizados automáticamente
+            </div>
+          )}
+        </div>
+
+        {/* Secciones del cubo */}
+        {CUBO_SECTIONS.map(section => {
+          const isOpen = openSection === section.key;
+          const value  = cubo[section.key] ?? '';
+          const filled = !!value.trim();
+          return (
+            <div key={section.key} style={{ background: 'var(--surface)', border: `1px solid ${filled ? 'rgba(34,197,94,0.25)' : 'var(--line)'}`, borderRadius: 11, overflow: 'hidden' }}>
+              <button
+                onClick={() => setOpenSection(isOpen ? null : section.key)}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+              >
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: filled ? '#22c55e' : 'var(--line)', flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{section.titulo}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{section.desc}</div>
+                </div>
+                <span style={{ fontSize: 9, fontWeight: 700, color: section.fuenteColor, background: `${section.fuenteColor}15`, border: `1px solid ${section.fuenteColor}30`, padding: '2px 8px', borderRadius: 99, flexShrink: 0 }}>
+                  {section.fuente}
+                </span>
+                <span style={{ color: 'var(--text-3)', fontSize: 12, flexShrink: 0 }}>{isOpen ? '▲' : '▼'}</span>
+              </button>
+              {isOpen && (
+                <div style={{ padding: '0 18px 16px' }}>
+                  <textarea
+                    value={value}
+                    onChange={e => saveSection(section.key, e.target.value)}
+                    placeholder={section.placeholder}
+                    style={{ width: '100%', minHeight: 180, background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8, padding: '10px 12px', color: 'var(--text)', fontSize: 12, fontFamily: 'var(--font-mono, monospace)', lineHeight: 1.7, outline: 'none', resize: 'vertical' }}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── Cobertura de entregables ── */}
+      <div style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+        {/* Secciones del cubo — estado rápido */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 11, padding: '14px 16px' }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Secciones del cubo</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {CUBO_SECTIONS.map(s => {
+              const filled = !!(cubo[s.key]?.trim());
+              return (
+                <button key={s.key} onClick={() => setOpenSection(s.key)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: '3px 0' }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: filled ? '#22c55e' : 'var(--line)' }} />
+                  <span style={{ fontSize: 12, flex: 1, color: filled ? 'var(--text)' : 'var(--text-3)', fontWeight: filled ? 600 : 400 }}>
+                    {CUBO_SHORT[s.key]}
+                  </span>
+                  {filled
+                    ? <span style={{ fontSize: 9, color: '#22c55e', fontWeight: 700 }}>✓</span>
+                    : <span style={{ fontSize: 9, color: '#ef4444', fontWeight: 700 }}>Falta</span>
+                  }
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Por entregable — cobertura visual */}
+        <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', padding: '4px 0' }}>
+          Listo para generar
+        </div>
+
+        {ENTREGABLES.map(e => {
+          const needed  = ENTREGABLE_NEEDS[e.id] ?? [];
+          const filledK = needed.filter(k => !!(cubo[k]?.trim()));
+          const missing = needed.filter(k => !(cubo[k]?.trim()));
+          const ready   = missing.length === 0;
+          return (
+            <div key={e.id} style={{
+              background: 'var(--surface)',
+              border: `1px solid ${ready ? 'rgba(34,197,94,0.35)' : missing.length === needed.length ? 'rgba(239,68,68,0.25)' : 'rgba(245,158,11,0.3)'}`,
+              borderRadius: 11, padding: '12px 14px',
+            }}>
+              {/* Título + badge */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7, marginBottom: 8 }}>
+                <span style={{ fontSize: 16, flexShrink: 0, lineHeight: 1 }}>{e.icon}</span>
+                <div style={{ flex: 1, fontSize: 11, fontWeight: 700, color: 'var(--text)', lineHeight: 1.3 }}>{e.titulo}</div>
+                <span style={{
+                  fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 99, flexShrink: 0,
+                  background: ready ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.08)',
+                  color: ready ? '#22c55e' : '#ef4444',
+                  border: `1px solid ${ready ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.2)'}`,
+                }}>
+                  {ready ? '✓ Listo' : `${filledK.length}/${needed.length}`}
+                </span>
+              </div>
+
+              {/* Chips de secciones necesarias */}
+              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                {needed.map(k => {
+                  const ok = !!(cubo[k]?.trim());
+                  return (
+                    <button key={k} onClick={() => setOpenSection(k)} style={{
+                      fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 99, cursor: 'pointer',
+                      background: ok ? 'rgba(34,197,94,0.1)'  : 'rgba(239,68,68,0.07)',
+                      color:      ok ? '#22c55e'               : '#ef4444',
+                      border:     `1px solid ${ok ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.25)'}`,
+                    }}>
+                      {ok ? '✓' : '○'} {CUBO_SHORT[k]}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Link abrir */}
+              <a href={`${e.path}?empresa=${encodeURIComponent(empresa)}&clienteId=${clienteId}`} target="_blank" rel="noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 3, marginTop: 9, fontSize: 10, textDecoration: 'none', fontWeight: ready ? 700 : 400, color: ready ? '#22c55e' : 'var(--text-3)' }}>
+                <ExternalLink size={9} /> {ready ? 'Abrir entregable →' : 'Ver HTML (parcial)'}
+              </a>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 // ── Config de tipos de hallazgo ────────────────────────────────────────────────
 const HALLAZGO_CONFIG = {
@@ -1071,7 +1516,7 @@ function TabPlan({ plan, filter, onFilterChange, onAdd, onStatusChange, onDelete
 }
 
 // ── Modal: Nuevo Hallazgo ──────────────────────────────────────────────────────
-function NuevoHallazgoModal({ onClose, onSave }: { onClose: () => void; onSave: (h: Omit<Hallazgo, 'id'>) => void }) {
+function NuevoHallazgoModal({ onClose, onSave, areasCliente }: { onClose: () => void; onSave: (h: Omit<Hallazgo, 'id'>) => void; areasCliente: string[] }) {
   const [f, setF] = useState<Omit<Hallazgo, 'id'>>({ area: '', tipo: 'critico', titulo: '', descripcion: '', impacto: '' });
   const u = (k: keyof typeof f, v: string) => setF(p => ({ ...p, [k]: v }));
   return (
@@ -1085,10 +1530,8 @@ function NuevoHallazgoModal({ onClose, onSave }: { onClose: () => void; onSave: 
         </div>
         <div>
           <label style={labelSt}>Área *</label>
-          <select value={f.area} onChange={e => u('area', e.target.value)} style={{ ...inputSt, width: '100%' } as any}>
-            <option value="">Seleccionar…</option>
-            {['Marketing', 'Ventas', 'Operaciones', 'Administración', 'Tecnología', 'RRHH', 'General'].map(a => <option key={a} value={a}>{a}</option>)}
-          </select>
+          <input list="areas-hall" value={f.area} onChange={e => u('area', e.target.value)} placeholder="Ej. Ventas, Operaciones…" style={{ ...inputSt, width: '100%' }} />
+          <datalist id="areas-hall">{areasCliente.map(a => <option key={a} value={a} />)}</datalist>
         </div>
       </div>
       <div style={{ marginTop: 12 }}>
@@ -1108,7 +1551,7 @@ function NuevoHallazgoModal({ onClose, onSave }: { onClose: () => void; onSave: 
 }
 
 // ── Modal: Nueva Acción ────────────────────────────────────────────────────────
-function NuevaAccionModal({ onClose, onSave, hallazgos }: { onClose: () => void; onSave: (a: Omit<AccionPlan, 'id'>) => void; hallazgos: Hallazgo[] }) {
+function NuevaAccionModal({ onClose, onSave, hallazgos, areasCliente }: { onClose: () => void; onSave: (a: Omit<AccionPlan, 'id'>) => void; hallazgos: Hallazgo[]; areasCliente: string[] }) {
   const [f, setF] = useState<Omit<AccionPlan, 'id'>>({ titulo: '', area: '', prioridad: 'alta', status: 'pendiente', responsable: '', fecha_estimada: '', hallazgo_ref: '', notas: '' });
   const u = (k: keyof typeof f, v: string) => setF(p => ({ ...p, [k]: v }));
   return (
@@ -1120,10 +1563,8 @@ function NuevaAccionModal({ onClose, onSave, hallazgos }: { onClose: () => void;
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div>
           <label style={labelSt}>Área *</label>
-          <select value={f.area} onChange={e => u('area', e.target.value)} style={{ ...inputSt, width: '100%' } as any}>
-            <option value="">Seleccionar…</option>
-            {['Marketing', 'Ventas', 'Operaciones', 'Administración', 'Tecnología', 'RRHH', 'General'].map(a => <option key={a} value={a}>{a}</option>)}
-          </select>
+          <input list="areas-acc" value={f.area} onChange={e => u('area', e.target.value)} placeholder="Ej. Ventas, Operaciones…" style={{ ...inputSt, width: '100%' }} />
+          <datalist id="areas-acc">{areasCliente.map(a => <option key={a} value={a} />)}</datalist>
         </div>
         <div>
           <label style={labelSt}>Prioridad</label>
