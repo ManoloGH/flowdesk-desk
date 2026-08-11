@@ -188,7 +188,7 @@ export default function TenantDetailPage() {
   async function deleteSlot(slotId: string, slotName: string) {
     if (!confirm(`¿Eliminar al usuario "${slotName}" permanentemente? Esta acción no se puede deshacer.`)) return;
     try {
-      await api.delete(`/team-slots/${slotId}`);
+      await api.delete(`/platform/network/${id}/team-slots/${slotId}`);
       await load();
     } catch (e: any) {
       alert(e?.message ?? 'Error al eliminar usuario');
