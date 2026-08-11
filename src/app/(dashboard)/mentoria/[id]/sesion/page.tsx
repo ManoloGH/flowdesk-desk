@@ -78,8 +78,9 @@ export default function SesionPage() {
   const [editText, setEditText]       = useState('');
   const [savingSection, setSavingSection] = useState(false);
 
-  const chatEndRef = useRef<HTMLDivElement>(null);
-  const inputRef   = useRef<HTMLTextAreaElement>(null);
+  const chatEndRef   = useRef<HTMLDivElement>(null);
+  const inputRef     = useRef<HTMLTextAreaElement>(null);
+  const abortRef     = useRef<AbortController | null>(null);
 
   // Load cliente + history from DB
   useEffect(() => {
@@ -118,6 +119,11 @@ export default function SesionPage() {
     const token = typeof window !== 'undefined' ? localStorage.getItem('fd_access') : null;
     let assistantText = '';
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+    // Auto-cancel after 90 s to avoid frozen UI
+    const timeoutId = setTimeout(() => controller.abort(), 90_000);
+
     try {
       const res = await fetch(`${BASE}/mentoria/clientes/${id}/chat`, {
         method: 'POST',
@@ -126,6 +132,7 @@ export default function SesionPage() {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ message: text }),
+        signal: controller.signal,
       });
 
       if (!res.ok || !res.body) throw new Error('Error en el servidor');
@@ -163,7 +170,13 @@ export default function SesionPage() {
             if (event.type === 'done' && event.cubo) {
               setCubo(event.cubo);
             }
-          } catch {}
+
+            if (event.type === 'error') {
+              throw new Error(event.message ?? 'Error del agente');
+            }
+          } catch (parseErr: any) {
+            if (parseErr?.message && !parseErr.message.startsWith('JSON')) throw parseErr;
+          }
         }
       }
 
@@ -171,11 +184,13 @@ export default function SesionPage() {
         setMessages(prev => [...prev, { role: 'assistant', content: assistantText }]);
       }
     } catch (e: any) {
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: `⚠️ Error: ${e?.message ?? 'No se pudo conectar con el agente.'}`,
-      }]);
+      const msg = e?.name === 'AbortError'
+        ? '⏱️ La respuesta tardó demasiado y se canceló. Puedes intentar de nuevo.'
+        : `⚠️ ${e?.message ?? 'No se pudo conectar con el agente.'}`;
+      setMessages(prev => [...prev, { role: 'assistant', content: msg }]);
     } finally {
+      clearTimeout(timeoutId);
+      abortRef.current = null;
       setStreamText('');
       setStreaming(false);
       setTimeout(() => inputRef.current?.focus(), 50);
@@ -283,18 +298,33 @@ export default function SesionPage() {
                   maxHeight: 120, overflowY: 'auto', lineHeight: 1.5,
                 }}
               />
-              <button
-                onClick={sendMessage}
-                disabled={streaming || !input.trim()}
-                style={{
-                  flexShrink: 0, width: 32, height: 32, borderRadius: 8,
-                  background: ACCENT, border: 'none', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  opacity: streaming || !input.trim() ? 0.4 : 1, transition: 'opacity 0.2s',
-                }}
-              >
-                <Send size={14} color="#fff" />
-              </button>
+              {streaming ? (
+                <button
+                  onClick={() => abortRef.current?.abort()}
+                  title="Detener respuesta"
+                  style={{
+                    flexShrink: 0, width: 32, height: 32, borderRadius: 8,
+                    background: '#ef4444', border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 14, color: '#fff',
+                  }}
+                >
+                  ■
+                </button>
+              ) : (
+                <button
+                  onClick={sendMessage}
+                  disabled={!input.trim()}
+                  style={{
+                    flexShrink: 0, width: 32, height: 32, borderRadius: 8,
+                    background: ACCENT, border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    opacity: !input.trim() ? 0.4 : 1, transition: 'opacity 0.2s',
+                  }}
+                >
+                  <Send size={14} color="#fff" />
+                </button>
+              )}
             </div>
           </div>
         </div>
