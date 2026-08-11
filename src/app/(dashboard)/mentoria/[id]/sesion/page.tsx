@@ -121,8 +121,14 @@ export default function SesionPage() {
 
     const controller = new AbortController();
     abortRef.current = controller;
-    // Auto-cancel after 90 s to avoid frozen UI
-    const timeoutId = setTimeout(() => controller.abort(), 90_000);
+
+    // Reactive timeout: cancel if no data received for 40s (backend sends keepalive every 10s)
+    let stallTimer: ReturnType<typeof setTimeout> | null = null;
+    function resetStall() {
+      if (stallTimer) clearTimeout(stallTimer);
+      stallTimer = setTimeout(() => controller.abort(), 40_000);
+    }
+    resetStall();
 
     try {
       const res = await fetch(`${BASE}/mentoria/clientes/${id}/chat`, {
@@ -145,6 +151,7 @@ export default function SesionPage() {
         const { done, value } = await reader.read();
         if (done) break;
 
+        resetStall(); // got data → reset stall timer
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
         buffer = lines.pop() ?? '';
@@ -189,7 +196,7 @@ export default function SesionPage() {
         : `⚠️ ${e?.message ?? 'No se pudo conectar con el agente.'}`;
       setMessages(prev => [...prev, { role: 'assistant', content: msg }]);
     } finally {
-      clearTimeout(timeoutId);
+      if (stallTimer) clearTimeout(stallTimer);
       abortRef.current = null;
       setStreamText('');
       setStreaming(false);
