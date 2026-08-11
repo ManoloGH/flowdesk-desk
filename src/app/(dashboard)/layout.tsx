@@ -22,7 +22,7 @@ import {
   Users, LogOut, ShieldCheck, Layers,
   Building2, CreditCard, ShieldAlert, Settings, Bell, X, CheckCheck,
   ExternalLink, ChevronLeft, Zap, ChevronDown, Brain, ListChecks,
-  Workflow, BarChart2,
+  Workflow, BarChart2, FileText,
 } from 'lucide-react';
 
 /* ── Navigation ── */
@@ -35,6 +35,7 @@ const CORE_NAV: NavItem[] = [
 ];
 
 const MAIN_NAV: NavItem[] = [
+  { href: '/proyectos',  label: 'Proyectos SOC',        icon: FileText },
   { href: '/mentoria',   label: 'CRM',                  icon: Workflow },
   { href: '/brain',      label: 'Base de conocimiento', icon: Brain },
   { href: '/recursos',   label: 'Recursos',             icon: Layers },
