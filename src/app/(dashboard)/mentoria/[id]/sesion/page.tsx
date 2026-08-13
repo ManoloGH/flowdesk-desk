@@ -71,7 +71,6 @@ export default function SesionPage() {
   const [messages, setMessages]       = useState<Message[]>([]);
   const [input, setInput]             = useState('');
   const [streaming, setStreaming]     = useState(false);
-  const [streamText, setStreamText]   = useState('');
   const [openSection, setOpenSection] = useState<CuboKey | null>('contexto');
   const [flashSection, setFlashSection] = useState<CuboKey | null>(null);
   const [editingSection, setEditingSection] = useState<CuboKey | null>(null);
@@ -105,7 +104,7 @@ export default function SesionPage() {
   // Scroll to bottom on new messages
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, streamText]);
+  }, [messages]);
 
   async function sendMessage() {
     const text = input.trim();
@@ -114,104 +113,30 @@ export default function SesionPage() {
     setMessages(prev => [...prev, { role: 'user', content: text }]);
     setInput('');
     setStreaming(true);
-    setStreamText('');
-
-    const token = typeof window !== 'undefined' ? localStorage.getItem('fd_access') : null;
-    let assistantText = '';
-
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    // Two-phase stall timer:
-    //   • 90s waiting for first text chunk (Anthropic processing large context)
-    //   • 30s between subsequent chunks (detect mid-stream hang)
-    let firstTextReceived = false;
-    let stallTimer: ReturnType<typeof setTimeout> | null = null;
-    function resetStall() {
-      if (stallTimer) clearTimeout(stallTimer);
-      stallTimer = setTimeout(() => controller.abort(), firstTextReceived ? 30_000 : 90_000);
-    }
-    resetStall();
 
     try {
-      const res = await fetch(`${BASE}/mentoria/clientes/${id}/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ message: text }),
-        signal: controller.signal,
-      });
+      const result = await api.post<{ text: string; cubo: Record<CuboKey, string>; sections_updated: string[] }>(
+        `/mentoria/clientes/${id}/chat`,
+        { message: text },
+      );
 
-      if (!res.ok || !res.body) throw new Error('Error en el servidor');
+      if (result.text) {
+        setMessages(prev => [...prev, { role: 'assistant', content: result.text }]);
+      }
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        resetStall(); // got data → reset stall timer
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() ?? '';
-
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          try {
-            const event = JSON.parse(line.slice(6));
-
-            if (event.type === 'start') {
-              resetStall(); // connection confirmed alive
-            }
-
-            if (event.type === 'text') {
-              if (!firstTextReceived) { firstTextReceived = true; resetStall(); }
-              assistantText += event.text;
-              setStreamText(assistantText);
-            }
-
-            if (event.type === 'tool_use') {
-              const sec = event.seccion as CuboKey;
-              setCubo(prev => ({ ...prev, [sec]: event.contenido }));
-              setFlashSection(sec);
-              setOpenSection(sec);
-              setTimeout(() => setFlashSection(null), 2500);
-            }
-
-            if (event.type === 'done' && event.cubo) {
-              setCubo(event.cubo);
-            }
-
-            if (event.type === 'error') {
-              throw new Error(event.message ?? 'Error del agente');
-            }
-          } catch (parseErr: any) {
-            if (parseErr?.message && !parseErr.message.startsWith('JSON')) throw parseErr;
-          }
+      if (result.cubo) {
+        setCubo(result.cubo);
+        // Flash updated sections
+        for (const sec of result.sections_updated ?? []) {
+          setFlashSection(sec as CuboKey);
+          setOpenSection(sec as CuboKey);
+          setTimeout(() => setFlashSection(null), 2500);
         }
       }
-
-      if (assistantText) {
-        setMessages(prev => [...prev, { role: 'assistant', content: assistantText }]);
-      }
     } catch (e: any) {
-      if (assistantText) {
-        // Got partial/full response before abort — commit it instead of showing error
-        setMessages(prev => [...prev, { role: 'assistant', content: assistantText }]);
-      } else {
-        const msg = e?.name === 'AbortError'
-          ? '⏱️ El agente tardó demasiado en responder. Intenta con un mensaje más corto o espera un momento.'
-          : `⚠️ ${e?.message ?? 'No se pudo conectar con el agente.'}`;
-        setMessages(prev => [...prev, { role: 'assistant', content: msg }]);
-      }
+      const msg = `⚠️ ${e?.message ?? 'No se pudo conectar con el agente.'}`;
+      setMessages(prev => [...prev, { role: 'assistant', content: msg }]);
     } finally {
-      if (stallTimer) clearTimeout(stallTimer);
-      abortRef.current = null;
-      setStreamText('');
       setStreaming(false);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
@@ -288,13 +213,10 @@ export default function SesionPage() {
               <ChatBubble key={i} role={m.role} content={m.content} />
             ))}
 
-            {streaming && streamText && (
-              <ChatBubble role="assistant" content={streamText} streaming />
-            )}
-            {streaming && !streamText && (
+            {streaming && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-3)', fontSize: 13 }}>
                 <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
-                Pensando…
+                Procesando…
               </div>
             )}
 
@@ -318,33 +240,23 @@ export default function SesionPage() {
                   maxHeight: 120, overflowY: 'auto', lineHeight: 1.5,
                 }}
               />
-              {streaming ? (
-                <button
-                  onClick={() => abortRef.current?.abort()}
-                  title="Detener respuesta"
-                  style={{
-                    flexShrink: 0, width: 32, height: 32, borderRadius: 8,
-                    background: '#ef4444', border: 'none', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 14, color: '#fff',
-                  }}
-                >
-                  ■
-                </button>
-              ) : (
-                <button
-                  onClick={sendMessage}
-                  disabled={!input.trim()}
-                  style={{
-                    flexShrink: 0, width: 32, height: 32, borderRadius: 8,
-                    background: ACCENT, border: 'none', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    opacity: !input.trim() ? 0.4 : 1, transition: 'opacity 0.2s',
-                  }}
-                >
-                  <Send size={14} color="#fff" />
-                </button>
-              )}
+              <button
+                onClick={streaming ? () => abortRef.current?.abort() : sendMessage}
+                disabled={!streaming && !input.trim()}
+                title={streaming ? 'Cancelar' : 'Enviar'}
+                style={{
+                  flexShrink: 0, width: 32, height: 32, borderRadius: 8,
+                  background: streaming ? '#ef4444' : ACCENT,
+                  border: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  opacity: !streaming && !input.trim() ? 0.4 : 1, transition: 'all 0.2s',
+                }}
+              >
+                {streaming
+                  ? <span style={{ fontSize: 12, color: '#fff', fontWeight: 700 }}>■</span>
+                  : <Send size={14} color="#fff" />
+                }
+              </button>
             </div>
           </div>
         </div>

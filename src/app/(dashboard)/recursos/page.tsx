@@ -7,6 +7,14 @@ import {
 
 const RECURSOS = [
   {
+    href: '/brain',
+    icon: '🧠',
+    label: 'Base de conocimiento',
+    descripcion: 'Documentos, SOPs, manuales y contexto institucional del equipo',
+    color: '#8b5cf6',
+    tags: ['Documentos', 'SOPs', 'Manuales', 'Contexto'],
+  },
+  {
     href: '/contacts',
     icon: '📋',
     label: 'Contactos',
