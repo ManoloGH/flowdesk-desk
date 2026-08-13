@@ -173,8 +173,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const buildNav = (): NavGroups => {
     const mods = brand.modules_config;
+    // proyectos (SOC) solo se muestra cuando está explícitamente habilitado en modules_config
+    const mainDefault = MAIN_NAV.filter(n => n.href !== '/proyectos');
     if (!mods || mods.length === 0) {
-      return { core: [...CORE_NAV], main: [...MAIN_NAV], recursos: [...RECURSOS_BASE], bottom: BOTTOM_NAV };
+      return { core: [...CORE_NAV], main: mainDefault, recursos: [...RECURSOS_BASE], bottom: BOTTOM_NAV };
     }
     // modules_config definida → filtrar TODO el nav por las keys habilitadas
     const enabledKeys = new Set(mods.filter((m) => m.enabled).map((m) => m.key));
