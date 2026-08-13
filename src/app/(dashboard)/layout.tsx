@@ -21,31 +21,30 @@ const DEFAULT_BRAND: BrandConfig = {
 import {
   Users, LogOut, ShieldCheck, Layers,
   Building2, CreditCard, ShieldAlert, Settings, Bell, X, CheckCheck,
-  ExternalLink, ChevronLeft, Zap, ChevronDown, Brain, ListChecks,
-  Workflow, BarChart2, FileText,
+  ExternalLink, ChevronLeft, ChevronDown, ListChecks,
+  Workflow, FileText, Home,
 } from 'lucide-react';
 
 /* ── Navigation ── */
 type NavItem = { href: string; label: string; icon: React.ElementType };
 
-const CORE_NAV: NavItem[] = [
-  { href: '/focusmode', label: 'Focus Mode', icon: Zap },
-  { href: '/metrics',   label: 'Dashboard',  icon: BarChart2 },
-  { href: '/team',      label: 'Equipo',     icon: Users },
-];
+const CORE_NAV: NavItem[] = [];
 
 const MAIN_NAV: NavItem[] = [
-  { href: '/proyectos',  label: 'Proyectos SOC',        icon: FileText },
-  { href: '/mentoria',   label: 'CRM',                  icon: Workflow },
-  { href: '/brain',      label: 'Base de conocimiento', icon: Brain },
-  { href: '/recursos',   label: 'Recursos',             icon: Layers },
+  { href: '/inicio',   label: 'Inicio',   icon: Home },
+  { href: '/mentoria', label: 'Gestión',  icon: Workflow },
+  { href: '/team',     label: 'Equipo',   icon: Users },
+  { href: '/recursos', label: 'Recursos', icon: Layers },
+];
+
+// Items que solo aparecen cuando modules_config los habilita explícitamente
+const OPT_IN_NAV: NavItem[] = [
+  { href: '/proyectos', label: 'Proyectos SOC', icon: FileText },
 ];
 
 const RECURSOS_BASE: NavItem[] = [];
 
-const BOTTOM_NAV: NavItem[] = [
-  { href: '/settings',     label: 'Configuración',     icon: Settings },
-];
+const BOTTOM_NAV: NavItem[] = [];
 
 const ADMIN_NAV: NavItem[] = [
   { href: '/admin',              label: 'Overview',         icon: ShieldCheck },
@@ -173,28 +172,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const buildNav = (): NavGroups => {
     const mods = brand.modules_config;
-    // proyectos (SOC) solo se muestra cuando está explícitamente habilitado en modules_config
-    const mainDefault = MAIN_NAV.filter(n => n.href !== '/proyectos');
-    if (!mods || mods.length === 0) {
-      return { core: [...CORE_NAV], main: mainDefault, recursos: [...RECURSOS_BASE], bottom: BOTTOM_NAV };
-    }
-    // modules_config definida → filtrar TODO el nav por las keys habilitadas
-    const enabledKeys = new Set(mods.filter((m) => m.enabled).map((m) => m.key));
-    const filterByKey = (items: NavItem[]) =>
-      items.filter((n) => enabledKeys.has(n.href.replace(/^\//, '')));
-
+    const enabledKeys = mods
+      ? new Set(mods.filter((m) => m.enabled).map((m) => m.key))
+      : new Set<string>();
+    const optIn = OPT_IN_NAV.filter(n => enabledKeys.has(n.href.replace(/^\//, '')));
     return {
-      core:     filterByKey(CORE_NAV),
-      main:     filterByKey(MAIN_NAV),
-      recursos: filterByKey(RECURSOS_BASE),
-      bottom:   BOTTOM_NAV,
+      core:     [],
+      main:     [...MAIN_NAV, ...optIn],
+      recursos: [],
+      bottom:   [],
     };
   };
 
   const NAV = buildNav();
 
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [bellOpen,   setBellOpen]   = useState(false);
+  const [drawerOpen,   setDrawerOpen]   = useState(false);
+  const [bellOpen,     setBellOpen]     = useState(false);
+  const [avatarOpen,   setAvatarOpen]   = useState(false);
+  const avatarRef = useRef<HTMLDivElement>(null);
   const [unread,     setUnread]     = useState(0);
   const [notifs,     setNotifs]     = useState<Notification[]>([]);
   const [notifLoad,  setNotifLoad]  = useState(false);
@@ -288,10 +283,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { setDrawerOpen(false); setBellOpen(false); }
+      if (e.key === 'Escape') { setDrawerOpen(false); setBellOpen(false); setAvatarOpen(false); }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) setAvatarOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   const openBell = async () => {
@@ -483,19 +486,69 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {fmtDate(now)}
           </span>
 
-          {/* Avatar */}
-          <div
-            title={`${effectiveUser.email} · ${effectiveUser.role} · Click para cerrar sesión`}
-            onClick={logout}
-            style={{
-              width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-              background: 'linear-gradient(135deg, var(--fd-cyan), var(--fd-magenta))',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: "'Inter Tight', sans-serif", fontWeight: 700,
-              fontSize: 12, color: 'white', cursor: 'pointer',
-            }}
-          >
-            {initials}
+          {/* Avatar → dropdown con Configuración + Cerrar sesión */}
+          <div ref={avatarRef} style={{ position: 'relative' }}>
+            <div
+              title={`${effectiveUser.email} · ${effectiveUser.role}`}
+              onClick={() => setAvatarOpen(v => !v)}
+              style={{
+                width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                background: 'linear-gradient(135deg, var(--fd-cyan), var(--fd-magenta))',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: "'Inter Tight', sans-serif", fontWeight: 700,
+                fontSize: 12, color: 'white', cursor: 'pointer',
+                outline: avatarOpen ? '2px solid var(--fd-cyan)' : 'none',
+                outlineOffset: 2,
+              }}
+            >
+              {initials}
+            </div>
+
+            {avatarOpen && (
+              <div style={{
+                position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+                minWidth: 180, background: 'var(--surface)', border: '1px solid var(--line-strong)',
+                borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
+                zIndex: 200, overflow: 'hidden',
+              }}>
+                <div style={{ padding: '8px 12px 6px', borderBottom: '1px solid var(--line)' }}>
+                  <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {effectiveUser.name || effectiveUser.email}
+                  </p>
+                  <p style={{ fontSize: 10, color: 'var(--text-3)', margin: '2px 0 0', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                    {effectiveUser.role}
+                  </p>
+                </div>
+                <div style={{ padding: '4px' }}>
+                  <button
+                    onClick={() => { setAvatarOpen(false); router.push('/settings'); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+                      padding: '8px 10px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                      background: 'transparent', color: 'var(--text-2)',
+                      fontFamily: "'Inter Tight', sans-serif", fontSize: 12, fontWeight: 500,
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface-2)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-2)'; }}
+                  >
+                    <Settings size={13} /> Configuración
+                  </button>
+                  <button
+                    onClick={() => { setAvatarOpen(false); logout(); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+                      padding: '8px 10px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                      background: 'transparent', color: 'var(--text-3)',
+                      fontFamily: "'Inter Tight', sans-serif", fontSize: 12, fontWeight: 500,
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.08)'; (e.currentTarget as HTMLButtonElement).style.color = '#ef4444'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-3)'; }}
+                  >
+                    <LogOut size={13} /> Cerrar sesión
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>
