@@ -3,39 +3,43 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { socFetch } from '@/lib/soc-api';
 import {
-  ArrowLeft, Send, Loader2, Monitor,
+  ArrowLeft, Send, Loader2, Monitor, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 
 type Tipo = 'Mejora' | 'SistemaNuevo';
 
 interface Mensaje { rol: 'usuario' | 'agente'; texto: string; }
+interface Pantalla  { titulo: string; html: string; }
 
 export default function NuevoProyectoPage() {
-  const router = useRouter();
+  const router       = useRouter();
   const searchParams = useSearchParams();
 
-  const [tipo, setTipo] = useState<Tipo | null>(null);
+  const [tipo,      setTipo]      = useState<Tipo | null>(null);
   const [iniciando, setIniciando] = useState(false);
 
-  // ── Chat state ────────────────────────────────────────────────────────────
+  // ── Chat state ─────────────────────────────────────────────────────────────
   const [requerimientoId, setRequerimientoId] = useState<string | null>(null);
-  const [mensajes, setMensajes] = useState<Mensaje[]>([]);
-  const [input, setInput] = useState('');
-  const [enviando, setEnviando] = useState(false);
-  const [htmlPantalla, setHtmlPantalla] = useState<string | null>(null);
-  const [tituloPantalla, setTituloPantalla] = useState<string>('Vista previa');
-  const [documentoListo, setDocumentoListo] = useState(false);
+  const [mensajes,        setMensajes]        = useState<Mensaje[]>([]);
+  const [input,           setInput]           = useState('');
+  const [enviando,        setEnviando]        = useState(false);
+  const [documentoListo,  setDocumentoListo]  = useState(false);
+
+  // ── Pantallas generadas ────────────────────────────────────────────────────
+  const [pantallas,    setPantallas]    = useState<Pantalla[]>([]);
+  const [pantallaIdx,  setPantallaIdx]  = useState(0);          // pestaña activa
+  const [esperaSig,    setEsperaSig]    = useState(false);      // botón "Siguiente"
+
   const chatRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll al último mensaje siempre que cambie la lista
   useEffect(() => {
     const el = chatRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [mensajes, enviando]);
 
-  const conPantalla = tipo === 'SistemaNuevo' && !!htmlPantalla;
+  const conPantalla = tipo === 'SistemaNuevo' && pantallas.length > 0;
 
-  // ── Continuar requerimiento existente: ?continuar={id} ───────────────────
+  // ── Continuar requerimiento existente: ?continuar={id} ────────────────────
   useEffect(() => {
     const continuarId = searchParams.get('continuar');
     if (!continuarId) return;
@@ -54,104 +58,125 @@ export default function NuevoProyectoPage() {
           texto: m.contenido,
         }));
         setMensajes(hist.length > 0 ? hist : [{ rol: 'agente', texto: 'Continuando la sesión…' }]);
-        // Restaurar última pantalla guardada
-        const pantallas = data.pantallas ?? [];
-        const ultima = pantallas.filter(p => p.htmlContenido).at(-1);
-        if (ultima?.htmlContenido) {
-          setHtmlPantalla(ultima.htmlContenido);
-          setTituloPantalla(ultima.titulo || 'Vista previa');
+        const cargadas = (data.pantallas ?? [])
+          .filter(p => p.htmlContenido)
+          .map(p => ({ titulo: p.titulo, html: p.htmlContenido! }));
+        if (cargadas.length > 0) {
+          setPantallas(cargadas);
+          setPantallaIdx(cargadas.length - 1);
         }
       })
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Return from mapeo flow: ?mapeoId=... en URL ───────────────────────────
+  // ── Return from mapeo flow: ?mapeoId=... ──────────────────────────────────
   useEffect(() => {
     const mapeoId = searchParams.get('mapeoId');
-    if (mapeoId) {
-      setTipo('SistemaNuevo');
-      iniciarConMapeo(mapeoId);
-    }
+    if (mapeoId) { setTipo('SistemaNuevo'); iniciarConMapeo(mapeoId); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Iniciar con mapeo vinculado (URL param legacy) ───────────────────────
   async function iniciarConMapeo(mapeoId: string) {
     setIniciando(true);
     try {
-      const res = await socFetch('/api/requerimientos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res  = await socFetch('/api/requerimientos', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tipo: 'SistemaNuevo', mapeoId }),
       });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       setRequerimientoId(data.requerimientoId);
       setMensajes([{ rol: 'agente', texto: data.mensajeBienvenida }]);
-    } catch (e) {
-      console.error(e);
-      alert('Error al iniciar la sesión. Intenta de nuevo.');
-      setTipo(null);
-    } finally { setIniciando(false); }
+    } catch { alert('Error al iniciar la sesión. Intenta de nuevo.'); setTipo(null); }
+    finally   { setIniciando(false); }
   }
 
-  // ── Iniciar sin mapeo (o Mejora) ──────────────────────────────────────────
   async function iniciar(t: Tipo) {
     setTipo(t);
     setIniciando(true);
     try {
-      const res = await socFetch('/api/requerimientos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res  = await socFetch('/api/requerimientos', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tipo: t }),
       });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       setRequerimientoId(data.requerimientoId);
       setMensajes([{ rol: 'agente', texto: data.mensajeBienvenida }]);
-    } catch (e) {
-      console.error(e);
-      alert('Error al iniciar la sesión. Intenta de nuevo.');
-      setTipo(null);
-    } finally { setIniciando(false); }
+    } catch { alert('Error al iniciar la sesión. Intenta de nuevo.'); setTipo(null); }
+    finally   { setIniciando(false); }
   }
 
-  // ── Enviar mensaje ────────────────────────────────────────────────────────
-  async function enviar() {
-    if (!input.trim() || !requerimientoId || enviando) return;
-    const texto = input.trim();
-    setInput('');
+  // ── Enviar mensaje (o mensaje automático) ─────────────────────────────────
+  async function enviar(textoOverride?: string) {
+    const texto = textoOverride ?? input.trim();
+    if (!texto || !requerimientoId || enviando) return;
+    if (!textoOverride) setInput('');
     setMensajes(prev => [...prev, { rol: 'usuario', texto }]);
     setEnviando(true);
+    setEsperaSig(false);
     try {
       const res = await socFetch(`/api/requerimientos/${requerimientoId}/mensaje`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mensaje: texto }),
       });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       setMensajes(prev => [...prev, { rol: 'agente', texto: data.respuestaAgente }]);
+
       if (data.nuevaPantalla && data.htmlPantalla) {
-        setHtmlPantalla(data.htmlPantalla);
-        setTituloPantalla(data.tituloPantalla ?? 'Pantalla 1');
+        const titulo = data.tituloPantalla ?? `Pantalla ${pantallas.length + 1}`;
+        setPantallas(prev => {
+          // si el agente regeneró una pantalla con mismo título → actualizar
+          const idx = prev.findIndex(
+            p => p.titulo.toLowerCase() === titulo.toLowerCase()
+          );
+          if (idx >= 0) {
+            const next = [...prev];
+            next[idx] = { titulo, html: data.htmlPantalla };
+            setPantallaIdx(idx);
+            return next;
+          }
+          const next = [...prev, { titulo, html: data.htmlPantalla }];
+          setPantallaIdx(next.length - 1);
+          return next;
+        });
+        // Mostrar botón "Siguiente pantalla" si el doc aún no está listo
+        if (!data.documentoListo) setEsperaSig(true);
       } else if (data.pantallaActualizada && data.htmlPantalla) {
-        setHtmlPantalla(data.htmlPantalla);
-        if (data.tituloPantalla) setTituloPantalla(data.tituloPantalla);
+        setPantallas(prev => {
+          const titulo = data.tituloPantalla;
+          if (titulo) {
+            const idx = prev.findIndex(p => p.titulo.toLowerCase() === titulo.toLowerCase());
+            if (idx >= 0) {
+              const next = [...prev]; next[idx] = { titulo, html: data.htmlPantalla }; return next;
+            }
+          }
+          // fallback: actualiza la pantalla activa
+          if (prev.length === 0) return prev;
+          const next = [...prev];
+          next[pantallaIdx] = { ...next[pantallaIdx], html: data.htmlPantalla };
+          return next;
+        });
       }
-      if (data.documentoListo) setDocumentoListo(true);
-    } catch (e) {
-      console.error(e);
+
+      if (data.documentoListo) { setDocumentoListo(true); setEsperaSig(false); }
+    } catch {
       setMensajes(prev => [...prev, { rol: 'agente', texto: 'Ocurrió un error. Por favor intenta de nuevo.' }]);
     } finally { setEnviando(false); }
   }
 
-  // ── Chat activo ───────────────────────────────────────────────────────────
+  // ── Chat activo ────────────────────────────────────────────────────────────
   if (requerimientoId) {
+    const pantallaActual = pantallas[pantallaIdx] ?? null;
+
     return (
       <div className="flex h-full overflow-hidden bg-slate-950">
-        <div className="flex flex-col w-[420px] shrink-0 border-r border-white/10 bg-slate-900 min-h-0">
+
+        {/* ── Panel izquierdo: chat ──────────────────────────────────────── */}
+        <div className="flex flex-col w-[400px] shrink-0 border-r border-white/10 bg-slate-900 min-h-0">
+          {/* Header */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
             <button onClick={() => router.back()} className="text-slate-400 hover:text-white">
               <ArrowLeft className="w-4 h-4" />
@@ -169,6 +194,7 @@ export default function NuevoProyectoPage() {
             )}
           </div>
 
+          {/* Mensajes */}
           <div ref={chatRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-3">
             {mensajes.map((m, i) => (
               <div key={i} className={`flex ${m.rol === 'usuario' ? 'justify-end' : 'justify-start'}`}>
@@ -190,29 +216,41 @@ export default function NuevoProyectoPage() {
             )}
           </div>
 
-          <div className="px-4 py-3 border-t border-white/10">
+          {/* Input */}
+          <div className="px-4 py-3 border-t border-white/10 space-y-2">
+            {/* Botón "Siguiente pantalla" — aparece tras generar cada pantalla */}
+            {esperaSig && !enviando && (
+              <button
+                onClick={() => enviar('Continuar con la siguiente pantalla')}
+                className="w-full py-2 rounded-xl bg-[#00614E]/80 hover:bg-[#00614E] text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                <span>Siguiente pantalla →</span>
+              </button>
+            )}
+
             <div className="flex items-end gap-2">
               <textarea
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } }}
-                placeholder="Escribe tu respuesta..."
+                placeholder={documentoListo ? 'Documento listo' : 'Escribe tu respuesta…'}
                 rows={2}
                 disabled={enviando || documentoListo}
                 className="flex-1 resize-none rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 disabled:opacity-40"
               />
               <button
-                onClick={enviar}
+                onClick={() => enviar()}
                 disabled={!input.trim() || enviando || documentoListo}
                 className="p-2.5 rounded-xl bg-violet-600 text-white hover:bg-violet-500 disabled:opacity-40 transition-colors shrink-0"
               >
                 <Send className="w-4 h-4" />
               </button>
             </div>
+
             {documentoListo && (
               <button
                 onClick={() => requerimientoId && router.push(`/proyectos/${requerimientoId}`)}
-                className="w-full mt-2 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 transition-colors"
+                className="w-full py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 transition-colors"
               >
                 Ver documento final →
               </button>
@@ -220,32 +258,68 @@ export default function NuevoProyectoPage() {
           </div>
         </div>
 
+        {/* ── Panel derecho: pantallas ───────────────────────────────────── */}
         {conPantalla ? (
           <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-2 border-b border-white/10 bg-slate-900">
-              <Monitor className="w-4 h-4 text-slate-400" />
-              <span className="text-sm font-medium text-slate-200">{tituloPantalla}</span>
-              <span className="text-xs text-slate-500 ml-1">— Vista previa generada</span>
+            {/* Tabs de pantallas */}
+            <div className="flex items-center gap-1 px-3 py-2 border-b border-white/10 bg-slate-900 overflow-x-auto shrink-0">
+              <Monitor className="w-4 h-4 text-slate-400 shrink-0 mr-1" />
+              {pantallas.map((p, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPantallaIdx(i)}
+                  className={`shrink-0 px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                    i === pantallaIdx
+                      ? 'bg-[#00614E] text-white'
+                      : 'text-slate-400 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  {i + 1}. {p.titulo}
+                </button>
+              ))}
+              {/* Flechas de navegación si hay muchas */}
+              {pantallas.length > 1 && (
+                <div className="ml-auto flex gap-1 shrink-0">
+                  <button
+                    onClick={() => setPantallaIdx(i => Math.max(0, i - 1))}
+                    disabled={pantallaIdx === 0}
+                    className="p-1 rounded text-slate-500 hover:text-white disabled:opacity-30"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setPantallaIdx(i => Math.min(pantallas.length - 1, i + 1))}
+                    disabled={pantallaIdx === pantallas.length - 1}
+                    className="p-1 rounded text-slate-500 hover:text-white disabled:opacity-30"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
-            <iframe
-              key={htmlPantalla!.length}
-              srcDoc={htmlPantalla!}
-              sandbox="allow-scripts allow-same-origin"
-              className="flex-1 w-full border-none"
-              title={tituloPantalla}
-            />
+
+            {/* Iframe de la pantalla activa */}
+            {pantallaActual && (
+              <iframe
+                key={pantallaActual.titulo + pantallaActual.html.length}
+                srcDoc={pantallaActual.html}
+                sandbox="allow-scripts allow-same-origin"
+                className="flex-1 w-full border-none"
+                title={pantallaActual.titulo}
+              />
+            )}
           </div>
         ) : (
           <div className="flex flex-col flex-1 min-h-0 items-center justify-center text-slate-700 gap-3">
             <Monitor className="w-16 h-16" />
-            <p className="text-sm text-slate-500">La pantalla generada aparecerá aquí</p>
+            <p className="text-sm text-slate-500">Las pantallas generadas aparecerán aquí</p>
           </div>
         )}
       </div>
     );
   }
 
-  // ── Loading ───────────────────────────────────────────────────────────────
+  // ── Loading ────────────────────────────────────────────────────────────────
   if (iniciando) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4">
@@ -255,7 +329,7 @@ export default function NuevoProyectoPage() {
     );
   }
 
-  // ── Step: elegir tipo → va directo al chat ───────────────────────────────
+  // ── Selector de tipo ───────────────────────────────────────────────────────
   return (
     <div className="flex flex-col items-center justify-center h-full gap-8 p-8">
       <button onClick={() => router.back()} className="self-start flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800">
