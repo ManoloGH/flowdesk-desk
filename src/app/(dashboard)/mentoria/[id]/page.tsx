@@ -146,6 +146,7 @@ export default function ClienteWorkspace() {
   const [creandoSesion, setCreandoSesion] = useState(false);
   const [generandoCuestionario, setGenerandoCuestionario] = useState<string | null>(null);
   const [cuestionarioVista, setCuestionarioVista] = useState<any | null>(null);
+  const [legacyChatLen, setLegacyChatLen] = useState(0);
   const [showSesion, setShowSesion]     = useState(false);
   const [showPago, setShowPago]         = useState(false);
   const [showHallazgo, setShowHallazgo] = useState(false);
@@ -177,6 +178,7 @@ export default function ClienteWorkspace() {
         setHallazgos(data.hallazgos || []);
         setPlan(data.plan || []);
         setSesionesDiag(data.sesiones_diagnostico || []);
+        setLegacyChatLen(((data.chat_history ?? []) as any[]).filter((m: any) => m.role === 'user').length);
       } catch {
         if (id === 'c-primer') {
           setCliente(MOCK_CLIENTE);
@@ -582,7 +584,27 @@ export default function ClienteWorkspace() {
               </div>
             )}
 
-            {sesionesDiag.length === 0 && (
+            {/* Sesión previa (chat_history legacy) */}
+            {legacyChatLen > 0 && (
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-3)', marginBottom: 10 }}>Sesión anterior (sin registrar)</div>
+                <div style={{ background: 'var(--surface)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#f59e0b', flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>Conversación sin nombre</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{legacyChatLen} intercambios guardados · Sesión libre (pre-nueva versión)</div>
+                  </div>
+                  <button
+                    onClick={() => router.push(`/mentoria/${id}/sesion`)}
+                    style={{ fontSize: 11, padding: '5px 12px', background: 'rgba(245,158,11,0.12)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
+                  >
+                    🎙️ Continuar
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {sesionesDiag.length === 0 && legacyChatLen === 0 && (
               <div style={{ textAlign: 'center', padding: '48px 32px', color: 'var(--text-3)', fontSize: 13 }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🎙️</div>
                 <div style={{ fontWeight: 600, marginBottom: 6 }}>Sin sesiones registradas</div>
