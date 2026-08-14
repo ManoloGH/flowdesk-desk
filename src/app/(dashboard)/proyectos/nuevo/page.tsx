@@ -41,16 +41,24 @@ export default function NuevoProyectoPage() {
   const normTitle = (s: string) =>
     s.normalize('NFD').replace(/\p{Mn}/gu, '').toLowerCase().trim();
 
-  // Escucha clicks de navegación desde los iframes de pantalla
+  // Escucha navegación desde los iframes de pantalla.
+  // soc-nav       → por índice (sidebar clicks)
+  // soc-nav-title → por título exacto (botones de acción dentro de pantallas → sub-pantallas)
   useEffect(() => {
+    const norm = (s: string) =>
+      s.normalize('NFD').replace(/\p{Mn}/gu, '').toLowerCase().trim();
     const handler = (e: MessageEvent) => {
       if (e.data?.type === 'soc-nav' && typeof e.data.screenIndex === 'number') {
         setPantallaIdx(e.data.screenIndex);
       }
+      if (e.data?.type === 'soc-nav-title' && typeof e.data.title === 'string') {
+        const idx = pantallas.findIndex(p => norm(p.titulo) === norm(e.data.title as string));
+        if (idx >= 0) setPantallaIdx(idx);
+      }
     };
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, []);
+  }, [pantallas]); // re-register when pantallas list changes
 
   // ── SOC frame builder ─────────────────────────────────────────────────────
   // Generates the sidebar from React state (always consistent) and wraps the
@@ -81,9 +89,22 @@ export default function NuevoProyectoPage() {
     // Old screens are full HTML pages — render as-is for backward compat
     if (/^\s*<!doctype|^\s*<html/i.test(contentHtml)) return contentHtml;
 
+    // Determine the "parent" title when on a sub-screen (title contains " / ")
+    const activeTitle = screens[activeIdx]?.titulo ?? '';
+    const activeParent = activeTitle.includes(' / ')
+      ? activeTitle.split(' / ')[0].trim()
+      : activeTitle;
+    const n = (s: string) => s.normalize('NFD').replace(/\p{Mn}/gu, '').toLowerCase().trim();
+
+    // Sidebar shows ONLY main screens (not sub-screens).
+    // When on a sub-screen (A.1), the parent item (A) shows as active.
     const navItems = screens
-      .map((p, i) =>
-        `<button class="soc-nav-item${i === activeIdx ? ' active' : ''}" onclick="window.parent.postMessage({type:'soc-nav',screenIndex:${i}},'*')">${socNavIcon(p.titulo)}<span>${p.titulo}</span></button>`)
+      .map((p, i) => {
+        if (p.titulo.includes(' / ')) return ''; // sub-screens not in sidebar
+        const isActive = i === activeIdx || n(p.titulo) === n(activeParent);
+        return `<button class="soc-nav-item${isActive ? ' active' : ''}" onclick="window.parent.postMessage({type:'soc-nav',screenIndex:${i}},'*')">${socNavIcon(p.titulo)}<span>${p.titulo}</span></button>`;
+      })
+      .filter(Boolean)
       .join('\n  ');
 
     return `<!DOCTYPE html>
