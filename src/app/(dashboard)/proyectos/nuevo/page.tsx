@@ -37,6 +37,10 @@ export default function NuevoProyectoPage() {
     if (el) el.scrollTop = el.scrollHeight;
   }, [mensajes, enviando]);
 
+  // Normaliza títulos para comparación insensible a acentos
+  const normTitle = (s: string) =>
+    s.normalize('NFD').replace(/\p{Mn}/gu, '').toLowerCase().trim();
+
   // Escucha clicks de navegación desde los iframes de pantalla
   useEffect(() => {
     const handler = (e: MessageEvent) => {
@@ -141,7 +145,7 @@ export default function NuevoProyectoPage() {
         setPantallas(prev => {
           // si el agente regeneró una pantalla con mismo título → actualizar
           const idx = prev.findIndex(
-            p => p.titulo.toLowerCase() === titulo.toLowerCase()
+            p => normTitle(p.titulo) === normTitle(titulo)
           );
           if (idx >= 0) {
             const next = [...prev];
@@ -159,7 +163,7 @@ export default function NuevoProyectoPage() {
         setPantallas(prev => {
           const titulo = data.tituloPantalla;
           if (titulo) {
-            const idx = prev.findIndex(p => p.titulo.toLowerCase() === titulo.toLowerCase());
+            const idx = prev.findIndex(p => normTitle(p.titulo) === normTitle(titulo));
             if (idx >= 0) {
               const next = [...prev]; next[idx] = { titulo, html: data.htmlPantalla }; return next;
             }
