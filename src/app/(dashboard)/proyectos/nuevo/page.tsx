@@ -37,6 +37,17 @@ export default function NuevoProyectoPage() {
     if (el) el.scrollTop = el.scrollHeight;
   }, [mensajes, enviando]);
 
+  // Escucha clicks de navegación desde los iframes de pantalla
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === 'soc-nav' && typeof e.data.screenIndex === 'number') {
+        setPantallaIdx(e.data.screenIndex);
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
   const conPantalla = tipo === 'SistemaNuevo' && pantallas.length > 0;
 
   // ── Continuar requerimiento existente: ?continuar={id} ────────────────────
