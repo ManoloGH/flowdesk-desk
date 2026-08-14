@@ -145,6 +145,9 @@ export default function ClienteWorkspace() {
   const [pickerForm, setPickerForm]     = useState({ tipo: 'director', interlocutor: '', cargo: '', area: '' });
   const [creandoSesion, setCreandoSesion] = useState(false);
   const [generandoCuestionario, setGenerandoCuestionario] = useState<string | null>(null);
+  const [generandoGlobal, setGenerandoGlobal] = useState(false);
+  const [showCuestionarioGen, setShowCuestionarioGen] = useState(false);
+  const [cuestionarioGenForm, setCuestionarioGenForm] = useState({ area: '', rolDestino: 'gerente' as 'gerente' | 'operador' });
   const [cuestionarioVista, setCuestionarioVista] = useState<any | null>(null);
   const [legacyChatLen, setLegacyChatLen] = useState(0);
   const [showSesion, setShowSesion]     = useState(false);
@@ -341,6 +344,23 @@ export default function ClienteWorkspace() {
     }
   }
 
+  async function handleGenerarCuestionarioGlobal() {
+    if (!cuestionarioGenForm.area.trim()) return;
+    setGenerandoGlobal(true);
+    try {
+      const result = await api.post<any>(`/mentoria/clientes/${id}/generar-cuestionario`, {
+        rolDestino: cuestionarioGenForm.rolDestino,
+        area: cuestionarioGenForm.area,
+      });
+      setShowCuestionarioGen(false);
+      setCuestionarioVista(result);
+    } catch (e: any) {
+      alert(e?.message ?? 'Error al generar cuestionario');
+    } finally {
+      setGenerandoGlobal(false);
+    }
+  }
+
   if (loading) return (
     <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ width: 22, height: 22, borderRadius: '50%', border: '2px solid #6c4de6', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
@@ -474,7 +494,10 @@ export default function ClienteWorkspace() {
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Sesiones de diagnóstico</div>
                 <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{sesionesDiag.length} sesión{sesionesDiag.length !== 1 ? 'es' : ''} registrada{sesionesDiag.length !== 1 ? 's' : ''}</div>
               </div>
-              <button onClick={() => setShowPicker(true)} style={btnPrimary}><Plus size={12} /> Iniciar sesión</button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => setShowCuestionarioGen(true)} style={{ ...btnGhost, fontSize: 12 }}>📋 Generar cuestionario</button>
+                <button onClick={() => setShowPicker(true)} style={btnPrimary}><Plus size={12} /> Iniciar sesión</button>
+              </div>
             </div>
 
             {/* Lista de sesiones */}
@@ -668,6 +691,47 @@ export default function ClienteWorkspace() {
                 </div>
               ))}
             </div>
+          </div>
+        </>
+      )}
+
+      {/* Modal: Generar cuestionario independiente */}
+      {showCuestionarioGen && (
+        <>
+          <div onClick={() => setShowCuestionarioGen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 60 }} />
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 440, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, zIndex: 70, padding: '28px 32px', boxShadow: '0 40px 80px rgba(0,0,0,0.5)' }}>
+            <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)', marginBottom: 6, letterSpacing: '-0.02em' }}>📋 Generar cuestionario</div>
+            <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 20 }}>Se genera automáticamente a partir del cubo de información del cliente.</div>
+
+            <div style={{ marginBottom: 14 }}>
+              <label style={labelSt}>Área *</label>
+              <input
+                value={cuestionarioGenForm.area}
+                onChange={e => setCuestionarioGenForm(p => ({ ...p, area: e.target.value }))}
+                placeholder="Ej: Operaciones, Ventas, Administración…"
+                style={{ ...inputSt, width: '100%' }}
+                autoFocus
+              />
+            </div>
+
+            <div style={{ marginBottom: 24 }}>
+              <label style={labelSt}>Destinatario</label>
+              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                {(['gerente', 'operador'] as const).map(rol => (
+                  <button key={rol} onClick={() => setCuestionarioGenForm(p => ({ ...p, rolDestino: rol }))} style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: `2px solid ${cuestionarioGenForm.rolDestino === rol ? '#3b82f6' : 'var(--line)'}`, background: cuestionarioGenForm.rolDestino === rol ? 'rgba(59,130,246,0.1)' : 'transparent', color: cuestionarioGenForm.rolDestino === rol ? '#3b82f6' : 'var(--text-2)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                    {rol === 'gerente' ? '🏢 Gerentes' : '⚙️ Operadores'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={handleGenerarCuestionarioGlobal}
+              disabled={!cuestionarioGenForm.area.trim() || generandoGlobal}
+              style={{ ...btnPrimary, width: '100%', justifyContent: 'center', fontSize: 14, padding: '11px', opacity: !cuestionarioGenForm.area.trim() ? 0.5 : 1 }}
+            >
+              {generandoGlobal ? '⏳ Generando (~30s)…' : '📋 Generar cuestionario'}
+            </button>
           </div>
         </>
       )}

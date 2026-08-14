@@ -163,7 +163,7 @@ export default function SesionPage() {
 
     const controller = new AbortController();
     abortRef.current = controller;
-    const timeoutId = setTimeout(() => controller.abort(), 30_000);
+    const timeoutId = setTimeout(() => controller.abort(), 65_000);
 
     try {
       const result = await apiFetch<{ text: string; cubo: Record<CuboKey, string>; sections_updated: string[] }>(
@@ -186,7 +186,7 @@ export default function SesionPage() {
     } catch (e: any) {
       const isAbort = e?.name === 'AbortError';
       const msg = isAbort
-        ? '⏱️ Sin respuesta en 30s. Verifica conexión e intenta de nuevo.'
+        ? '⏱️ Sin respuesta del agente. Verifica tu conexión e intenta de nuevo.'
         : `⚠️ ${e?.message ?? 'No se pudo conectar con el agente.'}`;
       setMessages(prev => [...prev, { role: 'assistant', content: msg }]);
     } finally {
