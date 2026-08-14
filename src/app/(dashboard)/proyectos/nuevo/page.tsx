@@ -52,6 +52,72 @@ export default function NuevoProyectoPage() {
     return () => window.removeEventListener('message', handler);
   }, []);
 
+  // ── SOC frame builder ─────────────────────────────────────────────────────
+  // Generates the sidebar from React state (always consistent) and wraps the
+  // AI-generated content section.  Old "full HTML" screens render as-is.
+
+  const socNavIcon = (titulo: string): string => {
+    const t = titulo.toLowerCase().normalize('NFD').replace(/\p{Mn}/gu, '');
+    if (/solicitud|request/.test(t))
+      return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="12" y2="16"/></svg>';
+    if (/brief|plan|campa/.test(t))
+      return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>';
+    if (/aprobac|aprob|aprov/.test(t))
+      return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>';
+    if (/tablero|producci|board|kanban/.test(t))
+      return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>';
+    if (/metric|kpi|indicador/.test(t))
+      return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>';
+    if (/reporte|informe|report/.test(t))
+      return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>';
+    if (/usuario|equipo|team|personal/.test(t))
+      return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
+    if (/inventar|producto|catalogo|catalog/.test(t))
+      return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>';
+    return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>';
+  };
+
+  const buildSocFrame = (screens: Pantalla[], activeIdx: number, contentHtml: string): string => {
+    // Old screens are full HTML pages — render as-is for backward compat
+    if (/^\s*<!doctype|^\s*<html/i.test(contentHtml)) return contentHtml;
+
+    const navItems = screens
+      .map((p, i) =>
+        `<button class="soc-nav-item${i === activeIdx ? ' active' : ''}" onclick="window.parent.postMessage({type:'soc-nav',screenIndex:${i}},'*')">${socNavIcon(p.titulo)}<span>${p.titulo}</span></button>`)
+      .join('\n  ');
+
+    return `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Segoe UI',system-ui,sans-serif;display:flex;background:#f4f6f8;color:#1a2332}
+.soc-nav{width:192px;flex-shrink:0;background:#1a2332;display:flex;flex-direction:column;padding:0 8px 16px}
+.soc-nav-brand{padding:13px 6px 11px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:6px;display:flex;align-items:center;gap:7px}
+.soc-nav-brand-dot{width:8px;height:8px;border-radius:50%;background:#00614E;flex-shrink:0}
+.soc-nav-brand-label{font-size:10.5px;font-weight:700;color:#fff;letter-spacing:.6px;text-transform:uppercase}
+.soc-nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;cursor:pointer;border:none;background:none;width:100%;text-align:left;color:rgba(255,255,255,.5);font-size:12px;font-family:'Segoe UI',system-ui,sans-serif;border-radius:6px;transition:background .12s,color .12s;line-height:1.25}
+.soc-nav-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.85)}
+.soc-nav-item.active{background:#00614E;color:#fff;font-weight:600}
+.soc-nav-item.active svg,.soc-nav-item:hover svg{opacity:1}
+.soc-nav-item svg{flex-shrink:0;opacity:.45;transition:opacity .12s}
+.soc-nav-item span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.soc-main{flex:1;overflow:auto;min-width:0;height:100%}
+</style>
+</head>
+<body>
+<nav class="soc-nav">
+  <div class="soc-nav-brand"><div class="soc-nav-brand-dot"></div><span class="soc-nav-brand-label">SOC Sistema</span></div>
+  ${navItems}
+</nav>
+<div class="soc-main">${contentHtml}</div>
+</body>
+</html>`;
+  };
+
   const conPantalla = tipo === 'SistemaNuevo' && pantallas.length > 0;
 
   // ── Continuar requerimiento existente: ?continuar={id} ────────────────────
@@ -313,11 +379,11 @@ export default function NuevoProyectoPage() {
               )}
             </div>
 
-            {/* Iframe de la pantalla activa */}
+            {/* Iframe de la pantalla activa — sidebar siempre generado por React */}
             {pantallaActual && (
               <iframe
                 key={pantallaActual.titulo + pantallaActual.html.length}
-                srcDoc={pantallaActual.html}
+                srcDoc={buildSocFrame(pantallas, pantallaIdx, pantallaActual.html)}
                 sandbox="allow-scripts allow-same-origin"
                 className="flex-1 w-full border-none"
                 title={pantallaActual.titulo}
