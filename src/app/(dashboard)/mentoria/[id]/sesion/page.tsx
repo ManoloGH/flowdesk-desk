@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
-import { ChevronLeft, ChevronDown, ChevronRight, Send, Loader2, ExternalLink, Zap } from 'lucide-react';
+import { ChevronLeft, ChevronDown, ChevronRight, Send, Loader2 } from 'lucide-react';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 const ACCENT = '#6c4de6';
@@ -476,41 +476,6 @@ export default function SesionPage() {
             })}
           </div>
 
-          {/* Entregables */}
-          <div style={{ padding: '14px 20px', borderTop: '1px solid var(--line)', flexShrink: 0 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              Generar entregables
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              <EntregableBtn
-                label="Ver cubo completo"
-                icon={<ExternalLink size={11} />}
-                onClick={() => router.push(`/mentoria/${id}?tab=cubo`)}
-              />
-              <EntregableBtn
-                label="Analizar con IA"
-                icon={<Zap size={11} />}
-                onClick={() => router.push(`/mentoria/${id}?tab=cubo&analizar=1`)}
-                color={ACCENT}
-              />
-              <EntregableBtn
-                label="Propuesta comercial"
-                icon={<ExternalLink size={11} />}
-                onClick={() => {
-                  const url = `/flowdesk/diagnosticos/propuesta-agentes.html?clienteId=${id}&empresa=${encodeURIComponent(empresa)}`;
-                  window.open(url, '_blank');
-                }}
-              />
-              <EntregableBtn
-                label="Roadmap 24 meses"
-                icon={<ExternalLink size={11} />}
-                onClick={() => {
-                  const url = `/flowdesk/diagnosticos/roadmap-24m.html?clienteId=${id}&empresa=${encodeURIComponent(empresa)}`;
-                  window.open(url, '_blank');
-                }}
-              />
-            </div>
-          </div>
         </div>
       </div>
 
@@ -545,23 +510,3 @@ function ChatBubble({ role, content, streaming }: { role: 'user' | 'assistant'; 
   );
 }
 
-// ── Entregable Button ─────────────────────────────────────────────────────────
-
-function EntregableBtn({ label, icon, onClick, color }: { label: string; icon: React.ReactNode; onClick: () => void; color?: string }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 5,
-        fontSize: 11, padding: '5px 10px',
-        background: 'var(--surface)', border: '1px solid var(--line)',
-        borderRadius: 6, cursor: 'pointer',
-        color: color ?? 'var(--text-2)', transition: 'border-color 0.15s',
-      }}
-      onMouseEnter={e => (e.currentTarget.style.borderColor = color ?? ACCENT)}
-      onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--line)')}
-    >
-      {icon} {label}
-    </button>
-  );
-}
