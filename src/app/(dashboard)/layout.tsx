@@ -359,7 +359,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           fontFamily: "'Inter Tight', sans-serif", fontSize: 12, fontWeight: 600,
           color: '#1c1000', zIndex: 100,
         }}>
-          <span>⚡ Estás dentro de: <strong>{impersonating}</strong></span>
+          <span>⚡ Entraste como <strong>{(user as any)?.impersonator_name ?? (user as any)?.impersonator_email ?? 'Admin'}</strong> — viendo: <strong>{impersonating}</strong></span>
           <button
             onClick={() => { exitCompany(); router.push('/admin/clients'); }}
             style={{
