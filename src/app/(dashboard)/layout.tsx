@@ -328,9 +328,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (wasUnread) setUnread(prev => Math.max(0, prev - 1));
   };
 
-  const initials = effectiveUser?.name
-    ? effectiveUser.name.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase()
-    : effectiveUser?.email?.slice(0, 2)?.toUpperCase() ?? 'U';
+  // En modo impersonación mostrar la identidad del admin, no la del tenant
+  const displayName  = impersonating ? ((user as any)?.impersonator_name  ?? (user as any)?.impersonator_email ?? effectiveUser?.name)  : effectiveUser?.name;
+  const displayEmail = impersonating ? ((user as any)?.impersonator_email ?? effectiveUser?.email) : effectiveUser?.email;
+  const initials = displayName
+    ? displayName.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase()
+    : displayEmail?.slice(0, 2)?.toUpperCase() ?? 'U';
 
   /* Admin routes — el admin layout cubre todo con fixed inset-0, no necesita este wrapper */
   if (pathname.startsWith('/admin')) {
@@ -393,8 +396,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Right */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
 
-          {/* Tenant Switcher — solo para platform_admin */}
-          {effectiveUser?.platform_admin && (
+          {/* Tenant Switcher — solo para platform_admin fuera de impersonación */}
+          {effectiveUser?.platform_admin && !impersonating && (
             <div ref={tenantSwitcherRef} style={{ position: 'relative' }}>
               <button
                 onClick={() => setTenantSwitcherOpen(v => !v)}
@@ -489,7 +492,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Avatar → dropdown con Configuración + Cerrar sesión */}
           <div ref={avatarRef} style={{ position: 'relative' }}>
             <div
-              title={`${effectiveUser.email} · ${effectiveUser.role}`}
+              title={`${displayEmail} · ${effectiveUser.role}`}
               onClick={() => setAvatarOpen(v => !v)}
               style={{
                 width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
@@ -513,7 +516,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               }}>
                 <div style={{ padding: '8px 12px 6px', borderBottom: '1px solid var(--line)' }}>
                   <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {effectiveUser.name || effectiveUser.email}
+                    {displayName || displayEmail}
                   </p>
                   <p style={{ fontSize: 10, color: 'var(--text-3)', margin: '2px 0 0', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                     {effectiveUser.role}
@@ -680,7 +683,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             );
           })}
 
-          {(effectiveUser.role === 'superadmin' || (effectiveUser as any).platform_admin) && (
+          {(effectiveUser.role === 'superadmin' || (effectiveUser as any).platform_admin) && !impersonating && (
             <>
               <div style={{
                 padding: '16px 12px 6px',
