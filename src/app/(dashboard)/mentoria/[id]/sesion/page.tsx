@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { api } from '@/lib/api';
+import { api, apiFetch } from '@/lib/api';
 import { ChevronLeft, ChevronDown, ChevronRight, Send, Loader2 } from 'lucide-react';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
@@ -161,10 +161,14 @@ export default function SesionPage() {
     setInput('');
     setStreaming(true);
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const timeoutId = setTimeout(() => controller.abort(), 90_000);
+
     try {
-      const result = await api.post<{ text: string; cubo: Record<CuboKey, string>; sections_updated: string[] }>(
+      const result = await apiFetch<{ text: string; cubo: Record<CuboKey, string>; sections_updated: string[] }>(
         `/mentoria/clientes/${id}/chat`,
-        { message: text, sesionId: sesionId ?? undefined },
+        { method: 'POST', body: JSON.stringify({ message: text, sesionId: sesionId ?? undefined }), signal: controller.signal },
       );
 
       if (result.text) {
@@ -173,7 +177,6 @@ export default function SesionPage() {
 
       if (result.cubo) {
         setCubo(result.cubo);
-        // Flash updated sections
         for (const sec of result.sections_updated ?? []) {
           setFlashSection(sec as CuboKey);
           setOpenSection(sec as CuboKey);
@@ -181,9 +184,14 @@ export default function SesionPage() {
         }
       }
     } catch (e: any) {
-      const msg = `⚠️ ${e?.message ?? 'No se pudo conectar con el agente.'}`;
+      const isAbort = e?.name === 'AbortError';
+      const msg = isAbort
+        ? '⏱️ La respuesta tardó demasiado (90s). Intenta con un mensaje más corto o vuelve a intentarlo.'
+        : `⚠️ ${e?.message ?? 'No se pudo conectar con el agente.'}`;
       setMessages(prev => [...prev, { role: 'assistant', content: msg }]);
     } finally {
+      clearTimeout(timeoutId);
+      abortRef.current = null;
       setStreaming(false);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
