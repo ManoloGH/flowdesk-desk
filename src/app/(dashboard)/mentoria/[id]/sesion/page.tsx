@@ -163,7 +163,7 @@ export default function SesionPage() {
 
     const controller = new AbortController();
     abortRef.current = controller;
-    const timeoutId = setTimeout(() => controller.abort(), 30_000);
+    const timeoutId = setTimeout(() => controller.abort(), 65_000);
 
     try {
       const result = await apiFetch<{ text: string; cubo: Record<CuboKey, string>; sections_updated: string[] }>(
