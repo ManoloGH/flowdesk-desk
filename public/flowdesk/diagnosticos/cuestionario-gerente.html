@@ -58,6 +58,12 @@ textarea{resize:vertical;min-height:72px}
 .fsep{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--ink3);margin:14px 0 8px}
 .fsep::before,.fsep::after{content:"";flex:1;height:1px;background:var(--br2)}
 .inv-row{display:grid;grid-template-columns:1.4fr 1fr 100px 1.2fr 28px;gap:6px;align-items:center;margin-bottom:6px}
+.etapa-sep{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--acc);margin:16px 0 10px;padding:6px 10px;background:var(--acc-bg);border-radius:6px;border-left:3px solid var(--acc)}
+.paso-card{border:1.5px solid var(--br2);border-radius:8px;padding:10px 12px;margin-bottom:8px;background:#F8FAFC;position:relative}
+.paso-num{font-size:9.5px;font-weight:800;color:var(--acc);margin-bottom:8px;text-transform:uppercase;letter-spacing:.1em}
+.mini-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.mini-tag{padding:3px 9px;border-radius:12px;font-size:10.5px;font-weight:600;cursor:pointer;border:1.5px solid var(--br2);background:#fff;color:var(--ink3);transition:all .15s;user-select:none}
+.mini-tag.on{background:var(--acc-bg);border-color:var(--acc-br);color:var(--acc)}
 .inv-card{border:1.5px solid var(--br2);border-radius:10px;padding:14px 16px;margin-bottom:10px;background:#fff}
 .inv-card-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .inv-name{font-size:13px;font-weight:800;color:var(--ink)}
@@ -258,7 +264,7 @@ var C={
   ],
   sis:["SAP","Excel","WhatsApp","Correo electrónico","Teams / Meet","Teléfono","Sistema propio","Físico / Papel","Otro"]
 };
-var pc=0,dc=0,decc=0,invCnt=0;
+var pc=0,dc=0,decc=0,invCnt=0,sc={};
 function init(){
   document.getElementById("fecha").value=new Date().toISOString().split("T")[0];
   document.getElementById("cliente").value=_EMP;
@@ -288,23 +294,91 @@ function addProc(){
     +"<div class='field'><label class='lbl req'>Nombre del proceso</label><input type='text' id='p"+n+"nm' placeholder='ej. Cotización de pedido' oninput='upd()'></div>"
     +"<div class='field'><label class='lbl'>¿Quién lo ejecuta? (puesto)</label><input type='text' id='p"+n+"ej' placeholder='ej. Ejecutivo de Ventas'></div>"
     +"</div>"
-    +"<div class='g3'>"
+    +"<div class='g2'>"
     +"<div class='field'><label class='lbl'>Frecuencia</label><select id='p"+n+"fr'><option>Varias veces/día</option><option>Diario</option><option>Semanal</option><option>Quincenal</option><option>Mensual</option><option>Bajo demanda</option></select></div>"
     +"<div class='field'><label class='lbl'>Tiempo estimado</label><input type='text' id='p"+n+"tp' placeholder='ej. 20 min, 2 hrs'></div>"
-    +"<div class='field'><label class='lbl'>Sistema principal</label>"+sisSel("p"+n+"si")+"</div>"
     +"</div>"
+    // ── SOLICITUD ──
+    +"<div class='etapa-sep'>① Solicitud — ¿Cómo inicia?</div>"
+    +"<div class='field'><label class='lbl'>¿Quién activa el proceso?</label>"
+    +"<div class='mini-tags' id='p"+n+"act'>"
+    +"<span class='mini-tag' onclick='this.classList.toggle(\"on\")'>Cliente</span>"
+    +"<span class='mini-tag' onclick='this.classList.toggle(\"on\")'>Proveedor</span>"
+    +"<span class='mini-tag' onclick='this.classList.toggle(\"on\")'>Depto. interno</span>"
+    +"<span class='mini-tag' onclick='this.classList.toggle(\"on\")'>Programado</span>"
+    +"</div></div>"
+    +"<div class='field'><label class='lbl'>¿Por dónde llega la solicitud?</label>"
+    +"<div class='mini-tags' id='p"+n+"can'>"
+    +"<span class='mini-tag' onclick='this.classList.toggle(\"on\")'>WhatsApp</span>"
+    +"<span class='mini-tag' onclick='this.classList.toggle(\"on\")'>Email</span>"
+    +"<span class='mini-tag' onclick='this.classList.toggle(\"on\")'>Llamada</span>"
+    +"<span class='mini-tag' onclick='this.classList.toggle(\"on\")'>Sistema</span>"
+    +"<span class='mini-tag' onclick='this.classList.toggle(\"on\")'>Presencial</span>"
+    +"<span class='mini-tag' onclick='this.classList.toggle(\"on\")'>Otro</span>"
+    +"</div></div>"
+    +"<div class='field'><label class='lbl'>¿Qué información llega al solicitarlo?</label>"
+    +"<textarea id='p"+n+"din' placeholder='Datos, documentos o información que proporciona quien activa el proceso...' style='min-height:52px'></textarea></div>"
+    // ── PROCESO ──
+    +"<div class='etapa-sep'>② Proceso — Paso a paso</div>"
+    +"<p style='font-size:11px;color:var(--ink4);margin-bottom:8px'>En cada paso: qué data se genera, dónde queda registrada, quién y desde dónde</p>"
+    +"<div id='p"+n+"steps'></div>"
+    +"<div class='addr'><button class='btn btn-sec np' onclick='addStep("+n+")'>+ Agregar paso</button></div>"
+    // ── ENTREGA ──
+    +"<div class='etapa-sep'>③ Entrega — ¿Qué sale del proceso?</div>"
+    +"<div class='field'><label class='lbl'>¿Qué se entrega al finalizar?</label>"
+    +"<input type='text' id='p"+n+"eqe' placeholder='ej. Cotización firmada, pedido en sistema, producto entregado'></div>"
     +"<div class='g2'>"
-    +"<div class='field'><label class='lbl'>¿Qué lo dispara? (input)</label><input type='text' id='p"+n+"in' placeholder='ej. Solicitud del cliente, correo de ventas'></div>"
-    +"<div class='field'><label class='lbl'>¿Qué produce? (output)</label><input type='text' id='p"+n+"ou' placeholder='ej. Cotización firmada, orden en SAP'></div>"
+    +"<div class='field'><label class='lbl'>¿Dónde queda el registro de la entrega?</label>"
+    +"<input type='text' id='p"+n+"edr' placeholder='ej. SAP, Excel de seguimiento, WhatsApp'></div>"
+    +"<div class='field'><label class='lbl'>¿Qué exactamente se anota / registra?</label>"
+    +"<input type='text' id='p"+n+"eqa' placeholder='ej. Número de folio, fecha, firma del cliente'></div>"
     +"</div>"
     +"<div class='g2'>"
     +"<div class='field'><label class='lbl'>¿Tiene SOP / instructivo?</label>"
     +"<div class='radios'><label class='rad'><input type='radio' name='p"+n+"sp' value='si'> Sí</label>"
     +"<label class='rad'><input type='radio' name='p"+n+"sp' value='no' checked> No</label>"
     +"<label class='rad'><input type='radio' name='p"+n+"sp' value='parcial'> Parcial</label></div></div>"
-    +"<div class='field'><label class='lbl'>Notas / problemas</label><input type='text' id='p"+n+"no' placeholder='Observaciones...'></div>"
+    +"<div class='field'><label class='lbl'>Notas / cuellos de botella</label>"
+    +"<input type='text' id='p"+n+"no' placeholder='Observaciones, datos que se pierden, problemas frecuentes...'></div>"
     +"</div>";
-  document.getElementById("procs").appendChild(d);upd();
+  document.getElementById("procs").appendChild(d);
+  addStep(n);
+  upd();
+}
+function addStep(pn){
+  if(!sc[pn])sc[pn]=0;sc[pn]++;var sn=sc[pn];
+  var d=document.createElement("div");d.className="paso-card";d.id="p"+pn+"s"+sn;
+  d.innerHTML="<button class='brm np' style='top:6px;right:6px' onclick='this.parentElement.remove()'>×</button>"
+    +"<div class='paso-num'>Paso "+sn+"</div>"
+    +"<div class='g2'>"
+    +"<div class='field'><label class='lbl'>¿Qué ocurre en este paso?</label>"
+    +"<input type='text' id='p"+pn+"s"+sn+"nm' placeholder='ej. El ejecutivo revisa disponibilidad'></div>"
+    +"<div class='field'><label class='lbl'>¿Qué data se genera?</label>"
+    +"<input type='text' id='p"+pn+"s"+sn+"dg' placeholder='ej. Cantidad disponible, precio actualizado'></div>"
+    +"</div>"
+    +"<div class='g2'>"
+    +"<div class='field'><label class='lbl'>¿Dónde se registra?</label>"
+    +"<select id='p"+pn+"s"+sn+"re'><option value=''>— seleccionar —</option>"
+    +"<option>Sistema / ERP</option><option>Excel</option><option>WhatsApp</option>"
+    +"<option>Email</option><option>Papel / Físico</option><option>No se registra</option><option>Otro</option></select></div>"
+    +"<div class='field'><label class='lbl'>¿Quién lo registra? (cargo)</label>"
+    +"<input type='text' id='p"+pn+"s"+sn+"rs' placeholder='ej. Ejecutivo de ventas'></div>"
+    +"</div>"
+    +"<div class='g2'>"
+    +"<div class='field'><label class='lbl'>¿Desde dónde trabaja?</label>"
+    +"<div class='mini-tags' id='p"+pn+"s"+sn+"ub'>"
+    +"<span class='mini-tag' onclick='this.classList.toggle(\"on\")'>Oficina</span>"
+    +"<span class='mini-tag' onclick='this.classList.toggle(\"on\")'>Campo</span>"
+    +"<span class='mini-tag' onclick='this.classList.toggle(\"on\")'>Remoto</span>"
+    +"</div></div>"
+    +"<div class='field'><label class='lbl'>¿Qué dispositivo usa?</label>"
+    +"<div class='mini-tags' id='p"+pn+"s"+sn+"di'>"
+    +"<span class='mini-tag' onclick='this.classList.toggle(\"on\")'>Computadora</span>"
+    +"<span class='mini-tag' onclick='this.classList.toggle(\"on\")'>Móvil</span>"
+    +"<span class='mini-tag' onclick='this.classList.toggle(\"on\")'>Ambos</span>"
+    +"</div></div>"
+    +"</div>";
+  document.getElementById("p"+pn+"steps").appendChild(d);
 }
 function addFlujo(t){
   var d=document.createElement("div");d.className="frow";
@@ -471,10 +545,23 @@ function copyMsg(btn,id){
 }
 function gv(id){var el=document.getElementById(id);return el?el.value:"";}
 function gProcs(){
+  var st=function(el){return el?Array.from(el.querySelectorAll(".mini-tag.on")).map(function(t){return t.textContent;}).join(", "):""};
   return Array.from(document.querySelectorAll("#procs .card-item")).map(function(c){
     var n=c.id.replace("p","");
     var sp=c.querySelector("[name='p"+n+"sp']:checked");
-    return{nombre:gv("p"+n+"nm"),ejecutor:gv("p"+n+"ej"),frecuencia:gv("p"+n+"fr"),tiempo:gv("p"+n+"tp"),sistema:gv("p"+n+"si"),input:gv("p"+n+"in"),output:gv("p"+n+"ou"),tiene_sop:sp?sp.value:"no",notas:gv("p"+n+"no")};
+    var stepsEl=document.getElementById("p"+n+"steps");
+    var pasos=stepsEl?Array.from(stepsEl.querySelectorAll(".paso-card")).map(function(s){
+      var sn=s.id.replace("p"+n+"s","");
+      var id=function(sfx){return"p"+n+"s"+sn+sfx;};
+      return{nombre:gv(id("nm")),data_generada:gv(id("dg")),donde_registra:gv(id("re")),responsable:gv(id("rs")),ubicacion:st(document.getElementById(id("ub"))),dispositivo:st(document.getElementById(id("di")))};
+    }):[];
+    return{
+      nombre:gv("p"+n+"nm"),ejecutor:gv("p"+n+"ej"),frecuencia:gv("p"+n+"fr"),tiempo:gv("p"+n+"tp"),
+      solicitud:{activador:st(c.querySelector("#p"+n+"act")),canal:st(c.querySelector("#p"+n+"can")),datos_entrada:gv("p"+n+"din")},
+      pasos:pasos,
+      entrega:{que_se_entrega:gv("p"+n+"eqe"),donde_registra:gv("p"+n+"edr"),que_se_anota:gv("p"+n+"eqa")},
+      tiene_sop:sp?sp.value:"no",notas:gv("p"+n+"no")
+    };
   });
 }
 function gFlujos(t){

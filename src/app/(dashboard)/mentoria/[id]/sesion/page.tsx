@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { ChevronLeft, ChevronDown, ChevronRight, Send, Loader2, ExternalLink, Zap } from 'lucide-react';
 
@@ -62,11 +62,22 @@ const CUBO_SECTIONS: { key: CuboKey; titulo: string; color: string; placeholder:
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
+const TIPOS_SESION = [
+  { key: 'dg',        label: 'Director General',   icon: '🏆' },
+  { key: 'director',  label: 'Director de área',   icon: '🏛️' },
+  { key: 'gerente',   label: 'Gerente',             icon: '🏢' },
+  { key: 'operador',  label: 'Operador',            icon: '⚙️' },
+  { key: 'otro',      label: 'Otro',                icon: '👤' },
+];
+
 export default function SesionPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const sesionId = searchParams.get('sesionId');
 
   const [empresa, setEmpresa]         = useState('');
+  const [sesionTitulo, setSesionTitulo] = useState('');
   const [cubo, setCubo]               = useState<Partial<Record<CuboKey, string>>>({});
   const [messages, setMessages]       = useState<Message[]>([]);
   const [input, setInput]             = useState('');
@@ -76,6 +87,11 @@ export default function SesionPage() {
   const [editingSection, setEditingSection] = useState<CuboKey | null>(null);
   const [editText, setEditText]       = useState('');
   const [savingSection, setSavingSection] = useState(false);
+  const [loadingClient, setLoadingClient] = useState(true);
+
+  // Session picker state (shown when no sesionId in URL)
+  const [pickerForm, setPickerForm] = useState({ tipo: 'director', interlocutor: '', cargo: '', area: '' });
+  const [creandoSesion, setCreandoSesion] = useState(false);
 
   const chatEndRef   = useRef<HTMLDivElement>(null);
   const inputRef     = useRef<HTMLTextAreaElement>(null);
@@ -83,23 +99,54 @@ export default function SesionPage() {
 
   // Load cliente + history from DB
   useEffect(() => {
+    setLoadingClient(true);
     api.get<any>(`/mentoria/clientes/${id}`)
       .then(c => {
         setEmpresa(c.empresa ?? '');
-        if (c.cubo && Object.keys(c.cubo).length > 0) {
-          setCubo(c.cubo);
-        }
-        const history = (c.chat_history ?? []) as Array<{ role: 'user' | 'assistant'; content: string }>;
-        if (history.length > 0) {
-          setMessages(history.map(m => ({ role: m.role, content: m.content })));
+        if (c.cubo && Object.keys(c.cubo).length > 0) setCubo(c.cubo);
+
+        if (sesionId) {
+          // Load from the specific named session
+          const sesiones = (c.sesiones_diagnostico ?? []) as any[];
+          const sesion = sesiones.find((s: any) => s.id === sesionId);
+          setSesionTitulo(sesion?.titulo ?? 'Sesión de diagnóstico');
+          const mensajes = (sesion?.mensajes ?? []) as Array<{ role: 'user' | 'assistant'; content: string }>;
+          setMessages(mensajes.length > 0
+            ? mensajes.map(m => ({ role: m.role, content: m.content }))
+            : [{ role: 'assistant', content: DEFAULT_GREETING }]);
         } else {
-          setMessages([{ role: 'assistant', content: DEFAULT_GREETING }]);
+          // Legacy: flat chat_history
+          const history = (c.chat_history ?? []) as Array<{ role: 'user' | 'assistant'; content: string }>;
+          setMessages(history.length > 0
+            ? history.map(m => ({ role: m.role, content: m.content }))
+            : [{ role: 'assistant', content: DEFAULT_GREETING }]);
         }
       })
-      .catch(() => {
-        setMessages([{ role: 'assistant', content: DEFAULT_GREETING }]);
+      .catch(() => setMessages([{ role: 'assistant', content: DEFAULT_GREETING }]))
+      .finally(() => setLoadingClient(false));
+  }, [id, sesionId]);
+
+  async function crearSesion() {
+    if (!pickerForm.interlocutor.trim()) return;
+    setCreandoSesion(true);
+    const newId = `s-${Date.now()}`;
+    const tipoLabel = TIPOS_SESION.find(t => t.key === pickerForm.tipo)?.label ?? pickerForm.tipo;
+    const titulo = pickerForm.tipo === 'dg'
+      ? `Sesión DG — ${pickerForm.interlocutor}`
+      : `Sesión ${pickerForm.cargo || tipoLabel} — ${pickerForm.interlocutor}`;
+    try {
+      await api.post(`/mentoria/clientes/${id}/sesiones-diag`, {
+        id: newId, titulo,
+        tipo: pickerForm.tipo,
+        interlocutor: pickerForm.interlocutor,
+        cargo: pickerForm.cargo,
+        area: pickerForm.area,
+        fecha: new Date().toISOString().split('T')[0],
       });
-  }, [id]);
+    } catch {}
+    setCreandoSesion(false);
+    router.replace(`/mentoria/${id}/sesion?sesionId=${newId}`);
+  }
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -117,7 +164,7 @@ export default function SesionPage() {
     try {
       const result = await api.post<{ text: string; cubo: Record<CuboKey, string>; sections_updated: string[] }>(
         `/mentoria/clientes/${id}/chat`,
-        { message: text },
+        { message: text, sesionId: sesionId ?? undefined },
       );
 
       if (result.text) {
@@ -164,6 +211,63 @@ export default function SesionPage() {
   const pct = Math.round(filledCount / CUBO_SECTIONS.length * 100);
   const userMsgCount = messages.filter(m => m.role === 'user').length;
 
+  // ── Session Picker (shown when no sesionId in URL) ────────────────────────
+  if (!loadingClient && !sesionId) {
+    return (
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: '1px solid var(--line)', flexShrink: 0, background: 'var(--surface)' }}>
+          <button onClick={() => router.push(`/mentoria/${id}`)} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', fontSize: 12, padding: 0 }}>
+            <ChevronLeft size={14} /> {empresa || 'Cliente'}
+          </button>
+          <div style={{ width: 1, height: 16, background: 'var(--line)' }} />
+          <span style={{ fontSize: 13, color: ACCENT, fontWeight: 600 }}>🎙️ Nueva sesión de diagnóstico</span>
+        </div>
+
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px' }}>
+          <div style={{ width: '100%', maxWidth: 480, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: '28px 32px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', marginBottom: 6, letterSpacing: '-0.02em' }}>¿Qué sesión vas a iniciar?</div>
+            <div style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 24 }}>
+              Esta información permite organizar y generar cuestionarios personalizados desde la sesión.
+            </div>
+
+            {/* Tipo de sesión */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-2)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Tipo de sesión</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {TIPOS_SESION.map(t => (
+                  <button key={t.key} onClick={() => setPickerForm(p => ({ ...p, tipo: t.key }))} style={{ padding: '6px 12px', borderRadius: 8, border: `2px solid ${pickerForm.tipo === t.key ? ACCENT : 'var(--line)'}`, background: pickerForm.tipo === t.key ? `${ACCENT}12` : 'transparent', color: pickerForm.tipo === t.key ? ACCENT : 'var(--text-2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    {t.icon} {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Con quién */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Con quién *</label>
+                <input value={pickerForm.interlocutor} onChange={e => setPickerForm(p => ({ ...p, interlocutor: e.target.value }))} placeholder="Nombre completo" style={{ width: '100%', padding: '9px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--text)', fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Cargo</label>
+                <input value={pickerForm.cargo} onChange={e => setPickerForm(p => ({ ...p, cargo: e.target.value }))} placeholder="Ej: Director de Operaciones" style={{ width: '100%', padding: '9px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--text)', fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Área</label>
+              <input value={pickerForm.area} onChange={e => setPickerForm(p => ({ ...p, area: e.target.value }))} placeholder="Ej: Operaciones, Administración, Comercial…" style={{ width: '100%', padding: '9px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--text)', fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+            </div>
+
+            <button onClick={crearSesion} disabled={!pickerForm.interlocutor.trim() || creandoSesion} style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: ACCENT, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', opacity: !pickerForm.interlocutor.trim() ? 0.5 : 1, transition: 'opacity 0.15s' }}>
+              {creandoSesion ? 'Creando sesión…' : '🎙️ Iniciar sesión'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg)' }}>
 
@@ -184,7 +288,7 @@ export default function SesionPage() {
         <div style={{ width: 1, height: 16, background: 'var(--line)' }} />
 
         <span style={{ fontSize: 13, color: ACCENT, fontWeight: 600 }}>
-          🎙️ Sesión de diagnóstico
+          🎙️ {sesionTitulo || 'Sesión de diagnóstico'}
         </span>
 
         {userMsgCount > 0 && (

@@ -138,8 +138,15 @@ export default function ClienteWorkspace() {
   const [tab, setTab]           = useState<'sesiones_cuestionarios' | 'cubo' | 'entregables'>('sesiones_cuestionarios');
   const [editing, setEditing]   = useState(false);
   const [checks, setChecks]     = useState<Record<string, boolean>>({});
-  const [sesiones, setSesiones] = useState<Sesion[]>([]);
-  const [pagos, setPagos]       = useState<Pago[]>([]);
+  const [sesiones, setSesiones]         = useState<Sesion[]>([]);
+  const [pagos, setPagos]               = useState<Pago[]>([]);
+  const [sesionesDiag, setSesionesDiag] = useState<any[]>([]);
+  const [showPicker, setShowPicker]     = useState(false);
+  const [pickerForm, setPickerForm]     = useState({ tipo: 'director', interlocutor: '', cargo: '', area: '' });
+  const [creandoSesion, setCreandoSesion] = useState(false);
+  const [generandoCuestionario, setGenerandoCuestionario] = useState<string | null>(null);
+  const [cuestionarioVista, setCuestionarioVista] = useState<any | null>(null);
+  const [legacyChatLen, setLegacyChatLen] = useState(0);
   const [showSesion, setShowSesion]     = useState(false);
   const [showPago, setShowPago]         = useState(false);
   const [showHallazgo, setShowHallazgo] = useState(false);
@@ -170,6 +177,8 @@ export default function ClienteWorkspace() {
         setPagos(data.pagos || []);
         setHallazgos(data.hallazgos || []);
         setPlan(data.plan || []);
+        setSesionesDiag(data.sesiones_diagnostico || []);
+        setLegacyChatLen(((data.chat_history ?? []) as any[]).filter((m: any) => m.role === 'user').length);
       } catch {
         if (id === 'c-primer') {
           setCliente(MOCK_CLIENTE);
@@ -285,6 +294,51 @@ export default function ClienteWorkspace() {
     const next = cliente.status === 'activo' ? 'inactivo' : 'activo';
     api.patch(`/mentoria/clientes/${id}/status`, { status: next }).catch(() => {});
     setCliente(prev => prev ? { ...prev, status: next } : prev);
+  }
+
+  const TIPOS_SESION_DIAG = [
+    { key: 'dg',       label: 'Director General', icon: '🏆' },
+    { key: 'director', label: 'Director de área', icon: '🏛️' },
+    { key: 'gerente',  label: 'Gerente',           icon: '🏢' },
+    { key: 'operador', label: 'Operador',           icon: '⚙️' },
+    { key: 'otro',     label: 'Otro',               icon: '👤' },
+  ];
+
+  async function crearYEntrarSesion() {
+    if (!pickerForm.interlocutor.trim()) return;
+    setCreandoSesion(true);
+    const newId = `s-${Date.now()}`;
+    const tipoLabel = TIPOS_SESION_DIAG.find(t => t.key === pickerForm.tipo)?.label ?? pickerForm.tipo;
+    const titulo = pickerForm.tipo === 'dg'
+      ? `Sesión DG — ${pickerForm.interlocutor}`
+      : `Sesión ${pickerForm.cargo || tipoLabel} — ${pickerForm.interlocutor}`;
+    try {
+      await api.post(`/mentoria/clientes/${id}/sesiones-diag`, {
+        id: newId, titulo, tipo: pickerForm.tipo,
+        interlocutor: pickerForm.interlocutor,
+        cargo: pickerForm.cargo, area: pickerForm.area,
+        fecha: new Date().toISOString().split('T')[0],
+      });
+    } catch {}
+    setCreandoSesion(false);
+    setShowPicker(false);
+    router.push(`/mentoria/${id}/sesion?sesionId=${newId}`);
+  }
+
+  async function handleGenerarCuestionario(sesionId: string, area: string, rolDestino: 'gerente' | 'operador') {
+    setGenerandoCuestionario(sesionId);
+    try {
+      const result = await api.post<any>(`/mentoria/clientes/${id}/sesiones-diag/${sesionId}/generar-cuestionario`, { rolDestino, area });
+      setSesionesDiag(prev => prev.map(s => s.id === sesionId
+        ? { ...s, cuestionarios_generados: [...(s.cuestionarios_generados ?? []), result] }
+        : s
+      ));
+      setCuestionarioVista(result);
+    } catch (e: any) {
+      alert(e?.message ?? 'Error al generar cuestionario');
+    } finally {
+      setGenerandoCuestionario(null);
+    }
   }
 
   if (loading) return (
@@ -414,66 +468,97 @@ export default function ClienteWorkspace() {
         {tab === 'sesiones_cuestionarios' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-            {/* Sesión IA — hilo único continuo */}
-            {(() => {
-              const chatHistory = (cliente as any).chat_history as Array<{ role: string }> | null;
-              const msgCount = chatHistory ? chatHistory.filter((m: any) => m.role === 'user').length : 0;
-              return (
-                <div style={{ background: 'var(--surface)', border: '1px solid rgba(108,77,230,0.3)', borderRadius: 12, padding: '18px 20px' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>🤖 Sesión de diagnóstico con IA</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 14 }}>
-                    El agente guía la conversación y documenta el cubo en tiempo real. El hilo es continuo — puedes pausar y retomar cuando quieras.
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                    <button
-                      onClick={() => router.push(`/mentoria/${id}/sesion`)}
-                      style={{ fontSize: 12, padding: '8px 20px', background: 'rgba(108,77,230,0.1)', color: '#6c4de6', border: '1px solid rgba(108,77,230,0.3)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}
-                    >
-                      🎙️ {msgCount > 0 ? 'Continuar sesión' : 'Iniciar sesión'}
-                    </button>
-                    {msgCount > 0 && (
-                      <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
-                        {msgCount} intercambio{msgCount !== 1 ? 's' : ''} registrado{msgCount !== 1 ? 's' : ''}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Cuestionarios colaboradores */}
-            <PipelineDiagnostico clienteId={id} empresa={cliente.empresa} ejecutivo={cliente.ejecutivo_asignado} driveUrl={cliente.drive_url} whatsapp={cliente.whatsapp} />
-
-            {/* Historial de sesiones */}
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
-              <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
-                  💬 Historial de sesiones {sesiones.length > 0 && <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 400 }}>({sesiones.length})</span>}
-                </div>
-                <button onClick={() => setShowSesion(true)} style={btnPrimary}><Plus size={12} /> Nueva sesión</button>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Sesiones de diagnóstico</div>
+                <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{sesionesDiag.length} sesión{sesionesDiag.length !== 1 ? 'es' : ''} registrada{sesionesDiag.length !== 1 ? 's' : ''}</div>
               </div>
-              {!sesiones.length ? (
-                <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-3)', fontSize: 13 }}>Sin sesiones registradas todavía</div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  {sesiones.map(s => (
-                    <div key={s.id} style={{ padding: '14px 20px', borderBottom: '1px solid var(--line)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{s.titulo}</span>
-                        <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 99, background: 'rgba(108,77,230,0.1)', color: '#8b6ef5' }}>{TIPO_SESION_LABEL[s.tipo]}</span>
-                        <span style={{ fontSize: 11, color: 'var(--text-3)', marginLeft: 'auto' }}>{fmtDate(s.fecha)}</span>
+              <button onClick={() => setShowPicker(true)} style={btnPrimary}><Plus size={12} /> Iniciar sesión</button>
+            </div>
+
+            {/* Lista de sesiones */}
+            {sesionesDiag.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {sesionesDiag.map((s: any) => {
+                  const intercambios = (s.mensajes ?? []).filter((m: any) => m.role === 'user').length;
+                  const cuestionarios = s.cuestionarios_generados ?? [];
+                  const tipoIcon = TIPOS_SESION_DIAG.find(t => t.key === s.tipo)?.icon ?? '🎙️';
+                  return (
+                    <div key={s.id} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
+                      {/* Sesión header */}
+                      <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ fontSize: 16 }}>{tipoIcon}</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{s.titulo}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
+                            {intercambios} intercambio{intercambios !== 1 ? 's' : ''} · {s.area || s.cargo || '—'} · {s.fecha}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                          <button
+                            onClick={() => router.push(`/mentoria/${id}/sesion?sesionId=${s.id}`)}
+                            style={{ fontSize: 11, padding: '5px 10px', background: 'rgba(108,77,230,0.1)', color: '#6c4de6', border: '1px solid rgba(108,77,230,0.3)', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
+                          >
+                            🎙️ Continuar
+                          </button>
+                          {s.area && (
+                            <button
+                              onClick={() => handleGenerarCuestionario(s.id, s.area, 'gerente')}
+                              disabled={generandoCuestionario === s.id}
+                              style={{ fontSize: 11, padding: '5px 10px', background: 'rgba(59,130,246,0.1)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 6, cursor: 'pointer', fontWeight: 600, opacity: generandoCuestionario === s.id ? 0.6 : 1 }}
+                            >
+                              {generandoCuestionario === s.id ? '⏳…' : '📋 Generar cuestionario'}
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      {s.notas && <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5, marginBottom: s.acciones ? 6 : 0 }}>{s.notas}</div>}
-                      {s.acciones && (
-                        <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>
-                          <span style={{ fontWeight: 600 }}>Próximos pasos: </span>{s.acciones}
+
+                      {/* Cuestionarios generados */}
+                      {cuestionarios.length > 0 && (
+                        <div style={{ borderTop: '1px solid var(--line)', padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          {cuestionarios.map((cq: any) => (
+                            <div key={cq.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 7 }}>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: 11, fontWeight: 600, color: '#3b82f6' }}>📋 {cq.titulo}</div>
+                                <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 1 }}>{(cq.preguntas ?? []).length} preguntas</div>
+                              </div>
+                              <button onClick={() => setCuestionarioVista(cq)} style={{ fontSize: 10, color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline', flexShrink: 0 }}>Ver</button>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
-                  ))}
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Sesión previa legacy */}
+            {legacyChatLen > 0 && (
+              <div style={{ background: 'var(--surface)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontSize: 16 }}>🕓</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>Sesión anterior (sin registrar)</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{legacyChatLen} intercambios · pre-nueva versión</div>
                 </div>
-              )}
-            </div>
+                <button onClick={() => router.push(`/mentoria/${id}/sesion`)} style={{ fontSize: 11, padding: '5px 10px', background: 'rgba(245,158,11,0.12)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>
+                  🎙️ Continuar
+                </button>
+              </div>
+            )}
+
+            {/* Empty state */}
+            {sesionesDiag.length === 0 && legacyChatLen === 0 && (
+              <div style={{ textAlign: 'center', padding: '48px 32px', color: 'var(--text-3)', fontSize: 13 }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>🎙️</div>
+                <div style={{ fontWeight: 600, marginBottom: 6 }}>Sin sesiones registradas</div>
+                <div style={{ marginBottom: 20, fontSize: 12 }}>Inicia con la sesión del Director General y avanza área por área.</div>
+                <button onClick={() => { setPickerForm({ tipo: 'dg', interlocutor: '', cargo: 'Director General', area: '' }); setShowPicker(true); }} style={btnPrimary}>
+                  <Plus size={12} /> Iniciar primera sesión
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -518,6 +603,74 @@ export default function ClienteWorkspace() {
         )}
 
       </div>
+
+      {/* Session Picker Modal */}
+      {showPicker && (
+        <>
+          <div onClick={() => setShowPicker(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 60 }} />
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 500, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, zIndex: 70, padding: '28px 32px', boxShadow: '0 40px 80px rgba(0,0,0,0.5)' }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', marginBottom: 6, letterSpacing: '-0.02em' }}>¿Qué sesión vas a iniciar?</div>
+            <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 20 }}>Organiza y genera cuestionarios personalizados desde cada sesión.</div>
+
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-2)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Tipo</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {TIPOS_SESION_DIAG.map(t => (
+                  <button key={t.key} onClick={() => setPickerForm(p => ({ ...p, tipo: t.key }))} style={{ padding: '5px 11px', borderRadius: 7, border: `2px solid ${pickerForm.tipo === t.key ? '#6c4de6' : 'var(--line)'}`, background: pickerForm.tipo === t.key ? 'rgba(108,77,230,0.1)' : 'transparent', color: pickerForm.tipo === t.key ? '#6c4de6' : 'var(--text-2)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                    {t.icon} {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+              <div><label style={labelSt}>Con quién *</label><input value={pickerForm.interlocutor} onChange={e => setPickerForm(p => ({ ...p, interlocutor: e.target.value }))} placeholder="Nombre completo" style={inputSt} /></div>
+              <div><label style={labelSt}>Cargo</label><input value={pickerForm.cargo} onChange={e => setPickerForm(p => ({ ...p, cargo: e.target.value }))} placeholder="Director de Operaciones…" style={inputSt} /></div>
+            </div>
+            <div style={{ marginBottom: 20 }}><label style={labelSt}>Área</label><input value={pickerForm.area} onChange={e => setPickerForm(p => ({ ...p, area: e.target.value }))} placeholder="Operaciones, Comercial, Administración…" style={{ ...inputSt, width: '100%' }} /></div>
+
+            <button onClick={crearYEntrarSesion} disabled={!pickerForm.interlocutor.trim() || creandoSesion} style={{ ...btnPrimary, width: '100%', justifyContent: 'center', fontSize: 14, padding: '11px', opacity: !pickerForm.interlocutor.trim() ? 0.5 : 1 }}>
+              {creandoSesion ? 'Creando…' : '🎙️ Iniciar sesión'}
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Cuestionario Vista Modal */}
+      {cuestionarioVista && (
+        <>
+          <div onClick={() => setCuestionarioVista(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 60 }} />
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 640, maxHeight: '80vh', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, zIndex: 70, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{cuestionarioVista.titulo}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{(cuestionarioVista.preguntas ?? []).length} preguntas generadas con IA</div>
+              </div>
+              <button onClick={() => setCuestionarioVista(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', fontSize: 18, lineHeight: 1 }}>✕</button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px' }}>
+              {Object.entries(
+                ((cuestionarioVista.preguntas ?? []) as any[]).reduce((acc: Record<string, any[]>, p: any) => {
+                  const sec = p.seccion || 'General';
+                  if (!acc[sec]) acc[sec] = [];
+                  acc[sec].push(p);
+                  return acc;
+                }, {})
+              ).map(([seccion, preguntas]) => (
+                <div key={seccion} style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#3b82f6', marginBottom: 8 }}>{seccion}</div>
+                  {(preguntas as any[]).map((p: any, i: number) => (
+                    <div key={i} style={{ padding: '10px 14px', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8, marginBottom: 6 }}>
+                      <div style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.5, marginBottom: 4 }}>{i + 1}. {p.pregunta}</div>
+                      {p.contexto_empresa && <div style={{ fontSize: 11, color: 'var(--text-3)', fontStyle: 'italic' }}>{p.contexto_empresa}</div>}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Modals */}
       {showSesion    && <NuevaSesionModal onClose={() => setShowSesion(false)} onSave={addSesion} />}
