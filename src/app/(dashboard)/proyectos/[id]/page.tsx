@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft, Download, CheckCircle2, Loader2, FileText,
@@ -35,6 +35,7 @@ interface VoBo {
   responsableNombre: string;
   responsableEmail: string;
   estado: number; // 0=Pendiente,1=Aprobado,2=Rechazado,3=Comentado
+  nota: string | null;
   fechaSolicitud: string;
   fechaRespuesta: string | null;
   comentario: string | null;
@@ -64,8 +65,9 @@ export default function RequerimientoPage() {
   // VoBo state
   const [vobos, setVobos] = useState<VoBo[]>([]);
   const [voboModal, setVoboModal] = useState(false);
-  const [voboForm, setVoboForm] = useState({ area: '', nombre: '', email: '', miEmail: '' });
+  const [voboForm, setVoboForm] = useState({ area: '', nombre: '', email: '', nota: '', miEmail: '' });
   const [enviandoVobo, setEnviandoVobo] = useState(false);
+  const voboRef = useRef<HTMLDivElement>(null);
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -134,6 +136,7 @@ export default function RequerimientoPage() {
           area: voboForm.area,
           responsableNombre: voboForm.nombre,
           responsableEmail: voboForm.email,
+          nota: voboForm.nota.trim() || null,
           solicitanteEmail: voboForm.miEmail || null,
         }),
       });
@@ -148,13 +151,14 @@ export default function RequerimientoPage() {
         responsableNombre: voboForm.nombre,
         responsableEmail: r.responsableEmail,
         estado: 0,
+        nota: voboForm.nota.trim() || null,
         fechaSolicitud: new Date().toISOString(),
         fechaRespuesta: null,
         comentario: null,
       }));
       setVobos(prev => [nuevo, ...prev]);
       setVoboModal(false);
-      setVoboForm({ area: '', nombre: '', email: '', miEmail: '' });
+      setVoboForm({ area: '', nombre: '', email: '', nota: '', miEmail: '' });
     } finally {
       setEnviandoVobo(false);
     }
@@ -210,6 +214,27 @@ export default function RequerimientoPage() {
             Continuar chat
           </button>
           <button
+            onClick={() => {
+              setVoboModal(true);
+              voboRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-white/5"
+          >
+            <Send className="w-4 h-4" />
+            VoBo
+            {vobos.length > 0 && (
+              <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
+                vobos.every(v => v.estado === 1)
+                  ? 'bg-emerald-400/15 text-emerald-400'
+                  : vobos.some(v => v.estado === 2)
+                  ? 'bg-red-400/15 text-red-400'
+                  : 'bg-yellow-400/15 text-yellow-400'
+              }`}>
+                {vobos.filter(v => v.estado === 1).length}/{vobos.length}
+              </span>
+            )}
+          </button>
+          <button
             onClick={descargarHtml}
             disabled={descargandoHtml}
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-white/5 disabled:opacity-40"
@@ -228,6 +253,92 @@ export default function RequerimientoPage() {
             </button>
           )}
         </div>
+      </div>
+
+      {/* Panel VoBo */}
+      <div ref={voboRef} className="bg-white/5 rounded-xl border border-white/10">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+          <div>
+            <p className="text-xs text-slate-500 uppercase tracking-wide">VoBo — Revisión de áreas</p>
+            {vobos.length > 0 && (
+              <p className="text-xs text-slate-500 mt-0.5">
+                {vobos.filter(v => v.estado === 1).length}/{vobos.length} aprobados
+              </p>
+            )}
+          </div>
+          <button
+            onClick={() => setVoboModal(true)}
+            className="flex items-center gap-1.5 text-xs text-[#00614E] hover:text-[#00614E]/80 font-medium"
+          >
+            <Send className="w-3 h-3" />
+            Solicitar VoBo
+          </button>
+        </div>
+
+        {vobos.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-8 text-slate-500">
+            <AlertCircle className="w-7 h-7 opacity-30" />
+            <p className="text-xs">Sin solicitudes de VoBo aún</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-white/5">
+            {vobos.map(v => {
+              const est = VOBO_ESTADO[v.estado] ?? VOBO_ESTADO[0];
+              const enviado = new Date(v.fechaSolicitud);
+              const respondido = v.fechaRespuesta ? new Date(v.fechaRespuesta) : null;
+              const fmt = (d: Date) =>
+                d.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: '2-digit' }) +
+                ' ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+              const difMin = respondido
+                ? Math.round((respondido.getTime() - enviado.getTime()) / 60000)
+                : null;
+              const tiempoResp = difMin !== null
+                ? difMin < 60 ? `${difMin}m` : difMin < 1440
+                  ? `${Math.floor(difMin / 60)}h ${difMin % 60}m`
+                  : `${Math.floor(difMin / 1440)}d ${Math.floor((difMin % 1440) / 60)}h`
+                : null;
+              return (
+                <div key={v.id} className="px-4 py-3 flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-200 truncate">{v.area}</p>
+                    <p className="text-xs text-slate-500">{v.responsableNombre} · {v.responsableEmail}</p>
+                    {v.nota && (
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        <span className="text-slate-600">Sobre:</span> {v.nota}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
+                      <span className="text-xs text-slate-500">
+                        <span className="text-slate-600">Enviado</span> {fmt(enviado)}
+                      </span>
+                      {respondido && (
+                        <>
+                          <span className="text-slate-700">·</span>
+                          <span className="text-xs text-slate-500">
+                            <span className="text-slate-600">Respondió</span> {fmt(respondido)}
+                          </span>
+                          {tiempoResp && (
+                            <>
+                              <span className="text-slate-700">·</span>
+                              <span className="text-xs text-emerald-600 font-medium">{tiempoResp}</span>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    {v.comentario && (
+                      <p className="text-xs text-slate-400 mt-1 italic">"{v.comentario}"</p>
+                    )}
+                  </div>
+                  <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium shrink-0 ${est.cls}`}>
+                    {est.icon}
+                    {est.label}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Detalle del documento */}
@@ -283,86 +394,6 @@ export default function RequerimientoPage() {
           </div>
         )}
 
-        {/* Panel VoBo */}
-        <div className="bg-white/5 rounded-xl border border-white/10">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-            <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wide">VoBo — Revisión de áreas</p>
-              {vobos.length > 0 && (
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {vobos.filter(v => v.estado === 1).length}/{vobos.length} aprobados
-                </p>
-              )}
-            </div>
-            <button
-              onClick={() => setVoboModal(true)}
-              className="flex items-center gap-1.5 text-xs text-[#00614E] hover:text-[#00614E]/80 font-medium"
-            >
-              <Send className="w-3 h-3" />
-              Solicitar VoBo
-            </button>
-          </div>
-
-          {vobos.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-8 text-slate-500">
-              <AlertCircle className="w-7 h-7 opacity-30" />
-              <p className="text-xs">Sin solicitudes de VoBo aún</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-white/5">
-              {vobos.map(v => {
-                const est = VOBO_ESTADO[v.estado] ?? VOBO_ESTADO[0];
-                const enviado = new Date(v.fechaSolicitud);
-                const respondido = v.fechaRespuesta ? new Date(v.fechaRespuesta) : null;
-                const fmt = (d: Date) =>
-                  d.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: '2-digit' }) +
-                  ' ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-                const difMin = respondido
-                  ? Math.round((respondido.getTime() - enviado.getTime()) / 60000)
-                  : null;
-                const tiempoResp = difMin !== null
-                  ? difMin < 60 ? `${difMin}m` : difMin < 1440
-                    ? `${Math.floor(difMin / 60)}h ${difMin % 60}m`
-                    : `${Math.floor(difMin / 1440)}d ${Math.floor((difMin % 1440) / 60)}h`
-                  : null;
-                return (
-                  <div key={v.id} className="px-4 py-3 flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-200 truncate">{v.area}</p>
-                      <p className="text-xs text-slate-500">{v.responsableNombre} · {v.responsableEmail}</p>
-                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
-                        <span className="text-xs text-slate-500">
-                          <span className="text-slate-600">Enviado</span> {fmt(enviado)}
-                        </span>
-                        {respondido && (
-                          <>
-                            <span className="text-slate-700">·</span>
-                            <span className="text-xs text-slate-500">
-                              <span className="text-slate-600">Respondió</span> {fmt(respondido)}
-                            </span>
-                            {tiempoResp && (
-                              <>
-                                <span className="text-slate-700">·</span>
-                                <span className="text-xs text-emerald-600 font-medium">{tiempoResp}</span>
-                              </>
-                            )}
-                          </>
-                        )}
-                      </div>
-                      {v.comentario && (
-                        <p className="text-xs text-slate-400 mt-1 italic">"{v.comentario}"</p>
-                      )}
-                    </div>
-                    <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium shrink-0 ${est.cls}`}>
-                      {est.icon}
-                      {est.label}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Modal Solicitar VoBo */}
@@ -396,6 +427,16 @@ export default function RequerimientoPage() {
                   />
                 </div>
               ))}
+              <div>
+                <label className="text-xs text-slate-400 block mb-1">Nota — ¿Sobre qué se pide aprobación? (opcional)</label>
+                <textarea
+                  value={voboForm.nota}
+                  onChange={e => setVoboForm(prev => ({ ...prev, nota: e.target.value }))}
+                  placeholder="Ej: Aprobación del módulo de facturación únicamente"
+                  rows={2}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#00614E]/40 resize-none"
+                />
+              </div>
             </div>
             <div className="flex gap-2 mt-6">
               <button

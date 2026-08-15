@@ -8,6 +8,7 @@ interface VoBoDetalle {
   nombreRequerimiento: string;
   area: string;
   responsableNombre: string;
+  nota: string | null;
   estado: number; // 0=Pendiente,1=Aprobado,2=Rechazado,3=Comentado
   fechaSolicitud: string;
   // Documento completo (campos del Requerimiento)
@@ -160,12 +161,13 @@ export default function VoBoPage() {
 
                 {/* Metadatos */}
                 <div className="bg-slate-50 rounded-xl border border-slate-200 divide-y divide-slate-200 mb-6">
-                  {[
+                  {([
                     ['Folio', d.folio],
                     ['Proyecto', d.nombreRequerimiento],
                     ['Área solicitante', d.area],
                     ['Fecha de solicitud', fecha],
-                  ].map(([label, value]) => (
+                    ...(d.nota ? [['Sobre', d.nota]] : []),
+                  ] as [string, string][]).map(([label, value]) => (
                     <div key={label} className="flex px-4 py-2.5 gap-3">
                       <span className="text-xs text-slate-400 w-32 pt-0.5 shrink-0">{label}</span>
                       <span className="text-sm font-medium text-slate-800">{value}</span>
