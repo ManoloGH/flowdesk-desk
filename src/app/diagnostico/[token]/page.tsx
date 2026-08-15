@@ -54,7 +54,7 @@ export default function EntrevistaPublica() {
     try {
       const result = await apiFetch(`/mentoria/publico/sesion/${token}/chat`, {
         method: 'POST',
-        body: JSON.stringify({ mensaje: 'Hola, estoy listo para comenzar la entrevista.' }),
+        body: JSON.stringify({ mensaje: 'Hola, estoy listo para comenzar el cuestionario.' }),
       });
       setMensajes([{ role: 'assistant', content: result.text }]);
       if (result.completada) setCompletada(true);
@@ -122,7 +122,7 @@ export default function EntrevistaPublica() {
           </div>
 
           <div style={{ fontSize: 22, fontWeight: 800, color: '#f3f4f6', marginBottom: 10, letterSpacing: '-0.02em' }}>
-            ¡Entrevista completada!
+            ¡Cuestionario completado!
           </div>
           <div style={{ fontSize: 14, color: '#9ca3af', lineHeight: 1.7, marginBottom: 28 }}>
             Tu información ha quedado guardada en FlowDesk y el consultor de MentorIA
@@ -179,7 +179,7 @@ export default function EntrevistaPublica() {
               onClick={iniciarEntrevista}
               style={{ padding: '12px 28px', background: '#6c4de6', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
             >
-              Comenzar entrevista
+              Comenzar cuestionario
             </button>
           </div>
         ) : (

@@ -557,7 +557,7 @@ export default function ClienteWorkspace() {
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--line)', marginTop: 16 }}>
           {([
-            { key: 'sesiones_cuestionarios', label: '🎙️ Sesiones y cuestionarios' },
+            { key: 'sesiones_cuestionarios', label: '🎙️ Entrevistas y cuestionarios' },
             { key: 'cubo',                   label: '🎯 Cubo de información' },
             { key: 'entregables',            label: '📦 Entregables' },
           ] as const).map(t => (
@@ -593,12 +593,12 @@ export default function ClienteWorkspace() {
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Sesiones de diagnóstico</div>
-                <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{sesionesDiag.length} sesión{sesionesDiag.length !== 1 ? 'es' : ''} registrada{sesionesDiag.length !== 1 ? 's' : ''}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Entrevistas de diagnóstico</div>
+                <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{sesionesDiag.length} entrevista{sesionesDiag.length !== 1 ? 's' : ''} registrada{sesionesDiag.length !== 1 ? 's' : ''}</div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={() => setShowCuestionarioGen(true)} style={{ ...btnGhost, fontSize: 12 }}>📋 Generar cuestionario</button>
-                <button onClick={() => setShowPicker(true)} style={btnPrimary}><Plus size={12} /> Iniciar sesión</button>
+                <button onClick={() => setShowPicker(true)} style={btnPrimary}><Plus size={12} /> Nueva entrevista</button>
               </div>
             </div>
 
@@ -610,7 +610,7 @@ export default function ClienteWorkspace() {
                   const cuestionarios = s.cuestionarios_generados ?? [];
                   const tipoIcon = TIPOS_SESION_DIAG.find(t => t.key === s.tipo)?.icon ?? '🎙️';
                   const isEditingThis = editandoSesionId === s.id;
-                  const NEXT_LABEL: Record<string, string> = { dg: '🏛️ Sugerir sesiones de directores', director: '🏢 Sugerir sesiones de gerentes', gerente: '📋 Generar cuestionario', operador: '📋 Generar cuestionario' };
+                  const NEXT_LABEL: Record<string, string> = { dg: '🏛️ Sugerir entrevistas de directores', director: '🏢 Sugerir entrevistas de gerentes', gerente: '📋 Generar cuestionario', operador: '📋 Generar cuestionario' };
                   const nextBtnLabel = NEXT_LABEL[s.tipo as string];
                   const isSuggestionBtn = s.tipo === 'dg' || s.tipo === 'director';
                   return (
@@ -645,7 +645,7 @@ export default function ClienteWorkspace() {
                             </span>
                             {s.completada && (
                               <span style={{ fontSize: 10, fontWeight: 700, color: '#22c55e', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 99, padding: '1px 7px', flexShrink: 0 }}>
-                                ✓ Entrevista completada
+                                ✓ Cuestionario completado
                               </span>
                             )}
                           </div>
@@ -690,7 +690,7 @@ export default function ClienteWorkspace() {
                                 disabled={tokenGenerando === s.id}
                                 style={{ fontSize: 11, padding: '5px 10px', background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 6, cursor: 'pointer', fontWeight: 600, opacity: tokenGenerando === s.id ? 0.6 : 1 }}
                               >
-                                {tokenGenerando === s.id ? '⏳ Generando…' : '🔗 Enviar entrevista'}
+                                {tokenGenerando === s.id ? '⏳ Generando…' : '📋 Enviar cuestionario'}
                               </button>
                             )
                           )}
@@ -741,10 +741,10 @@ export default function ClienteWorkspace() {
             {sesionesDiag.length === 0 && legacyChatLen === 0 && (
               <div style={{ textAlign: 'center', padding: '48px 32px', color: 'var(--text-3)', fontSize: 13 }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🎙️</div>
-                <div style={{ fontWeight: 600, marginBottom: 6 }}>Sin sesiones registradas</div>
-                <div style={{ marginBottom: 20, fontSize: 12 }}>Inicia con la sesión del Director General y avanza área por área.</div>
+                <div style={{ fontWeight: 600, marginBottom: 6 }}>Sin entrevistas registradas</div>
+                <div style={{ marginBottom: 20, fontSize: 12 }}>Inicia con la entrevista del Director General y avanza área por área.</div>
                 <button onClick={() => { setPickerForm({ tipo: 'dg', interlocutor: '', cargo: 'Director General', area: '' }); setShowPicker(true); }} style={btnPrimary}>
-                  <Plus size={12} /> Iniciar primera sesión
+                  <Plus size={12} /> Primera entrevista
                 </button>
               </div>
             )}
@@ -798,8 +798,8 @@ export default function ClienteWorkspace() {
         <>
           <div onClick={() => setShowPicker(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 60 }} />
           <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 500, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, zIndex: 70, padding: '28px 32px', boxShadow: '0 40px 80px rgba(0,0,0,0.5)' }}>
-            <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', marginBottom: 6, letterSpacing: '-0.02em' }}>¿Qué sesión vas a iniciar?</div>
-            <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 20 }}>Organiza y genera cuestionarios personalizados desde cada sesión.</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', marginBottom: 6, letterSpacing: '-0.02em' }}>¿Qué entrevista vas a iniciar?</div>
+            <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 20 }}>Selecciona el tipo y la persona con quien tienes la entrevista.</div>
 
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-2)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Tipo</div>
@@ -819,7 +819,7 @@ export default function ClienteWorkspace() {
             <div style={{ marginBottom: 20 }}><label style={labelSt}>Área</label><input value={pickerForm.area} onChange={e => setPickerForm(p => ({ ...p, area: e.target.value }))} placeholder="Operaciones, Comercial, Administración…" style={{ ...inputSt, width: '100%' }} /></div>
 
             <button onClick={crearYEntrarSesion} disabled={!pickerForm.interlocutor.trim() || creandoSesion} style={{ ...btnPrimary, width: '100%', justifyContent: 'center', fontSize: 14, padding: '11px', opacity: !pickerForm.interlocutor.trim() ? 0.5 : 1 }}>
-              {creandoSesion ? 'Creando…' : '🎙️ Iniciar sesión'}
+              {creandoSesion ? 'Creando…' : '🎙️ Iniciar entrevista'}
             </button>
           </div>
         </>
@@ -907,12 +907,12 @@ export default function ClienteWorkspace() {
         <>
           <div onClick={() => { if (!enviandoEntrevista) { setShowEnvioModal(null); setEnvioResultado(null); } }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 60 }} />
           <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 460, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, zIndex: 70, padding: '28px 32px', boxShadow: '0 40px 80px rgba(0,0,0,0.5)' }}>
-            <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)', marginBottom: 4, letterSpacing: '-0.02em' }}>🔗 Enviar entrevista</div>
-            <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 20 }}>Elige cómo quieres hacer llegar el enlace al entrevistado.</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)', marginBottom: 4, letterSpacing: '-0.02em' }}>📋 Enviar cuestionario</div>
+            <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 20 }}>Elige cómo quieres hacer llegar el cuestionario al entrevistado.</div>
 
             {/* Enlace — siempre visible */}
             <div style={{ background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8, padding: '10px 12px', marginBottom: 20 }}>
-              <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Enlace de entrevista</div>
+              <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Enlace del cuestionario</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ flex: 1, fontSize: 11, color: 'var(--text-2)', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{showEnvioModal.url}</div>
                 <button
@@ -981,7 +981,7 @@ export default function ClienteWorkspace() {
           <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 600, maxHeight: '80vh', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, zIndex: 70, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 40px 80px rgba(0,0,0,0.5)' }}>
             <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>Sesiones siguientes sugeridas</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>Entrevistas siguientes sugeridas</div>
                 <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>Generadas a partir del transcript y el organigrama. Selecciona cuáles crear.</div>
               </div>
               <button onClick={() => setShowSugerencias(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', fontSize: 18, lineHeight: 1 }}>✕</button>
@@ -990,7 +990,7 @@ export default function ClienteWorkspace() {
               {sugerencias.length === 0 ? (
                 <div style={{ textAlign: 'center', color: 'var(--text-3)', fontSize: 13, padding: '32px 0' }}>
                   No se pudieron identificar personas específicas.<br />
-                  <span style={{ fontSize: 11 }}>Registra más detalle en la sesión e intenta de nuevo.</span>
+                  <span style={{ fontSize: 11 }}>Registra más detalle en la entrevista e intenta de nuevo.</span>
                 </div>
               ) : sugerencias.map((sug: any, i: number) => {
                 const tipoIcon = TIPOS_SESION_DIAG.find(t => t.key === sug.tipo)?.icon ?? '👤';
@@ -1011,7 +1011,7 @@ export default function ClienteWorkspace() {
                         disabled={creandoSugerida !== null}
                         style={{ fontSize: 11, padding: '6px 14px', background: '#6c4de6', color: 'white', border: 'none', borderRadius: 7, cursor: 'pointer', fontWeight: 600, flexShrink: 0, opacity: creandoSugerida !== null ? 0.6 : 1 }}
                       >
-                        + Crear sesión
+                        + Crear entrevista
                       </button>
                     )}
                   </div>
@@ -1021,7 +1021,7 @@ export default function ClienteWorkspace() {
             <div style={{ padding: '14px 24px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
               <button onClick={() => setShowSugerencias(false)} style={{ ...btnGhost, fontSize: 13 }}>Cerrar</button>
               <button onClick={() => { setShowPicker(true); setShowSugerencias(false); }} style={{ ...btnPrimary, fontSize: 13 }}>
-                <Plus size={12} /> Crear sesión personalizada
+                <Plus size={12} /> Crear entrevista personalizada
               </button>
             </div>
           </div>
