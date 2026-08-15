@@ -263,24 +263,33 @@ export default function AgentePage() {
             <Field label="Nombre del agente">
               <input value={cfg.nombre} onChange={e => setField('nombre', e.target.value)} placeholder="Leo" className={INPUT} />
             </Field>
-            <Field label="¿A qué se dedica la empresa?">
+            <Field label="¿A qué se dedica la empresa?" hint="Descripción breve del negocio. El agente la usa para contextualizarse con el prospecto.">
               <textarea rows={2} value={cfg.actividad} onChange={e => setField('actividad', e.target.value)} placeholder="MentorIA Systems — Implementamos la metodología IA First…" className={INPUT} />
             </Field>
-            <Field label="Propuesta de valor">
-              <textarea rows={3} value={cfg.propuesta_valor} onChange={e => setField('propuesta_valor', e.target.value)} placeholder="Somos expertos en simplificar procesos…" className={INPUT} />
+            <Field label="Propuesta de valor de la empresa" hint="¿Qué diferencia a esta empresa de la competencia? El agente la menciona al presentarse.">
+              <textarea rows={3} value={cfg.propuesta_valor} onChange={e => setField('propuesta_valor', e.target.value)} placeholder="Somos expertos en simplificar procesos usando IA sin reemplazar al equipo humano…" className={INPUT} />
             </Field>
-          </ConfigCard>
-
-          {/* Misión y Enfoque */}
-          <ConfigCard icon={<Info className="w-3.5 h-3.5 text-gray-400" />} title="Misión y Enfoque">
-            <Field label="Misión del agente" hint="¿Cuál es el objetivo principal? El agente lo tiene presente en toda la conversación.">
+            <Field label="Misión del agente" hint="Objetivo principal del agente en cada conversación.">
               <textarea rows={2} value={cfg.mision} onChange={e => setField('mision', e.target.value)} placeholder="Convertir leads de WhatsApp en llamadas de diagnóstico con prospectos calificados." className={INPUT} />
             </Field>
             <Field label="En qué se debe enfocar" hint="Restricciones y prioridades. El agente evitará temas fuera de esta lista.">
               <textarea rows={3} value={cfg.enfoque} onChange={e => setField('enfoque', e.target.value)} placeholder={"- Calificar si la empresa tiene +10 años y +200 empleados\n- No hablar de precios ni tecnologías específicas\n- No salirse del guión del journey"} className={INPUT} />
             </Field>
-            <Field label="Tarea para próximos días (sin reunión agendada)" hint="Si el prospecto no agendó, ¿qué debe hacer el agente los días siguientes para revivir la conversación?">
-              <textarea rows={4} value={cfg.tarea_seguimiento} onChange={e => setField('tarea_seguimiento', e.target.value)} placeholder={"Día 3: Enviar mensaje recordando el diagnóstico gratuito.\nDía 7: Compartir un caso de éxito relevante a su industria.\nDía 14: Preguntar si hubo algún cambio en sus prioridades."} className={INPUT} />
+          </ConfigCard>
+
+          {/* Tareas de reactivación */}
+          <ConfigCard icon={<Info className="w-3.5 h-3.5 text-gray-400" />} title="Tareas de reactivación">
+            <p className="text-[11px] text-gray-500 mb-3 leading-relaxed">
+              Define qué mensajes debe enviar el agente automáticamente cuando el prospecto no agenda — uno por día clave. El sistema los programa al cerrar la conversación sin cita.
+            </p>
+            <Field label="Secuencia de seguimiento" hint="Formato: Día N: mensaje. Una tarea por línea.">
+              <textarea
+                rows={6}
+                value={cfg.tarea_seguimiento}
+                onChange={e => setField('tarea_seguimiento', e.target.value)}
+                placeholder={"Día 3: Hola [nombre], ¿pudiste pensar en el diagnóstico gratuito que te ofrecí? Quedo al pendiente 😊\nDía 7: Te comparto un caso de éxito de una empresa similar a [empresa] que redujo tiempos operativos 40% → [enlace]\nDía 14: ¿Hubo algún cambio en tus prioridades? Podemos agendar 15 min cuando gustes."}
+                className={INPUT}
+              />
             </Field>
           </ConfigCard>
 

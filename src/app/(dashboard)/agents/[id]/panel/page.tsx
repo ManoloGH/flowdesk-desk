@@ -2127,7 +2127,7 @@ const JOURNEY_STAGES = [
 
 function SectionJourney({ agentId, agent, setAgent }: { agentId: string; agent: AgentSlot; setAgent: (a: AgentSlot) => void }) {
   const cfg = agent.agent_config ?? {};
-  const [tab, setTab] = useState<'identidad' | 'journey' | 'criterios' | 'crm'>('identidad');
+  const [tab, setTab] = useState<'identidad' | 'journey' | 'criterios' | 'crm' | 'tareas'>('identidad');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [editingStages, setEditingStages] = useState(false);
@@ -2155,12 +2155,23 @@ function SectionJourney({ agentId, agent, setAgent }: { agentId: string; agent: 
     instance_name: (cfg.instance_name as string) ?? '',
     cal_com_url: (cfg.cal_com_url as string) ?? '',
     pitch: (cfg.pitch as string) ?? '',
+    propuesta_valor: (cfg.propuesta_valor as string) ?? '',
+    mision: (cfg.mision as string) ?? '',
+    enfoque: (cfg.enfoque as string) ?? '',
   });
   const [stages, setStages] = useState<JourneyStage[]>(parseStages);
   const [nodes, setNodes] = useState<JNode[]>(parseNodes);
   const [goodCriteria, setGoodCriteria] = useState<string>((cfg.good_lead_criteria as string) ?? '');
   const [badCriteria, setBadCriteria] = useState<string>((cfg.bad_lead_criteria as string) ?? '');
   const [crmGeneral, setCrmGeneral] = useState<string>((cfg.crm_instructions as string) ?? '');
+
+  interface ReactivationTask { id: string; name: string; condition: string; delay_hours: number; message: string; enabled: boolean; }
+  const parseTasks = (): ReactivationTask[] => {
+    const raw = cfg.reactivation_tasks;
+    if (Array.isArray(raw) && raw.length > 0) return raw as ReactivationTask[];
+    return [];
+  };
+  const [tasks, setTasks] = useState<ReactivationTask[]>(parseTasks);
 
   const save = async (extra?: Record<string, unknown>) => {
     setSaving(true);
@@ -2172,6 +2183,7 @@ function SectionJourney({ agentId, agent, setAgent }: { agentId: string; agent: 
         good_lead_criteria: goodCriteria,
         bad_lead_criteria: badCriteria,
         crm_instructions: crmGeneral,
+        reactivation_tasks: tasks,
         ...extra,
       };
       await api.patch(`/agent-panel/${agentId}/config`, payload);
@@ -2260,10 +2272,10 @@ function SectionJourney({ agentId, agent, setAgent }: { agentId: string; agent: 
       </div>
 
       {/* ── Tabs ─────────────────────────────────────────────────────── */}
-      <div className="flex gap-1 border-b border-gray-800 mb-6">
-        {(['identidad', 'journey', 'criterios', 'crm'] as const).map(t => (
+      <div className="flex gap-1 border-b border-gray-800 mb-6 flex-wrap">
+        {(['identidad', 'journey', 'criterios', 'crm', 'tareas'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${tab === t ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-400'}`}>
-            {t === 'identidad' ? 'Identidad del agente' : t === 'journey' ? 'Journey completo' : t === 'criterios' ? 'Criterios de calificación' : 'Movimiento en CRM'}
+            {t === 'identidad' ? 'Identidad del agente' : t === 'journey' ? 'Journey completo' : t === 'criterios' ? 'Criterios de calificación' : t === 'crm' ? 'Movimiento en CRM' : 'Tareas automáticas'}
           </button>
         ))}
       </div>
@@ -2271,20 +2283,50 @@ function SectionJourney({ agentId, agent, setAgent }: { agentId: string; agent: 
       {/* ── Tab: Identidad del agente ─────────────────────────────────── */}
       {tab === 'identidad' && (
         <div className="max-w-lg space-y-5">
-          <div>
-            <label className="text-xs text-gray-400 mb-1.5 block">Instancia Evolution (WhatsApp)</label>
-            <input value={form.instance_name} onChange={e => setForm(p => ({ ...p, instance_name: e.target.value }))} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="Ej: Mentoriacomercial" />
-            <p className="text-xs text-gray-600 mt-1">El nombre exacto de la instancia en Evolution API</p>
+          {/* ── Conexión WhatsApp ── */}
+          <div className="border border-gray-800 rounded-xl p-4 space-y-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-600">Conexión WhatsApp</p>
+            <div>
+              <label className="text-xs text-gray-400 mb-1.5 block">Instancia Evolution</label>
+              <input value={form.instance_name} onChange={e => setForm(p => ({ ...p, instance_name: e.target.value }))} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="Ej: Mentoriacomercial" />
+              <p className="text-xs text-gray-600 mt-1">El nombre exacto de la instancia en Evolution API</p>
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 mb-1.5 block">URL de agenda (Cal.com)</label>
+              <input value={form.cal_com_url} onChange={e => setForm(p => ({ ...p, cal_com_url: e.target.value }))} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="https://cal.com/tu-usuario/tu-evento" />
+            </div>
           </div>
-          <div>
-            <label className="text-xs text-gray-400 mb-1.5 block">URL de agenda (Cal.com)</label>
-            <input value={form.cal_com_url} onChange={e => setForm(p => ({ ...p, cal_com_url: e.target.value }))} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="https://cal.com/tu-usuario/tu-evento" />
+
+          {/* ── Identidad del negocio ── */}
+          <div className="border border-gray-800 rounded-xl p-4 space-y-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-600">Identidad del negocio</p>
+            <div>
+              <label className="text-xs text-gray-400 mb-1.5 block">Pitch del negocio</label>
+              <textarea value={form.pitch} onChange={e => setForm(p => ({ ...p, pitch: e.target.value }))} rows={3} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white resize-none focus:outline-none focus:border-indigo-500" placeholder="Somos una empresa de tecnología expertos en..." />
+              <p className="text-xs text-gray-600 mt-1">Presentación corta del negocio para la Etapa 1</p>
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 mb-1.5 block">Propuesta de valor</label>
+              <textarea value={form.propuesta_valor} onChange={e => setForm(p => ({ ...p, propuesta_valor: e.target.value }))} rows={3} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white resize-none focus:outline-none focus:border-indigo-500" placeholder="¿Por qué somos diferentes? ¿Qué resultados concretos entregamos?" />
+              <p className="text-xs text-gray-600 mt-1">El agente usa esto para defender el valor y rebatir objeciones</p>
+            </div>
           </div>
-          <div>
-            <label className="text-xs text-gray-400 mb-1.5 block">Pitch del negocio</label>
-            <textarea value={form.pitch} onChange={e => setForm(p => ({ ...p, pitch: e.target.value }))} rows={4} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white resize-none focus:outline-none focus:border-indigo-500" placeholder="Somos una empresa de tecnología expertos en..." />
-            <p className="text-xs text-gray-600 mt-1">El agente usa este texto para presentarse en la Etapa 1</p>
+
+          {/* ── Misión y enfoque del agente ── */}
+          <div className="border border-gray-800 rounded-xl p-4 space-y-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-600">Misión y enfoque del agente</p>
+            <div>
+              <label className="text-xs text-gray-400 mb-1.5 block">Misión del agente</label>
+              <textarea value={form.mision} onChange={e => setForm(p => ({ ...p, mision: e.target.value }))} rows={3} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white resize-none focus:outline-none focus:border-indigo-500" placeholder="Mi misión es identificar empresas que se beneficiarían de automatización y agendar una cita con el equipo de MentorIA..." />
+              <p className="text-xs text-gray-600 mt-1">Propósito central del agente — guía su comportamiento general</p>
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 mb-1.5 block">En qué se debe enfocar</label>
+              <textarea value={form.enfoque} onChange={e => setForm(p => ({ ...p, enfoque: e.target.value }))} rows={3} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white resize-none focus:outline-none focus:border-indigo-500" placeholder="- Empresas manufactureras o de logística con +100 empleados&#10;- Negocios con procesos repetitivos sin automatizar&#10;- Decisores con dolor operativo claro..." />
+              <p className="text-xs text-gray-600 mt-1">Define el tipo de prospecto ideal y en qué casos priorizar esfuerzo</p>
+            </div>
           </div>
+
           <SaveBtn />
         </div>
       )}
@@ -2377,6 +2419,105 @@ function SectionJourney({ agentId, agent, setAgent }: { agentId: string; agent: 
           </div>
 
           <SaveBtn />
+        </div>
+      )}
+
+      {/* ── Tab: Tareas automáticas ──────────────────────────────────── */}
+      {tab === 'tareas' && (
+        <div className="max-w-2xl space-y-4">
+          <div className="flex items-start justify-between mb-2">
+            <div>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Programa tareas automáticas para reactivar conversaciones que quedaron inactivas.
+                El agente ejecutará cada tarea cuando se cumpla la condición definida.
+              </p>
+            </div>
+            <SaveBtn />
+          </div>
+
+          {tasks.length === 0 && (
+            <div className="border border-dashed border-gray-800 rounded-xl p-6 text-center">
+              <p className="text-sm text-gray-600 mb-1">Sin tareas programadas.</p>
+              <p className="text-xs text-gray-700">Agrega una tarea para reactivar leads que no han respondido.</p>
+            </div>
+          )}
+
+          {tasks.map((task, i) => (
+            <div key={task.id} className={`border rounded-xl overflow-hidden ${task.enabled ? 'border-indigo-500/20' : 'border-gray-800'}`}>
+              <div className={`flex items-center gap-3 px-4 py-2.5 ${task.enabled ? 'bg-indigo-500/5' : 'bg-gray-900/50'}`}>
+                <button
+                  onClick={() => setTasks(prev => prev.map((t, idx) => idx === i ? { ...t, enabled: !t.enabled } : t))}
+                  className={`w-8 h-4 rounded-full transition-colors relative shrink-0 ${task.enabled ? 'bg-indigo-500' : 'bg-gray-700'}`}
+                >
+                  <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform ${task.enabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                </button>
+                <input
+                  value={task.name}
+                  onChange={e => setTasks(prev => prev.map((t, idx) => idx === i ? { ...t, name: e.target.value } : t))}
+                  className="flex-1 bg-transparent text-sm font-medium text-white placeholder-gray-600 focus:outline-none"
+                  placeholder="Nombre de la tarea (ej: Seguimiento 24h)"
+                />
+                <button
+                  onClick={() => setTasks(prev => prev.filter((_, idx) => idx !== i))}
+                  className="text-gray-700 hover:text-red-400 transition-colors shrink-0"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+              <div className="px-4 pb-4 pt-3 bg-gray-950/60 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] text-gray-500 mb-1 block">Condición de activación</label>
+                    <input
+                      value={task.condition}
+                      onChange={e => setTasks(prev => prev.map((t, idx) => idx === i ? { ...t, condition: e.target.value } : t))}
+                      className="w-full bg-gray-900 border border-gray-800 rounded-lg px-2.5 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                      placeholder="Sin respuesta del lead"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-gray-500 mb-1 block">Esperar (horas)</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={task.delay_hours}
+                      onChange={e => setTasks(prev => prev.map((t, idx) => idx === i ? { ...t, delay_hours: Number(e.target.value) } : t))}
+                      className="w-full bg-gray-900 border border-gray-800 rounded-lg px-2.5 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                      placeholder="24"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[11px] text-gray-500 mb-1 block">Mensaje de reactivación</label>
+                  <textarea
+                    value={task.message}
+                    onChange={e => setTasks(prev => prev.map((t, idx) => idx === i ? { ...t, message: e.target.value } : t))}
+                    rows={2}
+                    className="w-full bg-gray-900 border border-gray-800 rounded-lg px-2.5 py-2 text-sm text-white resize-none focus:outline-none focus:border-indigo-500"
+                    placeholder="¡Hola! Solo quería saber si tuviste oportunidad de revisar lo que charlamos. ¿Pudiste ver el diagnóstico que te mandé?"
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+
+          <button
+            onClick={() => setTasks(prev => [...prev, {
+              id: `task_${Date.now()}`,
+              name: '',
+              condition: 'Sin respuesta del lead',
+              delay_hours: 24,
+              message: '',
+              enabled: true,
+            }])}
+            className="flex items-center gap-2 px-4 py-2.5 border border-dashed border-gray-700 rounded-xl text-sm text-gray-500 hover:text-gray-300 hover:border-gray-600 transition-colors w-full justify-center"
+          >
+            <Plus size={14} /> Agregar tarea automática
+          </button>
+
+          <div className="mt-2">
+            <SaveBtn />
+          </div>
         </div>
       )}
     </div>
