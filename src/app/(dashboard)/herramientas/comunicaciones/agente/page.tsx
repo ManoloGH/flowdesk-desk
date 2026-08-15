@@ -47,6 +47,7 @@ interface AgentConfig {
   enfoque: string;
   tarea_seguimiento: string;
   evolution_instance: string;
+  escalation_phone: string;
   criterios_buen_lead: string;
   criterios_mal_lead: string;
   cal_booking_url: string;
@@ -109,6 +110,7 @@ const DEFAULTS: AgentConfig = {
   enfoque: '',
   tarea_seguimiento: '',
   evolution_instance: '',
+  escalation_phone: '',
   criterios_buen_lead: '',
   criterios_mal_lead: '',
   cal_booking_url: '',
@@ -143,6 +145,7 @@ export default function AgentePage() {
           enfoque: data.enfoque ?? '',
           tarea_seguimiento: data.tarea_seguimiento ?? '',
           evolution_instance: data.evolution_instance ?? '',
+          escalation_phone: data.escalation_phone ?? '',
           criterios_buen_lead: data.criterios_buen_lead ?? '',
           criterios_mal_lead: data.criterios_mal_lead ?? '',
           cal_booking_url: data.cal_booking_url ?? '',
@@ -177,6 +180,7 @@ export default function AgentePage() {
           enfoque: cfg.enfoque,
           tarea_seguimiento: cfg.tarea_seguimiento,
           evolution_instance: cfg.evolution_instance,
+          escalation_phone: cfg.escalation_phone,
           criterios_buen_lead: cfg.criterios_buen_lead,
           criterios_mal_lead: cfg.criterios_mal_lead,
           cal_booking_url: cfg.cal_booking_url,
@@ -254,7 +258,10 @@ export default function AgentePage() {
               Configura primero la conexión antes de activar el agente.
             </p>
             <Field label="Instancia Evolution API" hint="Nombre exacto que pusiste al crear la instancia para este número.">
-              <input value={cfg.evolution_instance} onChange={e => setField('evolution_instance', e.target.value)} placeholder="Ej: agente-ventas-mentoria" className={INPUT} />
+              <input value={cfg.evolution_instance} onChange={e => setField('evolution_instance', e.target.value)} placeholder="Ej: Mentoriacomercial" className={INPUT} />
+            </Field>
+            <Field label="Tu número de WhatsApp (escalaciones)" hint="Cuando el agente escale un lead, te manda un WA de aviso a este número. Incluye código de país sin + (ej: 5214421234567).">
+              <input value={cfg.escalation_phone} onChange={e => setField('escalation_phone', e.target.value)} placeholder="5214421234567" className={INPUT} type="tel" />
             </Field>
           </ConfigCard>
 
