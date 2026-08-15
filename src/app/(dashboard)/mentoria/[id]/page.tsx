@@ -604,8 +604,15 @@ export default function ClienteWorkspace() {
                               </button>
                             </div>
                           )}
-                          <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
-                            {intercambios} intercambio{intercambios !== 1 ? 's' : ''} · {s.area || s.cargo || '—'} · {s.fecha}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2, flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                              {intercambios} intercambio{intercambios !== 1 ? 's' : ''} · {s.area || s.cargo || '—'} · {s.fecha}
+                            </span>
+                            {s.completada && (
+                              <span style={{ fontSize: 10, fontWeight: 700, color: '#22c55e', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 99, padding: '1px 7px', flexShrink: 0 }}>
+                                ✓ Entrevista completada
+                              </span>
+                            )}
                           </div>
                         </div>
                         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
