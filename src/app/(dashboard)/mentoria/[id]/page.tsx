@@ -582,6 +582,14 @@ export default function ClienteWorkspace() {
         {tab === 'sesiones_cuestionarios' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
+            {/* Generating questionnaire banner */}
+            {generandoCuestionario && (
+              <div style={{ padding: '10px 16px', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: '#3b82f6', fontWeight: 600 }}>
+                <span>⏳</span>
+                Generando cuestionario con IA… esto toma ~15 segundos
+              </div>
+            )}
+
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
