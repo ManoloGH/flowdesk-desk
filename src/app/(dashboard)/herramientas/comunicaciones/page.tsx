@@ -2,15 +2,15 @@
 import { useEffect, useState } from 'react';
 import {
   MessageSquare, Phone, Globe, CheckCircle2, XCircle, AlertCircle,
-  Bot, User, Inbox, PhoneForwarded, Save, ExternalLink, ChevronDown,
+  Bot, User, PhoneForwarded, Save, ExternalLink, ChevronDown,
 } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 
 // ─── tipos ────────────────────────────────────────────────────────────────────
 
-type ChannelStatus = 'connected' | 'disconnected' | 'unconfigured';
-type HumanMode     = 'bandeja' | 'forward';
+type ChannelStatus  = 'connected' | 'disconnected' | 'unconfigured';
+type RoutingType    = 'agent' | 'user' | 'forward' | null;
 
 interface Channel {
   id: string;
@@ -19,9 +19,9 @@ interface Channel {
   status: ChannelStatus;
   number: string | null;
   configHref: string;
-  routing_type?: 'agent' | 'human' | null;
+  routing_type?: RoutingType;
   routing_agent_id?: string | null;
-  routing_human_mode?: HumanMode | null;
+  routing_user_id?: string | null;
   routing_forward_number?: string | null;
 }
 
@@ -30,10 +30,16 @@ interface Agent {
   name: string;
 }
 
+interface TeamMember {
+  id: string;
+  name: string;
+  role?: string;
+}
+
 interface RoutingPayload {
-  routing_type: 'agent' | 'human' | null;
+  routing_type: RoutingType;
   routing_agent_id: string | null;
-  routing_human_mode: HumanMode | null;
+  routing_user_id: string | null;
   routing_forward_number: string | null;
 }
 
@@ -74,31 +80,32 @@ function StatusBadge({ status }: { status: ChannelStatus }) {
 interface ChannelCardProps {
   channel: Channel;
   agents: Agent[];
+  members: TeamMember[];
   onSave: (id: string, payload: RoutingPayload) => Promise<void>;
 }
 
-function ChannelCard({ channel, agents, onSave }: ChannelCardProps) {
-  const [routingType,    setRoutingType]    = useState<'agent' | 'human' | null>(channel.routing_type ?? null);
+function ChannelCard({ channel, agents, members, onSave }: ChannelCardProps) {
+  const [routingType,    setRoutingType]    = useState<RoutingType>(channel.routing_type ?? null);
   const [agentId,        setAgentId]        = useState<string | null>(channel.routing_agent_id ?? null);
-  const [humanMode,      setHumanMode]      = useState<HumanMode>(channel.routing_human_mode ?? 'bandeja');
+  const [userId,         setUserId]         = useState<string | null>(channel.routing_user_id ?? null);
   const [forwardNumber,  setForwardNumber]  = useState<string>(channel.routing_forward_number ?? '');
   const [saving, setSaving] = useState(false);
   const [saved,  setSaved]  = useState(false);
 
   const isDirty =
-    routingType     !== (channel.routing_type         ?? null)     ||
-    agentId         !== (channel.routing_agent_id     ?? null)     ||
-    humanMode       !== (channel.routing_human_mode   ?? 'bandeja') ||
-    forwardNumber   !== (channel.routing_forward_number ?? '');
+    routingType    !== (channel.routing_type           ?? null) ||
+    agentId        !== (channel.routing_agent_id       ?? null) ||
+    userId         !== (channel.routing_user_id        ?? null) ||
+    forwardNumber  !== (channel.routing_forward_number ?? '');
 
   async function handleSave() {
     setSaving(true);
     try {
       await onSave(channel.id, {
         routing_type:           routingType,
-        routing_agent_id:       routingType === 'agent' ? agentId : null,
-        routing_human_mode:     routingType === 'human' ? humanMode : null,
-        routing_forward_number: routingType === 'human' && humanMode === 'forward' ? forwardNumber : null,
+        routing_agent_id:       routingType === 'agent'   ? agentId       : null,
+        routing_user_id:        routingType === 'user'    ? userId        : null,
+        routing_forward_number: routingType === 'forward' ? forwardNumber : null,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -108,7 +115,8 @@ function ChannelCard({ channel, agents, onSave }: ChannelCardProps) {
   }
 
   const Icon = channelIcon(channel.id);
-  const selectedAgent = agents.find(a => a.id === agentId);
+  const selectedAgent  = agents.find(a => a.id === agentId);
+  const selectedMember = members.find(m => m.id === userId);
 
   return (
     <div className="bg-[#0a0f1e] border border-white/5 rounded-xl p-5 space-y-4">
@@ -133,12 +141,12 @@ function ChannelCard({ channel, agents, onSave }: ChannelCardProps) {
       <div className="space-y-3">
         <p className="text-[10px] text-gray-500 uppercase tracking-wider">Enrutar a</p>
 
-        <div className="grid grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-2 gap-1.5">
           <button
             onClick={() => setRoutingType(null)}
-            className={`px-2 py-2 rounded-lg border text-[11px] font-medium transition-colors ${
+            className={`px-2 py-2 rounded-lg border text-[11px] font-medium transition-colors col-span-2 ${
               routingType === null
-                ? 'bg-white/8 border-white/15 text-white'
+                ? 'bg-white/8 border-white/15 text-gray-300'
                 : 'bg-transparent border-white/5 text-gray-600 hover:text-gray-300 hover:border-white/10'
             }`}
           >
@@ -146,23 +154,33 @@ function ChannelCard({ channel, agents, onSave }: ChannelCardProps) {
           </button>
           <button
             onClick={() => setRoutingType('agent')}
-            className={`flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg border text-[11px] font-medium transition-colors ${
+            className={`flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-lg border text-[11px] font-medium transition-colors ${
               routingType === 'agent'
                 ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300'
                 : 'bg-transparent border-white/5 text-gray-600 hover:text-gray-300 hover:border-white/10'
             }`}
           >
-            <Bot className="w-3 h-3" /> Agente IA
+            <Bot className="w-3.5 h-3.5" /> Agente IA
           </button>
           <button
-            onClick={() => setRoutingType('human')}
-            className={`flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg border text-[11px] font-medium transition-colors ${
-              routingType === 'human'
+            onClick={() => setRoutingType('user')}
+            className={`flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-lg border text-[11px] font-medium transition-colors ${
+              routingType === 'user'
+                ? 'bg-violet-500/10 border-violet-500/30 text-violet-300'
+                : 'bg-transparent border-white/5 text-gray-600 hover:text-gray-300 hover:border-white/10'
+            }`}
+          >
+            <User className="w-3.5 h-3.5" /> Usuario del equipo
+          </button>
+          <button
+            onClick={() => setRoutingType('forward')}
+            className={`flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-lg border text-[11px] font-medium transition-colors col-span-2 ${
+              routingType === 'forward'
                 ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
                 : 'bg-transparent border-white/5 text-gray-600 hover:text-gray-300 hover:border-white/10'
             }`}
           >
-            <User className="w-3 h-3" /> Humano
+            <PhoneForwarded className="w-3.5 h-3.5" /> Reenviar a número externo
           </button>
         </div>
 
@@ -185,7 +203,7 @@ function ChannelCard({ channel, agents, onSave }: ChannelCardProps) {
             {selectedAgent && !isDirty && (
               <div className="flex items-center gap-2 bg-cyan-500/5 border border-cyan-500/15 rounded-lg px-3 py-2">
                 <Bot className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
-                <p className="text-[10px] text-gray-500 flex-1">El agente sigue su journey desde el panel de agentes</p>
+                <p className="text-[10px] text-gray-500 flex-1">Sigue su propio journey desde el panel de agentes</p>
                 <Link href="/agents" className="text-[10px] text-gray-600 hover:text-cyan-400 transition-colors flex items-center gap-0.5 whitespace-nowrap">
                   Ver panel <ExternalLink className="w-2.5 h-2.5" />
                 </Link>
@@ -194,53 +212,43 @@ function ChannelCard({ channel, agents, onSave }: ChannelCardProps) {
           </div>
         )}
 
-        {/* Human sub-mode */}
-        {routingType === 'human' && (
-          <div className="space-y-2 bg-black/20 rounded-lg p-3 border border-amber-500/10">
-            <p className="text-[10px] text-gray-600 mb-2">¿Cómo se atiende?</p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setHumanMode('bandeja')}
-                className={`flex items-center gap-1.5 flex-1 px-3 py-2 rounded-lg border text-[11px] font-medium transition-colors ${
-                  humanMode === 'bandeja'
-                    ? 'bg-amber-500/10 border-amber-500/25 text-amber-300'
-                    : 'bg-transparent border-white/5 text-gray-600 hover:text-gray-300'
-                }`}
+        {/* User picker */}
+        {routingType === 'user' && (
+          <div className="space-y-2">
+            <div className="relative">
+              <select
+                value={userId ?? ''}
+                onChange={e => setUserId(e.target.value || null)}
+                className="w-full appearance-none bg-black/30 border border-violet-500/20 rounded-lg px-3 py-2 pr-8 text-xs text-white focus:outline-none focus:border-violet-500/40"
               >
-                <Inbox className="w-3 h-3" /> Bandeja web
-              </button>
-              <button
-                onClick={() => setHumanMode('forward')}
-                className={`flex items-center gap-1.5 flex-1 px-3 py-2 rounded-lg border text-[11px] font-medium transition-colors ${
-                  humanMode === 'forward'
-                    ? 'bg-amber-500/10 border-amber-500/25 text-amber-300'
-                    : 'bg-transparent border-white/5 text-gray-600 hover:text-gray-300'
-                }`}
-              >
-                <PhoneForwarded className="w-3 h-3" /> Reenviar a número
-              </button>
+                <option value="">— Seleccionar persona —</option>
+                {members.map(m => (
+                  <option key={m.id} value={m.id}>{m.name}{m.role ? ` — ${m.role}` : ''}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500 pointer-events-none" />
             </div>
-
-            {humanMode === 'bandeja' && (
-              <p className="text-[10px] text-gray-600 leading-relaxed">
-                Los mensajes y llamadas aparecen en la <span className="text-amber-300/70">Bandeja</span> para que un agente humano responda desde aquí.
+            {selectedMember && !isDirty && (
+              <p className="text-[10px] text-gray-600 bg-violet-500/5 border border-violet-500/15 rounded-lg px-3 py-2">
+                Los mensajes y llamadas de este canal aparecerán en la bandeja personal de <span className="text-violet-300">{selectedMember.name}</span>.
               </p>
             )}
+          </div>
+        )}
 
-            {humanMode === 'forward' && (
-              <div className="space-y-1.5">
-                <p className="text-[10px] text-gray-600 leading-relaxed">
-                  Mensajes y llamadas de voz se reenvían directamente a este número.
-                </p>
-                <input
-                  type="tel"
-                  value={forwardNumber}
-                  onChange={e => setForwardNumber(e.target.value)}
-                  placeholder="+52 55 1234 5678"
-                  className="w-full bg-black/30 border border-amber-500/20 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-amber-500/40 font-mono"
-                />
-              </div>
-            )}
+        {/* Number forward */}
+        {routingType === 'forward' && (
+          <div className="space-y-1.5">
+            <p className="text-[10px] text-gray-600 leading-relaxed">
+              Mensajes y llamadas de voz se reenvían directamente a este número.
+            </p>
+            <input
+              type="tel"
+              value={forwardNumber}
+              onChange={e => setForwardNumber(e.target.value)}
+              placeholder="+52 55 1234 5678"
+              className="w-full bg-black/30 border border-amber-500/20 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-amber-500/40 font-mono"
+            />
           </div>
         )}
       </div>
@@ -282,31 +290,30 @@ function ChannelCard({ channel, agents, onSave }: ChannelCardProps) {
 export default function ConmutadorPage() {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [agents,   setAgents]   = useState<Agent[]>([]);
+  const [members,  setMembers]  = useState<TeamMember[]>([]);
   const [loading,  setLoading]  = useState(true);
 
   useEffect(() => {
     Promise.all([
       api.get<Channel[]>('/communications/channels').catch(() => [] as Channel[]),
       api.get<Agent[]>('/agents').catch(() => [] as Agent[]),
-    ]).then(([ch, ag]) => {
+      api.get<TeamMember[]>('/team-slots?type=employee').catch(() => [] as TeamMember[]),
+    ]).then(([ch, ag, mb]) => {
       setChannels(ch);
       setAgents(ag);
+      setMembers(mb);
     }).finally(() => setLoading(false));
   }, []);
 
   async function handleSave(channelId: string, payload: RoutingPayload) {
     await api.patch(`/communications/channels/${channelId}`, payload);
-    setChannels(prev => prev.map(c =>
-      c.id === channelId
-        ? { ...c, ...payload }
-        : c
-    ));
+    setChannels(prev => prev.map(c => c.id === channelId ? { ...c, ...payload } : c));
   }
 
   return (
     <div className="px-6 py-5 space-y-5">
       <p className="text-xs text-gray-500 leading-relaxed max-w-xl">
-        Define a qué agente IA o humano se envían los mensajes y llamadas de cada canal. El agente IA sigue su propio journey — sin configuración duplicada aquí.
+        Define a qué agente, persona o número externo se envían los mensajes y llamadas de cada canal.
       </p>
 
       {loading ? (
@@ -324,7 +331,7 @@ export default function ConmutadorPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {channels.map(ch => (
-            <ChannelCard key={ch.id} channel={ch} agents={agents} onSave={handleSave} />
+            <ChannelCard key={ch.id} channel={ch} agents={agents} members={members} onSave={handleSave} />
           ))}
         </div>
       )}
@@ -335,23 +342,23 @@ export default function ConmutadorPage() {
         <ol className="space-y-1.5 text-xs text-gray-500">
           <li className="flex gap-2">
             <span className="text-cyan-500 font-mono flex-shrink-0">1.</span>
-            Llega un mensaje o llamada a cualquier canal (WhatsApp, WebChat, Instagram, Teléfono…)
+            Llega un mensaje o llamada por cualquier canal (WhatsApp, WebChat, Instagram, Teléfono…)
           </li>
           <li className="flex gap-2">
             <span className="text-cyan-500 font-mono flex-shrink-0">2.</span>
-            El conmutador aplica la regla de ruteo del canal correspondiente
+            El conmutador aplica la regla de ruteo configurada para ese canal
           </li>
           <li className="flex gap-2">
             <span className="text-cyan-500 font-mono flex-shrink-0">3.</span>
-            <span className="text-cyan-300">Agente IA</span> — el agente responde automáticamente siguiendo su journey
+            <span className="text-cyan-300">Agente IA</span> — responde automáticamente siguiendo su journey
           </li>
           <li className="flex gap-2">
             <span className="text-cyan-500 font-mono flex-shrink-0">4.</span>
-            <span className="text-amber-300">Humano · Bandeja web</span> — aparece en la pestaña Bandeja para respuesta manual
+            <span className="text-violet-300">Usuario del equipo</span> — aparece en la bandeja personal de esa persona
           </li>
           <li className="flex gap-2">
             <span className="text-cyan-500 font-mono flex-shrink-0">5.</span>
-            <span className="text-amber-300">Humano · Reenviar a número</span> — mensajes y llamadas de voz van directamente al número configurado
+            <span className="text-amber-300">Número externo</span> — mensajes y llamadas de voz se reenvían al número configurado
           </li>
         </ol>
       </div>
