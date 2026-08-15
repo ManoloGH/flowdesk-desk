@@ -68,6 +68,23 @@ export default function RequerimientoPage() {
   const [voboForm, setVoboForm] = useState({ area: '', nombre: '', email: '', nota: '', miEmail: '' });
   const [enviandoVobo, setEnviandoVobo] = useState(false);
   const voboRef = useRef<HTMLDivElement>(null);
+  // Catálogos para dropdowns
+  const [catAreas, setCatAreas] = useState<string[]>([]);
+
+  // Carga catálogo de departamentos cuando abre el modal
+  const abrirVoboModal = useCallback(async () => {
+    setVoboModal(true);
+    voboRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (catAreas.length > 0) return;
+    try {
+      const res = await socFetch('/api/catalogos');
+      if (res.ok) {
+        const cats: Array<{ clave: string | null; nombre: string; items: Array<{ valor: string }> }> = await res.json();
+        const dep = cats.find(c => c.clave === 'departamentos' || c.nombre.toLowerCase().includes('departamento'));
+        if (dep) setCatAreas(dep.items.map(i => i.valor));
+      }
+    } catch { /* catálogos aún no disponibles */ }
+  }, [catAreas.length]);
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -214,10 +231,7 @@ export default function RequerimientoPage() {
             Continuar chat
           </button>
           <button
-            onClick={() => {
-              setVoboModal(true);
-              voboRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }}
+            onClick={abrirVoboModal}
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-white/5"
           >
             <Send className="w-4 h-4" />
@@ -267,7 +281,7 @@ export default function RequerimientoPage() {
             )}
           </div>
           <button
-            onClick={() => setVoboModal(true)}
+            onClick={abrirVoboModal}
             className="flex items-center gap-1.5 text-xs text-[#00614E] hover:text-[#00614E]/80 font-medium"
           >
             <Send className="w-3 h-3" />
@@ -410,8 +424,39 @@ export default function RequerimientoPage() {
               Se enviará un correo al responsable con un enlace para aprobar, rechazar o comentar el requerimiento.
             </p>
             <div className="space-y-3">
+              {/* Área — dropdown si hay catálogo, texto libre si no */}
+              <div>
+                <label className="text-xs text-slate-400 block mb-1">Área / Departamento</label>
+                {catAreas.length > 0 ? (
+                  <select
+                    value={voboForm.area}
+                    onChange={e => setVoboForm(prev => ({ ...prev, area: e.target.value }))}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#00614E]/40"
+                  >
+                    <option value="">Selecciona un área…</option>
+                    {catAreas.map(a => <option key={a} value={a}>{a}</option>)}
+                    <option value="__otro__">Otro…</option>
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={voboForm.area}
+                    onChange={e => setVoboForm(prev => ({ ...prev, area: e.target.value }))}
+                    placeholder="Ej: Contabilidad"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#00614E]/40"
+                  />
+                )}
+                {voboForm.area === '__otro__' && (
+                  <input
+                    type="text"
+                    onChange={e => setVoboForm(prev => ({ ...prev, area: e.target.value }))}
+                    placeholder="Escribe el nombre del área"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#00614E]/40 mt-2"
+                    autoFocus
+                  />
+                )}
+              </div>
               {[
-                { label: 'Área / Departamento', key: 'area', type: 'text', placeholder: 'Ej: Contabilidad' },
                 { label: 'Nombre del responsable', key: 'nombre', type: 'text', placeholder: 'Ej: Juan Pérez' },
                 { label: 'Correo del responsable', key: 'email', type: 'email', placeholder: 'responsable@empresa.com' },
                 { label: 'Tu correo (para recibir notificación de respuesta)', key: 'miEmail', type: 'email', placeholder: 'tu@correo.com (opcional)' },
