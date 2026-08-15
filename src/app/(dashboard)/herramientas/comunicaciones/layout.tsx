@@ -1,10 +1,11 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { GitFork, Inbox } from 'lucide-react';
+import { GitFork, Radio, Inbox } from 'lucide-react';
 
 const TABS = [
   { href: '/herramientas/comunicaciones',        label: 'Conmutador', icon: GitFork, exact: true },
+  { href: '/herramientas/comunicaciones/canales', label: 'Canales',    icon: Radio,   exact: false },
   { href: '/herramientas/comunicaciones/bandeja', label: 'Bandeja',    icon: Inbox,   exact: false },
 ];
 
