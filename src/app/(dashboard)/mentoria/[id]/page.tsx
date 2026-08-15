@@ -155,6 +155,8 @@ export default function ClienteWorkspace() {
   const [sugerencias, setSugerencias] = useState<any[]>([]);
   const [showSugerencias, setShowSugerencias] = useState(false);
   const [creandoSugerida, setCreandoSugerida] = useState<string | null>(null);
+  const [tokenGenerando, setTokenGenerando] = useState<string | null>(null);
+  const [tokensGenerados, setTokensGenerados] = useState<Record<string, string>>({});
   const [legacyChatLen, setLegacyChatLen] = useState(0);
   const [showSesion, setShowSesion]     = useState(false);
   const [showPago, setShowPago]         = useState(false);
@@ -414,6 +416,18 @@ export default function ClienteWorkspace() {
     setCreandoSugerida(null);
   }
 
+  async function handleGenerarToken(sesionId: string) {
+    setTokenGenerando(sesionId);
+    try {
+      const result = await api.post<{ token: string; url: string }>(`/mentoria/clientes/${id}/sesiones-diag/${sesionId}/generar-token`, {});
+      setTokensGenerados(prev => ({ ...prev, [sesionId]: result.url }));
+    } catch (e: any) {
+      alert(e?.message ?? 'Error al generar enlace');
+    } finally {
+      setTokenGenerando(null);
+    }
+  }
+
   if (loading) return (
     <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ width: 22, height: 22, borderRadius: '50%', border: '2px solid #6c4de6', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
@@ -620,6 +634,24 @@ export default function ClienteWorkspace() {
                               </button>
                             )
                           )}
+                          {(s.tipo === 'gerente' || s.tipo === 'operador') && (
+                            tokensGenerados[s.id] ? (
+                              <button
+                                onClick={() => { navigator.clipboard.writeText(tokensGenerados[s.id]); alert('Liga copiada al portapapeles'); }}
+                                style={{ fontSize: 11, padding: '5px 10px', background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
+                              >
+                                📋 Copiar liga
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleGenerarToken(s.id)}
+                                disabled={tokenGenerando === s.id}
+                                style={{ fontSize: 11, padding: '5px 10px', background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 6, cursor: 'pointer', fontWeight: 600, opacity: tokenGenerando === s.id ? 0.6 : 1 }}
+                              >
+                                {tokenGenerando === s.id ? '⏳…' : '🔗 Enviar entrevista'}
+                              </button>
+                            )
+                          )}
                         </div>
                       </div>
 
@@ -635,6 +667,12 @@ export default function ClienteWorkspace() {
                               <button onClick={() => setCuestionarioVista(cq)} style={{ fontSize: 10, color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline', flexShrink: 0 }}>Ver</button>
                             </div>
                           ))}
+                        </div>
+                      )}
+                      {tokensGenerados[s.id] && (
+                        <div style={{ padding: '8px 16px', background: 'rgba(16,185,129,0.05)', borderTop: '1px solid rgba(16,185,129,0.2)' }}>
+                          <div style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 3 }}>Liga de entrevista generada:</div>
+                          <div style={{ fontSize: 11, color: '#10b981', wordBreak: 'break-all', fontFamily: 'monospace' }}>{tokensGenerados[s.id]}</div>
                         </div>
                       )}
                     </div>
@@ -1269,6 +1307,8 @@ function TabCubo({ clienteId, empresa, sesiones, cubo: initialCubo }: { clienteI
   });
   const [saving, setSaving] = React.useState(false);
   const [openSection, setOpenSection] = React.useState<CuboKey | null>('contexto');
+  const [revisando, setRevisando] = React.useState(false);
+  const [revision, setRevision] = React.useState<any | null>(null);
 
   const totalFilled = CUBO_SECTIONS.filter(s => cubo[s.key]?.trim()).length;
   const pctCubo = Math.round(totalFilled / CUBO_SECTIONS.length * 100);
@@ -1477,6 +1517,18 @@ Fase: Expansión (Fase 2)`,
     setOpenSection('contexto');
   }
 
+  async function handleRevisar() {
+    setRevisando(true);
+    try {
+      const result = await api.post<any>(`/mentoria/clientes/${clienteId}/revisar-cubo`, {});
+      setRevision(result);
+    } catch (e: any) {
+      alert(e?.message ?? 'Error al revisar el diagnóstico');
+    } finally {
+      setRevisando(false);
+    }
+  }
+
   function cycleStatus(id: string) {
     const order: Array<'borrador' | 'revision' | 'aprobado'> = ['borrador', 'revision', 'aprobado'];
     const cur = entStatus[id] ?? 'borrador';
@@ -1507,6 +1559,13 @@ Fase: Expansión (Fase 2)`,
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ fontSize: 22, fontWeight: 800, color: pctCubo === 100 ? '#22c55e' : '#6c4de6' }}>{pctCubo}%</div>
+              <button
+                onClick={handleRevisar}
+                disabled={revisando}
+                style={{ fontSize: 12, padding: '7px 14px', background: revisando ? 'var(--surface-2)' : 'rgba(108,77,230,0.1)', color: '#6c4de6', border: '1px solid rgba(108,77,230,0.3)', borderRadius: 8, cursor: 'pointer', fontWeight: 600, opacity: revisando ? 0.7 : 1 }}
+              >
+                {revisando ? '⏳ Analizando…' : '🔍 Revisar diagnóstico'}
+              </button>
             </div>
           </div>
           <div style={{ height: 5, background: 'var(--surface-2)', borderRadius: 99, overflow: 'hidden' }}>
@@ -1519,6 +1578,79 @@ Fase: Expansión (Fase 2)`,
             </div>
           )}
         </div>
+
+        {/* Panel de revisión pre-entrega */}
+        {revision && (
+          <div style={{ background: 'var(--surface)', border: '1px solid rgba(108,77,230,0.3)', borderRadius: 12, padding: '18px 20px', position: 'relative' }}>
+            <button onClick={() => setRevision(null)} style={{ position: 'absolute', top: 12, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', fontSize: 16 }}>✕</button>
+
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#6c4de6', marginBottom: 8 }}>🔍 Revisión pre-entrega</div>
+            <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6, marginBottom: 14 }}>{revision.resumen}</div>
+
+            {/* Entregables */}
+            <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Entregables</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 14 }}>
+              {(revision.entregables ?? []).map((e: any) => {
+                const stColor = e.estado === 'listo' ? '#22c55e' : e.estado === 'incompleto' ? '#f59e0b' : '#ef4444';
+                return (
+                  <div key={e.id} style={{ padding: '7px 10px', background: 'var(--bg)', border: `1px solid ${stColor}30`, borderRadius: 7 }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>{e.nombre}</div>
+                    <div style={{ fontSize: 10, color: stColor, fontWeight: 700 }}>{e.estado === 'listo' ? '✓ Listo' : e.estado === 'incompleto' ? '⚠ Incompleto' : '✕ Sin datos'}</div>
+                    {e.faltante && <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>{e.faltante}</div>}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Huecos */}
+            {(revision.huecos ?? []).length > 0 && (
+              <>
+                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Huecos detectados</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
+                  {(revision.huecos ?? []).map((h: any, i: number) => {
+                    const priorColor = h.prioridad === 'critico' ? '#ef4444' : h.prioridad === 'importante' ? '#f59e0b' : '#6b7280';
+                    return (
+                      <div key={i} style={{ display: 'flex', gap: 8, padding: '7px 10px', background: 'var(--bg)', border: `1px solid ${priorColor}25`, borderRadius: 7 }}>
+                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: priorColor, flexShrink: 0, marginTop: 4 }} />
+                        <div>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)' }}>{h.area}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.4 }}>{h.descripcion}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* Confirmaciones */}
+            {(revision.confirmaciones ?? []).length > 0 && (
+              <>
+                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Confirmar con el cliente</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 14 }}>
+                  {(revision.confirmaciones ?? []).map((c: string, i: number) => (
+                    <div key={i} style={{ fontSize: 11, color: 'var(--text-2)', padding: '5px 10px', background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 6, lineHeight: 1.5 }}>□ {c}</div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Preguntas finales */}
+            {(revision.preguntas_finales ?? []).length > 0 && (
+              <>
+                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Preguntas para llenar huecos</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {(revision.preguntas_finales ?? []).map((p: any, i: number) => (
+                    <div key={i} style={{ fontSize: 11, color: 'var(--text-2)', padding: '5px 10px', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 6, lineHeight: 1.5, cursor: 'pointer' }}
+                      onClick={() => setOpenSection(p.seccion as CuboKey)}>
+                      <span style={{ color: '#6c4de6', fontWeight: 600 }}>{p.seccion}: </span>{p.pregunta}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Secciones del cubo */}
         {CUBO_SECTIONS.map(section => {
