@@ -156,7 +156,12 @@ export default function ClienteWorkspace() {
   const [showSugerencias, setShowSugerencias] = useState(false);
   const [creandoSugerida, setCreandoSugerida] = useState<string | null>(null);
   const [tokenGenerando, setTokenGenerando] = useState<string | null>(null);
-  const [tokensGenerados, setTokensGenerados] = useState<Record<string, string>>({});
+  const [tokensGenerados, setTokensGenerados] = useState<Record<string, { token: string; url: string }>>({});
+  const [showEnvioModal, setShowEnvioModal] = useState<{ sesionId: string; url: string; token: string } | null>(null);
+  const [envioCanal, setEnvioCanal] = useState<'whatsapp' | 'email' | null>(null);
+  const [envioDestino, setEnvioDestino] = useState('');
+  const [enviandoEntrevista, setEnviandoEntrevista] = useState(false);
+  const [envioResultado, setEnvioResultado] = useState<{ ok: boolean; msg: string } | null>(null);
   const [legacyChatLen, setLegacyChatLen] = useState(0);
   const [showSesion, setShowSesion]     = useState(false);
   const [showPago, setShowPago]         = useState(false);
@@ -420,11 +425,33 @@ export default function ClienteWorkspace() {
     setTokenGenerando(sesionId);
     try {
       const result = await api.post<{ token: string; url: string }>(`/mentoria/clientes/${id}/sesiones-diag/${sesionId}/generar-token`, {});
-      setTokensGenerados(prev => ({ ...prev, [sesionId]: result.url }));
+      setTokensGenerados(prev => ({ ...prev, [sesionId]: result }));
+      setEnvioCanal(null);
+      setEnvioDestino('');
+      setEnvioResultado(null);
+      setShowEnvioModal({ sesionId, url: result.url, token: result.token });
     } catch (e: any) {
       alert(e?.message ?? 'Error al generar enlace');
     } finally {
       setTokenGenerando(null);
+    }
+  }
+
+  async function handleEnviarEntrevista() {
+    if (!showEnvioModal || !envioCanal || !envioDestino.trim()) return;
+    setEnviandoEntrevista(true);
+    try {
+      await api.post(`/mentoria/clientes/${id}/sesiones-diag/${showEnvioModal.sesionId}/enviar-entrevista`, {
+        canal: envioCanal,
+        destino: envioDestino.trim(),
+        token: showEnvioModal.token,
+        url: showEnvioModal.url,
+      });
+      setEnvioResultado({ ok: true, msg: `Enviado por ${envioCanal === 'whatsapp' ? 'WhatsApp' : 'email'} ✓` });
+    } catch (e: any) {
+      setEnvioResultado({ ok: false, msg: e?.message ?? 'Error al enviar' });
+    } finally {
+      setEnviandoEntrevista(false);
     }
   }
 
@@ -644,10 +671,10 @@ export default function ClienteWorkspace() {
                           {(s.tipo === 'gerente' || s.tipo === 'operador') && (
                             tokensGenerados[s.id] ? (
                               <button
-                                onClick={() => { navigator.clipboard.writeText(tokensGenerados[s.id]); alert('Liga copiada al portapapeles'); }}
-                                style={{ fontSize: 11, padding: '5px 10px', background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
+                                onClick={() => { setEnvioCanal(null); setEnvioDestino(''); setEnvioResultado(null); setShowEnvioModal(tokensGenerados[s.id]); }}
+                                style={{ fontSize: 11, padding: '5px 10px', background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
                               >
-                                📋 Copiar liga
+                                🔗 Reenviar / copiar
                               </button>
                             ) : (
                               <button
@@ -655,7 +682,7 @@ export default function ClienteWorkspace() {
                                 disabled={tokenGenerando === s.id}
                                 style={{ fontSize: 11, padding: '5px 10px', background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 6, cursor: 'pointer', fontWeight: 600, opacity: tokenGenerando === s.id ? 0.6 : 1 }}
                               >
-                                {tokenGenerando === s.id ? '⏳…' : '🔗 Enviar entrevista'}
+                                {tokenGenerando === s.id ? '⏳ Generando…' : '🔗 Enviar entrevista'}
                               </button>
                             )
                           )}
@@ -677,9 +704,9 @@ export default function ClienteWorkspace() {
                         </div>
                       )}
                       {tokensGenerados[s.id] && (
-                        <div style={{ padding: '8px 16px', background: 'rgba(16,185,129,0.05)', borderTop: '1px solid rgba(16,185,129,0.2)' }}>
-                          <div style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 3 }}>Liga de entrevista generada:</div>
-                          <div style={{ fontSize: 11, color: '#10b981', wordBreak: 'break-all', fontFamily: 'monospace' }}>{tokensGenerados[s.id]}</div>
+                        <div style={{ padding: '7px 16px', background: 'rgba(16,185,129,0.04)', borderTop: '1px solid rgba(16,185,129,0.15)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 10, color: '#10b981', fontWeight: 600 }}>✓ Liga lista</span>
+                          <span style={{ fontSize: 10, color: 'var(--text-3)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>{tokensGenerados[s.id].url}</span>
                         </div>
                       )}
                     </div>
@@ -863,6 +890,78 @@ export default function ClienteWorkspace() {
             >
               {generandoGlobal ? '⏳ Generando (~30s)…' : '📋 Generar cuestionario'}
             </button>
+          </div>
+        </>
+      )}
+
+      {/* Modal: Enviar entrevista */}
+      {showEnvioModal && (
+        <>
+          <div onClick={() => { if (!enviandoEntrevista) { setShowEnvioModal(null); setEnvioResultado(null); } }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 60 }} />
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 460, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, zIndex: 70, padding: '28px 32px', boxShadow: '0 40px 80px rgba(0,0,0,0.5)' }}>
+            <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)', marginBottom: 4, letterSpacing: '-0.02em' }}>🔗 Enviar entrevista</div>
+            <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 20 }}>Elige cómo quieres hacer llegar el enlace al entrevistado.</div>
+
+            {/* Enlace — siempre visible */}
+            <div style={{ background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8, padding: '10px 12px', marginBottom: 20 }}>
+              <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Enlace de entrevista</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ flex: 1, fontSize: 11, color: 'var(--text-2)', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{showEnvioModal.url}</div>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(showEnvioModal.url); setEnvioResultado({ ok: true, msg: '📋 Enlace copiado' }); }}
+                  style={{ fontSize: 11, padding: '4px 10px', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 6, cursor: 'pointer', fontWeight: 600, color: 'var(--text-2)', flexShrink: 0 }}
+                >
+                  Copiar
+                </button>
+              </div>
+            </div>
+
+            {/* Selección de canal */}
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-2)', marginBottom: 8 }}>O enviar directamente por:</div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+              {(['whatsapp', 'email'] as const).map(c => (
+                <button key={c} onClick={() => { setEnvioCanal(c); setEnvioDestino(''); setEnvioResultado(null); }}
+                  style={{ flex: 1, padding: '10px 0', borderRadius: 9, border: `2px solid ${envioCanal === c ? (c === 'whatsapp' ? '#22c55e' : '#3b82f6') : 'var(--line)'}`, background: envioCanal === c ? (c === 'whatsapp' ? 'rgba(34,197,94,0.1)' : 'rgba(59,130,246,0.1)') : 'transparent', color: envioCanal === c ? (c === 'whatsapp' ? '#22c55e' : '#3b82f6') : 'var(--text-2)', fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}>
+                  {c === 'whatsapp' ? '📱 WhatsApp' : '📧 Email'}
+                </button>
+              ))}
+            </div>
+
+            {/* Input del destino */}
+            {envioCanal && (
+              <div style={{ marginBottom: 20 }}>
+                <input
+                  value={envioDestino}
+                  onChange={e => setEnvioDestino(e.target.value)}
+                  placeholder={envioCanal === 'whatsapp' ? '+52 55 0000 0000 (con código de país)' : 'correo@empresa.mx'}
+                  type={envioCanal === 'email' ? 'email' : 'tel'}
+                  autoFocus
+                  style={{ ...inputSt, width: '100%' }}
+                />
+              </div>
+            )}
+
+            {/* Resultado */}
+            {envioResultado && (
+              <div style={{ padding: '8px 12px', borderRadius: 8, marginBottom: 16, background: envioResultado.ok ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', border: `1px solid ${envioResultado.ok ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`, fontSize: 12, color: envioResultado.ok ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
+                {envioResultado.msg}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              {envioCanal && (
+                <button
+                  onClick={handleEnviarEntrevista}
+                  disabled={!envioDestino.trim() || enviandoEntrevista}
+                  style={{ ...btnPrimary, flex: 1, justifyContent: 'center', opacity: !envioDestino.trim() ? 0.5 : 1, background: envioCanal === 'whatsapp' ? '#22c55e' : '#3b82f6' }}
+                >
+                  {enviandoEntrevista ? '⏳ Enviando…' : `Enviar por ${envioCanal === 'whatsapp' ? 'WhatsApp' : 'Email'}`}
+                </button>
+              )}
+              <button onClick={() => { setShowEnvioModal(null); setEnvioResultado(null); }} style={{ ...btnGhost, ...(envioCanal ? {} : { flex: 1, justifyContent: 'center' }) }}>
+                Cerrar
+              </button>
+            </div>
           </div>
         </>
       )}
