@@ -1,66 +1,168 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bot, User, MessageSquare, Trash2, RefreshCw } from 'lucide-react';
+import {
+  MessageSquare, Phone, Globe, Bot, User, PhoneForwarded,
+  RefreshCw, Clock, CheckCircle2, Circle, XCircle,
+  ChevronRight,
+} from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 
-const POLL_MS = 2000;
+const POLL_MS = 5000;
 
 // ─── tipos ────────────────────────────────────────────────────────────────────
 
+type ChannelKind  = 'whatsapp' | 'instagram' | 'webchat' | 'phone' | string;
+type RoutedType   = 'agent' | 'user' | 'forward';
+type ConvStatus   = 'active' | 'waiting' | 'closed';
+
 interface ConvSummary {
   id: string;
-  phone: string;
-  contactName: string;
-  mode: 'AI' | 'HUMAN';
-  lastMessage: string;
-  lastRole: string | null;
-  timeAgo: string;
+  contact_name: string;
+  contact_number: string | null;
+  channel: ChannelKind;
+  channel_name: string;
+  routed_type: RoutedType;
+  routed_to: string;
+  status: ConvStatus;
+  last_message: string;
+  time_ago: string;
+  message_count: number;
 }
 
-interface BotMessage {
+interface ConvMessage {
   id: string;
-  role: 'user' | 'assistant' | 'human';
+  role: 'contact' | 'agent' | 'human' | 'system';
   content: string;
   created_at: string;
 }
 
 interface ConvDetail {
-  conversation: { id: string; phone: string; contactName: string; mode: 'AI' | 'HUMAN' };
-  messages: BotMessage[];
+  id: string;
+  contact_name: string;
+  contact_number: string | null;
+  channel: ChannelKind;
+  channel_name: string;
+  routed_type: RoutedType;
+  routed_to: string;
+  status: ConvStatus;
+  started_at: string;
+  messages: ConvMessage[];
 }
 
-// ─── helpers ──────────────────────────────────────────────────────────────────
+// ─── meta helpers ─────────────────────────────────────────────────────────────
 
+const CHANNEL_META: Record<string, { icon: React.ElementType; color: string; label: string }> = {
+  whatsapp:  { icon: MessageSquare, color: 'text-emerald-400', label: 'WhatsApp'  },
+  instagram: { icon: MessageSquare, color: 'text-pink-400',    label: 'Instagram' },
+  webchat:   { icon: Globe,         color: 'text-blue-400',    label: 'WebChat'   },
+  phone:     { icon: Phone,         color: 'text-violet-400',  label: 'Teléfono'  },
+};
 
-// ─── página ───────────────────────────────────────────────────────────────────
+function channelMeta(kind: ChannelKind) {
+  const key = Object.keys(CHANNEL_META).find(k => kind.toLowerCase().includes(k));
+  return key ? CHANNEL_META[key] : CHANNEL_META.whatsapp;
+}
+
+const ROUTE_META: Record<RoutedType, { icon: React.ElementType; color: string; bg: string; label: string }> = {
+  agent:   { icon: Bot,             color: 'text-cyan-300',   bg: 'bg-cyan-500/10 border-cyan-500/20',   label: 'Agente IA'    },
+  user:    { icon: User,            color: 'text-violet-300', bg: 'bg-violet-500/10 border-violet-500/20', label: 'Asesor'       },
+  forward: { icon: PhoneForwarded,  color: 'text-amber-300',  bg: 'bg-amber-500/10 border-amber-500/20',  label: 'Reenvío'      },
+};
+
+const STATUS_META: Record<ConvStatus, { icon: React.ElementType; color: string; label: string }> = {
+  active:  { icon: Circle,       color: 'text-emerald-400', label: 'Activa'    },
+  waiting: { icon: Clock,        color: 'text-amber-400',   label: 'En espera' },
+  closed:  { icon: CheckCircle2, color: 'text-gray-500',    label: 'Cerrada'   },
+};
+
+// ─── RoutedChip ───────────────────────────────────────────────────────────────
+
+function RoutedChip({ type, to }: { type: RoutedType; to: string }) {
+  const m = ROUTE_META[type];
+  const Icon = m.icon;
+  return (
+    <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border ${m.bg} ${m.color}`}>
+      <Icon className="w-2.5 h-2.5 flex-shrink-0" />
+      {to}
+    </span>
+  );
+}
+
+function ChannelChip({ kind, name }: { kind: ChannelKind; name: string }) {
+  const m = channelMeta(kind);
+  const Icon = m.icon;
+  return (
+    <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/5 border border-white/8 ${m.color}`}>
+      <Icon className="w-2.5 h-2.5 flex-shrink-0" />
+      {name || m.label}
+    </span>
+  );
+}
+
+// ─── MessageBubble ────────────────────────────────────────────────────────────
+
+function MessageBubble({ msg }: { msg: ConvMessage }) {
+  const time = new Date(msg.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+
+  if (msg.role === 'system') {
+    return (
+      <div className="flex justify-center">
+        <span className="text-[10px] text-gray-600 bg-white/5 border border-white/5 px-3 py-1 rounded-full">
+          {msg.content}
+        </span>
+      </div>
+    );
+  }
+
+  const isContact = msg.role === 'contact';
+  const isAgent   = msg.role === 'agent';
+
+  return (
+    <div className={`flex ${isContact ? 'justify-start' : 'justify-end'}`}>
+      <div className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 ${
+        isContact ? 'bg-white/5 border border-white/8 rounded-tl-sm'
+        : isAgent  ? 'bg-cyan-900/40 border border-cyan-800/50 rounded-tr-sm'
+        :            'bg-violet-900/40 border border-violet-800/50 rounded-tr-sm'
+      }`}>
+        {!isContact && (
+          <p className={`text-[10px] font-medium mb-1 flex items-center gap-1 ${isAgent ? 'text-cyan-400' : 'text-violet-400'}`}>
+            {isAgent ? <Bot className="w-3 h-3" /> : <User className="w-3 h-3" />}
+            {isAgent ? 'Agente IA' : 'Asesor'}
+          </p>
+        )}
+        <p className="text-xs text-gray-200 whitespace-pre-wrap break-words">{msg.content}</p>
+        <p className="text-[10px] text-gray-600 mt-1">{time}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── page ─────────────────────────────────────────────────────────────────────
 
 export default function BandejaPage() {
   const [conversations, setConversations] = useState<ConvSummary[]>([]);
   const [selected, setSelected]           = useState<string | null>(null);
   const [detail, setDetail]               = useState<ConvDetail | null>(null);
-  const [draft, setDraft]                 = useState('');
-  const [sending, setSending]             = useState(false);
+  const [loading, setLoading]             = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // polling: lista
   const fetchConversations = useCallback(async () => {
     try {
-      const data: ConvSummary[] = await apiFetch('/communications/bot/conversations');
+      const data = await apiFetch<ConvSummary[]>('/communications/conversations');
       setConversations(data);
     } catch {}
   }, []);
 
   useEffect(() => {
-    fetchConversations();
+    fetchConversations().finally(() => setLoading(false));
     const id = setInterval(fetchConversations, POLL_MS);
     return () => clearInterval(id);
   }, [fetchConversations]);
 
-  // polling: mensajes del chat activo
   const fetchDetail = useCallback(async () => {
     if (!selected) return;
     try {
-      const data: ConvDetail = await apiFetch(`/communications/bot/conversations/${selected}/messages`);
+      const data = await apiFetch<ConvDetail>(`/communications/conversations/${selected}`);
       setDetail(data);
     } catch {}
   }, [selected]);
@@ -72,250 +174,141 @@ export default function BandejaPage() {
     return () => clearInterval(id);
   }, [selected, fetchDetail]);
 
-  // auto-scroll al fondo
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [detail?.messages.length]);
 
-  // ─── acciones ─────────────────────────────────────────────────────────────
-
-  async function handleModeToggle(mode: 'AI' | 'HUMAN') {
-    if (!selected) return;
-    try {
-      await apiFetch(`/communications/bot/conversations/${selected}/mode`, {
-        method: 'POST',
-        body: JSON.stringify({ mode }),
-      });
-      fetchDetail();
-      fetchConversations();
-    } catch {}
-  }
-
-  async function handleSend() {
-    if (!selected || !draft.trim() || sending) return;
-    setSending(true);
-    try {
-      await apiFetch(`/communications/bot/conversations/${selected}/messages`, {
-        method: 'POST',
-        body: JSON.stringify({ content: draft.trim() }),
-      });
-      setDraft('');
-      fetchDetail();
-      fetchConversations();
-    } catch {} finally {
-      setSending(false);
-    }
-  }
-
-  async function handleDelete(id: string) {
-    if (!confirm('¿Eliminar esta conversación?')) return;
-    try {
-      await apiFetch(`/communications/bot/conversations/${id}`, { method: 'DELETE' });
-      if (selected === id) { setSelected(null); setDetail(null); }
-      fetchConversations();
-    } catch {}
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
-  }
-
-  // ─── render ───────────────────────────────────────────────────────────────
-
   return (
     <div className="flex h-full overflow-hidden">
-      {/* Sidebar */}
+
+      {/* ── Sidebar ── */}
       <aside className="w-80 flex-shrink-0 border-r border-white/5 flex flex-col">
         <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
           <span className="text-xs font-semibold text-gray-400">
-            Conversaciones · {conversations.length}
+            Todas las conversaciones · {conversations.length}
           </span>
-          <button onClick={fetchConversations} className="text-gray-600 hover:text-gray-400 transition-colors">
+          <button
+            onClick={() => { setLoading(true); fetchConversations().finally(() => setLoading(false)); }}
+            className="text-gray-600 hover:text-gray-400 transition-colors"
+          >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {conversations.length === 0 ? (
-            <div className="px-4 py-8 text-center text-[11px] text-gray-600">
-              No hay conversaciones todavía.<br />
-              Envía un mensaje al número del agente desde otro WhatsApp.
+          {loading ? (
+            <div className="space-y-px">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="px-4 py-3 space-y-2 animate-pulse">
+                  <div className="h-3 bg-white/5 rounded w-3/4" />
+                  <div className="h-2 bg-white/5 rounded w-1/2" />
+                  <div className="h-2 bg-white/5 rounded w-full" />
+                </div>
+              ))}
+            </div>
+          ) : conversations.length === 0 ? (
+            <div className="px-4 py-10 text-center text-[11px] text-gray-600">
+              No hay conversaciones aún.
             </div>
           ) : (
-            conversations.map(c => (
-              <button
-                key={c.id}
-                onClick={() => setSelected(c.id)}
-                className={`w-full text-left px-4 py-3 border-b border-white/[0.04] transition-colors hover:bg-white/5 ${
-                  selected === c.id ? 'bg-white/8' : ''
-                }`}
-              >
-                <div className="flex items-center justify-between mb-0.5">
-                  <span className="text-xs font-medium text-white truncate flex-1 mr-2">
-                    {c.contactName}
-                  </span>
-                  <ModeBadge mode={c.mode} />
-                </div>
-                {c.phone !== c.contactName && (
-                  <p className="text-[10px] text-gray-600 font-mono mb-0.5">+{c.phone}</p>
-                )}
-                <p className="text-[11px] text-gray-500 truncate">{c.lastMessage || '—'}</p>
-                <p className="text-[10px] text-gray-700 mt-0.5">{c.timeAgo}</p>
-              </button>
-            ))
+            conversations.map(c => {
+              const sm = STATUS_META[c.status];
+              const SIcon = sm.icon;
+              const isSelected = selected === c.id;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setSelected(c.id)}
+                  className={`w-full text-left px-4 py-3 border-b border-white/[0.04] transition-colors hover:bg-white/5 ${
+                    isSelected ? 'bg-white/8 border-l-2 border-l-cyan-500' : ''
+                  }`}
+                >
+                  {/* Row 1: name + status + arrow */}
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <SIcon className={`w-2.5 h-2.5 flex-shrink-0 ${sm.color}`} />
+                    <span className="text-xs font-medium text-white truncate flex-1">{c.contact_name}</span>
+                    {c.contact_number && (
+                      <span className="text-[9px] font-mono text-gray-600 flex-shrink-0">{c.contact_number}</span>
+                    )}
+                    <ChevronRight className="w-3 h-3 text-gray-700 flex-shrink-0" />
+                  </div>
+                  {/* Row 2: channel + routed chip */}
+                  <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                    <ChannelChip kind={c.channel} name={c.channel_name} />
+                    <span className="text-gray-700 text-[10px]">→</span>
+                    <RoutedChip type={c.routed_type} to={c.routed_to} />
+                  </div>
+                  {/* Row 3: last message */}
+                  <p className="text-[11px] text-gray-500 truncate leading-relaxed">{c.last_message || '—'}</p>
+                  {/* Row 4: time + count */}
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-[10px] text-gray-700">{c.time_ago}</span>
+                    <span className="text-[10px] text-gray-700">{c.message_count} msgs</span>
+                  </div>
+                </button>
+              );
+            })
           )}
         </div>
       </aside>
 
-      {/* Panel principal */}
+      {/* ── Detail panel ── */}
       {!selected || !detail ? (
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-center text-gray-700">
-            <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            <p className="text-xs">Selecciona una conversación</p>
+          <div className="text-center text-gray-700 space-y-2">
+            <MessageSquare className="w-8 h-8 mx-auto opacity-20" />
+            <p className="text-xs">Selecciona una conversación para ver el historial</p>
           </div>
         </div>
       ) : (
         <div className="flex-1 flex flex-col min-w-0">
           {/* Header */}
-          <div className="flex-shrink-0 px-5 py-3 border-b border-white/5 flex items-center gap-3">
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{detail.conversation.contactName}</p>
-              <p className="text-[10px] text-gray-600 font-mono">+{detail.conversation.phone}</p>
+          <div className="flex-shrink-0 px-5 py-3 border-b border-white/5 space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-white">{detail.contact_name}</p>
+                {detail.contact_number && (
+                  <p className="text-[10px] font-mono text-gray-600">+{detail.contact_number}</p>
+                )}
+              </div>
+              <div className={`text-[10px] px-2 py-0.5 rounded-full border font-medium flex items-center gap-1 ${STATUS_META[detail.status].color} bg-white/5 border-white/10`}>
+                {(() => { const S = STATUS_META[detail.status].icon; return <S className="w-2.5 h-2.5" />; })()}
+                {STATUS_META[detail.status].label}
+              </div>
             </div>
-
-            {/* Toggle */}
-            <div className="flex gap-1 bg-white/5 rounded-lg p-1">
-              <button
-                onClick={() => handleModeToggle('AI')}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
-                  detail.conversation.mode === 'AI'
-                    ? 'bg-emerald-600 text-white'
-                    : 'text-gray-500 hover:text-gray-300'
-                }`}
-              >
-                <Bot className="w-3 h-3" /> Modo IA
-              </button>
-              <button
-                onClick={() => handleModeToggle('HUMAN')}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
-                  detail.conversation.mode === 'HUMAN'
-                    ? 'bg-amber-600 text-white'
-                    : 'text-gray-500 hover:text-gray-300'
-                }`}
-              >
-                <User className="w-3 h-3" /> Modo Humano
-              </button>
+            {/* Routing info */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] text-gray-600">Canal:</span>
+              <ChannelChip kind={detail.channel} name={detail.channel_name} />
+              <span className="text-[10px] text-gray-700 mx-1">→</span>
+              <span className="text-[10px] text-gray-600">Enrutado a:</span>
+              <RoutedChip type={detail.routed_type} to={detail.routed_to} />
             </div>
-
-            <button
-              onClick={() => handleDelete(selected)}
-              className="text-gray-600 hover:text-red-400 transition-colors"
-              title="Eliminar conversación"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            {detail.started_at && (
+              <p className="text-[10px] text-gray-700">
+                Iniciada: {new Date(detail.started_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}
+              </p>
+            )}
           </div>
 
-          {/* Mensajes */}
+          {/* Messages — audit view */}
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
-            {detail.messages.map(msg => (
-              <MessageBubble key={msg.id} msg={msg} />
-            ))}
+            {detail.messages.length === 0 ? (
+              <p className="text-center text-[11px] text-gray-600 py-8">Sin mensajes registrados.</p>
+            ) : (
+              detail.messages.map(msg => <MessageBubble key={msg.id} msg={msg} />)
+            )}
             <div ref={bottomRef} />
           </div>
 
-          {/* Footer */}
-          {detail.conversation.mode === 'HUMAN' ? (
-            <div className="flex-shrink-0 border-t border-white/5 px-4 py-3 flex gap-2 items-end">
-              <textarea
-                rows={2}
-                value={draft}
-                onChange={e => setDraft(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Escribe un mensaje… (Enter para enviar, Shift+Enter para salto de línea)"
-                className="flex-1 bg-white/5 border border-amber-500/40 focus:border-amber-500/70 rounded-lg px-3 py-2 text-xs text-gray-200 placeholder-gray-600 resize-none focus:outline-none transition-colors"
-              />
-              <button
-                onClick={handleSend}
-                disabled={sending || !draft.trim()}
-                className="flex-shrink-0 px-4 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white text-xs font-medium rounded-lg transition-colors"
-                style={{ height: 52 }}
-              >
-                {sending ? '…' : 'Enviar'}
-              </button>
-            </div>
-          ) : (
-            <div className="flex-shrink-0 border-t border-white/5 px-4 py-3">
-              <p className="text-[11px] text-gray-600 text-center">
-                <Bot className="w-3 h-3 inline mr-1 text-emerald-500" />
-                El agente IA responde automáticamente. Cambia a Modo Humano para escribir tú.
-              </p>
-            </div>
-          )}
+          {/* Footer note */}
+          <div className="flex-shrink-0 border-t border-white/5 px-5 py-2.5">
+            <p className="text-[10px] text-gray-700 text-center">
+              Vista de auditoría — registro de todas las conversaciones entrantes y su ruteo
+            </p>
+          </div>
         </div>
       )}
-    </div>
-  );
-}
-
-// ─── subcomponentes ───────────────────────────────────────────────────────────
-
-function ModeBadge({ mode }: { mode: 'AI' | 'HUMAN' }) {
-  if (mode === 'AI') {
-    return (
-      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800/50">
-        AI
-      </span>
-    );
-  }
-  return (
-    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-950 text-amber-400 border border-amber-800/50">
-      HU
-    </span>
-  );
-}
-
-function MessageBubble({ msg }: { msg: BotMessage }) {
-  const time = new Date(msg.created_at).toLocaleTimeString('es-ES', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-
-  if (msg.role === 'user') {
-    return (
-      <div className="flex justify-start">
-        <div className="max-w-[75%] bg-white/5 border border-white/8 rounded-2xl rounded-tl-sm px-3.5 py-2.5">
-          <p className="text-xs text-gray-200 whitespace-pre-wrap break-words">{msg.content}</p>
-          <p className="text-[10px] text-gray-600 mt-1">{time}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (msg.role === 'assistant') {
-    return (
-      <div className="flex justify-end">
-        <div className="max-w-[75%] bg-emerald-900/40 border border-emerald-800/50 rounded-2xl rounded-tr-sm px-3.5 py-2.5">
-          <p className="text-[10px] text-emerald-400 font-medium mb-1 flex items-center gap-1">
-            <Bot className="w-3 h-3" /> Agente IA
-          </p>
-          <p className="text-xs text-gray-200 whitespace-pre-wrap break-words">{msg.content}</p>
-          <p className="text-[10px] text-gray-600 mt-1">{time}</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex justify-end">
-      <div className="max-w-[75%] bg-amber-900/40 border border-amber-800/50 rounded-2xl rounded-tr-sm px-3.5 py-2.5">
-        <p className="text-[10px] text-amber-400 font-medium mb-1 flex items-center gap-1">
-          <User className="w-3 h-3" /> Humano
-        </p>
-        <p className="text-xs text-gray-200 whitespace-pre-wrap break-words">{msg.content}</p>
-        <p className="text-[10px] text-gray-600 mt-1">{time}</p>
-      </div>
     </div>
   );
 }
