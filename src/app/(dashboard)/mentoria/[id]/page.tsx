@@ -149,6 +149,12 @@ export default function ClienteWorkspace() {
   const [showCuestionarioGen, setShowCuestionarioGen] = useState(false);
   const [cuestionarioGenForm, setCuestionarioGenForm] = useState({ area: '', rolDestino: 'gerente' as 'gerente' | 'operador' });
   const [cuestionarioVista, setCuestionarioVista] = useState<any | null>(null);
+  const [editandoSesionId, setEditandoSesionId] = useState<string | null>(null);
+  const [editandoTitulo, setEditandoTitulo] = useState('');
+  const [sugiriendoId, setSugiriendoId] = useState<string | null>(null);
+  const [sugerencias, setSugerencias] = useState<any[]>([]);
+  const [showSugerencias, setShowSugerencias] = useState(false);
+  const [creandoSugerida, setCreandoSugerida] = useState<string | null>(null);
   const [legacyChatLen, setLegacyChatLen] = useState(0);
   const [showSesion, setShowSesion]     = useState(false);
   const [showPago, setShowPago]         = useState(false);
@@ -361,6 +367,53 @@ export default function ClienteWorkspace() {
     }
   }
 
+  function startEditSesion(sid: string, titulo: string) {
+    setEditandoSesionId(sid);
+    setEditandoTitulo(titulo);
+  }
+
+  async function saveEditSesion() {
+    if (!editandoSesionId) return;
+    const sid = editandoSesionId;
+    const titulo = editandoTitulo.trim();
+    setEditandoSesionId(null);
+    if (!titulo) return;
+    setSesionesDiag(prev => prev.map(s => s.id === sid ? { ...s, titulo } : s));
+    try { await api.patch(`/mentoria/clientes/${id}/sesiones-diag/${sid}`, { titulo }); } catch {}
+  }
+
+  async function handleSugerirSiguientes(sesionId: string) {
+    setSugiriendoId(sesionId);
+    try {
+      const result = await api.post<any[]>(`/mentoria/clientes/${id}/sesiones-diag/${sesionId}/sugerir-siguientes`, {});
+      setSugerencias(result ?? []);
+      setShowSugerencias(true);
+    } catch (e: any) {
+      alert(e?.message ?? 'Error al generar sugerencias');
+    } finally {
+      setSugiriendoId(null);
+    }
+  }
+
+  async function crearSesionSugerida(sug: any) {
+    const newId = `s-${Date.now()}`;
+    setCreandoSugerida(newId);
+    try {
+      await api.post(`/mentoria/clientes/${id}/sesiones-diag`, {
+        id: newId,
+        titulo: sug.titulo,
+        tipo: sug.tipo,
+        interlocutor: sug.interlocutor,
+        cargo: sug.cargo,
+        area: sug.area,
+        fecha: new Date().toISOString().split('T')[0],
+      });
+      setSesionesDiag(prev => [...prev, { id: newId, ...sug, mensajes: [], cuestionarios_generados: [], fecha: new Date().toISOString().split('T')[0] }]);
+      setShowSugerencias(false);
+    } catch {}
+    setCreandoSugerida(null);
+  }
+
   if (loading) return (
     <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ width: 22, height: 22, borderRadius: '50%', border: '2px solid #6c4de6', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
@@ -507,13 +560,36 @@ export default function ClienteWorkspace() {
                   const intercambios = (s.mensajes ?? []).filter((m: any) => m.role === 'user').length;
                   const cuestionarios = s.cuestionarios_generados ?? [];
                   const tipoIcon = TIPOS_SESION_DIAG.find(t => t.key === s.tipo)?.icon ?? '🎙️';
+                  const isEditingThis = editandoSesionId === s.id;
+                  const NEXT_LABEL: Record<string, string> = { dg: '🏛️ Sugerir sesiones de directores', director: '🏢 Sugerir sesiones de gerentes', gerente: '📋 Generar cuestionario', operador: '📋 Generar cuestionario' };
+                  const nextBtnLabel = NEXT_LABEL[s.tipo as string];
+                  const isSuggestionBtn = s.tipo === 'dg' || s.tipo === 'director';
                   return (
                     <div key={s.id} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
                       {/* Sesión header */}
                       <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
                         <span style={{ fontSize: 16 }}>{tipoIcon}</span>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{s.titulo}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          {isEditingThis ? (
+                            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                              <input
+                                value={editandoTitulo}
+                                onChange={e => setEditandoTitulo(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') saveEditSesion(); if (e.key === 'Escape') setEditandoSesionId(null); }}
+                                autoFocus
+                                style={{ ...inputSt, flex: 1, fontSize: 13, padding: '4px 8px' }}
+                              />
+                              <button onClick={saveEditSesion} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#22c55e', fontSize: 16, lineHeight: 1, padding: '2px 4px' }}>✓</button>
+                              <button onClick={() => setEditandoSesionId(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', fontSize: 16, lineHeight: 1, padding: '2px 4px' }}>✕</button>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.titulo}</div>
+                              <button onClick={() => startEditSesion(s.id, s.titulo)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', padding: '1px 3px', opacity: 0.5, flexShrink: 0 }} title="Editar nombre">
+                                <Edit2 size={11} />
+                              </button>
+                            </div>
+                          )}
                           <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
                             {intercambios} intercambio{intercambios !== 1 ? 's' : ''} · {s.area || s.cargo || '—'} · {s.fecha}
                           </div>
@@ -525,14 +601,24 @@ export default function ClienteWorkspace() {
                           >
                             🎙️ Continuar
                           </button>
-                          {s.area && (
-                            <button
-                              onClick={() => handleGenerarCuestionario(s.id, s.area, 'gerente')}
-                              disabled={generandoCuestionario === s.id}
-                              style={{ fontSize: 11, padding: '5px 10px', background: 'rgba(59,130,246,0.1)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 6, cursor: 'pointer', fontWeight: 600, opacity: generandoCuestionario === s.id ? 0.6 : 1 }}
-                            >
-                              {generandoCuestionario === s.id ? '⏳…' : '📋 Generar cuestionario'}
-                            </button>
+                          {nextBtnLabel && (
+                            isSuggestionBtn ? (
+                              <button
+                                onClick={() => handleSugerirSiguientes(s.id)}
+                                disabled={sugiriendoId === s.id}
+                                style={{ fontSize: 11, padding: '5px 10px', background: 'rgba(139,92,246,0.1)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.3)', borderRadius: 6, cursor: 'pointer', fontWeight: 600, opacity: sugiriendoId === s.id ? 0.6 : 1 }}
+                              >
+                                {sugiriendoId === s.id ? '⏳ Analizando…' : nextBtnLabel}
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleGenerarCuestionario(s.id, s.area || '', 'gerente')}
+                                disabled={generandoCuestionario === s.id}
+                                style={{ fontSize: 11, padding: '5px 10px', background: 'rgba(59,130,246,0.1)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 6, cursor: 'pointer', fontWeight: 600, opacity: generandoCuestionario === s.id ? 0.6 : 1 }}
+                              >
+                                {generandoCuestionario === s.id ? '⏳…' : nextBtnLabel}
+                              </button>
+                            )
                           )}
                         </div>
                       </div>
@@ -732,6 +818,60 @@ export default function ClienteWorkspace() {
             >
               {generandoGlobal ? '⏳ Generando (~30s)…' : '📋 Generar cuestionario'}
             </button>
+          </div>
+        </>
+      )}
+
+      {/* Modal: Sesiones sugeridas */}
+      {showSugerencias && (
+        <>
+          <div onClick={() => setShowSugerencias(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 60 }} />
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 600, maxHeight: '80vh', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, zIndex: 70, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 40px 80px rgba(0,0,0,0.5)' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>Sesiones siguientes sugeridas</div>
+                <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>Generadas a partir del transcript y el organigrama. Selecciona cuáles crear.</div>
+              </div>
+              <button onClick={() => setShowSugerencias(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', fontSize: 18, lineHeight: 1 }}>✕</button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {sugerencias.length === 0 ? (
+                <div style={{ textAlign: 'center', color: 'var(--text-3)', fontSize: 13, padding: '32px 0' }}>
+                  No se pudieron identificar personas específicas.<br />
+                  <span style={{ fontSize: 11 }}>Registra más detalle en la sesión e intenta de nuevo.</span>
+                </div>
+              ) : sugerencias.map((sug: any, i: number) => {
+                const tipoIcon = TIPOS_SESION_DIAG.find(t => t.key === sug.tipo)?.icon ?? '👤';
+                const yaExiste = sesionesDiag.some(s => s.interlocutor === sug.interlocutor && s.tipo === sug.tipo);
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: yaExiste ? 'rgba(34,197,94,0.05)' : 'var(--bg)', border: `1px solid ${yaExiste ? 'rgba(34,197,94,0.25)' : 'var(--line)'}`, borderRadius: 10 }}>
+                    <span style={{ fontSize: 18, flexShrink: 0 }}>{tipoIcon}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>{sug.interlocutor}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{sug.cargo}{sug.area ? ` · ${sug.area}` : ''}</div>
+                      <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2, fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sug.titulo}</div>
+                    </div>
+                    {yaExiste ? (
+                      <span style={{ fontSize: 11, color: '#22c55e', fontWeight: 600, flexShrink: 0 }}>✓ Ya existe</span>
+                    ) : (
+                      <button
+                        onClick={() => crearSesionSugerida(sug)}
+                        disabled={creandoSugerida !== null}
+                        style={{ fontSize: 11, padding: '6px 14px', background: '#6c4de6', color: 'white', border: 'none', borderRadius: 7, cursor: 'pointer', fontWeight: 600, flexShrink: 0, opacity: creandoSugerida !== null ? 0.6 : 1 }}
+                      >
+                        + Crear sesión
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ padding: '14px 24px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button onClick={() => setShowSugerencias(false)} style={{ ...btnGhost, fontSize: 13 }}>Cerrar</button>
+              <button onClick={() => { setShowPicker(true); setShowSugerencias(false); }} style={{ ...btnPrimary, fontSize: 13 }}>
+                <Plus size={12} /> Crear sesión personalizada
+              </button>
+            </div>
           </div>
         </>
       )}
