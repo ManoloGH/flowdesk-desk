@@ -64,7 +64,7 @@ export default function RequerimientoPage() {
   // VoBo state
   const [vobos, setVobos] = useState<VoBo[]>([]);
   const [voboModal, setVoboModal] = useState(false);
-  const [voboForm, setVoboForm] = useState({ area: '', nombre: '', email: '' });
+  const [voboForm, setVoboForm] = useState({ area: '', nombre: '', email: '', miEmail: '' });
   const [enviandoVobo, setEnviandoVobo] = useState(false);
 
   const cargar = useCallback(async () => {
@@ -134,6 +134,7 @@ export default function RequerimientoPage() {
           area: voboForm.area,
           responsableNombre: voboForm.nombre,
           responsableEmail: voboForm.email,
+          solicitanteEmail: voboForm.miEmail || null,
         }),
       });
       if (!res.ok) {
@@ -153,7 +154,7 @@ export default function RequerimientoPage() {
       }));
       setVobos(prev => [nuevo, ...prev]);
       setVoboModal(false);
-      setVoboForm({ area: '', nombre: '', email: '' });
+      setVoboForm({ area: '', nombre: '', email: '', miEmail: '' });
     } finally {
       setEnviandoVobo(false);
     }
@@ -311,11 +312,43 @@ export default function RequerimientoPage() {
             <div className="divide-y divide-white/5">
               {vobos.map(v => {
                 const est = VOBO_ESTADO[v.estado] ?? VOBO_ESTADO[0];
+                const enviado = new Date(v.fechaSolicitud);
+                const respondido = v.fechaRespuesta ? new Date(v.fechaRespuesta) : null;
+                const fmt = (d: Date) =>
+                  d.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: '2-digit' }) +
+                  ' ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+                const difMin = respondido
+                  ? Math.round((respondido.getTime() - enviado.getTime()) / 60000)
+                  : null;
+                const tiempoResp = difMin !== null
+                  ? difMin < 60 ? `${difMin}m` : difMin < 1440
+                    ? `${Math.floor(difMin / 60)}h ${difMin % 60}m`
+                    : `${Math.floor(difMin / 1440)}d ${Math.floor((difMin % 1440) / 60)}h`
+                  : null;
                 return (
                   <div key={v.id} className="px-4 py-3 flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-200 truncate">{v.area}</p>
                       <p className="text-xs text-slate-500">{v.responsableNombre} · {v.responsableEmail}</p>
+                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
+                        <span className="text-xs text-slate-500">
+                          <span className="text-slate-600">Enviado</span> {fmt(enviado)}
+                        </span>
+                        {respondido && (
+                          <>
+                            <span className="text-slate-700">·</span>
+                            <span className="text-xs text-slate-500">
+                              <span className="text-slate-600">Respondió</span> {fmt(respondido)}
+                            </span>
+                            {tiempoResp && (
+                              <>
+                                <span className="text-slate-700">·</span>
+                                <span className="text-xs text-emerald-600 font-medium">{tiempoResp}</span>
+                              </>
+                            )}
+                          </>
+                        )}
+                      </div>
                       {v.comentario && (
                         <p className="text-xs text-slate-400 mt-1 italic">"{v.comentario}"</p>
                       )}
@@ -349,7 +382,8 @@ export default function RequerimientoPage() {
               {[
                 { label: 'Área / Departamento', key: 'area', type: 'text', placeholder: 'Ej: Contabilidad' },
                 { label: 'Nombre del responsable', key: 'nombre', type: 'text', placeholder: 'Ej: Juan Pérez' },
-                { label: 'Correo electrónico', key: 'email', type: 'email', placeholder: 'responsable@empresa.com' },
+                { label: 'Correo del responsable', key: 'email', type: 'email', placeholder: 'responsable@empresa.com' },
+                { label: 'Tu correo (para recibir notificación de respuesta)', key: 'miEmail', type: 'email', placeholder: 'tu@correo.com (opcional)' },
               ].map(f => (
                 <div key={f.key}>
                   <label className="text-xs text-slate-400 block mb-1">{f.label}</label>
