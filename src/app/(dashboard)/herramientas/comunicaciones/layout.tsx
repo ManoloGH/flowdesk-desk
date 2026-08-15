@@ -1,14 +1,11 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Inbox, Radio, BookUser, GitFork, Bot } from 'lucide-react';
+import { GitFork, Inbox } from 'lucide-react';
 
 const TABS = [
-  { href: '/herramientas/comunicaciones/bandeja',    label: 'Bandeja',    icon: Inbox },
-  { href: '/herramientas/comunicaciones/canales',    label: 'Canales',    icon: Radio },
-  { href: '/herramientas/comunicaciones/directorio', label: 'Directorio', icon: BookUser },
-  { href: '/herramientas/comunicaciones/ruteo',      label: 'Ruteo',      icon: GitFork },
-  { href: '/herramientas/comunicaciones/agente',     label: 'Agente',     icon: Bot },
+  { href: '/herramientas/comunicaciones',        label: 'Conmutador', icon: GitFork, exact: true },
+  { href: '/herramientas/comunicaciones/bandeja', label: 'Bandeja',    icon: Inbox,   exact: false },
 ];
 
 export default function ComunicacionesLayout({ children }: { children: React.ReactNode }) {
@@ -20,15 +17,15 @@ export default function ComunicacionesLayout({ children }: { children: React.Rea
       <div className="flex-shrink-0 px-6 pt-5 pb-0 border-b border-white/5">
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-1">
-            <Radio className="w-4 h-4 text-cyan-400" />
+            <GitFork className="w-4 h-4 text-cyan-400" />
             <h1 className="text-base font-bold text-white">Central de Comunicaciones</h1>
           </div>
-          <p className="text-[11px] text-gray-600">Canales, directorio y ruteo de mensajes y llamadas</p>
+          <p className="text-[11px] text-gray-600">Conmutador — define a qué agente o humano se enruta cada canal</p>
         </div>
         {/* Tabs */}
         <div className="flex gap-1">
-          {TABS.map(({ href, label, icon: Icon }) => {
-            const active = pathname.startsWith(href);
+          {TABS.map(({ href, label, icon: Icon, exact }) => {
+            const active = exact ? pathname === href : pathname.startsWith(href);
             return (
               <Link
                 key={href}
