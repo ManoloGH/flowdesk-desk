@@ -798,10 +798,25 @@ export default function ClienteWorkspace() {
                 <span style={{ fontSize: 16 }}>🕓</span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>Sesión anterior (sin registrar)</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{legacyChatLen} intercambios · pre-nueva versión</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{legacyChatLen} intercambios · historial pre-versión actual</div>
                 </div>
                 <button onClick={() => router.push(`/mentoria/${id}/sesion`)} style={{ fontSize: 11, padding: '5px 10px', background: 'rgba(245,158,11,0.12)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>
                   🎙️ Continuar
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!window.confirm('¿Eliminar esta sesión antigua? Se borrará el historial de chat previo. Esta acción no se puede deshacer.')) return;
+                    try {
+                      await api.patch(`/mentoria/clientes/${id}`, { chat_history: [] });
+                      setLegacyChatLen(0);
+                    } catch (e: any) {
+                      alert(`Error al eliminar: ${e?.message ?? 'error desconocido'}`);
+                    }
+                  }}
+                  style={{ fontSize: 13, padding: '5px 8px', background: 'none', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 6, cursor: 'pointer', lineHeight: 1 }}
+                  title="Eliminar sesión antigua"
+                >
+                  🗑️
                 </button>
               </div>
             )}
