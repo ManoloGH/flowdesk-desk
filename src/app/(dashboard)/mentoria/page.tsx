@@ -51,7 +51,7 @@ const CONVERSION_STAGES = new Set(['contrato', 'implementacion']);
 
 const STAGE_MAP = Object.fromEntries(PROSPECTO_STAGES.map(s => [s.key, s]));
 
-const FASE_LABELS = ['Mapeo', 'Quick Wins', 'Expansión', 'Optimización'];
+const FASE_LABELS = ['Mapeo', 'Autorizar', 'Entregables', 'Entrega final'];
 const FASE_COLORS = ['#6c4de6', '#f59e0b', '#3b82f6', '#22c55e'];
 
 const PRECIO_LABEL: Record<string, number> = { '<10': 10000, '10-100': 30000, '>100': 50000 };

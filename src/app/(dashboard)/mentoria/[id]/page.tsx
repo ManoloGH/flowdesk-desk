@@ -54,44 +54,38 @@ interface AccionPlan {
 // ── Phases config ──────────────────────────────────────────────────────────────
 const PHASES = [
   {
-    num: 0, label: 'Mapeo técnico', duracion: '2 semanas', color: '#6c4de6',
+    num: 0, label: 'Mapeo', duracion: '~3 semanas', color: '#6c4de6',
     items: [
-      { id: 'accesos',       label: 'Accesos recibidos (sistemas, usuarios, APIs)' },
-      { id: 'inventario',    label: 'Inventario de herramientas documentado' },
-      { id: 'discovery',     label: 'Sesión de discovery completada' },
-      { id: 'configurador',  label: 'Configurador de diagnóstico ejecutado' },
-      { id: 'bpmn_asis',     label: 'BPMNs AS-IS generados y revisados' },
-      { id: 'hallazgos',     label: 'Hallazgos documentados con /analizar' },
+      { id: 'sesion_dg',        label: 'Entrevista con Director General completada' },
+      { id: 'sesiones_areas',   label: 'Entrevistas por área completadas' },
+      { id: 'cuestionarios',    label: 'Cuestionarios a gerentes/operadores respondidos' },
+      { id: 'cubo_completo',    label: 'Cubo de información lleno (procesos, sistemas, brechas)' },
+      { id: 'organigrama',      label: 'Organigrama documentado' },
     ],
   },
   {
-    num: 1, label: 'Quick Wins', duracion: '4 semanas', color: '#f59e0b',
+    num: 1, label: 'Autorizar', duracion: '~1 semana', color: '#f59e0b',
     items: [
-      { id: 'cuestionarios', label: 'Cuestionarios de diagnóstico completados' },
-      { id: 'matriz',        label: 'Matriz de impacto generada y aprobada' },
-      { id: 'auto1',         label: 'Automatización #1 implementada y probada' },
-      { id: 'auto2',         label: 'Automatización #2 implementada y probada' },
-      { id: 'auto3',         label: 'Automatización #3 implementada y probada' },
-      { id: 'informe',       label: 'Informe de diagnóstico entregado' },
+      { id: 'preliminar_gen',   label: 'Documento preliminar generado' },
+      { id: 'revision_areas',   label: 'Revisión con cada área involucrada' },
+      { id: 'correcciones',     label: 'Correcciones y ajustes aplicados' },
+      { id: 'info_autorizada',  label: 'Información autorizada por el cliente' },
     ],
   },
   {
-    num: 2, label: 'Expansión', duracion: '8 semanas', color: '#3b82f6',
+    num: 2, label: 'Entregables', duracion: '~1 semana', color: '#3b82f6',
     items: [
-      { id: 'bpmn_tobe',     label: 'BPMNs TO-BE implementados' },
-      { id: 'crm',           label: 'CRM configurado e integrado' },
-      { id: 'agente',        label: 'Agente IA configurado para el cliente' },
-      { id: 'dashboard',     label: 'Dashboard de métricas conectado' },
-      { id: 'capacitacion',  label: 'Capacitación al equipo realizada' },
+      { id: 'preliminar_ej',    label: 'Preliminar enviado al ejecutivo MentorIA' },
+      { id: 'comentarios_ej',   label: 'Comentarios finales del ejecutivo recibidos' },
+      { id: 'ajustes_finales',  label: 'Ajustes finales aplicados' },
     ],
   },
   {
-    num: 3, label: 'Optimización', duracion: 'Ongoing', color: '#22c55e',
+    num: 3, label: 'Entrega final', duracion: '1 sesión', color: '#22c55e',
     items: [
-      { id: 'revision_mes',  label: 'Revisión mensual de métricas completada' },
-      { id: 'ajustes',       label: 'Ajustes y mejoras aplicados este mes' },
-      { id: 'nuevas_opps',   label: 'Nuevas oportunidades identificadas' },
-      { id: 'renovacion',    label: 'Renovación / upsell evaluada' },
+      { id: 'entrega_final',    label: 'Entregables finales presentados al cliente' },
+      { id: 'sesion_cierre',    label: 'Sesión de cierre realizada' },
+      { id: 'firma_aprobacion', label: 'Aprobación / firma del cliente obtenida' },
     ],
   },
 ] satisfies { num: number; label: string; duracion: string; color: string; items: { id: string; label: string }[] }[];
@@ -1182,7 +1176,7 @@ export default function ClienteWorkspace() {
 // ── Phase Tracker ──────────────────────────────────────────────────────────────
 function PhaseTracker({ current }: { current: number }) {
   const colors = ['#6c4de6', '#f59e0b', '#3b82f6', '#22c55e'];
-  const labels = ['Mapeo', 'Quick Wins', 'Expansión', 'Optimización'];
+  const labels = ['Mapeo', 'Autorizar', 'Entregables', 'Entrega final'];
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginTop: 8 }}>
       {[0, 1, 2, 3].map((n, i) => {
