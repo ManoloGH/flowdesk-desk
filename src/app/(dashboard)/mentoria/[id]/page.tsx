@@ -162,6 +162,11 @@ export default function ClienteWorkspace() {
   const [envioDestino, setEnvioDestino] = useState('');
   const [enviandoEntrevista, setEnviandoEntrevista] = useState(false);
   const [envioResultado, setEnvioResultado] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [eliminandoSesion, setEliminandoSesion] = useState<string | null>(null);
+  const [editandoCuestionario, setEditandoCuestionario] = useState<{ sesionId: string; cq: any } | null>(null);
+  const [editCqTitulo, setEditCqTitulo] = useState('');
+  const [editCqPreguntas, setEditCqPreguntas] = useState<any[]>([]);
+  const [guardandoCuestionario, setGuardandoCuestionario] = useState(false);
   const [legacyChatLen, setLegacyChatLen] = useState(0);
   const [showSesion, setShowSesion]     = useState(false);
   const [showPago, setShowPago]         = useState(false);
@@ -386,7 +391,65 @@ export default function ClienteWorkspace() {
     setEditandoSesionId(null);
     if (!titulo) return;
     setSesionesDiag(prev => prev.map(s => s.id === sid ? { ...s, titulo } : s));
-    try { await api.patch(`/mentoria/clientes/${id}/sesiones-diag/${sid}`, { titulo }); } catch {}
+    try {
+      await api.patch(`/mentoria/clientes/${id}/sesiones-diag/${sid}`, { titulo });
+    } catch (e: any) {
+      alert(`No se pudo guardar el nombre: ${e?.message ?? 'error desconocido'}`);
+      setSesionesDiag(prev => prev.map(s => s.id === sid ? { ...s, titulo: s.titulo } : s));
+    }
+  }
+
+  async function handleDeleteSesion(sid: string) {
+    if (!window.confirm('¿Eliminar esta entrevista y todos sus datos?')) return;
+    setEliminandoSesion(sid);
+    try {
+      await api.delete(`/mentoria/clientes/${id}/sesiones-diag/${sid}`);
+      setSesionesDiag(prev => prev.filter(s => s.id !== sid));
+    } catch (e: any) {
+      alert(`Error al eliminar: ${e?.message ?? 'error desconocido'}`);
+    } finally {
+      setEliminandoSesion(null);
+    }
+  }
+
+  function openEditCuestionario(sesionId: string, cq: any) {
+    setEditandoCuestionario({ sesionId, cq });
+    setEditCqTitulo(cq.titulo ?? '');
+    setEditCqPreguntas(JSON.parse(JSON.stringify(cq.preguntas ?? [])));
+  }
+
+  async function saveEditCuestionario() {
+    if (!editandoCuestionario) return;
+    const { sesionId, cq } = editandoCuestionario;
+    setGuardandoCuestionario(true);
+    try {
+      const updated = await api.patch<any>(
+        `/mentoria/clientes/${id}/sesiones-diag/${sesionId}/cuestionarios/${cq.id}`,
+        { titulo: editCqTitulo.trim() || cq.titulo, preguntas: editCqPreguntas },
+      );
+      setSesionesDiag(prev => prev.map(s => s.id === sesionId
+        ? { ...s, cuestionarios_generados: (s.cuestionarios_generados ?? []).map((c: any) => c.id === cq.id ? updated : c) }
+        : s
+      ));
+      setEditandoCuestionario(null);
+    } catch (e: any) {
+      alert(`Error al guardar: ${e?.message ?? 'error desconocido'}`);
+    } finally {
+      setGuardandoCuestionario(false);
+    }
+  }
+
+  async function handleDeleteCuestionario(sesionId: string, cqId: string) {
+    if (!window.confirm('¿Eliminar este cuestionario?')) return;
+    try {
+      await api.delete(`/mentoria/clientes/${id}/sesiones-diag/${sesionId}/cuestionarios/${cqId}`);
+      setSesionesDiag(prev => prev.map(s => s.id === sesionId
+        ? { ...s, cuestionarios_generados: (s.cuestionarios_generados ?? []).filter((c: any) => c.id !== cqId) }
+        : s
+      ));
+    } catch (e: any) {
+      alert(`Error al eliminar: ${e?.message ?? 'error desconocido'}`);
+    }
   }
 
   async function handleSugerirSiguientes(sesionId: string) {
@@ -657,6 +720,14 @@ export default function ClienteWorkspace() {
                           >
                             🎙️ Continuar
                           </button>
+                          <button
+                            onClick={() => handleDeleteSesion(s.id)}
+                            disabled={eliminandoSesion === s.id}
+                            title="Eliminar entrevista"
+                            style={{ fontSize: 11, padding: '5px 7px', background: 'rgba(239,68,68,0.07)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 6, cursor: 'pointer', opacity: eliminandoSesion === s.id ? 0.5 : 1 }}
+                          >
+                            🗑️
+                          </button>
                           {nextBtnLabel && (
                             isSuggestionBtn ? (
                               <button
@@ -702,11 +773,13 @@ export default function ClienteWorkspace() {
                         <div style={{ borderTop: '1px solid var(--line)', padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
                           {cuestionarios.map((cq: any) => (
                             <div key={cq.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 7 }}>
-                              <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: 11, fontWeight: 600, color: '#3b82f6' }}>📋 {cq.titulo}</div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 11, fontWeight: 600, color: '#3b82f6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📋 {cq.titulo}</div>
                                 <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 1 }}>{(cq.preguntas ?? []).length} preguntas</div>
                               </div>
-                              <button onClick={() => setCuestionarioVista(cq)} style={{ fontSize: 10, color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline', flexShrink: 0 }}>Ver</button>
+                              <button onClick={() => setCuestionarioVista(cq)} style={{ fontSize: 10, color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px', textDecoration: 'underline', flexShrink: 0 }}>Ver</button>
+                              <button onClick={() => openEditCuestionario(s.id, cq)} style={{ fontSize: 10, color: 'var(--text-2)', background: 'rgba(0,0,0,0.05)', border: '1px solid var(--line)', borderRadius: 4, cursor: 'pointer', padding: '2px 7px', flexShrink: 0 }}>Editar</button>
+                              <button onClick={() => handleDeleteCuestionario(s.id, cq.id)} style={{ fontSize: 10, color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', flexShrink: 0 }}>🗑️</button>
                             </div>
                           ))}
                         </div>
@@ -821,6 +894,75 @@ export default function ClienteWorkspace() {
             <button onClick={crearYEntrarSesion} disabled={!pickerForm.interlocutor.trim() || creandoSesion} style={{ ...btnPrimary, width: '100%', justifyContent: 'center', fontSize: 14, padding: '11px', opacity: !pickerForm.interlocutor.trim() ? 0.5 : 1 }}>
               {creandoSesion ? 'Creando…' : '🎙️ Iniciar entrevista'}
             </button>
+          </div>
+        </>
+      )}
+
+      {/* Modal: Editar cuestionario */}
+      {editandoCuestionario && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 70 }} />
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 680, maxHeight: '88vh', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, zIndex: 80, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 40px 80px rgba(0,0,0,0.5)' }}>
+            {/* Header */}
+            <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Nombre del cuestionario</div>
+                <input
+                  value={editCqTitulo}
+                  onChange={e => setEditCqTitulo(e.target.value)}
+                  style={{ ...inputSt, width: '100%', fontSize: 14, fontWeight: 600 }}
+                  autoFocus
+                />
+              </div>
+              <button onClick={() => setEditandoCuestionario(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', fontSize: 18, flexShrink: 0 }}>✕</button>
+            </div>
+
+            {/* Preguntas editables */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '14px 24px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{editCqPreguntas.length} preguntas</div>
+                <button
+                  onClick={() => setEditCqPreguntas(prev => [...prev, { seccion: 'General', pregunta: '', contexto_empresa: '' }])}
+                  style={{ fontSize: 11, padding: '4px 10px', background: 'rgba(59,130,246,0.1)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
+                >
+                  + Agregar pregunta
+                </button>
+              </div>
+              {editCqPreguntas.map((p: any, i: number) => (
+                <div key={i} style={{ display: 'flex', gap: 8, padding: '10px 12px', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 9 }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <input
+                      value={p.seccion}
+                      onChange={e => setEditCqPreguntas(prev => prev.map((x, j) => j === i ? { ...x, seccion: e.target.value } : x))}
+                      placeholder="Sección"
+                      style={{ ...inputSt, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#3b82f6', padding: '3px 7px' }}
+                    />
+                    <textarea
+                      value={p.pregunta}
+                      onChange={e => setEditCqPreguntas(prev => prev.map((x, j) => j === i ? { ...x, pregunta: e.target.value } : x))}
+                      placeholder="Pregunta…"
+                      rows={2}
+                      style={{ ...inputSt, fontSize: 12, resize: 'vertical', lineHeight: 1.5 } as any}
+                    />
+                    <input
+                      value={p.contexto_empresa ?? ''}
+                      onChange={e => setEditCqPreguntas(prev => prev.map((x, j) => j === i ? { ...x, contexto_empresa: e.target.value } : x))}
+                      placeholder="Contexto (opcional)"
+                      style={{ ...inputSt, fontSize: 10, fontStyle: 'italic', color: 'var(--text-3)', padding: '3px 7px' }}
+                    />
+                  </div>
+                  <button onClick={() => setEditCqPreguntas(prev => prev.filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 14, alignSelf: 'flex-start', padding: '2px 4px', flexShrink: 0 }}>✕</button>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div style={{ padding: '14px 24px', borderTop: '1px solid var(--line)', display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={() => setEditandoCuestionario(null)} style={{ ...btnGhost, fontSize: 13 }}>Cancelar</button>
+              <button onClick={saveEditCuestionario} disabled={guardandoCuestionario} style={{ ...btnPrimary, fontSize: 13, opacity: guardandoCuestionario ? 0.6 : 1 }}>
+                {guardandoCuestionario ? '⏳ Guardando…' : '✓ Guardar cambios'}
+              </button>
+            </div>
           </div>
         </>
       )}
