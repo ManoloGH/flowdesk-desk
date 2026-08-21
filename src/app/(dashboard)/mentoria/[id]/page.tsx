@@ -174,6 +174,8 @@ export default function ClienteWorkspace() {
   const [procesando, setProcesando]     = useState(false);
   const [resumenIA, setResumenIA]       = useState('');
   const [roiIA, setRoiIA]              = useState('');
+  const [notasCorrecciones, setNotasCorrecciones] = useState<Record<string, string>>({});
+  const [entregablesRevisados, setEntregablesRevisados] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     async function load() {
@@ -744,7 +746,7 @@ export default function ClienteWorkspace() {
                           {(s.tipo === 'gerente' || s.tipo === 'operador') && (
                             tokensGenerados[s.id] ? (
                               <button
-                                onClick={() => { setEnvioCanal(null); setEnvioDestino(''); setEnvioResultado(null); setShowEnvioModal(tokensGenerados[s.id]); }}
+                                onClick={() => { setEnvioCanal(null); setEnvioDestino(''); setEnvioResultado(null); setShowEnvioModal({ sesionId: s.id, ...tokensGenerados[s.id] }); }}
                                 style={{ fontSize: 11, padding: '5px 10px', background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
                               >
                                 🔗 Reenviar / copiar
@@ -824,39 +826,121 @@ export default function ClienteWorkspace() {
         )}
 
         {/* ── ENTREGABLES ── */}
-        {tab === 'entregables' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <div style={{ fontSize: 12, color: 'var(--text-3)', padding: '2px 0' }}>
-              Cada entregable se genera desde el cubo de información. Ábrelos y revísalos con el cliente.
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-              {ENTREGABLES.map(e => (
-                <a
-                  key={e.id}
-                  href={`${e.path}?clienteId=${id}&empresa=${encodeURIComponent(cliente.empresa)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{
-                    display: 'flex', flexDirection: 'column', gap: 8,
-                    background: 'var(--surface)', border: '1px solid var(--line)',
-                    borderRadius: 12, padding: '18px 20px', textDecoration: 'none',
-                    transition: 'border-color 0.15s, box-shadow 0.15s',
-                  }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = '#6c4de650'; (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 4px 16px rgba(108,77,230,0.1)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--line)'; (e.currentTarget as HTMLAnchorElement).style.boxShadow = 'none'; }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 26 }}>{e.icon}</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-3)', background: 'var(--bg)', padding: '2px 7px', borderRadius: 99, border: '1px solid var(--line)' }}>#{e.num}</span>
+        {tab === 'entregables' && (() => {
+          const fase = cliente.fase_actual;
+          const entregableUrl = (path: string) => `${path}?clienteId=${id}&empresa=${encodeURIComponent(cliente.empresa)}`;
+          const EntregableCard = ({ e, showNotes }: { e: typeof ENTREGABLES[number]; showNotes?: boolean }) => (
+            <div key={e.id} style={{ background: 'var(--surface)', border: `1px solid ${entregablesRevisados[e.id] ? 'rgba(34,197,94,0.35)' : 'var(--line)'}`, borderRadius: 12, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 22 }}>{e.icon}</span>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{e.titulo}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{e.desc}</div>
                   </div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', lineHeight: 1.3 }}>{e.titulo}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5 }}>{e.desc}</div>
-                  <div style={{ fontSize: 10, color: '#8b6ef5', marginTop: 2 }}>📥 {e.fuente}</div>
-                </a>
-              ))}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>
+                  {entregablesRevisados[e.id] && <span style={{ fontSize: 10, fontWeight: 700, color: '#22c55e', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', padding: '2px 7px', borderRadius: 99 }}>✓ Revisado</span>}
+                  <a href={entregableUrl(e.path)} target="_blank" rel="noreferrer" style={{ fontSize: 11, fontWeight: 600, padding: '5px 12px', background: 'rgba(108,77,230,0.08)', color: '#6c4de6', border: '1px solid rgba(108,77,230,0.25)', borderRadius: 7, textDecoration: 'none', whiteSpace: 'nowrap' }}>Abrir ↗</a>
+                </div>
+              </div>
+              {showNotes && (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                  <textarea
+                    value={notasCorrecciones[e.id] ?? ''}
+                    onChange={ev => setNotasCorrecciones(p => ({ ...p, [e.id]: ev.target.value }))}
+                    placeholder="Notas de corrección (opcional)…"
+                    rows={2}
+                    style={{ flex: 1, fontSize: 11, padding: '7px 10px', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8, color: 'var(--text)', resize: 'vertical', fontFamily: 'inherit' } as any}
+                  />
+                  <button
+                    onClick={() => setEntregablesRevisados(p => ({ ...p, [e.id]: !p[e.id] }))}
+                    style={{ fontSize: 11, padding: '7px 12px', background: entregablesRevisados[e.id] ? 'rgba(34,197,94,0.1)' : 'var(--bg)', color: entregablesRevisados[e.id] ? '#22c55e' : 'var(--text-3)', border: `1px solid ${entregablesRevisados[e.id] ? 'rgba(34,197,94,0.3)' : 'var(--line)'}`, borderRadius: 8, cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}
+                  >
+                    {entregablesRevisados[e.id] ? '✓ Revisado' : 'Marcar revisado'}
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          );
+
+          /* ── Fase 0: Mapeo en curso ── */
+          if (fase === 0) return (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: '48px 24px', textAlign: 'center' }}>
+              <div style={{ fontSize: 36 }}>🗺️</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>Primero hay que terminar el mapeo</div>
+              <div style={{ fontSize: 13, color: 'var(--text-3)', maxWidth: 420, lineHeight: 1.6 }}>Completa las entrevistas y cuestionarios de todas las áreas. Cuando el cubo de información esté lleno, avanza a la fase de Autorización para generar los primeros entregables.</div>
+              <button onClick={() => setTab('sesiones_cuestionarios')} style={{ ...btnPrimary, marginTop: 8 }}>Ver entrevistas y cuestionarios →</button>
+            </div>
+          );
+
+          /* ── Fase 1: Autorizar información ── */
+          if (fase === 1) return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div style={{ padding: '14px 18px', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#f59e0b', marginBottom: 4 }}>Paso 1 — Autorizar información con el cliente</div>
+                <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6 }}>Abre el Mapa AS-IS y el Organigrama actual, preséntaselos al cliente y confirma que la información capturada es correcta. Si hay correcciones, anótalas y ajusta el cubo antes de continuar.</div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {ENTREGABLES.filter(e => e.id === 'flujo_asis' || e.id === 'org_actual').map(e => (
+                  <EntregableCard key={e.id} e={e} showNotes />
+                ))}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
+                <button
+                  onClick={advanceFase}
+                  style={{ ...btnPrimary, fontSize: 13 }}
+                >
+                  ✓ Cliente autorizó la información → Avanzar a Entregables
+                </button>
+              </div>
+            </div>
+          );
+
+          /* ── Fase 2: Revisión de entregables ── */
+          if (fase === 2) {
+            const totalEntregables = ENTREGABLES.length;
+            const revisados = ENTREGABLES.filter(e => entregablesRevisados[e.id]).length;
+            const todosRevisados = revisados === totalEntregables;
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Paso 2 — Revisión de entregables</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 3 }}>Abre cada entregable, revísalo con el ejecutivo MentorIA y registra las correcciones. Márcalos como revisados cuando estén listos.</div>
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: revisados === totalEntregables ? '#22c55e' : 'var(--text-3)' }}>{revisados}/{totalEntregables} revisados</div>
+                </div>
+                <div style={{ height: 4, background: 'var(--surface-2)', borderRadius: 99, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${Math.round(revisados / totalEntregables * 100)}%`, background: '#22c55e', borderRadius: 99, transition: 'width 0.4s' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {ENTREGABLES.map(e => <EntregableCard key={e.id} e={e} showNotes />)}
+                </div>
+                {todosRevisados && (
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
+                    <button onClick={advanceFase} style={{ ...btnPrimary, fontSize: 13 }}>
+                      🚀 Todos revisados → Pasar a Entrega Final
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          /* ── Fase 3: Entrega final ── */
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ padding: '14px 18px', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#22c55e', marginBottom: 4 }}>Paso 3 — Entrega final al cliente</div>
+                <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6 }}>Presenta los 6 entregables finales al cliente en la sesión de cierre.</div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+                {ENTREGABLES.map(e => <EntregableCard key={e.id} e={e} />)}
+              </div>
+            </div>
+          );
+        })()}
 
       </div>
 
