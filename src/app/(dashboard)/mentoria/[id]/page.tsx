@@ -162,6 +162,7 @@ export default function ClienteWorkspace() {
   const [editCqPreguntas, setEditCqPreguntas] = useState<any[]>([]);
   const [guardandoCuestionario, setGuardandoCuestionario] = useState(false);
   const [legacyChatLen, setLegacyChatLen] = useState(0);
+  const [showMaestra, setShowMaestra]     = useState(false);
   const [showSesion, setShowSesion]     = useState(false);
   const [showPago, setShowPago]         = useState(false);
   const [showHallazgo, setShowHallazgo] = useState(false);
@@ -662,6 +663,33 @@ export default function ClienteWorkspace() {
               </div>
             </div>
 
+            {/* Sesión Maestra */}
+            <div
+              onClick={() => setShowMaestra(v => !v)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px',
+                background: showMaestra ? 'linear-gradient(135deg, #1e1154 0%, #312975 100%)' : 'var(--surface)',
+                border: `1px solid ${showMaestra ? '#6c4de6' : 'var(--line)'}`,
+                borderRadius: 12, cursor: 'pointer', transition: 'all .2s',
+                boxShadow: showMaestra ? '0 4px 16px rgba(108,77,230,.3)' : 'none',
+              }}
+            >
+              <div style={{
+                width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                background: 'linear-gradient(135deg, #6c4de6, #9b72ff)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+              }}>🧠</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: showMaestra ? 'white' : 'var(--text)' }}>Sesión Maestra</div>
+                <div style={{ fontSize: 11, color: showMaestra ? 'rgba(255,255,255,.7)' : 'var(--text-3)', marginTop: 2, lineHeight: 1.4 }}>
+                  Análisis cruzado de todas las sesiones · detecta huecos y conflictos · graba en el cubo
+                </div>
+              </div>
+              <div style={{ fontSize: 11, color: showMaestra ? 'rgba(255,255,255,.6)' : 'var(--text-3)' }}>
+                {showMaestra ? 'Activa ▸' : 'Abrir'}
+              </div>
+            </div>
+
             {/* Lista de sesiones */}
             {sesionesDiag.length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -834,9 +862,12 @@ export default function ClienteWorkspace() {
               </div>
             )}
           </div>
-          {/* Chat Agente Planificación */}
-          <div style={{ width: 320, flexShrink: 0, borderLeft: '1px solid var(--line)', padding: '16px 14px', overflow: 'hidden' }}>
-            <AgenteChat clienteId={id} agente="planificacion" />
+          {/* Panel derecho: Sesión Maestra o Agente Planificación */}
+          <div style={{ width: 360, flexShrink: 0, borderLeft: '1px solid var(--line)', padding: '16px 14px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            {showMaestra
+              ? <SesionMaestraChat clienteId={id} />
+              : <AgenteChat clienteId={id} agente="planificacion" />
+            }
           </div>
           </div>
         )}
@@ -1292,6 +1323,112 @@ export default function ClienteWorkspace() {
       {showPago      && <NuevoPagoModal onClose={() => setShowPago(false)} onSave={addPago} precio={cliente.precio} />}
       {showHallazgo  && <NuevoHallazgoModal onClose={() => setShowHallazgo(false)} onSave={addHallazgo} areasCliente={[...new Set([...hallazgos.map(h => h.area), ...(cliente.areas_diagnosticadas ?? [])].filter(Boolean))]} />}
       {showAccion    && <NuevaAccionModal onClose={() => setShowAccion(false)} onSave={addAccion} hallazgos={hallazgos} areasCliente={[...new Set([...hallazgos.map(h => h.area), ...(cliente.areas_diagnosticadas ?? [])].filter(Boolean))]} />}
+    </div>
+  );
+}
+
+// ── Sesión Maestra Chat ────────────────────────────────────────────────────────
+function SesionMaestraChat({ clienteId }: { clienteId: string }) {
+  const [msgs, setMsgs] = React.useState<{ role: 'user' | 'assistant'; content: string; sections?: string[] }[]>([]);
+  const [input, setInput] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [loadingHistory, setLoadingHistory] = React.useState(true);
+  const bottomRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    setLoadingHistory(true);
+    api.get<any[]>(`/mentoria/clientes/${clienteId}/sesion-maestra/history`)
+      .then(h => setMsgs((h ?? []).map((m: any) => ({ role: m.role, content: m.content }))))
+      .catch(() => {})
+      .finally(() => setLoadingHistory(false));
+  }, [clienteId]);
+
+  React.useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs]);
+
+  async function send() {
+    const text = input.trim();
+    if (!text || loading) return;
+    setInput('');
+    setMsgs(p => [...p, { role: 'user', content: text }]);
+    setLoading(true);
+    try {
+      const res = await api.post<{ text: string; sections_updated: string[] }>(`/mentoria/clientes/${clienteId}/sesion-maestra/chat`, { mensaje: text });
+      setMsgs(p => [...p, { role: 'assistant', content: res.text, sections: res.sections_updated }]);
+    } catch (e: any) {
+      setMsgs(p => [...p, { role: 'assistant', content: `Error: ${e?.message ?? 'intenta de nuevo'}` }]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const ACCENT = '#6c4de6';
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--surface)', border: '1px solid #6c4de6', borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)', background: 'linear-gradient(135deg, #1e1154 0%, #312975 100%)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 18 }}>🧠</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'white' }}>Sesión Maestra</span>
+        </div>
+        <div style={{ fontSize: 10, color: 'rgba(255,255,255,.65)', marginTop: 3, lineHeight: 1.4 }}>
+          Análisis cruzado de todas las entrevistas · identifica huecos, cruces y conflictos · graba al cubo
+        </div>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {loadingHistory ? (
+          <div style={{ textAlign: 'center', color: 'var(--text-3)', fontSize: 11, padding: '20px 0' }}>Cargando historial…</div>
+        ) : msgs.length === 0 ? (
+          <div style={{ textAlign: 'center', color: 'var(--text-3)', fontSize: 11, padding: '20px 8px', lineHeight: 1.6 }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>🧠</div>
+            Pregunta qué información se cruza entre sesiones, qué falta para los entregables, o dicta datos para guardar en el cubo.
+          </div>
+        ) : msgs.map((m, i) => (
+          <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start', gap: 4 }}>
+            <div style={{
+              maxWidth: '90%', padding: '8px 12px',
+              borderRadius: m.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+              background: m.role === 'user' ? ACCENT : 'var(--bg)',
+              border: m.role === 'assistant' ? '1px solid var(--line)' : 'none',
+              color: m.role === 'user' ? 'white' : 'var(--text)',
+              fontSize: 12, lineHeight: 1.6, whiteSpace: 'pre-wrap',
+            }}>
+              {m.content}
+            </div>
+            {m.role === 'assistant' && m.sections && m.sections.length > 0 && (
+              <div style={{ fontSize: 10, color: '#9b72ff', paddingLeft: 4 }}>
+                ✓ Cubo actualizado: {m.sections.join(', ')}
+              </div>
+            )}
+          </div>
+        ))}
+        {loading && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 12, alignSelf: 'flex-start', width: 'fit-content' }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: ACCENT, animation: 'pulse 1s infinite' }} />
+            <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Analizando sesiones…</span>
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      <div style={{ padding: '10px 12px', borderTop: '1px solid var(--line)', display: 'flex', gap: 8, flexShrink: 0 }}>
+        <textarea
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+          placeholder="¿Qué información se cruza entre Ventas y Operaciones? ¿Qué falta para el Mapa AS-IS?…"
+          rows={2}
+          disabled={loading}
+          style={{ flex: 1, fontSize: 11, padding: '8px 10px', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8, color: 'var(--text)', resize: 'none', fontFamily: 'inherit', lineHeight: 1.5 } as any}
+        />
+        <button
+          onClick={send}
+          disabled={!input.trim() || loading}
+          style={{ padding: '8px 14px', background: ACCENT, color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 700, opacity: !input.trim() || loading ? 0.5 : 1, alignSelf: 'flex-end', flexShrink: 0 }}
+        >
+          ↑
+        </button>
+      </div>
     </div>
   );
 }
