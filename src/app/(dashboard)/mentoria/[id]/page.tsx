@@ -635,11 +635,12 @@ export default function ClienteWorkspace() {
       </div>
 
       {/* ── Tab content ── */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px' }}>
+      <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
 
         {/* ── SESIONES Y CUESTIONARIOS ── */}
         {tab === 'sesiones_cuestionarios' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ flex: 1, display: 'flex', gap: 0, overflow: 'hidden' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             {/* Generating questionnaire banner */}
             {generandoCuestionario && (
@@ -833,15 +834,31 @@ export default function ClienteWorkspace() {
               </div>
             )}
           </div>
+          {/* Chat Agente Planificación */}
+          <div style={{ width: 320, flexShrink: 0, borderLeft: '1px solid var(--line)', padding: '16px 14px', overflow: 'hidden' }}>
+            <AgenteChat clienteId={id} agente="planificacion" />
+          </div>
+          </div>
         )}
 
         {/* ── CUBO DE INFORMACIÓN ── */}
         {tab === 'cubo' && (
-          <TabCubo clienteId={id} empresa={cliente.empresa} sesiones={sesiones} cubo={(cliente as any).cubo ?? {}} />
+          <div style={{ flex: 1, display: 'flex', gap: 0, overflow: 'hidden' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px' }}>
+              <TabCubo clienteId={id} empresa={cliente.empresa} sesiones={sesiones} cubo={(cliente as any).cubo ?? {}} />
+            </div>
+            {/* Chat Agente Cubo */}
+            <div style={{ width: 320, flexShrink: 0, borderLeft: '1px solid var(--line)', padding: '16px 14px', overflow: 'hidden' }}>
+              <AgenteChat clienteId={id} agente="cubo" />
+            </div>
+          </div>
         )}
 
         {/* ── ENTREGABLES ── */}
-        {tab === 'entregables' && (() => {
+        {tab === 'entregables' && (
+          <div style={{ flex: 1, display: 'flex', gap: 0, overflow: 'hidden' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px' }}>
+          {(() => {
           const fase = cliente.fase_actual;
           const entregableUrl = (path: string) => `${path}?clienteId=${id}&empresa=${encodeURIComponent(cliente.empresa)}`;
           const EntregableCard = ({ e, showNotes }: { e: typeof ENTREGABLES[number]; showNotes?: boolean }) => (
@@ -955,7 +972,14 @@ export default function ClienteWorkspace() {
               </div>
             </div>
           );
-        })()}
+          })()}
+          </div>
+          {/* Chat Agente Entregables */}
+          <div style={{ width: 320, flexShrink: 0, borderLeft: '1px solid var(--line)', padding: '16px 14px', overflow: 'hidden' }}>
+            <AgenteChat clienteId={id} agente="entregables" />
+          </div>
+          </div>
+        )}
 
       </div>
 
@@ -1268,6 +1292,131 @@ export default function ClienteWorkspace() {
       {showPago      && <NuevoPagoModal onClose={() => setShowPago(false)} onSave={addPago} precio={cliente.precio} />}
       {showHallazgo  && <NuevoHallazgoModal onClose={() => setShowHallazgo(false)} onSave={addHallazgo} areasCliente={[...new Set([...hallazgos.map(h => h.area), ...(cliente.areas_diagnosticadas ?? [])].filter(Boolean))]} />}
       {showAccion    && <NuevaAccionModal onClose={() => setShowAccion(false)} onSave={addAccion} hallazgos={hallazgos} areasCliente={[...new Set([...hallazgos.map(h => h.area), ...(cliente.areas_diagnosticadas ?? [])].filter(Boolean))]} />}
+    </div>
+  );
+}
+
+// ── Agente Chat Panel ──────────────────────────────────────────────────────────
+type AgenteKey = 'planificacion' | 'cubo' | 'entregables';
+
+const AGENTE_META: Record<AgenteKey, { label: string; color: string; placeholder: string; desc: string }> = {
+  planificacion: {
+    label: 'Agente de Planificación',
+    color: '#6c4de6',
+    desc: 'Planifica entrevistas, detecta temas que cruzan áreas y lleva el seguimiento',
+    placeholder: '¿Qué áreas me faltan por entrevistar? ¿Qué preguntas debo cruzar entre Ventas y Operaciones?…',
+  },
+  cubo: {
+    label: 'Agente de Análisis',
+    color: '#f59e0b',
+    desc: 'Detecta conflictos entre áreas, rupturas de proceso y huecos para los entregables',
+    placeholder: '¿Qué información me falta para generar el Mapa AS-IS? ¿Hay conflictos entre lo que dijo Ventas y Operaciones?…',
+  },
+  entregables: {
+    label: 'Agente de Entregables',
+    color: '#3b82f6',
+    desc: 'Genera borradores, incorpora correcciones y aprende el estilo del cliente',
+    placeholder: 'Genera el borrador del Mapa AS-IS. Corrección: el cliente quiere más detalle en costos…',
+  },
+};
+
+function AgenteChat({ clienteId, agente }: { clienteId: string; agente: AgenteKey }) {
+  const meta = AGENTE_META[agente];
+  const [msgs, setMsgs] = React.useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
+  const [input, setInput] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [loadingHistory, setLoadingHistory] = React.useState(true);
+  const bottomRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    setLoadingHistory(true);
+    api.get<any[]>(`/mentoria/clientes/${clienteId}/agente-chat/${agente}`)
+      .then(history => setMsgs((history ?? []).map((m: any) => ({ role: m.role, content: m.content }))))
+      .catch(() => {})
+      .finally(() => setLoadingHistory(false));
+  }, [clienteId, agente]);
+
+  React.useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [msgs]);
+
+  async function send() {
+    const text = input.trim();
+    if (!text || loading) return;
+    setInput('');
+    setMsgs(p => [...p, { role: 'user', content: text }]);
+    setLoading(true);
+    try {
+      const res = await api.post<{ text: string }>(`/mentoria/clientes/${clienteId}/agente-chat`, { agente, mensaje: text });
+      setMsgs(p => [...p, { role: 'assistant', content: res.text }]);
+    } catch (e: any) {
+      setMsgs(p => [...p, { role: 'assistant', content: `Error: ${e?.message ?? 'intenta de nuevo'}` }]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
+      {/* Header */}
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)', background: 'var(--bg)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: meta.color, flexShrink: 0 }} />
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>{meta.label}</span>
+        </div>
+        <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 3, lineHeight: 1.4 }}>{meta.desc}</div>
+      </div>
+
+      {/* Messages */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {loadingHistory ? (
+          <div style={{ textAlign: 'center', color: 'var(--text-3)', fontSize: 11, padding: '20px 0' }}>Cargando historial…</div>
+        ) : msgs.length === 0 ? (
+          <div style={{ textAlign: 'center', color: 'var(--text-3)', fontSize: 11, padding: '20px 8px', lineHeight: 1.6 }}>
+            <div style={{ fontSize: 22, marginBottom: 8 }}>💬</div>
+            Pregunta al agente para comenzar.<br />Tiene acceso al cubo, las sesiones y los entregables.
+          </div>
+        ) : msgs.map((m, i) => (
+          <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
+            <div style={{
+              maxWidth: '88%', padding: '8px 12px', borderRadius: m.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+              background: m.role === 'user' ? meta.color : 'var(--bg)',
+              border: m.role === 'assistant' ? '1px solid var(--line)' : 'none',
+              color: m.role === 'user' ? 'white' : 'var(--text)',
+              fontSize: 12, lineHeight: 1.6, whiteSpace: 'pre-wrap',
+            }}>
+              {m.content}
+            </div>
+          </div>
+        ))}
+        {loading && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 12, alignSelf: 'flex-start', width: 'fit-content' }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: meta.color, animation: 'pulse 1s infinite' }} />
+            <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Analizando…</span>
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Input */}
+      <div style={{ padding: '10px 12px', borderTop: '1px solid var(--line)', display: 'flex', gap: 8, flexShrink: 0 }}>
+        <textarea
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+          placeholder={meta.placeholder}
+          rows={2}
+          disabled={loading}
+          style={{ flex: 1, fontSize: 11, padding: '8px 10px', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8, color: 'var(--text)', resize: 'none', fontFamily: 'inherit', lineHeight: 1.5 } as any}
+        />
+        <button
+          onClick={send}
+          disabled={!input.trim() || loading}
+          style={{ padding: '8px 14px', background: meta.color, color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 700, opacity: !input.trim() || loading ? 0.5 : 1, alignSelf: 'flex-end', flexShrink: 0 }}
+        >
+          ↑
+        </button>
+      </div>
     </div>
   );
 }
