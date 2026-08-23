@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft, Download, CheckCircle2, Loader2, FileText,
-  MessageSquare, Send, X, Clock, Check, AlertCircle,
+  MessageSquare, Send, X, Clock, Check, AlertCircle, ImagePlus, Trash2,
 } from 'lucide-react';
 import { socFetch } from '@/lib/soc-api';
 
@@ -11,6 +11,14 @@ interface Pantalla {
   id: string;
   titulo: string;
   htmlContenido: string | null;
+}
+
+interface AnexoScreenshot {
+  id: string;
+  titulo: string;
+  mimeType: string;
+  imagenBase64: string;
+  orden: number;
 }
 
 interface RequerimientoDetalle {
@@ -27,6 +35,7 @@ interface RequerimientoDetalle {
   documentoWordPath: string | null;
   notionPageId: string | null;
   pantallas: Pantalla[];
+  screenshots: AnexoScreenshot[];
 }
 
 interface VoBo {
@@ -62,6 +71,12 @@ export default function RequerimientoPage() {
   const [aprobando, setAprobando] = useState(false);
   const [descargandoHtml, setDescargandoHtml] = useState(false);
 
+  // Screenshots
+  const [screenshots, setScreenshots] = useState<AnexoScreenshot[]>([]);
+  const [subiendoScreenshot, setSubiendoScreenshot] = useState(false);
+  const [tituloScreenshot, setTituloScreenshot] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
+
   // VoBo state
   const [vobos, setVobos] = useState<VoBo[]>([]);
   const [voboModal, setVoboModal] = useState(false);
@@ -94,7 +109,9 @@ export default function RequerimientoPage() {
         socFetch(`/api/requerimientos/${id}/vobos`),
       ]);
       if (!resReq.ok) throw new Error();
-      setReq(await resReq.json());
+      const data: RequerimientoDetalle = await resReq.json();
+      setReq(data);
+      setScreenshots(data.screenshots ?? []);
       if (resVobos.ok) setVobos(await resVobos.json());
     } finally {
       setLoading(false);
@@ -179,6 +196,38 @@ export default function RequerimientoPage() {
     } finally {
       setEnviandoVobo(false);
     }
+  }
+
+  async function subirScreenshot(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const titulo = tituloScreenshot.trim() || file.name.replace(/\.[^.]+$/, '');
+    setSubiendoScreenshot(true);
+    try {
+      const base64: string = await new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.onload = () => res((reader.result as string).split(',')[1]);
+        reader.onerror = rej;
+        reader.readAsDataURL(file);
+      });
+      const resp = await socFetch(`/api/requerimientos/${id}/screenshots`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ titulo, imagenBase64: base64, mimeType: file.type }),
+      });
+      if (!resp.ok) { alert('Error al subir la imagen.'); return; }
+      const nuevo = await resp.json();
+      setScreenshots(prev => [...prev, { id: nuevo.id, titulo: nuevo.titulo, mimeType: file.type, imagenBase64: base64, orden: nuevo.orden }]);
+      setTituloScreenshot('');
+      if (fileRef.current) fileRef.current.value = '';
+    } finally {
+      setSubiendoScreenshot(false);
+    }
+  }
+
+  async function eliminarScreenshot(screenshotId: string) {
+    const res = await socFetch(`/api/requerimientos/${id}/screenshots/${screenshotId}`, { method: 'DELETE' });
+    if (res.ok) setScreenshots(prev => prev.filter(s => s.id !== screenshotId));
   }
 
   if (loading) {
@@ -377,6 +426,53 @@ export default function RequerimientoPage() {
             <p className="text-sm text-emerald-400">Registrado en Notion ✓</p>
           </div>
         )}
+
+        {/* Capturas de referencia */}
+        <div className="bg-white/5 rounded-xl border border-white/10">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+            <p className="text-xs text-slate-500 uppercase tracking-wide">
+              Capturas de referencia {screenshots.length > 0 && `(${screenshots.length})`}
+            </p>
+          </div>
+          <div className="p-4 space-y-4">
+            {screenshots.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {screenshots.map(s => (
+                  <div key={s.id} className="relative group rounded-lg overflow-hidden border border-white/10">
+                    <img
+                      src={`data:${s.mimeType};base64,${s.imagenBase64}`}
+                      alt={s.titulo}
+                      className="w-full object-contain max-h-64 bg-black/20"
+                    />
+                    <div className="flex items-center justify-between px-3 py-2 bg-black/40">
+                      <span className="text-xs text-slate-300 truncate">{s.titulo}</span>
+                      <button
+                        onClick={() => eliminarScreenshot(s.id)}
+                        className="text-slate-500 hover:text-red-400 ml-2"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={tituloScreenshot}
+                onChange={e => setTituloScreenshot(e.target.value)}
+                placeholder="Título de la captura (opcional)"
+                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#00614E]/40"
+              />
+              <label className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm cursor-pointer border border-white/10 text-slate-300 hover:bg-white/5 ${subiendoScreenshot ? 'opacity-40 pointer-events-none' : ''}`}>
+                {subiendoScreenshot ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
+                Agregar
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={subirScreenshot} />
+              </label>
+            </div>
+          </div>
+        </div>
 
         {req.pantallas && req.pantallas.length > 0 && (
           <div className="space-y-4">
