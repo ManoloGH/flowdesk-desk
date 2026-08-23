@@ -219,8 +219,14 @@ export default function ClienteWorkspace() {
   async function advanceFase() {
     if (!cliente || cliente.fase_actual >= 3) return;
     const next = (cliente.fase_actual + 1) as 0 | 1 | 2 | 3;
+    const hoy = new Date().toISOString().split('T')[0];
     try { await api.patch(`/mentoria/clientes/${id}/fase`, { fase: next }); } catch {}
-    setCliente(prev => prev ? { ...prev, fase_actual: next } : prev);
+    if (next === 3 && !cliente.fecha_fin) {
+      try { await api.patch(`/mentoria/clientes/${id}`, { fecha_fin: hoy }); } catch {}
+      setCliente(prev => prev ? { ...prev, fase_actual: next, fecha_fin: hoy } : prev);
+    } else {
+      setCliente(prev => prev ? { ...prev, fase_actual: next } : prev);
+    }
   }
 
   async function saveNotas() {
@@ -327,6 +333,7 @@ export default function ClienteWorkspace() {
     if (!pickerForm.interlocutor.trim()) return;
     setCreandoSesion(true);
     const newId = `s-${Date.now()}`;
+    const hoy = new Date().toISOString().split('T')[0];
     const tipoLabel = TIPOS_SESION_DIAG.find(t => t.key === pickerForm.tipo)?.label ?? pickerForm.tipo;
     const titulo = pickerForm.tipo === 'dg'
       ? `Sesión DG — ${pickerForm.interlocutor}`
@@ -336,8 +343,13 @@ export default function ClienteWorkspace() {
         id: newId, titulo, tipo: pickerForm.tipo,
         interlocutor: pickerForm.interlocutor,
         cargo: pickerForm.cargo, area: pickerForm.area,
-        fecha: new Date().toISOString().split('T')[0],
+        fecha: hoy,
       });
+      // Auto-fill fecha_inicio en la primera sesión
+      if (sesionesDiag.length === 0 && cliente && !cliente.fecha_inicio) {
+        try { await api.patch(`/mentoria/clientes/${id}`, { fecha_inicio: hoy }); } catch {}
+        setCliente(prev => prev ? { ...prev, fecha_inicio: hoy } : prev);
+      }
     } catch {}
     setCreandoSesion(false);
     setShowPicker(false);
@@ -529,11 +541,17 @@ export default function ClienteWorkspace() {
   );
 
   const fase = PHASES[cliente.fase_actual];
+  const faseNum = cliente.fase_actual + 1; // display 1-4
   const faseItemsDone = PHASES[cliente.fase_actual].items.filter(i => checks[i.id]).length;
   const faseTotal = PHASES[cliente.fase_actual].items.length;
   const fasePct = Math.round(faseItemsDone / faseTotal * 100);
-  const totalDone = PHASES.flatMap(p => p.items).filter(i => checks[i.id]).length;
-  const totalItems = PHASES.flatMap(p => p.items).length;
+
+  // Progreso total: 70% mapeo (sesiones completadas) + 10% por cada fase avanzada (1,2,3)
+  const sesCompletadas = sesionesDiag.filter(s => s.completada).length;
+  const sesTotal = sesionesDiag.length;
+  const mapeoProgress = sesTotal > 0 ? (sesCompletadas / sesTotal) * 70 : 0;
+  const faseBonus = (cliente.fase_actual >= 1 ? 10 : 0) + (cliente.fase_actual >= 2 ? 10 : 0) + (cliente.fase_actual >= 3 ? 10 : 0);
+  const progresoTotal = Math.min(100, Math.round(mapeoProgress + faseBonus));
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -575,21 +593,29 @@ export default function ClienteWorkspace() {
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-start' }}>
                 <div style={{ background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 10, padding: '12px 16px', minWidth: 140 }}>
                   <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Fase actual</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: fase.color, marginBottom: 6 }}>Fase {fase.num} · {fase.label}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: fase.color, marginBottom: 6 }}>Fase {faseNum} · {fase.label}</div>
                   <div style={{ height: 4, background: 'var(--surface-2)', borderRadius: 99, overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: fasePct + '%', background: fase.color, borderRadius: 99, transition: 'width 0.4s' }} />
                   </div>
-                  <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 5 }}>{faseItemsDone}/{faseTotal} entregables · {fasePct}%</div>
+                  <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 5 }}>{faseItemsDone}/{faseTotal} tareas · {fasePct}%</div>
                 </div>
                 <div style={{ background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 10, padding: '12px 16px', minWidth: 120 }}>
                   <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Contrato</div>
                   <div style={{ fontSize: 16, fontWeight: 800, color: '#f59e0b', letterSpacing: '-0.02em' }}>{fmt$(cliente.precio)}</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 3 }}>Desde {fmtDate(cliente.fecha_inicio)}</div>
+                  <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 3 }}>
+                    {cliente.fecha_inicio ? `Inicio: ${fmtDate(cliente.fecha_inicio)}` : 'Sin fecha de inicio'}
+                    {cliente.fecha_fin ? ` · Fin: ${fmtDate(cliente.fecha_fin)}` : ''}
+                  </div>
                 </div>
-                <div style={{ background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 10, padding: '12px 16px' }}>
+                <div style={{ background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 10, padding: '12px 16px', minWidth: 110 }}>
                   <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Progreso total</div>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: '#6c4de6', letterSpacing: '-0.02em' }}>{Math.round(totalDone / totalItems * 100)}%</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 3 }}>{totalDone}/{totalItems} entregables</div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: '#6c4de6', letterSpacing: '-0.02em' }}>{progresoTotal}%</div>
+                  <div style={{ height: 3, background: 'var(--surface-2)', borderRadius: 99, overflow: 'hidden', marginTop: 5, marginBottom: 4 }}>
+                    <div style={{ height: '100%', width: progresoTotal + '%', background: '#6c4de6', borderRadius: 99, transition: 'width 0.4s' }} />
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--text-3)' }}>
+                    {sesTotal > 0 ? `${sesCompletadas}/${sesTotal} sesiones completadas` : 'Sin sesiones registradas'}
+                  </div>
                 </div>
               </div>
 
@@ -602,7 +628,7 @@ export default function ClienteWorkspace() {
                 )}
                 <button onClick={() => setEditing(true)} style={btnGhost}><Edit2 size={12} /> Editar</button>
                 {cliente.fase_actual < 3 && fasePct === 100 && (
-                  <button onClick={advanceFase} style={btnPrimary}>Avanzar a Fase {cliente.fase_actual + 1} →</button>
+                  <button onClick={advanceFase} style={btnPrimary}>Avanzar a Fase {faseNum + 1} →</button>
                 )}
                 <button onClick={toggleStatus} style={{ ...btnGhost, color: cliente.status === 'activo' ? '#ef4444' : '#22c55e', borderColor: cliente.status === 'activo' ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.3)', fontSize: 12 }}>
                   {cliente.status === 'activo' ? 'Desactivar cliente' : 'Reactivar cliente'}
@@ -1616,7 +1642,7 @@ function PhaseTracker({ current }: { current: number }) {
           <div key={n} style={{ display: 'flex', alignItems: 'center', flex: i < 3 ? 1 : 'none' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
               <div style={{ width: 30, height: 30, borderRadius: '50%', background: done ? '#22c55e' : active ? color : 'var(--surface-2)', border: `2px solid ${done ? '#22c55e' : active ? color : 'var(--line)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: done || active ? 'white' : 'var(--text-3)', flexShrink: 0 }}>
-                {done ? '✓' : n}
+                {done ? '✓' : n + 1}
               </div>
               <span style={{ fontSize: 10, fontWeight: 600, color: active ? color : done ? '#22c55e' : 'var(--text-3)', whiteSpace: 'nowrap' }}>{labels[n]}</span>
             </div>
